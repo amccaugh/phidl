@@ -8,10 +8,12 @@ Created on Wed Jul 20 17:47:14 2016
 
 from __future__ import division # Otherwise integer division e.g.  20 / 7 = 2
 from __future__ import print_function # Use print('hello') instead of print 'hello'
-from __future__ import unicode_literals # Use print('hello') instead of print 'hello'
+#from __future__ import unicode_literals
 import numpy as np
 import gdspy
 from matplotlib import pyplot as plt
+from matplotlib.patches import Polygon as PolygonPatch
+from matplotlib.collections import PatchCollection
 
 
 class Port(object):
@@ -93,14 +95,16 @@ class SubDevice(gdspy.CellReference):
         if type(origin) is Port:
             o = origin.midpoint
         elif type(origin) is str:
-            o = self.get_port(origin)
+            port = self.get_port(origin)
+            o = port.midpoint
         else:
             o = origin
             
         if type(destination) is Port:
             d = destination.midpoint
         elif type(destination) is str:
-            d = self.get_port(destination)
+            port = self.get_port(destination)
+            d = port.midpoint
         else:
             d = destination
             
@@ -159,20 +163,29 @@ class SubDevice(gdspy.CellReference):
         
                     
 def quickplot(items, overlay_ports = True):
+    fig, ax = plt.subplots()
+    
     if type(items) is not list:  items = [items]
     for item in items:
         if type(item) is Device or type(item) is SubDevice:
             polygons = item.get_polygons(by_spec=False, depth=None)
+            patches = []
             for p in polygons:
+#                p.append(p[-1]) # Close polygon
                 xy = zip(*p)
-                plt.plot(xy[0], xy[1], '.-')
-                # TODO Make this filled in
+#                plt.plot(xy[0], xy[1], '.-')
+                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
             for port in item.get_ports():
                 pass # TODO Draw ports too
+    pc = PatchCollection(patches, alpha=0.4)
+    colors = 100*np.random.rand(len(patches))
+    pc.set_array(np.array(colors))
+    ax.add_collection(pc)
     plt.axis('equal')
+
     plt.show()
             
-        
+
 
 
 #my_wg = Device('Waveguide')
@@ -220,7 +233,7 @@ snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
 wg1 = d.add_device(waveguide(name = 'important_wg', width=5, height = 10))
 
 # Create another waveguide separately, then add it to new device 'd'
-temp = waveguide(width=5, height = 10) # Should this return a DeviceReference?
+temp = waveguide(width=7, height = 1) # Should this return a DeviceReference?
 wg2 = d.add_device(temp) # This replaces wg2 with its DeviceReference
 wg2.translate(dx = 0.5, dy = 1.7)
 
@@ -231,14 +244,14 @@ snspd.rotate(angle = 45)
 wg1.translate(dx = 1, dy = 2) # Calculates dx, dy automatically
 
 # To implement: Translate using Ports or their names
-wg1.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
-wg1.move(origin = 'term2', destination = snspd.get_port('wgport2')) # Takes port and sends to destination
+snspd.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
+wg1.move(origin = 'wgport1', destination = snspd.get_port('term2')) # Takes port and sends to destination
 
 # Add some new geometry
 poly1 = d.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6), (-6, -6), (-4, -4), (-4, 4), (0, 4)]))
 poly2 = gdspy.Polygon([(2, 2), (2, 6), (-6, 6)])
 poly1.fillet(0.5) # Can fillet it after adding or before
-poly2.translate([0.4,0.6])
+poly2.translate(dx = 0.4, dy = 0.6)
 d.add_polygon(poly1)
 d.add_polygon(poly2)
 
