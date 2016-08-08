@@ -11,9 +11,35 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 #from __future__ import unicode_literals
 import numpy as np
 import gdspy
+from copy import deepcopy
+
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon as PolygonPatch
 from matplotlib.collections import PatchCollection
+
+
+
+def apply_transformations(point, orientation, origin=[0, 0], rotation=None, x_reflection=False):
+    # Apply GDS-type transformations (x_ref)
+    new_point = np.array(point)
+    new_orientation = orientation
+    
+    if x_reflection:
+        new_point[0] = -new_point[0]
+        new_orientation = mod(180-orientation, 360)
+#    if self.magnification is not None:
+#        pass
+    if rotation is not None:
+        ct = np.cos(rotation * np.pi / 180.0)
+        st = np.sin(rotation * np.pi / 180.0)
+        st = np.array([-st, st])
+        new_point = new_point * ct + new_point[::-1] * st
+        new_orientation += rotation
+    if origin is not None:
+        new_point = new_point + np.array(origin)
+        
+    return new_point, new_orientation
+
 
 
 class Port(object):
@@ -21,16 +47,22 @@ class Port(object):
         self.midpoint = midpoint
         self.width = width
         self.orientation = orientation
+        
+        
 
-
+# TODO: Make it so if you don't specify a name, it auto-assigns a unique one
 class Device(gdspy.Cell):
+    id = 0    
+    
     def __init__(self, name, exclude_from_global=True):
         super(Device, self).__init__(name, exclude_from_global)
         self.ports = {}
+        self.subdevices = []
 
     def add_device(self, device):
         subdevice = SubDevice(device)   # Create a SubDevice (CellReference)
         self.add(subdevice)             # Add SubDevice (CellReference) to Device (Cell)
+        self.subdevices.append(subdevice) # Add to the list of subdevices (for convenience)
         return subdevice                # Return the SubDevice (CellReference)
 
     # QUESTION: Could make this add_element but that implies we're stuck to GDS elements
@@ -45,34 +77,19 @@ class Device(gdspy.Cell):
         self.ports[name] = p
         return p
         
+    def copy_port(self, name, port):
+        p = Port(port.midpoint, port.width, port.orientation)
+        self.ports[name] = p
+        
+        
     def get_ports(self):
         return self.ports
+        
         
     def remove_port(self, name):
         self.ports.pop(name, None)
         
 
-        
-        
-#    def add_subdevice(self, subdevice):
-#        if type(subdevice) is Device:
-#            pass # Create the device reference
-#        if type(subdevice) is DeviceReference:
-#            pass # 
-#        if type(subdevice) is list:
-#            if type(device[0]) is Device:
-#                pass
-#            if type(device[0]) is DeviceReference:
-#                pass
-#    
-#    def get_ports(self, depth=None):
-#        pass
-#    
-#    
-#        
-#    def copy_port(self, port, new_port_name):
-#        p = Port(port.midpoint, port.width, port.orientation)
-    
     
         
     
@@ -80,8 +97,23 @@ class Device(gdspy.Cell):
 class SubDevice(gdspy.CellReference):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         super(SubDevice, self).__init__(device, origin, rotation, magnification, x_reflection)
-        self.ports = device.ports
-        
+        self.parent_ports = device.ports
+        self._local_ports = deepcopy(device.ports)
+#        self._update_ports()
+    
+    # This property allows you to call mysubdevice.ports, and receive a copy of
+    # the ports dict which is correctly rotated and translated
+    @property
+    def ports(self):
+        for key in self.parent_ports.keys():
+            port = self.parent_ports[key] 
+            new_midpoint, new_orientation = apply_transformations(port.midpoint, \
+                port.orientation, self.origin, self.rotation, self.x_reflection)
+            self._local_ports[key].midpoint = new_midpoint
+            self._local_ports[key].orientation = new_orientation
+        return self._local_ports
+
+
     def translate(self, dx = 0, dy = 0):
         self.origin = np.array(self.origin) + np.array([dx,dy])
         
@@ -89,24 +121,18 @@ class SubDevice(gdspy.CellReference):
     def move(self, origin = [0,0], destination = [0,0]):
         """
         Moves the SubDevice from the origin point to the destination.  Both origin
-        and destination can be 1x2 array-like, Port, or a string with name of a
-        Pot in this subdevice
+        and destination can be 1x2 array-like, Port, or a key corresponding to
+        one of the Ports in this subdevice
         """
-        if type(origin) is Port:
-            o = origin.midpoint
-        elif type(origin) is str:
-            port = self.get_port(origin)
-            o = port.midpoint
-        else:
-            o = origin
+        if type(origin) is Port:            o = origin.midpoint
+        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif np.array(origin).size == 2:     o = origin
+        else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or dict key')
             
-        if type(destination) is Port:
-            d = destination.midpoint
-        elif type(destination) is str:
-            port = self.get_port(destination)
-            d = port.midpoint
-        else:
-            d = destination
+        if type(destination) is Port:           d = destination.midpoint
+        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif np.array(origin).size == 2:         d = destination
+        else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or dict key')
             
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
         
@@ -114,38 +140,6 @@ class SubDevice(gdspy.CellReference):
     def rotate(self, angle = 45):
         self.rotation += angle
         
-        
-    def get_port(self, name):
-        """ Returns a translated, reflected, and rotated version of the 
-        subdevice's port which corresponds the location of the port in the 
-        Device where this SubDevice lives """
-        
-        # First get the base location of the referenced port
-        ref_port = self.ports[name]
-        width = ref_port.width
-        new_midpoint = np.array(ref_port.midpoint)
-        new_orientation = ref_port.orientation
-        
-        # Then transform the referenced port location according to the
-        # transformations in the SubDevice (CellReference) properties
-        if self.x_reflection:
-            new_midpoint[0] = -new_midpoint[0]
-            new_orientation = mod(180-orientation, 360)
-        if self.magnification is not None:
-            pass
-        if self.rotation is not None:
-            ct = np.cos(self.rotation * np.pi / 180.0)
-            st = np.sin(self.rotation * np.pi / 180.0)
-            st = np.array([-st, st])
-            new_midpoint = new_midpoint * ct + new_midpoint[::-1] * st
-            new_orientation += self.rotation
-        if self.origin is not None:
-            new_midpoint = new_midpoint + np.array(self.origin)
-        
-        return Port(new_midpoint, width, new_orientation)
-        
-    def get_ports(self):
-        return [self.get_port(name) for name in self.ports.keys()]
         
     def connect_port(self, port, destination, translate = True, rotate = True):
         # port can either be a string with the name or an actual Port
@@ -163,20 +157,30 @@ class SubDevice(gdspy.CellReference):
         
                     
 def quickplot(items, overlay_ports = True):
+    """ Takes a list of devices/subdevices/polygons or single one of those, and
+    plots them.  Also has the option to overlay their ports
+    """
     fig, ax = plt.subplots()
     
+    # Iterate through each each Device/Subdevice/Polygon and display it
     if type(items) is not list:  items = [items]
     for item in items:
         if type(item) is Device or type(item) is SubDevice:
             polygons = item.get_polygons(by_spec=False, depth=None)
             patches = []
             for p in polygons:
-#                p.append(p[-1]) # Close polygon
                 xy = zip(*p)
-#                plt.plot(xy[0], xy[1], '.-')
                 patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-            for port in item.get_ports():
-                pass # TODO Draw ports too
+            for port in item.ports.values():
+                plt.plot(port.midpoint[0], port.midpoint[1], 'rp', markersize = 15)
+        if type(item) is Device:
+            for sd in item.subdevices:
+                for port in sd.ports.values():
+                    plt.plot(port.midpoint[0], port.midpoint[1], 'y*', markersize = 10)
+        if type(item) is gdspy.Polygon:
+                p = item.points
+                xy = zip(*p)
+                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
     pc = PatchCollection(patches, alpha=0.4)
     colors = 100*np.random.rand(len(patches))
     pc.set_array(np.array(colors))
@@ -215,41 +219,43 @@ def SNSPD(name = 'snspd', config = 'snspd.yaml'):
     snspd.add_port(name = 'term2', midpoint = [5,3], width = 1, orientation = -90)
     return snspd
     
-def waveguide(name = 'snspd', width = 1, height = 1):
+def waveguide(name = 'waveguide', width = 10, height = 1):
     wg = Device(name)
     wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
-    wg.add_port(name = 'wgport1', midpoint = [3,3], width = 1, orientation = 45)
-    wg.add_port(name = 'wgport2', midpoint = [2,1.5], width = 1, orientation = -60)
+    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
+    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
     return wg
 
 
 #%% How we might want to be coding
+
+
 
 # Construct a new device 'd'
 d = Device('Integrated')
 
 # Create an SNSPD and waveguide and add references to them into 'd'
 snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
-wg1 = d.add_device(waveguide(name = 'important_wg', width=5, height = 10))
+wg1 = d.add_device(waveguide(name = 'important_wg', width=10, height = 1))
 
 # Create another waveguide separately, then add it to new device 'd'
-temp = waveguide(width=7, height = 1) # Should this return a DeviceReference?
+temp = waveguide(width=7, height = 1) # This creates a Device and calls it temp
 wg2 = d.add_device(temp) # This replaces wg2 with its DeviceReference
 wg2.translate(dx = 0.5, dy = 1.7)
 
 # Manipulate the subdevice references
 snspd.translate(dx = 4, dy = 6) # Move by dx = 4, dy = 6
 snspd.move(origin = [4,6], destination = [5,9]) # can either move from point to point
-snspd.rotate(angle = 45)
+snspd.rotate(angle = 15)
 wg1.translate(dx = 1, dy = 2) # Calculates dx, dy automatically
 
 # To implement: Translate using Ports or their names
 snspd.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
-wg1.move(origin = 'wgport1', destination = snspd.get_port('term2')) # Takes port and sends to destination
+wg1.move(origin = 'wgport1', destination = snspd.ports['term2']) # Takes port and sends to destination
 
 # Add some new geometry
 poly1 = d.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6), (-6, -6), (-4, -4), (-4, 4), (0, 4)]))
-poly2 = gdspy.Polygon([(2, 2), (2, 6), (-6, 6)])
+poly2 = gdspy.Polygon([(2.0, 2), (2, 6), (-6, 6)])
 poly1.fillet(0.5) # Can fillet it after adding or before
 poly2.translate(dx = 0.4, dy = 0.6)
 d.add_polygon(poly1)
@@ -277,6 +283,34 @@ snspd.connect_port(port = 'term2', destination = [1,5], orientation = 45) # Can 
 # 
 d.plot(overlay_ports = True)
 
+
+
+# %% Connecting together several waveguides
+
+d = Device('MultiWaveguide')
+wg1 = d.add_device(waveguide(width=10, height = 1))
+wg2 = d.add_device(waveguide(width=12, height = 2))
+wg3 = d.add_device(waveguide(width=14, height = 3))
+
+quickplot(d)
+
+wg2.move(origin = 'wgport1', destination = wg1.ports['wgport2'])
+wg3.move(origin = 'wgport1', destination = wg2.ports['wgport2'])
+
+quickplot(d)
+
+d.copy_port(name = '1', port = wg1.get_port('wgport1'))
+d.copy_port(name = '2', port = wg3.get_port('wgport2'))
+
+quickplot(d)
+
+
+dsquared = Device('MultiMultiWaveguide')
+mwg1 = dsquared.add_device(d)
+mwg2 = dsquared.add_device(d)
+mwg2.move(origin = '1', destination = mwg1.get_port('2'))
+
+quickplot(dsquared)
 
 
 #%%
