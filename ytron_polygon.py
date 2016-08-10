@@ -19,26 +19,7 @@ from matplotlib.collections import PatchCollection
 
 
 
-def apply_transformations(point, orientation, origin=[0, 0], rotation=None, x_reflection=False):
-    # Apply GDS-type transformations (x_ref)
-    new_point = np.array(point)
-    new_orientation = orientation
-    
-    if x_reflection:
-        new_point[0] = -new_point[0]
-        new_orientation = mod(180-orientation, 360)
-#    if self.magnification is not None:
-#        pass
-    if rotation is not None:
-        ct = np.cos(rotation * np.pi / 180.0)
-        st = np.sin(rotation * np.pi / 180.0)
-        st = np.array([-st, st])
-        new_point = new_point * ct + new_point[::-1] * st
-        new_orientation += rotation
-    if origin is not None:
-        new_point = new_point + np.array(origin)
-        
-    return new_point, new_orientation
+
 
 
 
@@ -70,6 +51,7 @@ class Device(gdspy.Cell):
         self.add(polygon)
         return polygon
         
+    # QUESTION: ``name`` implies string -- should this be id?
     def add_port(self, name, midpoint = [0,0], width = 1, orientation = 90):
         if self.ports.has_key(name):
             raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
@@ -107,12 +89,34 @@ class SubDevice(gdspy.CellReference):
     def ports(self):
         for key in self.parent_ports.keys():
             port = self.parent_ports[key] 
-            new_midpoint, new_orientation = apply_transformations(port.midpoint, \
+            new_midpoint, new_orientation = self.transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
             self._local_ports[key].midpoint = new_midpoint
             self._local_ports[key].orientation = new_orientation
         return self._local_ports
 
+
+    def transform_port(point, orientation, origin=[0, 0], rotation=None, x_reflection=False):
+        # Apply GDS-type transformations (x_ref)
+        new_point = np.array(point)
+        new_orientation = orientation
+        
+        if x_reflection:
+            new_point[0] = -new_point[0]
+            new_orientation = mod(180-orientation, 360)
+    #    if self.magnification is not None:
+    #        pass
+        if rotation is not None:
+            ct = np.cos(rotation * np.pi / 180.0)
+            st = np.sin(rotation * np.pi / 180.0)
+            st = np.array([-st, st])
+            new_point = new_point * ct + new_point[::-1] * st
+            new_orientation += rotation
+        if origin is not None:
+            new_point = new_point + np.array(origin)
+            
+        return new_point, new_orientation
+        
 
     def translate(self, dx = 0, dy = 0):
         self.origin = np.array(self.origin) + np.array([dx,dy])
