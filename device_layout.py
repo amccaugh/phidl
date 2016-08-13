@@ -32,12 +32,14 @@ def rotate_points(points, angle = 45, center = [0,0]):
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
 
-
-def reflect_point(point, p, q):
+def reflect_points(points, p1, p2):
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
-    a = np.array(point); p = np.array(p); q = np.array(q);
-    return 2*(p + (q-p)*np.dot((q-p),(a-p))/np.linalg.norm(q-p)**2) - a
-        
+    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
+    if np.array(points).ndim == 1: 
+        p = points
+        return 2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p
+    if np.array(points).ndim == 2: 
+        return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p for p in points])
 
 
 
@@ -140,10 +142,10 @@ class SubDevice(gdspy.CellReference):
         
         
     def bounding_box(self, boundary = None):
-        """ Returns the bound box in the format of the southwest and northeast
+        """ Returns the bounding box in the format of the southwest and northeast
         corners [(-1,-2), (4,5)].  ``boundary`` can be specified to be edges
         or vertices of the bounding box.  For instance specifying east 'E'
-        returns the maximum x coordinate, while 'NE' returns the max (x,y) """
+        returns the maximum +x coordinate, while 'NE' returns the max (+x,+y) """
         box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
         if type(boundary) is str:
             boundary = boundary.upper() # Make uppercase
@@ -161,7 +163,6 @@ class SubDevice(gdspy.CellReference):
 
     def translate(self, dx = 0, dy = 0):
         self.origin = np.array(self.origin) + np.array([dx,dy])
-        
         
         
     def move(self, origin = [0,0], destination = [0,0]):
@@ -185,8 +186,10 @@ class SubDevice(gdspy.CellReference):
         self.rotation += angle
         self.origin = rotate_points(self.origin, angle, center)
         
+        
     def reflect(self, normal = [1,0]):
         pass
+        
         
     def connect(self, port, destination, translate = True, rotate = True, offset = 0):
         # ``port`` can either be a string with the name or an actual Port
@@ -199,6 +202,7 @@ class SubDevice(gdspy.CellReference):
             self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         if translate is True:
             self.move(origin = p, destination = destination)
+    
     
     def route(self):
         pass
