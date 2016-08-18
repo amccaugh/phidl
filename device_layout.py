@@ -33,6 +33,9 @@ def rotate_points(points, angle = 45, center = [0,0]):
     
 
 def reflect_points(points, p1, p2):
+    """ Reflects points across the line formed by p1 and p2.  ``points`` may be
+    input as either single points [1,2] or array-like[N][2], and will return in kind
+    """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
     if np.array(points).ndim == 1: 
@@ -44,10 +47,11 @@ def reflect_points(points, p1, p2):
 
 
 class Port(object):
-    def __init__(self, midpoint = [0,0], width = 1, orientation = 90):
+    def __init__(self, midpoint = [0,0], width = 1, orientation = 90, parent = None):
         self.midpoint = midpoint
         self.width = width
         self.orientation = orientation
+        self.parent = parent
         
         
 
@@ -76,7 +80,7 @@ class Device(gdspy.Cell):
     def add_port(self, name, midpoint = [0,0], width = 1, orientation = 90):
         if self.ports.has_key(name):
             raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
-        p = Port(midpoint, width, orientation)
+        p = Port(midpoint, width, orientation, parent = self)
         self.ports[name] = p
         return p
         
@@ -120,6 +124,7 @@ class SubDevice(gdspy.CellReference):
                 port.orientation, self.origin, self.rotation, self.x_reflection)
             self._local_ports[key].midpoint = new_midpoint
             self._local_ports[key].orientation = new_orientation
+            self._local_ports[key].parent = self
         return self._local_ports
 
 
@@ -187,8 +192,25 @@ class SubDevice(gdspy.CellReference):
         self.origin = rotate_points(self.origin, angle, center)
         
         
-    def reflect(self, normal = [1,0]):
-        pass
+    def reflect(self, p1, p2):
+        p1 = np.array(p1);  p2 = np.array(p2)
+        # Translate so reflection axis passes through origin
+        self.origin = self.origin - p1
+        
+        # Rotate so reflection axis aligns with x-axis
+        angle = np.arctan((p2[1]-p1[1])/(p2[0]-p1[0]))*180/np.pi
+        self.origin = rotate_points(self.origin, angle = -angle, center = [0,0])
+        self.rotation -= angle
+        
+        # Reflect across x-axis
+        self.x_reflection = not self.x_reflection
+        self.origin[1] = -self.origin[1]
+        self.rotation = -self.rotation
+        
+        # Un-rotate and un-translate
+        self.origin = rotate_points(self.origin, angle = angle, center = [0,0])
+        self.rotation += angle
+        self.origin = self.origin + p1
         
         
     def connect(self, port, destination, translate = True, rotate = True, offset = 0):
@@ -470,6 +492,8 @@ def waveguide(name = 'waveguide', width = 10, height = 1):
 # Construct a new device 'd'
 d = Device('Integrated')
 
+snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, terminals_same_side = False)
+
 # Create an SNSPD and waveguide and add references to them into 'd'
 snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
 wg1 = d.add_device(waveguide(name = 'important_wg', width=10, height = 1))
@@ -533,17 +557,34 @@ quickplot(d)
 wg2.move(origin = 'wgport1', destination = wg1.ports['wgport2'])
 wg3.move(origin = 'wgport1', destination = wg2.ports['wgport2'])
 
-quickplot(d)
-
-d.copy_port(name = '1', port = wg1.get_port('wgport1'))
-d.copy_port(name = '2', port = wg3.get_port('wgport2'))
 
 quickplot(d)
 
+wg1.rotate(angle = 45, center = wg1.ports['wgport2'].midpoint)
+wg3.rotate(angle = 45, center = wg3.ports['wgport1'].midpoint)
+
+quickplot(d)
+
+wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
+
+quickplot(d); plt.plot([2,10],[-8,15])
+
+[sd.reflect(p1 = [2,-8], p2 = [10,15]) for sd in [wg1, wg2, wg3]]
+
+quickplot(d); plt.plot([2,10],[-8,15])
+
+d.copy_port(name = 1, port = wg1.ports['wgport1'])
+d.copy_port(name = 2, port = wg3.ports['wgport2'])
+
+quickplot(d)
 
 dsquared = Device('MultiMultiWaveguide')
 mwg1 = dsquared.add_device(d)
 mwg2 = dsquared.add_device(d)
-mwg2.move(origin = '1', destination = mwg1.get_port('2'))
+mwg2.move(origin = 1, destination = mwg1.ports[2])
+
+quickplot(dsquared)
+
+mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = True)
 
 quickplot(dsquared)
