@@ -47,11 +47,25 @@ def reflect_points(points, p1, p2):
 
 
 class Port(object):
+    # TODO: Make so normal and bounds are properties which can be set and
+    # which will set their midpoint and orientation and width accordingly
     def __init__(self, midpoint = [0,0], width = 1, orientation = 90, parent = None):
         self.midpoint = midpoint
         self.width = width
         self.orientation = orientation
         self.parent = parent
+        
+    def bounds(self):
+        dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
+        dy = self.width/2*np.sin((self.orientation - 90)*np.pi/180)
+        left_point = self.midpoint - np.array([dx,dy])
+        right_point = self.midpoint + np.array([dx,dy])
+        return np.array([left_point, right_point])
+        
+    def normal(self):
+        dx = np.cos((self.orientation)*np.pi/180)
+        dy = np.sin((self.orientation)*np.pi/180)
+        return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
         
         
 
@@ -135,7 +149,7 @@ class SubDevice(gdspy.CellReference):
         
         if x_reflection:
             new_point[1] = -new_point[1]
-            new_orientation = mod(180-orientation, 360)
+            new_orientation = -orientation
         if rotation is not None:
             new_point = rotate_points(new_point, angle = rotation, center = [0, 0])
             new_orientation += rotation
@@ -231,12 +245,17 @@ class SubDevice(gdspy.CellReference):
 
 
 
+def p2xy(points):
+    x = np.array(points)[:,0]
+    y = np.array(points)[:,1]
+    return x,y
+    
 def quickplot(items, overlay_ports = True):
     """ Takes a list of devices/subdevices/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     fig, ax = plt.subplots()
     
-    # Iterate through each each Device/Subdevice/Polygon and display it
+    # Iterate through each each Device/Subdevice/Polygon
     if type(items) is not list:  items = [items]
     for item in items:
         if type(item) is Device or type(item) is SubDevice:
@@ -246,11 +265,14 @@ def quickplot(items, overlay_ports = True):
                 xy = zip(*p)
                 patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
             for port in item.ports.values():
-                plt.plot(port.midpoint[0], port.midpoint[1], 'rp', markersize = 12)
+                _draw_port(port, arrow_scale = 1, shape = 'full', color = 'r')
+#                plt.plot(port.midpoint[0], port.midpoint[1], 'rp', markersize = 12)
+#                plt.arrow(x=0, y=0, dx=0, dy=1, shape='full', lw=3, length_includes_head=True, head_width=.01, alpha = 0.4)
         if type(item) is Device:
             for sd in item.subdevices:
                 for port in sd.ports.values():
                     plt.plot(port.midpoint[0], port.midpoint[1], 'y*', markersize = 8)
+                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'b')
         if type(item) is gdspy.Polygon:
                 p = item.points
                 xy = zip(*p)
@@ -262,8 +284,18 @@ def quickplot(items, overlay_ports = True):
     plt.axis('equal')
 
     plt.show()
-            
 
+
+def _draw_port(port, arrow_scale = 1, **kwargs):
+x = port.midpoint[0]
+y = port.midpoint[1]
+nv = port.normal()
+n = (nv[1]-nv[0])*arrow_scale
+dx, dy = n[0], n[1]
+xbound, ybound = p2xy(port.bounds())
+plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
+plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
+plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
 
 
 #my_wg = Device('Waveguide')
@@ -284,307 +316,75 @@ def quickplot(items, overlay_ports = True):
 
 
 #%% Pre-create some devices
-def SNSPD(name = 'snspd', config = 'snspd.yaml'):
-    snspd = Device(name)
-    snspd.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6)]))
-    snspd.add_port(name = 'term1', midpoint = [0,0], width = 1, orientation = 90)
-    snspd.add_port(name = 'term2', midpoint = [5,2], width = 1, orientation = -90)
-    snspd.remove_port('term2')
-    snspd.add_port(name = 'term2', midpoint = [5,3], width = 1, orientation = -90)
-    return snspd
-    
-def waveguide(name = 'waveguide', width = 10, height = 1):
-    wg = Device(name)
-    wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
-    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
-    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
-    return wg
-
-
-#%% How we might want to be coding
-
-
-
-# Construct a new device 'd'
-d = Device('Integrated')
-
-# Create an SNSPD and waveguide and add references to them into 'd'
-snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
-wg1 = d.add_device(waveguide(name = 'important_wg', width=10, height = 1))
-
-# Create another waveguide separately, then add it to new device 'd'
-temp = waveguide(width=7, height = 1) # This creates a Device and calls it temp
-wg2 = d.add_device(temp) # This replaces wg2 with its DeviceReference
-wg2.translate(dx = 0.5, dy = 1.7)
-
-# Manipulate the subdevice references
-snspd.translate(dx = 4, dy = 6) # Move by dx = 4, dy = 6
-snspd.move(origin = [4,6], destination = [5,9]) # can either move from point to point
-snspd.rotate(angle = 15)
-wg1.translate(dx = 1, dy = 2) # Calculates dx, dy automatically
-
-# To implement: Translate using Ports or their names
-snspd.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
-wg1.move(origin = 'wgport1', destination = snspd.ports['term2']) # Takes port and sends to destination
-
-# Add some new geometry
-poly1 = d.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6), (-6, -6), (-4, -4), (-4, 4), (0, 4)]))
-poly2 = gdspy.Polygon([(2.0, 2), (2, 6), (-6, 6)])
-poly1.fillet(0.5) # Can fillet it after adding or before
-poly2.translate(dx = 0.4, dy = 0.6)
-d.add_polygon(poly1)
-d.add_polygon(poly2)
-
-# Add new ports to 'd' in a few different ways
-d.add_port(name = 'integratedport1', midpoint = [3,4]) # Use the Device.add_port function
-d.add_port(snspd.get_port('term2'))                    # Copy any existing port
-
-# Connect device together
-snspd.connect_port(port = 'term1', destination = wg1.get_port('wgport1'), rotate = False, translate = True)
-snspd.connect_port(port = 'term2', destination = [1,5], orientation = 45) # Can specify either name of port or object
-
-# How do you move a port?  Does the port know what it's parent is?
-    # If the port knows it's parent
-        # You can write a general thing to mv
-    # If not
-        # The DeviceReference you want to move must precede
-
-        
-#d.connect_ports(snspd.get_port('term2'), wg1.get_port('wgport1')) # BAD idea: which one gets moved?
-#d.ports['integratedport2'] = Port(midpoint = [0,1])    # BAD idea: Make the Port() separately and attach it to the ports{} dict
-
-
-# 
-d.plot(overlay_ports = True)
-
-
-
-# %% Connecting together several waveguides
-
-d = Device('MultiWaveguide')
-wg1 = d.add_device(waveguide(width=10, height = 1))
-wg2 = d.add_device(waveguide(width=12, height = 2))
-wg3 = d.add_device(waveguide(width=14, height = 3))
-
-quickplot(d)
-
-wg2.move(origin = 'wgport1', destination = wg1.ports['wgport2'])
-wg3.move(origin = 'wgport1', destination = wg2.ports['wgport2'])
-
-quickplot(d)
-
-wg3.rotate(angle = 45, center =  wg2.ports['wgport2'].midpoint)
-
-quickplot(d)
-
-wg3.connect(port = 'wgport2', destination = wg1.ports['wgport1'])
-
-quickplot(d)
-
-d.copy_port(name = '1', port = wg1.ports['wgport1'])
-d.copy_port(name = '2', port = wg3.ports['wgport2'])
-
-quickplot(d)
-
-
-dsquared = Device('MultiMultiWaveguide')
-mwg1 = dsquared.add_device(d)
-mwg2 = dsquared.add_device(d)
-mwg2.move(origin = '1', destination = mwg1.get_port('2'))
-
-quickplot(dsquared)
-
-
-#%%
-
-def quickplot_polygon(p):
-    plt.plot(p.points[:,0], p.points[:,1],'.-')
-    plt.axis('equal')
-    
-    
-def quickplot_ports(ports):
-    [plt.plot(x,y, 'rx') for x,y in ports.values()]
-    plt.axis('equal')
-
-
-def sine_curve_polygon(width_begin, width_end, length, layer = 1, num_pts = 20, mirrored = False):
-            
-    sine_curve_x = linspace(0, length, num_pts)
-    sine_curve_y = (sin(linspace(-pi/2, pi/2, num_pts)) + 1)*(width_end-width_begin)
-    sine_curve_y += width_begin
-    
-    xpts = sine_curve_x.tolist() + [length, 0]
-    ypts = sine_curve_y.tolist() + [0, 0]
-    
-    # Ports
-    ports = {
-        'begin_midpoint': [0, width_begin/2],
-        'end_midpoint': [length, width_end/2],
-    }
-    
-    
-    if mirrored: ypts = -ypts
-    return gdspy.Polygon(zip(xpts,ypts), layer), ports
-    
-
-def ytron_polygon(rho_c = 5, theta_c = 5.0/180*pi, theta_res = 10.0/180*pi, L_arm = 500, L_gnd = 500, W_ch = 200, W_g = 200, layer = 1):
-    # theta_c = theta_c*pi/180
-    # theta_res = theta_c*pi/180
-    thetalist = linspace(-(pi-theta_c),-theta_c, (pi-theta_c)/theta_res)
-    semicircle_x = rho_c*cos(thetalist)
-    semicircle_y = rho_c*sin(thetalist)+rho_c
-
-    # Rest of yTron
-    xc = rho_c*cos(theta_c) 
-    yc = rho_c*sin(theta_c) 
-    L_arm_x = L_arm*sin(theta_c) 
-    L_arm_y = L_arm*cos(theta_c) 
-
-    # Write out x and y coords for yTron polygon
-    xpts = semicircle_x.tolist() + [xc+L_arm_x, xc+L_arm_x+W_ch, xc+W_ch,    xc+W_ch, 0, -(xc+W_g), -(xc+W_g), -(xc+L_arm_x+W_g), -(xc+L_arm_x)] 
-    ypts = semicircle_y.tolist() + [yc+L_arm_y,      yc+L_arm_y,      yc,   yc-L_gnd, yc-L_gnd,  yc-L_gnd,        yc,        yc+L_arm_y,    yc+L_arm_y] 
-    
-    # Ports
-    ports = {
-        'left_arm_midpoint': [-(xc+L_arm_x+W_g/2), yc+L_arm_y],
-        'right_arm_midpoint': [xc+L_arm_x+W_ch/2, yc+L_arm_y],
-        'source_midpoint': [0, -L_gnd],
-    }
-
-    return gdspy.Polygon(zip(xpts,ypts), layer), ports
-
-
-def connect_ports(poly_to_move, point1, point2, rotation):
-    dx = point1[0] - point2[0]
-    dy = point1[1] - point2[1]
-    poly_to_move.translate(dx, dy)
-    poly_to_move.rotate(angle = rotation, center = point1)
-    
-    
-
-
-
-
-
-
-#%% Pre-create some devices
-def SNSPD(name = 'snspd', config = 'snspd.yaml'):
-    snspd = Device(name)
-    snspd.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6)]))
-    snspd.add_port(name = 'term1', midpoint = [0,0], width = 1, orientation = 90)
-    snspd.add_port(name = 'term2', midpoint = [5,2], width = 1, orientation = -90)
-    snspd.remove_port('term2')
-    snspd.add_port(name = 'term2', midpoint = [5,3], width = 1, orientation = -90)
-    return snspd
-    
-def waveguide(name = 'waveguide', width = 10, height = 1):
-    wg = Device(name)
-    wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
-    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
-    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
-    return wg
-
-
-#%% How we might want to be coding
-
-
-
-# Construct a new device 'd'
-d = Device('Integrated')
-
-snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, terminals_same_side = False)
-
-# Create an SNSPD and waveguide and add references to them into 'd'
-snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
-wg1 = d.add_device(waveguide(name = 'important_wg', width=10, height = 1))
-
-# Create another waveguide separately, then add it to new device 'd'
-temp = waveguide(width=7, height = 1) # This creates a Device and calls it temp
-wg2 = d.add_device(temp) # This replaces wg2 with its DeviceReference
-wg2.translate(dx = 0.5, dy = 1.7)
-
-# Manipulate the subdevice references
-snspd.translate(dx = 4, dy = 6) # Move by dx = 4, dy = 6
-snspd.move(origin = [4,6], destination = [5,9]) # can either move from point to point
-snspd.rotate(angle = 15)
-wg1.translate(dx = 1, dy = 2) # Calculates dx, dy automatically
-
-# To implement: Translate using Ports or their names
-snspd.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
-wg1.move(origin = 'wgport1', destination = snspd.ports['term2']) # Takes port and sends to destination
-
-# Add some new geometry
-poly1 = d.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6), (-6, -6), (-4, -4), (-4, 4), (0, 4)]))
-poly2 = gdspy.Polygon([(2.0, 2), (2, 6), (-6, 6)])
-poly1.fillet(0.5) # Can fillet it after adding or before
-poly2.translate(dx = 0.4, dy = 0.6)
-d.add_polygon(poly1)
-d.add_polygon(poly2)
-
-# Add new ports to 'd' in a few different ways
-d.add_port(name = 'integratedport1', midpoint = [3,4]) # Use the Device.add_port function
-d.add_port(snspd.get_port('term2'))                    # Copy any existing port
-
-# Connect device together
-snspd.connect_port(port = 'term1', destination = wg1.get_port('wgport1'), rotate = False, translate = True)
-snspd.connect_port(port = 'term2', destination = [1,5], orientation = 45) # Can specify either name of port or object
-
-# How do you move a port?  Does the port know what it's parent is?
-    # If the port knows it's parent
-        # You can write a general thing to mv
-    # If not
-        # The DeviceReference you want to move must precede
-
-        
-#d.connect_ports(snspd.get_port('term2'), wg1.get_port('wgport1')) # BAD idea: which one gets moved?
-#d.ports['integratedport2'] = Port(midpoint = [0,1])    # BAD idea: Make the Port() separately and attach it to the ports{} dict
-
-
-# 
-d.plot(overlay_ports = True)
-
-
-
-# %% Connecting together several waveguides
-
-d = Device('MultiWaveguide')
-wg1 = d.add_device(waveguide(width=10, height = 1))
-wg2 = d.add_device(waveguide(width=12, height = 2))
-wg3 = d.add_device(waveguide(width=14, height = 3))
-
-quickplot(d)
-
-wg2.move(origin = 'wgport1', destination = wg1.ports['wgport2'])
-wg3.move(origin = 'wgport1', destination = wg2.ports['wgport2'])
-
-
-quickplot(d)
-
-wg1.rotate(angle = 45, center = wg1.ports['wgport2'].midpoint)
-wg3.rotate(angle = 45, center = wg3.ports['wgport1'].midpoint)
-
-quickplot(d)
-
-wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
-
-quickplot(d); plt.plot([2,10],[-8,15])
-
-[sd.reflect(p1 = [2,-8], p2 = [10,15]) for sd in [wg1, wg2, wg3]]
-
-quickplot(d); plt.plot([2,10],[-8,15])
-
-d.copy_port(name = 1, port = wg1.ports['wgport1'])
-d.copy_port(name = 2, port = wg3.ports['wgport2'])
-
-quickplot(d)
-
-dsquared = Device('MultiMultiWaveguide')
-mwg1 = dsquared.add_device(d)
-mwg2 = dsquared.add_device(d)
-mwg2.move(origin = 1, destination = mwg1.ports[2])
-
-quickplot(dsquared)
-
-mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = True)
-
-quickplot(dsquared)
+#def SNSPD(name = 'snspd', config = 'snspd.yaml'):
+#    snspd = Device(name)
+#    snspd.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6)]))
+#    snspd.add_port(name = 'term1', midpoint = [0,0], width = 1, orientation = 90)
+#    snspd.add_port(name = 'term2', midpoint = [5,2], width = 1, orientation = -90)
+#    snspd.remove_port('term2')
+#    snspd.add_port(name = 'term2', midpoint = [5,3], width = 1, orientation = -90)
+#    return snspd
+#    
+#def waveguide(name = 'waveguide', width = 10, height = 1):
+#    wg = Device(name)
+#    wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
+#    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
+#    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
+#    return wg
+
+
+##%% How we might want to be coding
+#
+#
+#
+## Construct a new device 'd'
+#d = Device('Integrated')
+#
+## Create an SNSPD and waveguide and add references to them into 'd'
+#snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
+#wg1 = d.add_device(waveguide(name = 'important_wg', width=10, height = 1))
+#
+## Create another waveguide separately, then add it to new device 'd'
+#temp = waveguide(width=7, height = 1) # This creates a Device and calls it temp
+#wg2 = d.add_device(temp) # This replaces wg2 with its DeviceReference
+#wg2.translate(dx = 0.5, dy = 1.7)
+#
+## Manipulate the subdevice references
+#snspd.translate(dx = 4, dy = 6) # Move by dx = 4, dy = 6
+#snspd.move(origin = [4,6], destination = [5,9]) # can either move from point to point
+#snspd.rotate(angle = 15)
+#wg1.translate(dx = 1, dy = 2) # Calculates dx, dy automatically
+#
+## To implement: Translate using Ports or their names
+#snspd.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
+#wg1.move(origin = 'wgport1', destination = snspd.ports['term2']) # Takes port and sends to destination
+#
+## Add some new geometry
+#poly1 = d.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6), (-6, -6), (-4, -4), (-4, 4), (0, 4)]))
+#poly2 = gdspy.Polygon([(2.0, 2), (2, 6), (-6, 6)])
+#poly1.fillet(0.5) # Can fillet it after adding or before
+#poly2.translate(dx = 0.4, dy = 0.6)
+#d.add_polygon(poly1)
+#d.add_polygon(poly2)
+#
+## Add new ports to 'd' in a few different ways
+#d.add_port(name = 'integratedport1', midpoint = [3,4]) # Use the Device.add_port function
+#d.add_port(snspd.get_port('term2'))                    # Copy any existing port
+#
+## Connect device together
+#snspd.connect_port(port = 'term1', destination = wg1.get_port('wgport1'), rotate = False, translate = True)
+#snspd.connect_port(port = 'term2', destination = [1,5], orientation = 45) # Can specify either name of port or object
+#
+## How do you move a port?  Does the port know what it's parent is?
+#    # If the port knows it's parent
+#        # You can write a general thing to mv
+#    # If not
+#        # The DeviceReference you want to move must precede
+#
+#        
+##d.connect_ports(snspd.get_port('term2'), wg1.get_port('wgport1')) # BAD idea: which one gets moved?
+##d.ports['integratedport2'] = Port(midpoint = [0,1])    # BAD idea: Make the Port() separately and attach it to the ports{} dict
+#
+#
+## 
+#d.plot(overlay_ports = True)
