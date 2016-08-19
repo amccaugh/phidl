@@ -4,21 +4,27 @@ Created on Thu Aug 18 16:33:13 2016
 
 @author: anm16
 """
+# %% Connecting together several waveguides
 
-
-def waveguide(name = 'waveguide', width = 10, height = 1):
+def waveguide(width = 10, height = 1, name = 'waveguide'):
     wg = Device(name)
     wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
     wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
     wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
     return wg
 
-# %% Connecting together several waveguides
+
 
 d = Device('MultiWaveguide')
 wg1 = d.add_device(waveguide(width=10, height = 1))
 wg2 = d.add_device(waveguide(width=12, height = 2))
 wg3 = d.add_device(waveguide(width=14, height = 3))
+
+quickplot(d)
+
+poly1 = d.add_polygon([[8,6,7,9],[6,8,9,5]]) # Add as xpts list, ypts list
+poly2 = d.add_polygon([(0, 0), (1, 1), (1, 3), (-3, 3)]) # Add as list of points
+poly2.translate(5,4)
 
 quickplot(d)
 
@@ -56,6 +62,7 @@ mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = T
 
 quickplot(dsquared)
 
+dsquared.write_gds('MultiMultiWaveguideTutorial.gds')
 
 # %% Plotting continuously
 

@@ -44,7 +44,6 @@ def reflect_points(points, p1, p2):
     if np.array(points).ndim == 2: 
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p for p in points])
 
-
 class Port(object):
     # TODO: Make so normal and bounds are properties which can be set and
     # which will set their midpoint and orientation and width accordingly
@@ -71,16 +70,22 @@ class Port(object):
         
         
 
-# TODO: Make it so if you don't specify a name, it auto-assigns a unique one
 class Device(gdspy.Cell):
-    id = 0    
+    id = 0
     
     def __init__(self, name = 'Unnamed', exclude_from_global=True):
-        super(Device, self).__init__(name, exclude_from_global)
         self.ports = {}
+        self.parameters = {}
         self.subdevices = []
         Device.id += 1
+        name = '%s%06d' % (name, Device.id) # Write name e.g. 'Unnamed000005'
+        super(Device, self).__init__(name, exclude_from_global)
 
+
+    @property
+    def layers(self):
+        return self.get_layers()
+        
     def add_device(self, device):
         subdevice = SubDevice(device)   # Create a SubDevice (CellReference)
         self.add(subdevice)             # Add SubDevice (CellReference) to Device (Cell)
@@ -88,7 +93,14 @@ class Device(gdspy.Cell):
         return subdevice                # Return the SubDevice (CellReference)
 
     # QUESTION: Could make this add_element but that implies we're stuck to GDS elements
-    def add_polygon(self, polygon):
+    # TODO: Allow input of either [xpts, ypts], or [[1,2],[0,2],[2,3]]
+    def add_polygon(self, polygon, layer = 0, datatype = 0):
+        if type(polygon) is gdspy.Polygon: # Then it must be of the form [[1,2],[3,4],[5,6]]
+            pass
+        elif len(polygon[0]) == 2: # Then it must be of the form [[1,2],[3,4],[5,6]]
+            polygon = gdspy.Polygon(polygon, layer, datatype)
+        elif len(polygon[0]) > 2: # Then it must be of the form [[1,3,5],[2,4,6]]
+            polygon = gdspy.Polygon(xy2p(polygon), layer, datatype)
         self.add(polygon)
         return polygon
         
@@ -107,7 +119,7 @@ class Device(gdspy.Cell):
     def remove_port(self, name):
         self.ports.pop(name, None)
         
-    def bounding_box(self, boundary = None):
+    def bbox(self, boundary = None):
         box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
         if type(boundary) is str:
             boundary = boundary.upper() # Make uppercase
@@ -121,7 +133,9 @@ class Device(gdspy.Cell):
             if boundary == 'W':     return box[0][0]
         else: return box
     
-        
+    def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
+        gdspy.gds_print(filename, cells=[self], name='library', unit=unit, precision=precision)
+    
     
     
 class SubDevice(gdspy.CellReference):
@@ -132,7 +146,7 @@ class SubDevice(gdspy.CellReference):
     
     @property
     def ports(self):
-        """ This property allows you to call mysubdevice.ports, and receive a copy
+        """ This property allows you to access mysubdevice.ports, and receive a copy
         of the ports dict which is correctly rotated and translated"""
         for key in self.parent_ports.keys():
             port = self.parent_ports[key] 
@@ -162,11 +176,11 @@ class SubDevice(gdspy.CellReference):
         
         
         
-    def bounding_box(self, boundary = None):
+    def bbox(self, boundary = None):
         """ Returns the bounding box in the format of the southwest and northeast
         corners [(-1,-2), (4,5)].  ``boundary`` can be specified to be edges
         or vertices of the bounding box.  For instance specifying east 'E'
-        returns the maximum +x coordinate, while 'NE' returns the max (+x,+y) """
+        returns the maximum +x coordinate, while 'NE' returns the max [+x,+y] """
         box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
         if type(boundary) is str:
             boundary = boundary.upper() # Make uppercase
@@ -192,13 +206,13 @@ class SubDevice(gdspy.CellReference):
          corresponding to one of the Ports in this subdevice """
         if type(origin) is Port:            o = origin.midpoint
         elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
-        elif np.array(origin).size == 2:     o = origin
-        else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or dict key')
+        elif np.array(origin).size == 2:    o = origin
+        else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or port name')
             
         if type(destination) is Port:           d = destination.midpoint
         elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
-        elif np.array(origin).size == 2:         d = destination
-        else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or dict key')
+        elif np.array(origin).size == 2:        d = destination
+        else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
             
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
         
@@ -248,11 +262,25 @@ class SubDevice(gdspy.CellReference):
 
 
 def p2xy(points):
-    x = np.array(points)[:,0]
-    y = np.array(points)[:,1]
-    return x,y
+    """ Takes in a list of [x,y] pairs and converts them to lists of x points 
+    and y points.  So p2xy([[1,5],[2,6],[3,7]]) returns [[1,2,3],[5,6,7]]
+    """
+    p = np.array(points)
+    x = p[:,0]
+    y = p[:,1]
+    return np.array([x,y])
     
-def quickplot(items, overlay_ports = True, new_window = True):
+def xy2p(*args):
+    """ Takes in lists of x points and y points, e.g. [1,2,3],[5,6,7] and
+    converts it to the point format e.g. [[1,5],[2,6],[3,7]].  Can either be
+    called as xy2p(xpts, ypts) or as xy2p(xy) where xy = [xpts, ypts]
+    """
+    if len(args) == 1:      x,y = args[0][0], args[0][1] 
+    elif len(args) == 2:    x,y = args[0],    args[1]
+    return np.array(zip(*[x,y]))
+    
+    
+def quickplot(items, overlay_ports = True, label_ports = True, new_window = True):
     """ Takes a list of devices/subdevices/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if new_window: fig, ax = plt.subplots(1)
@@ -261,32 +289,32 @@ def quickplot(items, overlay_ports = True, new_window = True):
         ax.cla()        # Clears the axes of all previous polygons
     
     # Iterate through each each Device/Subdevice/Polygon
+    patches = []
     if type(items) is not list:  items = [items]
     for item in items:
         if type(item) is Device or type(item) is SubDevice:
             polygons = item.get_polygons(by_spec=False, depth=None)
-            patches = []
             for p in polygons:
-                xy = zip(*p)
                 patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-            for port in item.ports.values():
+            for name, port in item.ports.items():
                 _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                text(port.midpoint[0], port.midpoint[1], name)
         if type(item) is Device:
             for sd in item.subdevices:
-                for port in sd.ports.values():
+                for name, port in sd.ports.items():
                     _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                    text(port.midpoint[0], port.midpoint[1], name)
         if type(item) is gdspy.Polygon:
-                p = item.points
-                xy = zip(*p)
-                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
+            p = item.points
+            patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
     pc = PatchCollection(patches, alpha=0.4)
     colors = 100*np.random.rand(len(patches))
     pc.set_array(np.array(colors))
     ax.add_collection(pc)
     plt.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
-    ax.axhline(y=0, color='k', alpha = 0.1)
-    ax.axvline(x=0, color='k', alpha = 0.1)
+    ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
+    ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
     plt.draw()
 
 
