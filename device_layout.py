@@ -45,7 +45,6 @@ def reflect_points(points, p1, p2):
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p for p in points])
 
 
-
 class Port(object):
     # TODO: Make so normal and bounds are properties which can be set and
     # which will set their midpoint and orientation and width accordingly
@@ -54,6 +53,9 @@ class Port(object):
         self.width = width
         self.orientation = orientation
         self.parent = parent
+        
+    def __repr__(self):
+        return ('Port (midpoint %s, width %s, orientation %s)' % (self.midpoint, self.width, self.orientation))
         
     def bounds(self):
         dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
@@ -250,11 +252,13 @@ def p2xy(points):
     y = np.array(points)[:,1]
     return x,y
     
-def quickplot(items, overlay_ports = True):
+def quickplot(items, overlay_ports = True, new_window = True):
     """ Takes a list of devices/subdevices/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
-    fig, ax = plt.subplots()
-    bbox_size = 
+    if new_window: fig, ax = plt.subplots(1)
+    else:
+        ax = plt.gca()  # Get current figure
+        ax.cla()        # Clears the axes of all previous polygons
     
     # Iterate through each each Device/Subdevice/Polygon
     if type(items) is not list:  items = [items]
@@ -267,12 +271,9 @@ def quickplot(items, overlay_ports = True):
                 patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
             for port in item.ports.values():
                 _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-#                plt.plot(port.midpoint[0], port.midpoint[1], 'rp', markersize = 12)
-#                plt.arrow(x=0, y=0, dx=0, dy=1, shape='full', lw=3, length_includes_head=True, head_width=.01, alpha = 0.4)
         if type(item) is Device:
             for sd in item.subdevices:
                 for port in sd.ports.values():
-#                    plt.plot(port.midpoint[0], port.midpoint[1], 'y*', markersize = 8)
                     _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
         if type(item) is gdspy.Polygon:
                 p = item.points
@@ -283,8 +284,10 @@ def quickplot(items, overlay_ports = True):
     pc.set_array(np.array(colors))
     ax.add_collection(pc)
     plt.axis('equal')
-
-    plt.show()
+    ax.grid(True, which='both', alpha = 0.4)
+    ax.axhline(y=0, color='k', alpha = 0.1)
+    ax.axvline(x=0, color='k', alpha = 0.1)
+    plt.draw()
 
 
 def _draw_port(port, arrow_scale = 1, **kwargs):

@@ -38,7 +38,7 @@ quickplot(d); plt.plot([2,10],[-8,15])
 
 [sd.reflect(p1 = [2,-8], p2 = [10,15]) for sd in [wg1, wg2, wg3]]
 
-quickplot(d); plt.plot([2,10],[-8,15])
+quickplot(d, new_window = True); plt.plot([2,10],[-8,15])
 
 d.copy_port(name = 1, port = wg1.ports['wgport1'])
 d.copy_port(name = 2, port = wg3.ports['wgport2'])
@@ -55,3 +55,18 @@ quickplot(dsquared)
 mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = True)
 
 quickplot(dsquared)
+
+
+# %% Plotting continuously
+
+import datetime, threading, time
+
+fig, ax = plt.subplots(1)
+
+def foo():
+    quickplot(d, fig, ax)
+    print(datetime.datetime.now())
+    t = threading.Timer(1.0, foo)
+
+plot_thread = threading.Thread(target=foo)
+plot_thread.start()
