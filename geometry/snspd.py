@@ -43,9 +43,9 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, 
 # Example code
 #==============================================================================
     
-s = snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, terminals_same_side = False)
-quickplot(s)
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, terminals_same_side = False)
+#quickplot(s)
 
 
-#step = optimal_step(start_width = 10, end_width = 1, num_pts = 30, width_tol = 1e-3)
+#step = optimal_step(start_width = 10, end_width = 1, num_pts = 50, width_tol = 1e-3)
 #quickplot(step)

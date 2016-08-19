@@ -50,8 +50,8 @@ def optimal_hairpin(width = 100.0, pitch = 200.0, length = 3000, num_pts = 50):
     
     xports = min(xpts)
     yports = min(ypts) + width/2
-    d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 90)
-    d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = -90)
+    d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
+    d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
     
     return d
     
@@ -138,8 +138,8 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 # Example code
 #==============================================================================
     
-#hairpin = optimal_hairpin(width = 100.0, pitch = 200.0, length = 3000, num_pts = 50)
-#quickplot(hairpin)
+hairpin = optimal_hairpin(width = 1, pitch = 3, length = 30, num_pts = 20)
+quickplot(hairpin)
 
 
 #step = optimal_step(start_width = 10, end_width = 1, num_pts = 30, width_tol = 1e-3)

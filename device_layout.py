@@ -254,6 +254,7 @@ def quickplot(items, overlay_ports = True):
     """ Takes a list of devices/subdevices/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     fig, ax = plt.subplots()
+    bbox_size = 
     
     # Iterate through each each Device/Subdevice/Polygon
     if type(items) is not list:  items = [items]
@@ -265,14 +266,14 @@ def quickplot(items, overlay_ports = True):
                 xy = zip(*p)
                 patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
             for port in item.ports.values():
-                _draw_port(port, arrow_scale = 1, shape = 'full', color = 'r')
+                _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
 #                plt.plot(port.midpoint[0], port.midpoint[1], 'rp', markersize = 12)
 #                plt.arrow(x=0, y=0, dx=0, dy=1, shape='full', lw=3, length_includes_head=True, head_width=.01, alpha = 0.4)
         if type(item) is Device:
             for sd in item.subdevices:
                 for port in sd.ports.values():
-                    plt.plot(port.midpoint[0], port.midpoint[1], 'y*', markersize = 8)
-                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'b')
+#                    plt.plot(port.midpoint[0], port.midpoint[1], 'y*', markersize = 8)
+                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
         if type(item) is gdspy.Polygon:
                 p = item.points
                 xy = zip(*p)
@@ -287,15 +288,15 @@ def quickplot(items, overlay_ports = True):
 
 
 def _draw_port(port, arrow_scale = 1, **kwargs):
-x = port.midpoint[0]
-y = port.midpoint[1]
-nv = port.normal()
-n = (nv[1]-nv[0])*arrow_scale
-dx, dy = n[0], n[1]
-xbound, ybound = p2xy(port.bounds())
-plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
-plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
-plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
+    x = port.midpoint[0]
+    y = port.midpoint[1]
+    nv = port.normal()
+    n = (nv[1]-nv[0])*arrow_scale
+    dx, dy = n[0], n[1]
+    xbound, ybound = p2xy(port.bounds())
+    #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
+    plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
+    plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
 
 
 #my_wg = Device('Waveguide')

@@ -5,6 +5,14 @@ Created on Thu Aug 18 16:33:13 2016
 @author: anm16
 """
 
+
+def waveguide(name = 'waveguide', width = 10, height = 1):
+    wg = Device(name)
+    wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
+    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
+    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
+    return wg
+
 # %% Connecting together several waveguides
 
 d = Device('MultiWaveguide')
