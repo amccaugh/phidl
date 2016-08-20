@@ -95,7 +95,9 @@ class Device(gdspy.Cell):
     # QUESTION: Could make this add_element but that implies we're stuck to GDS elements
     # TODO: Allow input of either [xpts, ypts], or [[1,2],[0,2],[2,3]]
     def add_polygon(self, polygon, layer = 0, datatype = 0):
-        if type(polygon) is gdspy.Polygon: # Then it must be of the form [[1,2],[3,4],[5,6]]
+        if type(polygon) is gdspy.Polygon:
+            pass
+        if type(polygon) is gdspy.PolygonSet:
             pass
         elif len(polygon[0]) == 2: # Then it must be of the form [[1,2],[3,4],[5,6]]
             polygon = gdspy.Polygon(polygon, layer, datatype)
@@ -298,12 +300,12 @@ def quickplot(items, overlay_ports = True, label_ports = True, new_window = True
                 patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
             for name, port in item.ports.items():
                 _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                text(port.midpoint[0], port.midpoint[1], name)
+                plt.text(port.midpoint[0], port.midpoint[1], name)
         if type(item) is Device:
             for sd in item.subdevices:
                 for name, port in sd.ports.items():
                     _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                    text(port.midpoint[0], port.midpoint[1], name)
+                    plt.text(port.midpoint[0], port.midpoint[1], name)
         if type(item) is gdspy.Polygon:
             p = item.points
             patches.append(PolygonPatch(p, closed=True, alpha = 0.4))

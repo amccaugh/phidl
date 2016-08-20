@@ -4,7 +4,7 @@ import gdspy
 
 def rectangle(point1 = [2,2], point2 = [0,0]):
     """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
-    points = numpy.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
+    points = np.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
     return gdspy.Polygon(points)
     
 
