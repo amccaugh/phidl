@@ -63,22 +63,33 @@ mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = T
 quickplot(dsquared)
 
 mwg2.translate(dx = 25, dy = 25)
-dsquared.route(port_a = mwg1.ports[1], port_b = mwg2.ports[2], path_type = 'sine', width_type = 'straight', width_b = 5)
+dsquared.route(port_a = mwg1.ports[1], port_b = mwg2.ports[2], path_type = 'sine', width_type = 'straight')
 
 quickplot(dsquared)
 
 dsquared.write_gds('MultiMultiWaveguideTutorial.gds')
 
-# %% Plotting continuously
+# %% Testing routing functions
 
-import datetime, threading, time
+d = Device()
 
-fig, ax = plt.subplots(1)
+cp1 = d.add_device(compass(dimensions = [2,2])).move(destination = [-10,-50])
+cp2 = d.add_device(compass(dimensions = [2,2])).move(destination = [-5,-50])
+cp3 = d.add_device(compass(dimensions = [2,2])).move(destination = [0,-50])
+cp4 = d.add_device(compass(dimensions = [2,2])).move(destination = [5,-50])
+cp5 = d.add_device(compass(dimensions = [2,2])).move(destination = [10,-50])
 
-def foo():
-    quickplot(d, fig, ax)
-    print(datetime.datetime.now())
-    t = threading.Timer(1.0, foo)
 
-plot_thread = threading.Thread(target=foo)
-plot_thread.start()
+cpm = d.add_device(compass_multi(dimensions = [40,20], ports = {'S':5, 'N':1})).move(destination = [0,15])
+
+
+quickplot(d)
+
+
+r1 = d.route(port_a = cpm.ports['S1'], port_b = cp1.ports['N'], path_type = 'sine', width_type = 'straight')
+r2 = d.route(port_a = cpm.ports['S2'], port_b = cp2.ports['N'], path_type = 'sine', width_type = 'straight')
+r3 = d.route(port_a = cpm.ports['S3'], port_b = cp3.ports['N'], path_type = 'sine', width_type = 'straight')
+r4 = d.route(port_a = cpm.ports['S4'], port_b = cp4.ports['N'], path_type = 'sine', width_type = 'straight')
+r5 = d.route(port_a = cpm.ports['S5'], port_b = cp5.ports['N'], path_type = 'sine', width_type = 'straight')
+
+quickplot(d)

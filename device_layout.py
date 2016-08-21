@@ -151,7 +151,7 @@ class Device(gdspy.Cell):
         
         separation = point_b - point_a  # Vector drawn from A to B
         distance = np.linalg.norm(separation) # Magnitude of vector from A to B
-        rotation = np.arctan(separation[1]/separation[0])*180/np.pi # Rotation of vector from A to B
+        rotation = np.arctan2(separation[1],separation[0])*180/np.pi # Rotation of vector from A to B
         angle = rotation - orientation   # If looking out along the normal of ``a``, the angle you would have to look to see ``b``
         forward_distance = distance*np.cos(angle*np.pi/180)
         lateral_distance = distance*np.sin(angle*np.pi/180)
@@ -270,21 +270,23 @@ class SubDevice(gdspy.CellReference):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this subdevice """
         if type(origin) is Port:            o = origin.midpoint
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
         elif np.array(origin).size == 2:    o = origin
+        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
         else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or port name')
             
         if type(destination) is Port:           d = destination.midpoint
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         elif np.array(origin).size == 2:        d = destination
+        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
             
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
+        return self
         
         
     def rotate(self, angle = 45, center = [0,0]):
         self.rotation += angle
         self.origin = rotate_points(self.origin, angle, center)
+        return self
         
         
     def reflect(self, p1, p2):
@@ -306,6 +308,7 @@ class SubDevice(gdspy.CellReference):
         self.origin = rotate_points(self.origin, angle = angle, center = [0,0])
         self.rotation += angle
         self.origin = self.origin + p1
+        return self
         
         
     def connect(self, port, destination, translate = True, rotate = True, offset = 0):
