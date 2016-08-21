@@ -69,7 +69,7 @@ class Port(object):
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
         
         
-
+        
 class Device(gdspy.Cell):
     id = 0
     
@@ -97,7 +97,7 @@ class Device(gdspy.Cell):
     def add_polygon(self, polygon, layer = 0, datatype = 0):
         if type(polygon) is gdspy.Polygon:
             pass
-        if type(polygon) is gdspy.PolygonSet:
+        elif type(polygon) is gdspy.PolygonSet:
             pass
         elif len(polygon[0]) == 2: # Then it must be of the form [[1,2],[3,4],[5,6]]
             polygon = gdspy.Polygon(polygon, layer, datatype)
@@ -137,6 +137,69 @@ class Device(gdspy.Cell):
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         gdspy.gds_print(filename, cells=[self], name='library', unit=unit, precision=precision)
+        
+            
+    def route(self, port_a, port_b, path_type = 'sine', width_type = 'straight', width_a = None, width_b = None, layer = 0, datatype = 0):
+        # TODO: Check for mismatched orientations and give warning
+        # TODO: Change port_a and port_b names        
+        # Assuming they're both Ports for now
+        point_a = np.array(port_a.midpoint)
+        if width_a is None:  width_a = port_a.width
+        point_b = np.array(port_b.midpoint)
+        if width_b is None:  width_b = port_b.width
+        orientation = port_a.orientation
+        
+        separation = point_b - point_a  # Vector drawn from A to B
+        distance = np.linalg.norm(separation) # Magnitude of vector from A to B
+        rotation = np.arctan(separation[1]/separation[0])*180/np.pi # Rotation of vector from A to B
+        angle = rotation - orientation   # If looking out along the normal of ``a``, the angle you would have to look to see ``b``
+        forward_distance = distance*np.cos(angle*np.pi/180)
+        lateral_distance = distance*np.sin(angle*np.pi/180)
+        
+        # Create a path assuming starting at the origin and setting orientation = 0
+        # use the "connect" function later to move the path to the correct location
+        xf = forward_distance
+        yf = lateral_distance
+        if path_type == 'straight':
+            curve_fun = lambda t: [xf*t, yf*t]
+            curve_deriv_fun = lambda t: [xf + t*0, yf + t*0]
+        if path_type == 'sine':
+            curve_fun = lambda t: [xf*t, yf*(1-np.cos(t*np.pi))/2]
+            curve_deriv_fun = lambda t: [xf  + t*0, yf*(np.sin(t*np.pi)*np.pi)/2]
+        #if path_type == 'semicircle':
+        #    def semicircle(t):
+        #        t = np.array(t)
+        #        x,y = np.zeros(t.shape), np.zeros(t.shape)
+        #        ii = (0 <= t) & (t <= 0.5)
+        #        jj = (0.5 < t) & (t <= 1)
+        #        x[ii] = (np.cos(-np.pi/2 + t[ii]*np.pi/2))*xf
+        #        y[ii] = (np.sin(-np.pi/2 + t[ii]*np.pi/2)+1)*yf*2
+        #        x[jj] = (np.cos(np.pi*3/2 - t[jj]*np.pi)+2)*xf/2
+        #        y[jj] = (np.sin(np.pi*3/2 - t[jj]*np.pi)+1)*yf/2
+        #        return x,y
+        #    curve_fun = semicircle
+        #    curve_deriv_fun = None
+        if width_type == 'straight':
+            width_fun = lambda t: (width_b - width_a)*t + width_a
+        if width_type == 'sine':
+            print('hello')
+            width_fun = lambda t: (width_b - width_a)*(1-np.cos(t*np.pi))/2 + width_a
+        
+        route_path = gdspy.Path(width = width_a, initial_point = [0,0])
+        route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=99,\
+                max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
+        
+        # Make the route path into a Device with ports, and use "connect" to move it
+        # into the proper location
+        d = Device()
+        d.add(route_path)
+        d.add_port(name = 1, midpoint = [0,0], width = width_a, orientation = 180)
+        d.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width_b, orientation = 0)
+        r = self.add_device(d)
+        r.connect(1, port_a)
+        return r
+
+
     
     
     
@@ -257,9 +320,6 @@ class SubDevice(gdspy.CellReference):
         if translate is True:
             self.move(origin = p, destination = destination)
     
-    
-    def route(self):
-        pass
 
 
 

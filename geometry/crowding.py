@@ -58,7 +58,8 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     
 
     
-    
+# TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
+# TODO Include parameter to make curve sub-optimal (gentler than optimal)
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3):
 
     #==========================================================================

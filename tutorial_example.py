@@ -62,6 +62,11 @@ mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = T
 
 quickplot(dsquared)
 
+mwg2.translate(dx = 25, dy = 25)
+dsquared.route(port_a = mwg1.ports[1], port_b = mwg2.ports[2], path_type = 'sine', width_type = 'straight', width_b = 5)
+
+quickplot(dsquared)
+
 dsquared.write_gds('MultiMultiWaveguideTutorial.gds')
 
 # %% Plotting continuously
