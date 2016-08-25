@@ -4,6 +4,7 @@ from numpy import sqrt, pi
 
 
 
+def racetrack_gradual(t, width, R, N, layer = 0, datatype = 0):
     curve_fun = lambda t: racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = 0.3, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
@@ -41,3 +42,7 @@ def _racetrack_gradual_parametric(t, R, N):
 
 
 
+t = np.linspace(0,1)
+x,y = _racetrack_gradual_parametric(t, R = 5, N = 3)
+plt.plot(x,y)
+plt.axis('equal')
