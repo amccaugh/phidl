@@ -3,7 +3,7 @@ import gdspy
 import scipy.optimize
 
 
-def optimal_hairpin(width = 100.0, pitch = 200.0, length = 3000, num_pts = 50):
+def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer = 0, datatype = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -34,7 +34,7 @@ def optimal_hairpin(width = 100.0, pitch = 200.0, length = 3000, num_pts = 50):
     xpts.append(xpts[-1] + 4*width); ypts.append(0)
     xpts.append(xpts[-1]); ypts.append(-a)
     xpts.append(xpts[0]); ypts.append(-a)
-    xpts.append(xpts[0]-length); ypts.append(-a)
+    xpts.append(max(xpts)-length); ypts.append(-a)
     xpts.append(xpts[-1]); ypts.append(ypts[0])
     xpts.append(xpts[0]); ypts.append(ypts[0])
     
@@ -50,15 +50,16 @@ def optimal_hairpin(width = 100.0, pitch = 200.0, length = 3000, num_pts = 50):
     
     xports = min(xpts)
     yports = min(ypts) + width/2
-    d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 90)
-    d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = -90)
+    d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
+    d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
     
     return d
     
     
 
     
-    
+# TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
+# TODO Include parameter to make curve sub-optimal (gentler than optimal)
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3):
 
     #==========================================================================
@@ -98,6 +99,8 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     if start_width > end_width:
         reverse = True
         start_width, end_width = end_width, start_width
+    else:
+        reverse = False
         
     xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
     xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
@@ -138,9 +141,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 # Example code
 #==============================================================================
     
-#hairpin = optimal_hairpin(width = 100.0, pitch = 200.0, length = 3000, num_pts = 50)
+#hairpin = optimal_hairpin(width = 1, pitch = 3, length = 30, num_pts = 20)
 #quickplot(hairpin)
 
 
-#step = optimal_step(start_width = 10, end_width = 1, num_pts = 30, width_tol = 1e-3)
+#step = optimal_step(start_width = 5, end_width = 1, num_pts = 80, width_tol = 1e-3)
 #quickplot(step)
