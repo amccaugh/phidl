@@ -182,7 +182,6 @@ class Device(gdspy.Cell):
         if width_type == 'straight':
             width_fun = lambda t: (width_b - width_a)*t + width_a
         if width_type == 'sine':
-            print('hello')
             width_fun = lambda t: (width_b - width_a)*(1-np.cos(t*np.pi))/2 + width_a
         
         route_path = gdspy.Path(width = width_a, initial_point = [0,0])
@@ -373,6 +372,8 @@ def quickplot(items, overlay_ports = True, label_ports = True, new_window = True
             p = item.points
             patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
     pc = PatchCollection(patches, alpha=0.4)
+    # TODO: Change this to per-layer coloring    
+    np.random.seed(0)
     colors = 100*np.random.rand(len(patches))
     pc.set_array(np.array(colors))
     ax.add_collection(pc)

@@ -2,13 +2,13 @@ import numpy as np
 import gdspy
 
 # TODO fix centering of this
-def compass(dimensions = [4,2], center = [0,0], layer = 0, dtype = 0):
+def compass(dimensions = [4,2], center = [0,0], layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west)
     """
     
     d = Device(name = 'pad_compass')
-    d.add_polygon(rectangle_centered(dimensions, center = [0,0]))
+    d.add_polygon(rectangle_centered(dimensions, center = [0,0]), layer = layer, datatype = datatype)
     
     dx = dimensions[0]
     dy = dimensions[1]
@@ -17,12 +17,11 @@ def compass(dimensions = [4,2], center = [0,0], layer = 0, dtype = 0):
     d.add_port(name = 'E', midpoint = [dx/2, 0],  width = dy, orientation = 0)
     d.add_port(name = 'W', midpoint = [-dx/2, 0], width = dy, orientation = 180)
     
-    d.
-    
     return d
     
+    
 # TODO fix centering of this
-def compass_multi(dimensions = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0, dtype = 0):
+def compass_multi(dimensions = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
     """
@@ -64,11 +63,11 @@ def compass_multi(dimensions = [4,2], ports = {'N':3,'S':4}, center = [0,0], lay
 #quickplot(cp)
 
 
-#cpm = compass_multi(dimensions = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, dtype = 0)
+#cpm = compass_multi(dimensions = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
 #quickplot(cpm)
 
 
-#cpm = compass_multi(dimensions = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, dtype = 0)
+#cpm = compass_multi(dimensions = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
 #inset_polygon = inset(cpm, distance = 2, layer = 1, datatype = 1)
 #cpm.add(inset_polygon)
 #quickplot(cpm)

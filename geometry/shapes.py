@@ -2,17 +2,17 @@ import numpy as np
 import gdspy
 
 
-def rectangle(point1 = [2,2], point2 = [0,0]):
+def rectangle(point1 = [2,2], point2 = [0,0], layer = 0, datatype = 0):
     """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
     points = np.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
-    return gdspy.Polygon(points)
+    return gdspy.Polygon(points, layer = layer, datatype = datatype)
     
 
-def rectangle_centered(dimensions = [2,2], center = [0,0]):
+def rectangle_centered(dimensions = [2,2], center = [0,0], layer = 0, datatype = 0):
     """ Creates a rectangle polygon of size ``dimensions`` and centered at ``center`` """
     point1 = np.array(center) - np.array(dimensions)/2
     point2 = np.array(center) + np.array(dimensions)/2
-    return rectangle(point1, point2)
+    return rectangle(point1, point2, layer = layer, datatype = datatype)
 
     
     
@@ -21,5 +21,5 @@ def rectangle_centered(dimensions = [2,2], center = [0,0]):
 # Example code
 #==============================================================================
     
-#r = rectangle_centered([5,50])
+#r = rectangle_centered([5,50], layer = 5, datatype = 15)
 #quickplot(r)

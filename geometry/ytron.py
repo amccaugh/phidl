@@ -1,5 +1,6 @@
 import numpy as np
 import gdspy
+from numpy import sqrt, pi
 
 #def sine_curve_polygon(width_begin, width_end, length, layer = 1, num_pts = 20, mirrored = False):
 #            

@@ -8,7 +8,7 @@ Created on Thu Aug 18 16:33:13 2016
 
 def waveguide(width = 10, height = 1, name = 'waveguide'):
     wg = Device(name)
-    wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
+    wg.add_polygon([(0, 0), (width, 0), (width, height), (0, height)])
     wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
     wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
     return wg
@@ -54,7 +54,7 @@ quickplot(d)
 dsquared = Device('MultiMultiWaveguide')
 mwg1 = dsquared.add_device(d)
 mwg2 = dsquared.add_device(d)
-mwg2.move(origin = 1, destination = mwg1.ports[2])
+mwg2.move(destination = [4,4])
 
 quickplot(dsquared)
 
@@ -62,7 +62,10 @@ mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = T
 
 quickplot(dsquared)
 
-mwg2.translate(dx = 25, dy = 25)
+mwg2.translate(dx = 40, dy = 25)
+
+quickplot(dsquared)
+
 dsquared.route(port_a = mwg1.ports[1], port_b = mwg2.ports[2], path_type = 'sine', width_type = 'straight')
 
 quickplot(dsquared)
