@@ -8,10 +8,10 @@ def rectangle(point1 = [2,2], point2 = [0,0], layer = 0, datatype = 0):
     return gdspy.Polygon(points, layer = layer, datatype = datatype)
     
 
-def rectangle_centered(dimensions = [2,2], center = [0,0], layer = 0, datatype = 0):
-    """ Creates a rectangle polygon of size ``dimensions`` and centered at ``center`` """
-    point1 = np.array(center) - np.array(dimensions)/2
-    point2 = np.array(center) + np.array(dimensions)/2
+def rectangle_centered(size = [2,2], center = [0,0], layer = 0, datatype = 0):
+    """ Creates a rectangle polygon of size ``size`` and centered at ``center`` """
+    point1 = np.array(center) - np.array(size)/2
+    point2 = np.array(center) + np.array(size)/2
     return rectangle(point1, point2, layer = layer, datatype = datatype)
 
 # TODO: Write ring definition

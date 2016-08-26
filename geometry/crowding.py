@@ -35,7 +35,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     xpts.append(xpts[-1]); ypts.append(-a)
     xpts.append(xpts[0]); ypts.append(-a)
     xpts.append(max(xpts)-length); ypts.append(-a)
-    xpts.append(xpts[-1]); ypts.append(ypts[0])
+    xpts.append(xpts[-1]); ypts.append(-a + width)
     xpts.append(xpts[0]); ypts.append(ypts[0])
     
     xpts = np.array(xpts)
@@ -49,7 +49,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     d.add_polygon(gdspy.Polygon(zip(xpts,-ypts)))
     
     xports = min(xpts)
-    yports = min(ypts) + width/2
+    yports = -a + width/2
     d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
     d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
     

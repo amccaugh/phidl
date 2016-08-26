@@ -294,12 +294,15 @@ class SubDevice(gdspy.CellReference):
         
         
     def rotate(self, angle = 45, center = [0,0]):
+        if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = rotate_points(self.origin, angle, center)
         return self
         
         
     def reflect(self, p1 = [0,1], p2 = [0,0]):
+        if type(p1) is Port:  p1 = p1.midpoint
+        if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
         # Translate so reflection axis passes through origin
         self.origin = self.origin - p1
@@ -353,7 +356,7 @@ def xy2p(*args):
     return np.array(zip(*[x,y]))
     
     
-def quickplot(items, overlay_ports = True, label_ports = True, new_window = True):
+def quickplot(items, overlay_ports = True, overlay_subports = True, label_ports = True, new_window = True):
     """ Takes a list of devices/subdevices/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if new_window: fig, ax = plt.subplots(1)
@@ -372,7 +375,7 @@ def quickplot(items, overlay_ports = True, label_ports = True, new_window = True
             for name, port in item.ports.items():
                 _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
                 plt.text(port.midpoint[0], port.midpoint[1], name)
-        if type(item) is Device:
+        if type(item) is Device and overlay_subports is True:
             for sd in item.subdevices:
                 for name, port in sd.ports.items():
                     _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')

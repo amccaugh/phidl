@@ -2,10 +2,10 @@ import numpy as np
 import gdspy
 
 
-def snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, \
+def snspd(wire_width = 0.2, wire_pitch = 0.6, size = [3,3], num_pts = 20, \
           terminals_same_side = False, layer = 0, datatype = 0):
-    xsize = dimensions[0]
-    ysize = dimensions[1]
+    xsize = size[0]
+    ysize = size[1]
     num_meanders = int(ysize/wire_pitch)
     if terminals_same_side: num_meanders += mod(num_meanders,2) # Make number of meanders even
     
@@ -33,13 +33,13 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, 
         bottom_port = hp1.ports[1]
     
     
-    c_nw = d.add_device(compass(dimensions = [xsize/2 ,wire_width]))
-    c_se = d.add_device(compass(dimensions = [xsize/2 ,wire_width]))
+    c_nw = d.add_device(compass(size = [xsize/2 ,wire_width]))
+    c_se = d.add_device(compass(size = [xsize/2 ,wire_width]))
     c_nw.connect('E', top_port)
     c_se.connect('E', bottom_port)
     
-    d.copy_port(c_nw.ports['W'], name = 1)
-    d.copy_port(c_se.ports['W'], name = 2)
+    d.add_port(port = c_nw.ports['W'], name = 1)
+    d.add_port(port = c_se.ports['W'], name = 2)
     
     return d
 
@@ -50,7 +50,7 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [3,3], num_pts = 20, 
 # Example code
 #==============================================================================
     
-#s = snspd(wire_width = 0.2, wire_pitch = 0.6, dimensions = [10,3], num_pts = 20, terminals_same_side = True)
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], num_pts = 20, terminals_same_side = True)
 #quickplot(s)
 
 

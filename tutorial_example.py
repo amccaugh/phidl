@@ -33,8 +33,8 @@ wg3.move(origin = 'wgport1', destination = wg2.ports['wgport2'])
 
 quickplot(d)
 
-wg1.rotate(angle = 45, center = wg1.ports['wgport2'].midpoint)
-wg3.rotate(angle = 45, center = wg3.ports['wgport1'].midpoint)
+wg1.rotate(angle = 45, center = wg1.ports['wgport2'])
+wg3.rotate(angle = 45, center = wg3.ports['wgport1'])
 
 quickplot(d)
 
@@ -76,14 +76,14 @@ dsquared.write_gds('MultiMultiWaveguideTutorial.gds')
 
 d = Device()
 
-cp1 = d.add_device(compass(dimensions = [2,2])).move(destination = [-10,-50])
-cp2 = d.add_device(compass(dimensions = [2,2])).move(destination = [-5,-50])
-cp3 = d.add_device(compass(dimensions = [2,2])).move(destination = [0,-50])
-cp4 = d.add_device(compass(dimensions = [2,2])).move(destination = [5,-50])
-cp5 = d.add_device(compass(dimensions = [2,2])).move(destination = [10,-50])
+cp1 = d.add_device(compass(size = [2,2])).move(destination = [-10,-50])
+cp2 = d.add_device(compass(size = [2,2])).move(destination = [-5,-50])
+cp3 = d.add_device(compass(size = [2,2])).move(destination = [0,-50])
+cp4 = d.add_device(compass(size = [2,2])).move(destination = [5,-50])
+cp5 = d.add_device(compass(size = [2,2])).move(destination = [10,-50])
 
 
-cpm = d.add_device(compass_multi(dimensions = [40,20], ports = {'S':5, 'N':1})).move(destination = [0,15])
+cpm = d.add_device(compass_multi(size = [40,20], ports = {'S':5, 'N':1})).move(destination = [0,15])
 
 
 quickplot(d)
