@@ -12,6 +12,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import gdspy
+import yaml
 from copy import deepcopy
 
 from matplotlib import pyplot as plt
@@ -47,14 +48,16 @@ def reflect_points(points, p1, p2):
 class Port(object):
     # TODO: Make so normal and bounds are properties which can be set and
     # which will set their midpoint and orientation and width accordingly
-    def __init__(self, midpoint = [0,0], width = 1, orientation = 90, parent = None):
+    def __init__(self, name = None, midpoint = [0,0], width = 1, orientation = 90, parent = None):
+        self.name = name
         self.midpoint = midpoint
         self.width = width
-        self.orientation = orientation
+        self.orientation = mod(orientation,360)
         self.parent = parent
         
     def __repr__(self):
-        return ('Port (midpoint %s, width %s, orientation %s)' % (self.midpoint, self.width, self.orientation))
+        return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
+                (self.name, self.midpoint, self.width, self.orientation))
         
     def bounds(self):
         dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
@@ -69,7 +72,7 @@ class Port(object):
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
         
         
-        
+# TODO: Add "select" function which can return subdevices, polygons, etc on specific layers or other criteria
 class Device(gdspy.Cell):
     id = 0
     
@@ -92,8 +95,6 @@ class Device(gdspy.Cell):
         self.subdevices.append(subdevice) # Add to the list of subdevices (for convenience)
         return subdevice                # Return the SubDevice (CellReference)
 
-    # QUESTION: Could make this add_element but that implies we're stuck to GDS elements
-    # TODO: Allow input of either [xpts, ypts], or [[1,2],[0,2],[2,3]]
     def add_polygon(self, polygon, layer = 0, datatype = 0):
         if type(polygon) is gdspy.Polygon:
             pass
@@ -106,17 +107,17 @@ class Device(gdspy.Cell):
         self.add(polygon)
         return polygon
         
-    # QUESTION: ``name`` implies string -- should this be id?
-    def add_port(self, name, midpoint = [0,0], width = 1, orientation = 90):
-        if self.ports.has_key(name):
+    def add_port(self, name = None, midpoint = [0,0], width = 1, orientation = 45, port = None):
+        """ Can be called to copy an existing port like add_port(port = existing_port) or
+        to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
+        Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
+        if type(port) == Port: p = port
+        else:                  p = Port(name, midpoint, width, orientation, parent = self)
+        if name is not None: p.name = name
+        if self.ports.has_key(p.name):
             raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
-        p = Port(midpoint, width, orientation, parent = self)
-        self.ports[name] = p
+        self.ports[p.name] = p
         return p
-        
-    def copy_port(self, port, name = None):
-        if name is None: raise ValueError('[DEVICE] copy_port() error: Port must be assigned name') 
-        self.add_port(name, port.midpoint, port.width, port.orientation)
         
     def remove_port(self, name):
         self.ports.pop(name, None)
@@ -137,17 +138,26 @@ class Device(gdspy.Cell):
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         gdspy.gds_print(filename, cells=[self], name='library', unit=unit, precision=precision)
+
+    # TODO: Write align function that takes a polygon/subdevice and moves it to the destination
+    def align(self, element, destination):
+        pass
+    
+    def connect(self, port, destination):
+        sd = port.parent
+        sd.connect(port, destination)
+        return sd
         
             
-    def route(self, port_a, port_b, path_type = 'sine', width_type = 'straight', width_a = None, width_b = None, layer = 0, datatype = 0):
-        # TODO: Check for mismatched orientations and give warning
-        # TODO: Change port_a and port_b names        
+    def route(self, port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, layer = 0, datatype = 0):
         # Assuming they're both Ports for now
-        point_a = np.array(port_a.midpoint)
-        if width_a is None:  width_a = port_a.width
-        point_b = np.array(port_b.midpoint)
-        if width_b is None:  width_b = port_b.width
-        orientation = port_a.orientation
+        point_a = np.array(port1.midpoint)
+        if width1 is None:  width1 = port1.width
+        point_b = np.array(port2.midpoint)
+        if width2 is None:  width2 = port2.width
+        if round(abs(mod(mwg1.ports[1].orientation -mwg2.ports[2].orientation,360)),3) != 180:
+            raise ValueError('[DEVICE] route() error: Ports do not face each other (orientations must be 180 apart)') 
+        orientation = port1.orientation
         
         separation = point_b - point_a  # Vector drawn from A to B
         distance = np.linalg.norm(separation) # Magnitude of vector from A to B
@@ -180,11 +190,11 @@ class Device(gdspy.Cell):
         #    curve_fun = semicircle
         #    curve_deriv_fun = None
         if width_type == 'straight':
-            width_fun = lambda t: (width_b - width_a)*t + width_a
+            width_fun = lambda t: (width2 - width1)*t + width1
         if width_type == 'sine':
-            width_fun = lambda t: (width_b - width_a)*(1-np.cos(t*np.pi))/2 + width_a
+            width_fun = lambda t: (width2 - width1)*(1-np.cos(t*np.pi))/2 + width1
         
-        route_path = gdspy.Path(width = width_a, initial_point = [0,0])
+        route_path = gdspy.Path(width = width1, initial_point = [0,0])
         route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=99,\
                 max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
         
@@ -192,10 +202,10 @@ class Device(gdspy.Cell):
         # into the proper location
         d = Device()
         d.add(route_path)
-        d.add_port(name = 1, midpoint = [0,0], width = width_a, orientation = 180)
-        d.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width_b, orientation = 0)
+        d.add_port(name = 1, midpoint = [0,0], width = width1, orientation = 180)
+        d.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
         r = self.add_device(d)
-        r.connect(1, port_a)
+        r.connect(1, port1)
         return r
 
 
@@ -217,7 +227,7 @@ class SubDevice(gdspy.CellReference):
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
             self._local_ports[key].midpoint = new_midpoint
-            self._local_ports[key].orientation = new_orientation
+            self._local_ports[key].orientation = mod(new_orientation,360)
             self._local_ports[key].parent = self
         return self._local_ports
 
@@ -235,6 +245,7 @@ class SubDevice(gdspy.CellReference):
             new_orientation += rotation
         if origin is not None:
             new_point = new_point + np.array(origin)
+        new_orientation = mod(new_orientation, 360)
             
         return new_point, new_orientation
         
@@ -288,7 +299,7 @@ class SubDevice(gdspy.CellReference):
         return self
         
         
-    def reflect(self, p1, p2):
+    def reflect(self, p1 = [0,1], p2 = [0,0]):
         p1 = np.array(p1);  p2 = np.array(p2)
         # Translate so reflection axis passes through origin
         self.origin = self.origin - p1
@@ -310,17 +321,15 @@ class SubDevice(gdspy.CellReference):
         return self
         
         
-    def connect(self, port, destination, translate = True, rotate = True, offset = 0):
+    def connect(self, port, destination):
         # ``port`` can either be a string with the name or an actual Port
         if self.ports.has_key(port):
             p = self.ports[port]
         elif type(port) is Port:
             p = port
         
-        if rotate is True:
-            self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
-        if translate is True:
-            self.move(origin = p, destination = destination)
+        self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
+        self.move(origin = p, destination = destination)
     
 
 
@@ -396,93 +405,26 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
 
 
-#my_wg = Device('Waveguide')
-#my_wg.add_port(name = 'term1', midpoint = [1,1], width = 1, orientation = 90)
-#my_snspd = Device('SNSPD')
-#my_snspd.add_port(name = 'term1', midpoint = [1,1], width = 1, orientation = 90)
-#my_snspd.add_port(name = 'term2', midpoint = [1,1], width = 1, orientation = 90)
+#def applyconfig(fun, filename = 'myconfig.yaml', **kwargs):
+#    with open(filename) as f:  config_dict = yaml.load(f) # Load arguments from config file
+#    config_dict.update(**kwargs)                          # Replace any additional arguments  
+#    return fun(**config_dict)
 #
-#integrated_device = Device('Integrated', exclude_from_global = False)
-#wg_ref = DeviceReference(my_wg, (25, 0), rotation=180)
-#snspd_ref = DeviceReference(my_snspd, (2, 1), rotation=45)
-#p = snspd_ref.get_port('term1')
-#print p.orientation
-#print p.midpoint
-#
-#integrated_device.add(wg_ref)       
-#integrated_device.add(snspd_ref)
-
-
-#%% Pre-create some devices
-#def SNSPD(name = 'snspd', config = 'snspd.yaml'):
-#    snspd = Device(name)
-#    snspd.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6)]))
-#    snspd.add_port(name = 'term1', midpoint = [0,0], width = 1, orientation = 90)
-#    snspd.add_port(name = 'term2', midpoint = [5,2], width = 1, orientation = -90)
-#    snspd.remove_port('term2')
-#    snspd.add_port(name = 'term2', midpoint = [5,3], width = 1, orientation = -90)
-#    return snspd
 #    
-#def waveguide(name = 'waveguide', width = 10, height = 1):
-#    wg = Device(name)
-#    wg.add_polygon(gdspy.Polygon([(0, 0), (width, 0), (width, height), (0, height)]))
-#    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
-#    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
-#    return wg
+#def useconfig(filename = 'myconfig.yaml', **kwargs):
+#    with open(filename) as f:  config_dict = yaml.load(f) # Load arguments from config file
+#    config_dict.update(**kwargs)                          # Replace any additional arguments  
+#    return config_dict
+#
+#    
+#filename = 'C:/Users/anm16/Downloads/temp.yaml'
+#d = _load_config_file(filename)
+#
+#
+#y = applyconfig(beamsplitter, filename, arm_length = 50)
+#quickplot(y)
+#
+#y = beamsplitter(**useconfig(filename, arm_length = 50))
+#quickplot(y)
 
 
-##%% How we might want to be coding
-#
-#
-#
-## Construct a new device 'd'
-#d = Device('Integrated')
-#
-## Create an SNSPD and waveguide and add references to them into 'd'
-#snspd = d.add_device(SNSPD(name = 'my_snspd', config = 'snspd22.yaml'))
-#wg1 = d.add_device(waveguide(name = 'important_wg', width=10, height = 1))
-#
-## Create another waveguide separately, then add it to new device 'd'
-#temp = waveguide(width=7, height = 1) # This creates a Device and calls it temp
-#wg2 = d.add_device(temp) # This replaces wg2 with its DeviceReference
-#wg2.translate(dx = 0.5, dy = 1.7)
-#
-## Manipulate the subdevice references
-#snspd.translate(dx = 4, dy = 6) # Move by dx = 4, dy = 6
-#snspd.move(origin = [4,6], destination = [5,9]) # can either move from point to point
-#snspd.rotate(angle = 15)
-#wg1.translate(dx = 1, dy = 2) # Calculates dx, dy automatically
-#
-## To implement: Translate using Ports or their names
-#snspd.move(origin = [5,6], destination = 'term2') # Takes port and sends to destination
-#wg1.move(origin = 'wgport1', destination = snspd.ports['term2']) # Takes port and sends to destination
-#
-## Add some new geometry
-#poly1 = d.add_polygon(gdspy.Polygon([(0, 0), (2, 2), (2, 6), (-6, 6), (-6, -6), (-4, -4), (-4, 4), (0, 4)]))
-#poly2 = gdspy.Polygon([(2.0, 2), (2, 6), (-6, 6)])
-#poly1.fillet(0.5) # Can fillet it after adding or before
-#poly2.translate(dx = 0.4, dy = 0.6)
-#d.add_polygon(poly1)
-#d.add_polygon(poly2)
-#
-## Add new ports to 'd' in a few different ways
-#d.add_port(name = 'integratedport1', midpoint = [3,4]) # Use the Device.add_port function
-#d.add_port(snspd.get_port('term2'))                    # Copy any existing port
-#
-## Connect device together
-#snspd.connect_port(port = 'term1', destination = wg1.get_port('wgport1'), rotate = False, translate = True)
-#snspd.connect_port(port = 'term2', destination = [1,5], orientation = 45) # Can specify either name of port or object
-#
-## How do you move a port?  Does the port know what it's parent is?
-#    # If the port knows it's parent
-#        # You can write a general thing to mv
-#    # If not
-#        # The DeviceReference you want to move must precede
-#
-#        
-##d.connect_ports(snspd.get_port('term2'), wg1.get_port('wgport1')) # BAD idea: which one gets moved?
-##d.ports['integratedport2'] = Port(midpoint = [0,1])    # BAD idea: Make the Port() separately and attach it to the ports{} dict
-#
-#
-## 
-#d.plot(overlay_ports = True)

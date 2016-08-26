@@ -1,14 +1,13 @@
 import numpy as np
 import gdspy
 
-# TODO fix centering of this
 def compass(dimensions = [4,2], center = [0,0], layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west)
     """
     
-    d = Device(name = 'pad_compass')
-    d.add_polygon(rectangle_centered(dimensions, center = [0,0]), layer = layer, datatype = datatype)
+    d = Device(name = 'contact_compass')
+    d.add_polygon(rectangle_centered(dimensions, center), layer = layer, datatype = datatype)
     
     dx = dimensions[0]
     dy = dimensions[1]
@@ -26,7 +25,7 @@ def compass_multi(dimensions = [4,2], ports = {'N':3,'S':4}, center = [0,0], lay
     rectangle (north, south, east, and west).
     """
     
-    d = Device(name = 'pad_compass_multi')
+    d = Device(name = 'contact_compass_multi')
     d.add_polygon(rectangle_centered(dimensions, center = [0,0]))
     
     dx = dimensions[0]/2
@@ -55,6 +54,35 @@ def compass_multi(dimensions = [4,2], ports = {'N':3,'S':4}, center = [0,0], lay
     
     return d
 
+
+def flagpole(dimensions = [4,2], connection_dimensions = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
+    if shape ==   'p':
+        orientation = -90
+    elif shape == 'q':
+        dimensions[0], connection_dimensions[0] = -dimensions[0], -connection_dimensions[0]
+        orientation = -90
+    elif shape == 'b':
+        dimensions[1], connection_dimensions[1] = -dimensions[1], -connection_dimensions[1]
+        orientation = 90
+    elif shape == 'd':
+        dimensions[1], connection_dimensions[1] = -dimensions[1], -connection_dimensions[1]
+        dimensions[0], connection_dimensions[0] = -dimensions[0], -connection_dimensions[0]
+        orientation = 90
+    xpts = [0, 0, dimensions[0], dimensions[0], connection_dimensions[0], connection_dimensions[0], 0]
+    ypts = [0, dimensions[1], dimensions[1], 0, 0, -connection_dimensions[1], -connection_dimensions[1]]
+    
+    d = Device(name = 'tapered')
+    pad_poly = d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    if taper_type == 'fillet':
+        taper_amount = min([abs(dimensions[0]-connection_dimensions[0]), abs(connection_dimensions[1])])
+        pad_poly.fillet([0,0,0,0,taper_amount,0,0])
+    if taper_type == 'straight':
+        taper_poly = d.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
+    
+    d.add_port(name = 1, midpoint = [connection_dimensions[0]/2, -connection_dimensions[1]],  width = connection_dimensions[0], orientation = orientation)
+    return d
+
+
 #==============================================================================
 # Example code
 #==============================================================================
@@ -71,3 +99,6 @@ def compass_multi(dimensions = [4,2], ports = {'N':3,'S':4}, center = [0,0], lay
 #inset_polygon = inset(cpm, distance = 2, layer = 1, datatype = 1)
 #cpm.add(inset_polygon)
 #quickplot(cpm)
+
+#fp = flagpole(dimensions = [4,2], connection_dimensions = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0)
+#quickplot(tp)

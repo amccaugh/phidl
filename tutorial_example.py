@@ -46,8 +46,8 @@ quickplot(d); plt.plot([2,10],[-8,15])
 
 quickplot(d, new_window = True); plt.plot([2,10],[-8,15])
 
-d.copy_port(name = 1, port = wg1.ports['wgport1'])
-d.copy_port(name = 2, port = wg3.ports['wgport2'])
+d.add_port(port = wg1.ports['wgport1'], name = 1)
+d.add_port(port = wg3.ports['wgport2'], name = 2)
 
 quickplot(d)
 
@@ -58,7 +58,7 @@ mwg2.move(destination = [4,4])
 
 quickplot(dsquared)
 
-mwg1.connect(port = 1, destination = mwg2.ports[2], translate = True, rotate = True)
+dsquared.connect(port = mwg1.ports[1], destination = mwg2.ports[2])
 
 quickplot(dsquared)
 
@@ -66,7 +66,7 @@ mwg2.translate(dx = 40, dy = 25)
 
 quickplot(dsquared)
 
-dsquared.route(port_a = mwg1.ports[1], port_b = mwg2.ports[2], path_type = 'sine', width_type = 'straight')
+dsquared.route(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight')
 
 quickplot(dsquared)
 

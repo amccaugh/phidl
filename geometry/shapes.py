@@ -14,8 +14,13 @@ def rectangle_centered(dimensions = [2,2], center = [0,0], layer = 0, datatype =
     point2 = np.array(center) + np.array(dimensions)/2
     return rectangle(point1, point2, layer = layer, datatype = datatype)
 
+# TODO: Write ring definition
+def ring(width, layer = 0, datatype = 0):
+    arc()
     
-    
+# TODO: Write ring definition    
+def arc(radius, width, initial_angle = 0, final_angle = 90, angle_resolution = 5):
+    pass
     
 #==============================================================================
 # Example code
