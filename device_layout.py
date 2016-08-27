@@ -22,6 +22,9 @@ from matplotlib.collections import PatchCollection
 
 
 def rotate_points(points, angle = 45, center = [0,0]):
+    """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
+    input as either single points [1,2] or array-like[N][2], and will return in kind
+    """
     angle = angle*np.pi/180
     ca = np.cos(angle)
     sa = np.sin(angle)
@@ -33,7 +36,8 @@ def rotate_points(points, angle = 45, center = [0,0]):
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
 
-def reflect_points(points, p1, p2):
+
+def reflect_points(points, p1 = [0,0], p2 = [1,0]):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -44,6 +48,15 @@ def reflect_points(points, p1, p2):
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p
     if np.array(points).ndim == 2: 
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p for p in points])
+
+
+def translate_points(points, d = [1,2]):
+    """ Reflects points across the line formed by p1 and p2.  ``points`` may be
+    input as either single points [1,2] or array-like[N][2], and will return in kind
+    """
+    points = np.array(points) + d
+    return points
+    
 
 class Port(object):
     # TODO: Make so normal and bounds are properties which can be set and
@@ -155,7 +168,7 @@ class Device(gdspy.Cell):
         if width1 is None:  width1 = port1.width
         point_b = np.array(port2.midpoint)
         if width2 is None:  width2 = port2.width
-        if round(abs(mod(mwg1.ports[1].orientation -mwg2.ports[2].orientation,360)),3) != 180:
+        if round(abs(mod(port1.orientation - port2.orientation,360)),3) != 180:
             raise ValueError('[DEVICE] route() error: Ports do not face each other (orientations must be 180 apart)') 
         orientation = port1.orientation
         
@@ -208,6 +221,31 @@ class Device(gdspy.Cell):
         r.connect(1, port1)
         return r
 
+    def rotate(self, angle = 45, center = [0,0]):
+        for e in self.elements:
+            if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet:
+                e.rotate(angle = angle*np.pi/180, center = center)
+            if type(e) is SubDevice: 
+                e.rotate(angle, center)
+        for p in self.ports.values():
+            p.midpoint = rotate_points(p.midpoint, angle, center)
+            p.orientation = mod(p.orientation + angle, 360)
+            
+    # FIXME Add logic to make this accept things like origin = myport
+    def move(self, origin = [0,0], destination = [0,0]):
+        for e in self.elements:
+            if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
+                dx,dy = np.array(destination) - origin
+                e.translate(dx,dy)
+            if type(e) is SubDevice: 
+                e.move(origin, destination)
+        for p in self.ports.values():
+            p.midpoint = np.array(p.midpoint) + np.array(destination) - np.array(origin)
+            
+    # FIXME Make this work for all types of elements    
+#    def reflect(self, p1, p2):
+#        for e in self.elements:
+#            e.reflect(angle, center)
 
     
     
@@ -271,8 +309,9 @@ class SubDevice(gdspy.CellReference):
                 
                 
 
-    def translate(self, dx = 0, dy = 0):
-        self.origin = np.array(self.origin) + np.array([dx,dy])
+    def translate(self, d = [1,2]):
+        self.origin = np.array(self.origin) + np.array(d)
+        return self
         
         
     def move(self, origin = [0,0], destination = [0,0]):
@@ -333,7 +372,7 @@ class SubDevice(gdspy.CellReference):
         
         self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         self.move(origin = p, destination = destination)
-    
+        return self
 
 
 
@@ -353,7 +392,8 @@ def xy2p(*args):
     """
     if len(args) == 1:      x,y = args[0][0], args[0][1] 
     elif len(args) == 2:    x,y = args[0],    args[1]
-    return np.array(zip(*[x,y]))
+    points = np.array(zip(*[x,y]))
+    return points
     
     
 def quickplot(items, overlay_ports = True, overlay_subports = True, label_ports = True, new_window = True):

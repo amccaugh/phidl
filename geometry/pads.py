@@ -52,34 +52,39 @@ def compass_multi(size = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0
         p_list = np.linspace(-m, m, num_ports)
         [d.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],  width = dy/num_ports*2, orientation = 180) for n,p in enumerate(p_list)]
     
+    d.move(origin = [0,0], destination = center)
     return d
+    
+    
 
-
+# TODO: Fix the fillet here, right now only goes halfway down
 def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
+    f = deepcopy(flag_size)
+    p = deepcopy(pole_size)
     if shape ==   'p':
         orientation = -90
     elif shape == 'q':
-        flag_size[0], pole_size[0] = -flag_size[0], -pole_size[0]
+        f[0], p[0] = -flag_size[0], -pole_size[0]
         orientation = -90
     elif shape == 'b':
-        flag_size[1], pole_size[1] = -flag_size[1], -pole_size[1]
+        f[1], p[1] = -flag_size[1], -pole_size[1]
         orientation = 90
     elif shape == 'd':
-        flag_size[1], pole_size[1] = -flag_size[1], -pole_size[1]
-        flag_size[0], pole_size[0] = -flag_size[0], -pole_size[0]
+        f[1], p[1] = -flag_size[1], -pole_size[1]
+        f[0], p[0] = -flag_size[0], -pole_size[0]
         orientation = 90
-    xpts = [0, 0, flag_size[0], flag_size[0], pole_size[0], pole_size[0], 0]
-    ypts = [0, flag_size[1], flag_size[1], 0, 0, -pole_size[1], -pole_size[1]]
+    xpts = [0, 0, f[0], f[0], p[0], p[0], 0]
+    ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
     
     d = Device(name = 'tapered')
     pad_poly = d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
     if taper_type == 'fillet':
-        taper_amount = min([abs(flag_size[0]-pole_size[0]), abs(pole_size[1])])
+        taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,0,0,taper_amount,0,0])
     if taper_type == 'straight':
         taper_poly = d.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
     
-    d.add_port(name = 1, midpoint = [pole_size[0]/2, -pole_size[1]],  width = pole_size[0], orientation = orientation)
+    d.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = p[0], orientation = orientation)
     return d
 
 
@@ -87,15 +92,15 @@ def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'st
 # Example code
 #==============================================================================
 
-#cp = compass(flag_size = [4,2])
+#cp = compass(size = [4,2])
 #quickplot(cp)
 
 
-#cpm = compass_multi(flag_size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
+#cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
 #quickplot(cpm)
 
 
-#cpm = compass_multi(flag_size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
+#cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
 #inset_polygon = inset(cpm, distance = 2, layer = 1, datatype = 1)
 #cpm.add(inset_polygon)
 #quickplot(cpm)
