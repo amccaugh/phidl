@@ -17,10 +17,6 @@ def taper(length, width = None, end_width = None, port = None, layer = 0, dataty
         d.move(origin = [0,0], destination = port.midpoint)
     return d
     
-
-quickplot(d)
-
-
     
 def ramp(length, width, end_width = None, layer = 0, datatype = 0):
     if end_width is None: end_width = width

@@ -10,16 +10,21 @@ from __future__ import division # Otherwise integer division e.g.  20 / 7 = 2
 from __future__ import print_function # Use print('hello') instead of print 'hello'
 from __future__ import absolute_import
 
-import numpy as np
 import gdspy
 import yaml
 from copy import deepcopy
+import numpy as np
+from numpy import sqrt, mod
+from numpy.linalg import norm
 
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon as PolygonPatch
 from matplotlib.collections import PatchCollection
 
 
+#==============================================================================
+# Useful transformation functions
+#==============================================================================
 
 def rotate_points(points, angle = 45, center = [0,0]):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
@@ -35,8 +40,6 @@ def rotate_points(points, angle = 45, center = [0,0]):
     if np.array(points).ndim == 1: 
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
-
-
 def reflect_points(points, p1 = [0,0], p2 = [1,0]):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
@@ -45,10 +48,9 @@ def reflect_points(points, p1 = [0,0], p2 = [1,0]):
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
     if np.array(points).ndim == 1: 
         p = points
-        return 2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p
+        return 2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p
     if np.array(points).ndim == 2: 
-        return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/np.linalg.norm(p2-p1)**2) - p for p in points])
-
+        return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
 def translate_points(points, d = [1,2]):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
@@ -58,49 +60,79 @@ def translate_points(points, d = [1,2]):
     return points
     
 
+
+
 class Port(object):
-    # TODO: Make so normal and bounds are properties which can be set and
-    # which will set their midpoint and orientation and width accordingly
+    # TODO: Make so normal and bounds are properties which can be set
     def __init__(self, name = None, midpoint = [0,0], width = 1, orientation = 90, parent = None):
         self.name = name
         self.midpoint = midpoint
         self.width = width
         self.orientation = mod(orientation,360)
         self.parent = parent
+        if self.width <= 0: raise ValueError('[DEVICE] Port creation error: width cannot be negative or zero')
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
                 (self.name, self.midpoint, self.width, self.orientation))
-        
-    def bounds(self):
+       
+    # TODO: Make so normal and bounds are properties have setattr
+    @property
+    def endpoints(self):
         dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
         dy = self.width/2*np.sin((self.orientation - 90)*np.pi/180)
         left_point = self.midpoint - np.array([dx,dy])
         right_point = self.midpoint + np.array([dx,dy])
         return np.array([left_point, right_point])
         
+    @property
     def normal(self):
         dx = np.cos((self.orientation)*np.pi/180)
         dy = np.sin((self.orientation)*np.pi/180)
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
         
+
+
         
 # TODO: Add "select" function which can return subdevices, polygons, etc on specific layers or other criteria
 class Device(gdspy.Cell):
-    id = 0
+    uid = 0
     
     def __init__(self, name = 'Unnamed', exclude_from_global=True):
         self.ports = {}
         self.parameters = {}
         self.subdevices = []
-        Device.id += 1
-        name = '%s%06d' % (name, Device.id) # Write name e.g. 'Unnamed000005'
+        Device.uid += 1
+        name = '%s%06d' % (name, Device.uid) # Write name e.g. 'Unnamed000005'
+        # TODO: Add logic here to test name length
         super(Device, self).__init__(name, exclude_from_global)
 
 
     @property
     def layers(self):
         return self.get_layers()
+
+    @property
+    def bbox(self):
+        self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
+        return np.array(self.get_bounding_box())
+
+    @property
+    def width(self):
+        return self.bounds('E') - self.bounds('W')
+
+    @property
+    def height(self):
+        return self.bounds('N') - self.bounds('S')
+
+    @property
+    def center(self):
+        return np.sum(self.bbox,0)/2
+
+    @center.setter
+    def center(self, destination):
+        self.move(destination = destination, origin = self.center)
+
         
     def add_device(self, device):
         subdevice = SubDevice(device)   # Create a SubDevice (CellReference)
@@ -132,29 +164,67 @@ class Device(gdspy.Cell):
         self.ports[p.name] = p
         return p
         
+    def add_array(self, device, start = [0,0], direction = 'E', spacing = 10, num_devices = 6):
+        if type(direction) is str:
+            direction = direction.upper() # Make uppercase
+            if   direction == 'NE':    direction = [1,1]
+            elif direction == 'SE':    direction = [1,-1]
+            elif direction == 'SW':    direction = [-1,-1]
+            elif direction == 'NW':    direction = [-1,1]
+            elif direction == 'N':     direction = [0,1]
+            elif direction == 'S':     direction = [0,-1]
+            elif direction == 'E':     direction = [1,0]
+            elif direction == 'W':     direction = [-1,0]
+        translation = np.array(direction/norm(direction)*spacing)
+        subdevices = []
+        for n in range(num_devices):
+            sd = self.add_device(device)
+            sd.move(destination = translation*n, origin = -np.array(start))
+            subdevices.append(sd)
+        return subdevices
+        
+        
     def remove_port(self, name):
         self.ports.pop(name, None)
         
-    def bbox(self, boundary = None):
-        box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
-        if type(boundary) is str:
-            boundary = boundary.upper() # Make uppercase
-            if boundary == 'NE':    return np.array(box[1])
-            if boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-            if boundary == 'SW':    return np.array(box[0])
-            if boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-            if boundary == 'N':     return box[1][1]
-            if boundary == 'S':     return box[0][1]
-            if boundary == 'E':     return box[1][0]
-            if boundary == 'W':     return box[0][0]
-        else: return box
+    def bounds(self, boundary = None):
+        box = self.bbox # Returns like [(-1,-2), (4,5)]
+        boundary = boundary.upper() # Make uppercase
+        if   boundary == 'NE':    return np.array(box[1])
+        elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
+        elif boundary == 'SW':    return np.array(box[0])
+        elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
+        elif boundary == 'N':     return box[1][1]
+        elif boundary == 'S':     return box[0][1]
+        elif boundary == 'E':     return box[1][0]
+        elif boundary == 'W':     return box[0][0]
+        else: raise ValueError('[DEVICE] bounds() received invalid boundary.  Should be e.g. "NE", or "W"')
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
+        if filename[-4:] != '.gds':  filename += '.gds'
+        tempname = self.name
+        self.name = 'toplevel'
         gdspy.gds_print(filename, cells=[self], name='library', unit=unit, precision=precision)
+        self.name = tempname
 
     # TODO: Write align function that takes a polygon/subdevice and moves it to the destination
-    def align(self, element, destination):
-        pass
+    # def align(self, elements, boundary = 'E', destination = [0,0]):
+    #   """ Allows you to move several ``elements``  """
+    #   boxes = np.array([e.bbox for e in elements])
+    #   xmin = min(boxes[:,0,0])
+    #   xmin = min(boxes[:,1,0])
+    #   ymin = min(boxes[:,0,1])
+    #   ymin = min(boxes[:,1,1])
+    #   if elements is not list: elements = [elements]
+    #     if   boundary == 'NE':    return np.array(box[1])
+    #     elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
+    #     elif boundary == 'SW':    return np.array(box[0])
+    #     elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
+    #     elif boundary == 'N':     return box[1][1]
+    #     elif boundary == 'S':     return box[0][1]
+    #     elif boundary == 'E':     return box[1][0]
+    #     elif boundary == 'W':     return box[0][0]
+    #     return elements
     
     def connect(self, port, destination):
         sd = port.parent
@@ -162,7 +232,7 @@ class Device(gdspy.Cell):
         return sd
         
             
-    def route(self, port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, layer = 0, datatype = 0):
+    def route(self, port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0):
         # Assuming they're both Ports for now
         point_a = np.array(port1.midpoint)
         if width1 is None:  width1 = port1.width
@@ -173,7 +243,7 @@ class Device(gdspy.Cell):
         orientation = port1.orientation
         
         separation = point_b - point_a  # Vector drawn from A to B
-        distance = np.linalg.norm(separation) # Magnitude of vector from A to B
+        distance = norm(separation) # Magnitude of vector from A to B
         rotation = np.arctan2(separation[1],separation[0])*180/np.pi # Rotation of vector from A to B
         angle = rotation - orientation   # If looking out along the normal of ``a``, the angle you would have to look to see ``b``
         forward_distance = distance*np.cos(angle*np.pi/180)
@@ -208,7 +278,7 @@ class Device(gdspy.Cell):
             width_fun = lambda t: (width2 - width1)*(1-np.cos(t*np.pi))/2 + width1
         
         route_path = gdspy.Path(width = width1, initial_point = [0,0])
-        route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=99,\
+        route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts, \
                 max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
         
         # Make the route path into a Device with ports, and use "connect" to move it
@@ -230,17 +300,44 @@ class Device(gdspy.Cell):
         for p in self.ports.values():
             p.midpoint = rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
+        return self
             
     # FIXME Add logic to make this accept things like origin = myport
-    def move(self, origin = [0,0], destination = [0,0]):
-        for e in self.elements:
+    def move(self, elements = None, origin = [0,0], destination = None, axis = None):
+        """ Moves elements of the Device from the origin point to the destination.  Both
+         origin and destination can be 1x2 array-like, Port, or a key
+         corresponding to one of the Ports in this device """
+
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        if type(origin) is Port:            o = origin.midpoint
+        elif np.array(origin).size == 2:    o = origin
+        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or port name')
+            
+        if type(destination) is Port:           d = destination.midpoint
+        elif np.array(origin).size == 2:        d = destination
+        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
+
+        if axis == 'x': d[1] = o[1]
+        if axis == 'y': d[0] = o[0]
+
+        if elements is None: elements = self.elements
+
+        for e in elements:
             if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
-                dx,dy = np.array(destination) - origin
+                dx,dy = np.array(d) - o
                 e.translate(dx,dy)
             if type(e) is SubDevice: 
-                e.move(origin, destination)
+                e.move(destination = d, origin = o)
         for p in self.ports.values():
-            p.midpoint = np.array(p.midpoint) + np.array(destination) - np.array(origin)
+            p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+        return self
+
             
     # FIXME Make this work for all types of elements    
 #    def reflect(self, p1, p2):
@@ -269,6 +366,26 @@ class SubDevice(gdspy.CellReference):
             self._local_ports[key].parent = self
         return self._local_ports
 
+    @property
+    def bbox(self):
+        return self.get_bounding_box()
+
+    @property
+    def width(self):
+        return self.bounds('E') - self.bounds('W')
+
+    @property
+    def height(self):
+        return self.bounds('N') - self.bounds('S')
+
+    @property
+    def center(self):
+        return np.sum(self.bbox,0)/2
+
+    @center.setter
+    def center(self, destination):
+        self.move(destination = destination, origin = self.center)
+
 
     def _transform_port(self, point, orientation, origin=[0, 0], rotation=None, x_reflection=False):
         # Apply GDS-type transformations (x_ref)
@@ -289,9 +406,9 @@ class SubDevice(gdspy.CellReference):
         
         
         
-    def bbox(self, boundary = None):
-        """ Returns the bounding box in the format of the southwest and northeast
-        corners [(-1,-2), (4,5)].  ``boundary`` can be specified to be edges
+    def bounds(self, boundary = 'E'):
+        """ Returns coordinates for edges and vertices of the bounding box
+        ``boundary`` can be specified to be edges
         or vertices of the bounding box.  For instance specifying east 'E'
         returns the maximum +x coordinate, while 'NE' returns the max [+x,+y] """
         box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
@@ -306,18 +423,22 @@ class SubDevice(gdspy.CellReference):
             if boundary == 'E':     return box[1][0]
             if boundary == 'W':     return box[0][0]
         else: return box
-                
-                
 
     def translate(self, d = [1,2]):
         self.origin = np.array(self.origin) + np.array(d)
         return self
         
         
-    def move(self, origin = [0,0], destination = [0,0]):
+    def move(self, origin = [0,0], destination = None, axis = None):
         """ Moves the SubDevice from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this subdevice """
+
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
         if type(origin) is Port:            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
         elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
@@ -328,6 +449,10 @@ class SubDevice(gdspy.CellReference):
         elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
             
+        # Lock one axis if necessary
+        if axis == 'x': d[1] = o[1]
+        if axis == 'y': d[0] = o[0]
+
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
         return self
         
@@ -439,10 +564,10 @@ def quickplot(items, overlay_ports = True, overlay_subports = True, label_ports 
 def _draw_port(port, arrow_scale = 1, **kwargs):
     x = port.midpoint[0]
     y = port.midpoint[1]
-    nv = port.normal()
+    nv = port.normal
     n = (nv[1]-nv[0])*arrow_scale
     dx, dy = n[0], n[1]
-    xbound, ybound = p2xy(port.bounds())
+    xbound, ybound = p2xy(port.endpoints)
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
     plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)

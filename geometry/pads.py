@@ -6,7 +6,7 @@ def compass(size = [4,2], center = [0,0], layer = 0, datatype = 0):
     rectangle (north, south, east, and west)
     """
     
-    d = Device(name = 'contact_compass')
+    d = Device(name = 'compass')
     d.add_polygon(rectangle_centered(size, center), layer = layer, datatype = datatype)
     
     dx = size[0]
@@ -25,7 +25,7 @@ def compass_multi(size = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0
     rectangle (north, south, east, and west).
     """
     
-    d = Device(name = 'contact_compass_multi')
+    d = Device(name = 'compass_multi')
     d.add_polygon(rectangle_centered(size, center = [0,0]))
     
     dx = size[0]/2
@@ -61,6 +61,11 @@ def compass_multi(size = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0
 def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
     f = deepcopy(flag_size)
     p = deepcopy(pole_size)
+    shape = shape.lower()
+
+    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
+    assert taper_type in ['straight','fillet'], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
+    
     if shape ==   'p':
         orientation = -90
     elif shape == 'q':
@@ -76,17 +81,41 @@ def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'st
     xpts = [0, 0, f[0], f[0], p[0], p[0], 0]
     ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
     
-    d = Device(name = 'tapered')
+    d = Device(name = 'flagpole')
     pad_poly = d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,0,0,taper_amount,0,0])
-    if taper_type == 'straight':
-        taper_poly = d.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
-    
-    d.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = p[0], orientation = orientation)
+    elif taper_type == 'straight':
+        d.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
+            
+    d.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = abs(p[0]), orientation = orientation)
+    d.add_port(name = 2, midpoint = [f[0]/2, f[1]],  width = abs(f[0]), orientation = orientation-180)
     return d
 
+
+def tee(top_size = [4,2], leg_size = [2,1], taper_type = 'straight', layer = 0, datatype = 0):
+    f = np.array(top_size)
+    p = np.array(leg_size)
+    
+    xpts = np.array([f[0], f[0], p[0], p[0], -p[0], -p[0], -f[0], -f[0]])/2
+    ypts = [f[1], 0, 0, -p[1], -p[1], 0, 0, f[1]]
+    
+    d = Device(name = 'tee')
+    pad_poly = d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    if taper_type == 'fillet':
+        taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
+        pad_poly.fillet([0,0,taper_amount,0,0,taper_amount,0,0])
+    if taper_type == 'straight':
+        taper_poly1 = d.add_polygon([xpts[1:4],ypts[1:4]], layer = layer, datatype = datatype)
+        taper_poly2 = d.add_polygon([xpts[4:7],ypts[4:7]], layer = layer, datatype = datatype)
+        
+    d.add_port(name = 'N', midpoint = [0, f[1]],  width = f[0], orientation = 90)
+    d.add_port(name = 'S', midpoint = [0, -p[1]],  width = p[0], orientation = -90)
+    d.add_port(name = 'E', midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
+    d.add_port(name = 'W', midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
+    return d
+    
 
 #==============================================================================
 # Example code
@@ -106,4 +135,8 @@ def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'st
 #quickplot(cpm)
 
 #fp = flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0)
+#quickplot(fp)
+
+
+#tp = tee(top_size = [4,2], leg_size = [2,1], taper_type = 'fillet', layer = 0, datatype = 0)
 #quickplot(tp)
