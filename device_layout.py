@@ -12,7 +12,17 @@ Created on Wed Jul 20 17:47:14 2016
 
 # Add __add__, __and__, etc functinoality to allow boolean operations
 # Make a distribute() function
+# Make a distribute() function
+# Make quickplot use itertools.chain() instead of list.append()
+# Add "select" function which can return subdevices, polygons, etc on specific layers or other criteria
 
+
+#==============================================================================
+# Major TODO
+#==============================================================================
+
+# Add import function
+# Add fill tool
 
 #==============================================================================
 # Imports
@@ -98,10 +108,11 @@ class Port(object):
     # FIXME currently broken
     @endpoints.setter
     def endpoints(self, points):
+        print(points)
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
-        self.orientation = np.arctan2(dy,dx)*180/np.pi
+        self.orientation = np.arctan2(-dy,dx)*180/np.pi
         self.width = sqrt(dx**2 + dy**2)
         
     @property
@@ -113,7 +124,6 @@ class Port(object):
 
 
         
-# TODO: Add "select" function which can return subdevices, polygons, etc on specific layers or other criteria
 class Device(gdspy.Cell):
     uid = 0
     
@@ -208,11 +218,6 @@ class Device(gdspy.Cell):
             sd.move(destination = np.array(spacing)*n, origin = -np.array(start))
             subdevices.append(sd)
         return subdevices
-    
-    def offset(self, elements, distance = 10, join_first = True, delete_inputs = False, layer=0, datatype=0):
-        p = gdspy.offset(elements, distance, join='miter', tolerance=2, precision=0.001, join_first=join_first, max_points=199, layer=layer, datatype=layer)
-        self.add_polygon(p)
-        return p
         
     def delete_port(self, name):
         self.ports.pop(name, None)
@@ -285,7 +290,7 @@ class Device(gdspy.Cell):
         yf = lateral_distance
         if path_type == 'straight':
             curve_fun = lambda t: [xf*t, yf*t]
-            curve_deriv_fun = lambda t: [xf + t*0, yf + t*0]
+            curve_deriv_fun = lambda t: [xf + t*0, t*0]
         if path_type == 'sine':
             curve_fun = lambda t: [xf*t, yf*(1-np.cos(t*np.pi))/2]
             curve_deriv_fun = lambda t: [xf  + t*0, yf*(np.sin(t*np.pi)*np.pi)/2]
@@ -334,7 +339,6 @@ class Device(gdspy.Cell):
             p.orientation = mod(p.orientation + angle, 360)
         return self
             
-    # FIXME Add logic to make this accept things like origin = myport
     def move(self, elements = None, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
@@ -355,8 +359,8 @@ class Device(gdspy.Cell):
         elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
 
-        if axis == 'x': d[1] = o[1]
-        if axis == 'y': d[0] = o[0]
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
 
         if elements is None: elements = self.elements
 
@@ -382,15 +386,15 @@ class Device(gdspy.Cell):
 class SubDevice(gdspy.CellReference):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         super(SubDevice, self).__init__(device, origin, rotation, magnification, x_reflection)
-        self.parent_ports = device.ports
+        self._parent_ports = device.ports
         self._local_ports = deepcopy(device.ports)
     
     @property
     def ports(self):
         """ This property allows you to access mysubdevice.ports, and receive a copy
         of the ports dict which is correctly rotated and translated"""
-        for key in self.parent_ports.keys():
-            port = self.parent_ports[key] 
+        for key in self._parent_ports.keys():
+            port = self._parent_ports[key] 
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
             self._local_ports[key].midpoint = new_midpoint
@@ -455,10 +459,6 @@ class SubDevice(gdspy.CellReference):
             if boundary == 'E':     return box[1][0]
             if boundary == 'W':     return box[0][0]
         else: return box
-
-    def translate(self, d = [1,2]):
-        self.origin = np.array(self.origin) + np.array(d)
-        return self
         
         
     def move(self, origin = (0,0), destination = None, axis = None):
@@ -482,8 +482,8 @@ class SubDevice(gdspy.CellReference):
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
             
         # Lock one axis if necessary
-        if axis == 'x': d[1] = o[1]
-        if axis == 'y': d[0] = o[0]
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
 
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
         return self
@@ -532,6 +532,20 @@ class SubDevice(gdspy.CellReference):
         return self
 
 
+#==============================================================================
+# Handy geometry functions
+#==============================================================================
+
+    
+def inset(elements, distance = 0.1, join_first = True, layer=0, datatype=0):
+    p = gdspy.offset(elements, -distance, join='miter', tolerance=2, precision=0.001, join_first=join_first, max_points=199, layer=layer, datatype=layer)
+    return p
+    
+    
+
+#==============================================================================
+# Helper functions
+#==============================================================================
 
 def p2xy(points):
     """ Takes in a list of [x,y] pairs and converts them to lists of x points 
@@ -578,8 +592,10 @@ def quickplot(items, overlay_ports = True, overlay_subports = True, label_ports 
                     _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
                     plt.text(port.midpoint[0], port.midpoint[1], name)
         if type(item) is gdspy.Polygon:
-            p = item.points
-            patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
+            patches.append(PolygonPatch(item.points, closed=True, alpha = 0.4))
+        if type(item) is gdspy.PolygonSet:
+            for p in item.polygons:
+                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
     pc = PatchCollection(patches, alpha=0.4)
     # TODO: Change this to per-layer coloring    
     np.random.seed(0)
