@@ -2,13 +2,13 @@ import numpy as np
 import gdspy
 
 
-def rectangle(point1 = [2,2], point2 = [0,0], layer = 0, datatype = 0):
+def rectangle(point1 = (2,2), point2 = (0,0), layer = 0, datatype = 0):
     """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
     points = np.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
     return gdspy.Polygon(points, layer = layer, datatype = datatype)
     
 
-def rectangle_centered(size = [2,2], center = [0,0], layer = 0, datatype = 0):
+def rectangle_centered(size = (2,2), center = (0,0), layer = 0, datatype = 0):
     """ Creates a rectangle polygon of size ``size`` and centered at ``center`` """
     point1 = np.array(center) - np.array(size)/2
     point2 = np.array(center) + np.array(size)/2

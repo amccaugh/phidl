@@ -6,6 +6,18 @@ Created on Wed Jul 20 17:47:14 2016
 """
 
 
+#==============================================================================
+# Potential improvements
+#==============================================================================
+
+# Add __add__, __and__, etc functinoality to allow boolean operations
+# Make a distribute() function
+
+
+#==============================================================================
+# Imports
+#==============================================================================
+
 from __future__ import division # Otherwise integer division e.g.  20 / 7 = 2
 from __future__ import print_function # Use print('hello') instead of print 'hello'
 from __future__ import absolute_import
@@ -26,7 +38,7 @@ from matplotlib.collections import PatchCollection
 # Useful transformation functions
 #==============================================================================
 
-def rotate_points(points, angle = 45, center = [0,0]):
+def rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -40,7 +52,7 @@ def rotate_points(points, angle = 45, center = [0,0]):
     if np.array(points).ndim == 1: 
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
-def reflect_points(points, p1 = [0,0], p2 = [1,0]):
+def reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -63,8 +75,7 @@ def translate_points(points, d = [1,2]):
 
 
 class Port(object):
-    # TODO: Make so normal and bounds are properties which can be set
-    def __init__(self, name = None, midpoint = [0,0], width = 1, orientation = 90, parent = None):
+    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 90, parent = None):
         self.name = name
         self.midpoint = midpoint
         self.width = width
@@ -76,7 +87,6 @@ class Port(object):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
                 (self.name, self.midpoint, self.width, self.orientation))
        
-    # TODO: Make so normal and bounds are properties have setattr
     @property
     def endpoints(self):
         dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
@@ -84,6 +94,15 @@ class Port(object):
         left_point = self.midpoint - np.array([dx,dy])
         right_point = self.midpoint + np.array([dx,dy])
         return np.array([left_point, right_point])
+    
+    # FIXME currently broken
+    @endpoints.setter
+    def endpoints(self, points):
+        p1, p2 = np.array(points[0]), np.array(points[1])
+        self.midpoint = (p1+p2)/2
+        dx, dy = p2-p1
+        self.orientation = np.arctan2(dy,dx)*180/np.pi
+        self.width = sqrt(dx**2 + dy**2)
         
     @property
     def normal(self):
@@ -101,6 +120,7 @@ class Device(gdspy.Cell):
     def __init__(self, name = 'Unnamed', exclude_from_global=True):
         self.ports = {}
         self.parameters = {}
+        self.meta = {}
         self.subdevices = []
         Device.uid += 1
         name = '%s%06d' % (name, Device.uid) # Write name e.g. 'Unnamed000005'
@@ -134,8 +154,11 @@ class Device(gdspy.Cell):
         self.move(destination = destination, origin = self.center)
 
         
-    def add_device(self, device):
-        subdevice = SubDevice(device)   # Create a SubDevice (CellReference)
+    def add_device(self, device, config = None, **kwargs):
+         # Check if ``device`` is actually a device-making function
+        if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
+        else:                   d = device
+        subdevice = SubDevice(d)   # Create a SubDevice (CellReference)
         self.add(subdevice)             # Add SubDevice (CellReference) to Device (Cell)
         self.subdevices.append(subdevice) # Add to the list of subdevices (for convenience)
         return subdevice                # Return the SubDevice (CellReference)
@@ -152,7 +175,7 @@ class Device(gdspy.Cell):
         self.add(polygon)
         return polygon
         
-    def add_port(self, name = None, midpoint = [0,0], width = 1, orientation = 45, port = None):
+    def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
@@ -164,27 +187,34 @@ class Device(gdspy.Cell):
         self.ports[p.name] = p
         return p
         
-    def add_array(self, device, start = [0,0], direction = 'E', spacing = 10, num_devices = 6):
-        if type(direction) is str:
-            direction = direction.upper() # Make uppercase
-            if   direction == 'NE':    direction = [1,1]
-            elif direction == 'SE':    direction = [1,-1]
-            elif direction == 'SW':    direction = [-1,-1]
-            elif direction == 'NW':    direction = [-1,1]
-            elif direction == 'N':     direction = [0,1]
-            elif direction == 'S':     direction = [0,-1]
-            elif direction == 'E':     direction = [1,0]
-            elif direction == 'W':     direction = [-1,0]
-        translation = np.array(direction/norm(direction)*spacing)
+    def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
+         # Check if ``device`` is actually a device-making function
+        if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
+        else:                   d = device
+#        if type(direction) is str:
+#            direction = direction.upper() # Make uppercase
+#            if   direction == 'NE':    direction = [1,1]
+#            elif direction == 'SE':    direction = [1,-1]
+#            elif direction == 'SW':    direction = [-1,-1]
+#            elif direction == 'NW':    direction = [-1,1]
+#            elif direction == 'N':     direction = [0,1]
+#            elif direction == 'S':     direction = [0,-1]
+#            elif direction == 'E':     direction = [1,0]
+#            elif direction == 'W':     direction = [-1,0]
+#        translation = np.array(direction/norm(direction)*spacing)
         subdevices = []
         for n in range(num_devices):
-            sd = self.add_device(device)
-            sd.move(destination = translation*n, origin = -np.array(start))
+            sd = self.add_device(d)
+            sd.move(destination = np.array(spacing)*n, origin = -np.array(start))
             subdevices.append(sd)
         return subdevices
+    
+    def offset(self, elements, distance = 10, join_first = True, delete_inputs = False, layer=0, datatype=0):
+        p = gdspy.offset(elements, distance, join='miter', tolerance=2, precision=0.001, join_first=join_first, max_points=199, layer=layer, datatype=layer)
+        self.add_polygon(p)
+        return p
         
-        
-    def remove_port(self, name):
+    def delete_port(self, name):
         self.ports.pop(name, None)
         
     def bounds(self, boundary = None):
@@ -208,7 +238,7 @@ class Device(gdspy.Cell):
         self.name = tempname
 
     # TODO: Write align function that takes a polygon/subdevice and moves it to the destination
-    # def align(self, elements, boundary = 'E', destination = [0,0]):
+    # def align(self, elements, boundary = 'E', destination = (0,0)):
     #   """ Allows you to move several ``elements``  """
     #   boxes = np.array([e.bbox for e in elements])
     #   xmin = min(boxes[:,0,0])
@@ -277,7 +307,7 @@ class Device(gdspy.Cell):
         if width_type == 'sine':
             width_fun = lambda t: (width2 - width1)*(1-np.cos(t*np.pi))/2 + width1
         
-        route_path = gdspy.Path(width = width1, initial_point = [0,0])
+        route_path = gdspy.Path(width = width1, initial_point = (0,0))
         route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts, \
                 max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
         
@@ -285,13 +315,15 @@ class Device(gdspy.Cell):
         # into the proper location
         d = Device()
         d.add(route_path)
-        d.add_port(name = 1, midpoint = [0,0], width = width1, orientation = 180)
+        d.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
         d.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
+        d.meta['length'] = route_path.length
         r = self.add_device(d)
-        r.connect(1, port1)
+        r.connect(1, port1)        
         return r
+        
 
-    def rotate(self, angle = 45, center = [0,0]):
+    def rotate(self, angle = 45, center = (0,0)):
         for e in self.elements:
             if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet:
                 e.rotate(angle = angle*np.pi/180, center = center)
@@ -303,7 +335,7 @@ class Device(gdspy.Cell):
         return self
             
     # FIXME Add logic to make this accept things like origin = myport
-    def move(self, elements = None, origin = [0,0], destination = None, axis = None):
+    def move(self, elements = None, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
@@ -387,7 +419,7 @@ class SubDevice(gdspy.CellReference):
         self.move(destination = destination, origin = self.center)
 
 
-    def _transform_port(self, point, orientation, origin=[0, 0], rotation=None, x_reflection=False):
+    def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
@@ -429,7 +461,7 @@ class SubDevice(gdspy.CellReference):
         return self
         
         
-    def move(self, origin = [0,0], destination = None, axis = None):
+    def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves the SubDevice from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this subdevice """
@@ -457,14 +489,14 @@ class SubDevice(gdspy.CellReference):
         return self
         
         
-    def rotate(self, angle = 45, center = [0,0]):
+    def rotate(self, angle = 45, center = (0,0)):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = rotate_points(self.origin, angle, center)
         return self
         
         
-    def reflect(self, p1 = [0,1], p2 = [0,0]):
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
         if type(p1) is Port:  p1 = p1.midpoint
         if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
@@ -573,10 +605,13 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
 
 
-#def applyconfig(fun, filename = 'myconfig.yaml', **kwargs):
-#    with open(filename) as f:  config_dict = yaml.load(f) # Load arguments from config file
-#    config_dict.update(**kwargs)                          # Replace any additional arguments  
-#    return fun(**config_dict)
+def makedevice(fun, config = None, **kwargs):
+    config_dict = {}
+    if type(config) is str:
+        with open(config) as f:  config_dict = yaml.load(f) # Load arguments from config file
+    elif type(config) is dict:   config_dict = config
+    config_dict.update(**kwargs)
+    return fun(**config_dict)
 #
 #    
 #def useconfig(filename = 'myconfig.yaml', **kwargs):
@@ -589,7 +624,7 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
 #d = _load_config_file(filename)
 #
 #
-#y = applyconfig(beamsplitter, filename, arm_length = 50)
+#y = makedevice(beamsplitter, filename, arm_length = 50)
 #quickplot(y)
 #
 #y = beamsplitter(**useconfig(filename, arm_length = 50))

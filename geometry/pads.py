@@ -1,7 +1,7 @@
 import numpy as np
 import gdspy
 
-def compass(size = [4,2], center = [0,0], layer = 0, datatype = 0):
+def compass(size = (4,2), center = (0,0), layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west)
     """
@@ -20,7 +20,7 @@ def compass(size = [4,2], center = [0,0], layer = 0, datatype = 0):
     
     
 # TODO fix centering of this
-def compass_multi(size = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0, datatype = 0):
+def compass_multi(size = (4,2), ports = {'N':3,'S':4}, center = (0,0), layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
     """
@@ -58,7 +58,7 @@ def compass_multi(size = [4,2], ports = {'N':3,'S':4}, center = [0,0], layer = 0
     
 
 # TODO: Fix the fillet here, right now only goes halfway down
-def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
+def flagpole(flag_size = (4,2), pole_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
     f = deepcopy(flag_size)
     p = deepcopy(pole_size)
     shape = shape.lower()
@@ -94,7 +94,7 @@ def flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'st
     return d
 
 
-def tee(top_size = [4,2], leg_size = [2,1], taper_type = 'straight', layer = 0, datatype = 0):
+def tee(top_size = (4,2), leg_size = (2,1), taper_type = 'straight', layer = 0, datatype = 0):
     f = np.array(top_size)
     p = np.array(leg_size)
     
