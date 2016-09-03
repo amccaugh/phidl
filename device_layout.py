@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 20 17:47:14 2016
-
-@author: anm16
-"""
-
-
 #==============================================================================
 # Potential improvements
 #==============================================================================
@@ -165,6 +157,8 @@ class Device(gdspy.Cell):
 
         
     def add_device(self, device, config = None, **kwargs):
+        """ Takes a Device (or Device-making function with config) and adds it
+        as a SubDevice to the current Device.  """
          # Check if ``device`` is actually a device-making function
         if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
         else:                   d = device
@@ -201,17 +195,6 @@ class Device(gdspy.Cell):
          # Check if ``device`` is actually a device-making function
         if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
         else:                   d = device
-#        if type(direction) is str:
-#            direction = direction.upper() # Make uppercase
-#            if   direction == 'NE':    direction = [1,1]
-#            elif direction == 'SE':    direction = [1,-1]
-#            elif direction == 'SW':    direction = [-1,-1]
-#            elif direction == 'NW':    direction = [-1,1]
-#            elif direction == 'N':     direction = [0,1]
-#            elif direction == 'S':     direction = [0,-1]
-#            elif direction == 'E':     direction = [1,0]
-#            elif direction == 'W':     direction = [-1,0]
-#        translation = np.array(direction/norm(direction)*spacing)
         subdevices = []
         for n in range(num_devices):
             sd = self.add_device(d)
@@ -355,7 +338,7 @@ class Device(gdspy.Cell):
         else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or port name')
             
         if type(destination) is Port:           d = destination.midpoint
-        elif np.array(origin).size == 2:        d = destination
+        elif np.array(destination).size == 2:        d = destination
         elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
 
@@ -374,6 +357,10 @@ class Device(gdspy.Cell):
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
         return self
 
+
+    def label(self, text = 'hello', position = (0,0), layer = 89):
+        if type(text) is not str: text = str(text)
+        self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
             
     # FIXME Make this work for all types of elements    
 #    def reflect(self, p1, p2):
@@ -477,7 +464,7 @@ class SubDevice(gdspy.CellReference):
         else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or port name')
             
         if type(destination) is Port:           d = destination.midpoint
-        elif np.array(origin).size == 2:        d = destination
+        elif np.array(destination).size == 2:        d = destination
         elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
             
@@ -538,7 +525,7 @@ class SubDevice(gdspy.CellReference):
 
     
 def inset(elements, distance = 0.1, join_first = True, layer=0, datatype=0):
-    p = gdspy.offset(elements, -distance, join='miter', tolerance=2, precision=0.001, join_first=join_first, max_points=199, layer=layer, datatype=layer)
+    p = gdspy.offset(elements, -distance, join='miter', tolerance=2, precision=0.001, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
     return p
     
     

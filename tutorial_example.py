@@ -1,23 +1,21 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug 18 16:33:13 2016
+#==============================================================================
+# We'll start by assuming we have a function waveguide() which already exists
+#==============================================================================
 
-@author: anm16
-"""
-# %% Connecting together several waveguides
-
-def waveguide(width = 10, height = 1, name = 'waveguide'):
-    wg = Device(name)
+def waveguide(width = 10, height = 1):
+    wg = Device('waveguide')
     wg.add_polygon([(0, 0), (width, 0), (width, height), (0, height)])
     wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
     wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
     return wg
    
+
 #==============================================================================
-# Create a new blank device ``d`` which will act as a blank canvas,
+# Create a blank device
+#==============================================================================
+# Create a new device ``d`` which will act as a blank canvas,
 # and add a few waveguides to it to start out.  add_device() returns
 # the referenced object you added, allowing you to manipulate it later
-#==============================================================================
 d = Device('MultiWaveguide')
 wg1 = d.add_device(waveguide(width=10, height = 1))
 wg2 = d.add_device(waveguide(width=12, height = 2))
@@ -27,23 +25,21 @@ quickplot(d)
 
 
 #==============================================================================
-# Making polygons
+# Creating polygons
 #==============================================================================
 # Create and add a polygon from separate lists of x points and y points
 # e.g. [(x1, x2, x3, ...), (y1, y2, y3, ...)]
 poly1 = d.add_polygon([[8,6,7,9],[6,8,9,5]])
 # Alternatively, create and add a polygon from a list of points
-# e.g. [(x1,y1), (x2,y2), (x3,y3), ...]
+# e.g. [(x1,y1), (x2,y2), (x3,y3), ...] using the same function
 poly2 = d.add_polygon([(0, 0), (1, 1), (1, 3), (-3, 3)])
 
 quickplot(d)
 
+
 #==============================================================================
 # Manipulating geometry 1 - Basic movement and rotation
 #==============================================================================
-wg1.center # Will print out the center coordinate of its bounding box
-wg1.center = [4,4] # Shift wg1 such that the center coordinate of its bounding box is at (4,4)
-
 wg1.move([10,4]) # Shift the second waveguide we created over by dx = 10, dy = 4
 wg2.move(origin = [1,1], destination = [2,2]) # Shift the second waveguide over by dx = 1, dy = 1
 wg3.move([1,1], [5,5], axis = 'y') # Shift the third waveguide over by dx = 0, dy = 4 (motion only along y-axis)
@@ -51,78 +47,120 @@ wg3.move([1,1], [5,5], axis = 'y') # Shift the third waveguide over by dx = 0, d
 wg1.rotate(45) # Rotate the first waveguie by 45 degrees around (0,0)
 wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees around (1,1)
 
+wg3.reflect(p1 = [1,1], p2 = [3,1]) # Reflects wg3 across the line formed by p1 and p2
+
+wg1.center # Will print out the center coordinate of its bounding box
+wg1.center = [4,4] # Shift wg1 such that the center coordinate of its bounding box is at (4,4)
+
+
 quickplot(d)
+
 
 #==============================================================================
-# Manipulating geometry 2 - Smarter movement
-# 
-# Often it's more convenient to 
+# Manipulating geometry 2 - Smarter movement with ports
 #==============================================================================
-wg2.move(origin = 'wgport1', destination = wg1.ports['wgport2'])
-wg3.move(origin = 'wgport1', destination = wg2.ports['wgport2'])
-
-quickplot(d)
-
-wg1.rotate(angle = 45, center = wg1.ports['wgport2'])
-wg3.rotate(angle = 45, center = wg3.ports['wgport1'])
-
-quickplot(d)
-
+# All the waveguides we made have two ports: 'wgport1' and 'wgport2'  We can 
+# use these names in place of (x,y) pairs.  For instance, if we want to move
+# wg1 such that its port 'wgport1' rests on the origin, we do:
+wg1.move(origin = 'wgport1', destination = [0,0])
+# Alternatively, we can use the Port object itself in the same manner.  We can
+# access the Port objects for any Device (or SubDevice) by calling device.ports,
+# --which returns a Python dictionary--and accessing its value with the key
+wg3.move(origin = wg3.ports['wgport1'], destination = [0,0])
+# We can even move one port to another 
+wg2.move(origin = wg2.ports['wgport1'], destination = wg3.ports['wgport2'])
+# Several functions beyond just move() can take Ports as inputs
+wg1.rotate(angle = -60, center = wg1.ports['wgport2'])
 wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
 
-quickplot(d); plt.plot([2,10],[-8,15])
+quickplot(d)
 
-[sd.reflect(p1 = [2,-8], p2 = [10,15]) for sd in [wg1, wg2, wg3]]
 
-quickplot(d, new_window = True); plt.plot([2,10],[-8,15])
+#==============================================================================
+# Manipulating geometry 3 - Chaining commands
+#==============================================================================
+# Many of the functions in Device return the object they manipulate.  We can use
+# this to chain commands in a single line. For instance this is equivalent:
+wg1.rotate(angle = 15, center = [0,0])
+wg1.move([10,20])
+# ...with this expression
+wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 
-d.add_port(port = wg1.ports['wgport1'], name = 1)
-d.add_port(port = wg3.ports['wgport2'], name = 2)
+
+
+#==============================================================================
+# Connecting devices with connect()
+#==============================================================================
+d.connect(port = wg1.ports['wgport1'], destination = wg2.ports['wgport2'])
+d.connect(port = wg3.ports['wgport2'], destination = wg2.ports['wgport1'])
 
 quickplot(d)
 
+
+
+#==============================================================================
+# Adding ports
+#==============================================================================
+# Although our waveguides have ports, ``d`` itself does not -- it only draws
+# the subports (ports of wg1, wg2, wg3) as a convience.  We need to add ports
+# that we specifically want in our new device ``d``
+d.add_port(port = wg1.ports['wgport2'], name = 1)
+d.add_port(port = wg3.ports['wgport1'], name = 2)
+
+quickplot(d)
+
+
+
+#==============================================================================
+# Taking things a level higher
+#==============================================================================
+# Now that we have our device ``d`` which is a multi-waveguide device, we
+# can add references to that device in a new blank canvas we'll call ``dsquared``.
+# We'll add two copies of ``d`` to dsquared, and shift one so we can see them both
 dsquared = Device('MultiMultiWaveguide')
 mwg1 = dsquared.add_device(d)
 mwg2 = dsquared.add_device(d)
-mwg2.move(destination = [4,4])
+mwg2.move(destination = [10,10])
 
 quickplot(dsquared)
 
+# Like before, let's connect mwg1 and mwg2 together then offset them slightly
 dsquared.connect(port = mwg1.ports[1], destination = mwg2.ports[2])
+mwg2.move(destination = [30,30])
 
 quickplot(dsquared)
 
-mwg2.translate(dx = 40, dy = 25)
 
-quickplot(dsquared)
-
+#==============================================================================
+# Routing
+#==============================================================================
+# Routing allows us to connect two ports which face each other with a smooth
+# polygon.  Since we connected our two 
 dsquared.route(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight')
-
 quickplot(dsquared)
 
+
+#==============================================================================
+# Adding text
+#==============================================================================
+# The function text() creates a Device, just like waveguide.  Use it and 
+# manipulate it like any other Device
+t = dsquared.add_device( text('Hello\nworld!', size = 10, justify = 'center'))
+t.move([0,40]).rotate(45)
+quickplot(dsquared)
+
+
+#==============================================================================
+# Labeling
+#==============================================================================
+# This label will display in a GDS viewer, but will not be rendered
+# or printed like the polygons created by the text()
+dsquared.label('First label', mwg1.center)
+dsquared.label('Second label', mwg2.center)
+
+
+#==============================================================================
+# Saving the file as a .gds
+#==============================================================================
 dsquared.write_gds('MultiMultiWaveguideTutorial.gds')
 
-# %% Testing routing functions
-
-d = Device()
-
-cp1 = d.add_device(compass(size = [2,2])).move(destination = [-10,-50])
-cp2 = d.add_device(compass(size = [2,2])).move(destination = [-5,-50])
-cp3 = d.add_device(compass(size = [2,2])).move(destination = [0,-50])
-cp4 = d.add_device(compass(size = [2,2])).move(destination = [5,-50])
-cp5 = d.add_device(compass(size = [2,2])).move(destination = [10,-50])
-
-
-cpm = d.add_device(compass_multi(size = [40,20], ports = {'S':5, 'N':1})).move(destination = [0,15])
-
-
-quickplot(d)
-
-
-r1 = d.route(port_a = cpm.ports['S1'], port_b = cp1.ports['N'], path_type = 'sine', width_type = 'straight')
-r2 = d.route(port_a = cpm.ports['S2'], port_b = cp2.ports['N'], path_type = 'sine', width_type = 'straight')
-r3 = d.route(port_a = cpm.ports['S3'], port_b = cp3.ports['N'], path_type = 'sine', width_type = 'straight')
-r4 = d.route(port_a = cpm.ports['S4'], port_b = cp4.ports['N'], path_type = 'sine', width_type = 'straight')
-r5 = d.route(port_a = cpm.ports['S5'], port_b = cp5.ports['N'], path_type = 'sine', width_type = 'straight')
-
-quickplot(d)

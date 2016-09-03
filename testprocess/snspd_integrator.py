@@ -4,7 +4,7 @@
 # SNSPD yTron-based integrator
 #==============================================================================
 def snspd_integrator(
-                    nanowire_width = 0.3,
+                    nanowire_width = 0.5,
                     fill_factor = 1/3,
                     contact_pad_width = 5,
                     snspd_size = [20,20],
@@ -12,8 +12,8 @@ def snspd_integrator(
                     pad_pole_size = [contact_pad_width*10, 50],
                     pad_spacing = 50,
                     connector_size = [400,150],
-                    inset_distance = 2,
-                    num_devices = 14,
+                    inset_distance = 1,
+                    num_devices = 5,
                     label = 'A1',
                     rho_intersection = 1,
                     theta_intersection = 5,
@@ -28,7 +28,7 @@ def snspd_integrator(
 
 
     #==============================================================================
-    # Create and place components*
+    # Create and place components
     #==============================================================================
     cpm = D.add_device(compass_multi, size = connector_size, center = [0,-200], ports = {'N':num_devices,'S':1}, layer = 0, datatype = 0)
     f = D.add_device(flagpole(flag_size = connector_size, pole_size = [width_left,width_left], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
@@ -54,10 +54,14 @@ def snspd_integrator(
     #==============================================================================
     # Route components
     #==============================================================================
+    pad_routes = []
+    connector_routes = []
     for n in range(num_devices):
         s = snspd_array[n]; p = pad_array[n]
-        D.route(port1 = s.ports[1], port2 = cpm.ports['N%s' % (n+1)], path_type = 'sine', width_type = 'sine', width1 = None, width2 = contact_pad_width*2, num_path_pts = 99, layer = 0, datatype = 0)
-        D.route(port1 = p.ports['S'], port2 = s.ports[2], path_type = 'sine', width_type = 'sine', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0)
+        rc = D.route(port1 = s.ports[1], port2 = cpm.ports['N%s' % (n+1)], path_type = 'sine', width_type = 'sine', width1 = None, width2 = contact_pad_width*4, num_path_pts = 99, layer = 0, datatype = 0)
+        rp = D.route(port1 = p.ports['S'], port2 = s.ports[2], path_type = 'sine', width_type = 'sine', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0)
+        pad_routes.append(rp)
+        connector_routes.append(rc)
     r_ytron_gnd = D.route(y.ports['source'], gnd.ports['N'], path_type = 'sine', width_type = 'sine')
     r_ytron_pad = D.route(y.ports['left'], fy.ports[1], path_type = 'straight', width_type = 'sine')
     
@@ -67,8 +71,8 @@ def snspd_integrator(
     #==============================================================================
     D.add_polygon( inset([r_ytron_gnd, gnd], distance = inset_distance, join_first = True, layer=1, datatype=0) )
     D.add_polygon( inset([r_ytron_gnd, gnd], distance = inset_distance, join_first = True, layer=1, datatype=0) )
-    D.add_polygon( inset(pad_array, distance = inset_distance, join_first = True, layer=1, datatype=0) )
-    D.add_polygon( inset([f,cpm], distance = inset_distance, join_first = True, layer=1, datatype=0) )
+    D.add_polygon( inset(pad_array + pad_routes, distance = inset_distance, join_first = True, layer=1, datatype=0) )
+    D.add_polygon( inset([f,cpm] + connector_routes, distance = inset_distance, join_first = True, layer=1, datatype=0) )
     D.add_polygon( inset([fy, r_ytron_pad], distance = inset_distance, join_first = True, layer=1, datatype=0) )
     
     
@@ -80,9 +84,22 @@ def snspd_integrator(
     return D
 
 
-D = snspd_integrator(label = 'A4')
-snspd_integrator(label = 'A3')
-D.add_device( text('hello', justify = 'right', size = 200, layer = 1) )
-quickplot(D)
-D.write_gds('SNSPD Integrator.gds')
+
+
+#==============================================================================
+# Row A: Varying sharpness of yTron intersection (rho_intersection)
+#==============================================================================
+d = Device()
+rho = [0.5,1,2,4,8]
+for n in range(5):
+    s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+    s.move([(s.width + 300)*n, 0])
+    d.label(('Varying yTron rho\n rho = %s' % rho[n]), s.center)
+    
+#==============================================================================
+# Row B: Varying sharpness of yTron intersection (rho_intersection)
+#==============================================================================
+    
+#quickplot(d)
+d.write_gds('SNSPD Integrator.gds')
 
