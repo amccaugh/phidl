@@ -2,7 +2,32 @@ import numpy as np
 import gdspy
 from numpy import sqrt, pi
 
-
+def taper(length, width = None, end_width = None, port = None, layer = 0, datatype = 0):
+    if type(port) is Port and width is None: width = port.width
+    if end_width is None: end_width = width
+    xpts = [0, length, length, 0]
+    ypts = [width/2, end_width/2, -end_width/2, -width/2]
+    
+    d = Device('taper')
+    d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    d.add_port(name = 1, midpoint = [0, 0], width = width, orientation = 180)
+    d.add_port(name = 2, midpoint = [length, 0], width = end_width, orientation = 0)
+    if type(port) is Port: 
+        d.rotate(angle = port.orientation, center = [0,0])
+        d.move(origin = [0,0], destination = port.midpoint)
+    return d
+    
+    
+def ramp(length, width, end_width = None, layer = 0, datatype = 0):
+    if end_width is None: end_width = width
+    xpts = [0, width/2, width/2, 0]
+    ypts = [width/2, end_width/2, 0, 0]
+    d = Device('ramp')
+    d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    d.add_port(name = 1, midpoint = [0, 0], width = width, orientation = 180)
+    d.add_port(name = 2, midpoint = [length, end_width/2], width = end_width, orientation = 0)
+    return d
+    
 
 def racetrack_gradual(t, R, N, layer = 0, datatype = 0):
     curve_fun = lambda t: racetrack_gradual_parametric(t, R = 5, N = 3)

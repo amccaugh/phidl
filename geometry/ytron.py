@@ -22,8 +22,8 @@ from numpy import sqrt, pi
 #    return gdspy.Polygon(zip(xpts,ypts), layer), ports
 
 
-def ytron_round(rho_intersection = 1, theta_intersection = 5, theta_resolution = 10, arm_length = 500, \
-                  source_length = 500, width_right = 200, width_left = 200, layer = 0, datatype = 0):
+def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, source_length = 500,
+                  width_right = 200, width_left = 200, theta_resolution = 10, layer = 0, datatype = 0):
     
     #==========================================================================
     #  Create the basic geometry

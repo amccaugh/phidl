@@ -4,9 +4,9 @@ from numpy import sqrt, pi
 
 
 
-def racetrack_gradual(t, width, R, N, layer = 0, datatype = 0):
+def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0, datatype = 0):
     curve_fun = lambda t: racetrack_gradual_parametric(t, R = 5, N = 3)
-    route_path = gdspy.Path(width = 0.3, initial_point = [0,0])
+    route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer, datatype=datatype)
     d = Device()
@@ -37,8 +37,8 @@ def _racetrack_gradual_parametric(t, R, N):
 # Example code
 #==============================================================================
 
-#d = racetrack_gradual(t, R = 5, N=3)
-#quickplot(d)
+d = racetrack_gradual(width = 0.3, R = 5, N = 3)
+quickplot(d)
 
 
 

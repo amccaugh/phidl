@@ -35,7 +35,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     xpts.append(xpts[-1]); ypts.append(-a)
     xpts.append(xpts[0]); ypts.append(-a)
     xpts.append(max(xpts)-length); ypts.append(-a)
-    xpts.append(xpts[-1]); ypts.append(ypts[0])
+    xpts.append(xpts[-1]); ypts.append(-a + width)
     xpts.append(xpts[0]); ypts.append(ypts[0])
     
     xpts = np.array(xpts)
@@ -49,7 +49,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     d.add_polygon(gdspy.Polygon(zip(xpts,-ypts)))
     
     xports = min(xpts)
-    yports = min(ypts) + width/2
+    yports = -a + width/2
     d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
     d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
     
@@ -60,7 +60,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
 # TODO Include parameter to make curve sub-optimal (gentler than optimal)
-def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3):
+def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3, anticrowding_factor = 1.2):
 
     #==========================================================================
     #  Create the basic geometry
@@ -117,6 +117,11 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     ypts.append(0)
     xpts.append(xpts[0])
     ypts.append(0)
+    
+    # anticrowding_factor stretches the wire out; a stretched wire is a gentler
+    # transition, so there's less chance of current crowding if the fabrication 
+    # isn't perfect but as a result, the wire isn't as short as it could be
+    xpts = (np.array(xpts)*anticrowding_factor).tolist()
 
     if reverse is True:
         xpts = (-np.array(xpts)).tolist()
