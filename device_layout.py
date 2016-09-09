@@ -348,7 +348,7 @@ class Device(gdspy.Cell):
         if elements is None: elements = self.elements
 
         for e in elements:
-            if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
+            if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet or type(e) is gdspy.Label: 
                 dx,dy = np.array(d) - o
                 e.translate(dx,dy)
             if type(e) is SubDevice: 

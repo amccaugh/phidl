@@ -31,7 +31,7 @@ def snspd_integrator(
     # Create and place components
     #==============================================================================
     cpm = D.add_device(compass_multi, size = connector_size, center = [0,-200], ports = {'N':num_devices,'S':1}, layer = 0, datatype = 0)
-    f = D.add_device(flagpole(flag_size = connector_size, pole_size = [width_left,width_left], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
+    f = D.add_device(flagpole(flag_size = connector_size, pole_size = [width_right,width_right], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
     fy = D.add_device(flagpole(flag_size = [connector_size[0],connector_size[1]*2], pole_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
     
     t = tee(top_size = pad_flag_size, leg_size = pad_pole_size, taper_type = 'fillet', layer = 0, datatype = 0)
@@ -90,16 +90,38 @@ def snspd_integrator(
 # Row A: Varying sharpness of yTron intersection (rho_intersection)
 #==============================================================================
 d = Device()
-rho = [0.5,1,2,4,8]
-for n in range(5):
-    s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+rho = [0.25,0.5,1,1.5,2]
+for n, r in enumerate(rho):
+    s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r, num_devices = 5) )
     s.move([(s.width + 300)*n, 0])
-    d.label(('Varying yTron rho\n rho = %s' % rho[n]), s.center)
+    d.label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
+    
     
 #==============================================================================
-# Row B: Varying sharpness of yTron intersection (rho_intersection)
+# Row B: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
 #==============================================================================
+rho = [0.25,0.5,1,1.5,2]
+for n, r in enumerate(rho):
+    s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+    s.move([(s.width + 300)*n, -(s.height+200)])
+    d.label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
     
+    
+#==============================================================================
+# Row C: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
+#==============================================================================
+rho = [0.25,0.5,1,1.5,2]
+for n, r in enumerate(rho):
+    s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+    s.move([(s.width + 300)*n, -2*(s.height+200)])
+    d.label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
+
+final_center = d.center
+die = d.add_device( basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
+              die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
+              datatype = 0, draw_bbox = True,  bbox_layer = 99,  bbox_datatype = 99) )
+die.center = final_center
+              
 #quickplot(d)
 d.write_gds('SNSPD Integrator.gds')
 
