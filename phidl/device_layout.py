@@ -100,7 +100,6 @@ class Port(object):
     # FIXME currently broken
     @endpoints.setter
     def endpoints(self, points):
-        print(points)
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1

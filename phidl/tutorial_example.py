@@ -1,5 +1,11 @@
+from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
+
+
+from phidl import Device, quickplot
+
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
+# and makes us a simple waveguide
 #==============================================================================
 
 def waveguide(width = 10, height = 1):
