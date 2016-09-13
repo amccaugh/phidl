@@ -153,7 +153,40 @@ class Device(gdspy.Cell):
     @center.setter
     def center(self, destination):
         self.move(destination = destination, origin = self.center)
+        
+    @property
+    def xmax(self):
+        return self.bbox[1][0]
 
+    @xmax.setter
+    def xmax(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
+        
+    @property
+    def ymax(self):
+        return self.bbox[1][1]
+
+    @ymax.setter
+    def ymax(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
+        
+    @property
+    def xmin(self):
+        return self.bbox[0][0]
+
+    @xmin.setter
+    def xmin(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
+        
+    @property
+    def ymin(self):
+        return self.bbox[0][1]
+
+    @ymin.setter
+    def ymin(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
+        
+        
         
     def add_device(self, device, config = None, **kwargs):
         """ Takes a Device (or Device-making function with config) and adds it
@@ -407,6 +440,38 @@ class SubDevice(gdspy.CellReference):
     @center.setter
     def center(self, destination):
         self.move(destination = destination, origin = self.center)
+        
+    @property
+    def xmax(self):
+        return self.bbox[1][0]
+
+    @xmax.setter
+    def xmax(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
+        
+    @property
+    def ymax(self):
+        return self.bbox[1][1]
+
+    @ymax.setter
+    def ymax(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
+        
+    @property
+    def xmin(self):
+        return self.bbox[0][0]
+
+    @xmin.setter
+    def xmin(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
+        
+    @property
+    def ymin(self):
+        return self.bbox[0][1]
+
+    @ymin.setter
+    def ymin(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
 
 
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
