@@ -820,7 +820,7 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, d
     justify = justify.lower()
     for l in t.subdevices:
         if justify == 'left':   pass
-        if justify == 'right':  l.move(origin = l.bounds('NE'), destination = position, axis = 'x')
+        if justify == 'right':  l.xmax = position[0]# l.move(origin = l.bounds('NE'), destination = position, axis = 'x')
         if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
     return t
     
@@ -990,9 +990,10 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
-    d.parameters['radius_curvature'] = rho_intersection
-    d.parameters['left_arm_width'] = width_left
-    d.parameters['right_arm_width'] = width_right
+    d.meta['rho'] = rho_intersection
+    d.meta['left_width'] = width_left
+    d.meta['right_width'] = width_right
+    d.meta['source_width'] = width_left + width_right + 2*xc
 
     return d
     

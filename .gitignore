@@ -3,6 +3,7 @@ test.sh
 debug.py
 winbuild*
 *.gds
+*.bat
 docs/_*
 .*.swp
 

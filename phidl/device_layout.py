@@ -380,20 +380,28 @@ class Device(gdspy.Cell):
 
         if elements is None: elements = self.elements
 
+        dx,dy = np.array(d) - o
+        
+        # Move geometries
         for e in elements:
-            if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet or type(e) is gdspy.Label: 
-                dx,dy = np.array(d) - o
+            if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
                 e.translate(dx,dy)
             if type(e) is SubDevice: 
                 e.move(destination = d, origin = o)
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+        
+        # Move labels
+        for l in self.labels:
+            l.translate(dx,dy)
+        
         return self
 
 
     def label(self, text = 'hello', position = (0,0), layer = 89):
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
+        l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
+        return l
             
     # FIXME Make this work for all types of elements    
 #    def reflect(self, p1, p2):

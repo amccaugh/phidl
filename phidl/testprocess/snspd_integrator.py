@@ -123,9 +123,13 @@ for n, r in enumerate(rho):
 final_center = d.center
 die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
               die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
-              datatype = 0, draw_bbox = True,  bbox_layer = 99,  bbox_datatype = 99) )
+              datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
 die.center = final_center
               
-#quickplot(d)
-d.write_gds('SNSPD Integrator.gds')
+quickplot(d)
+
+#fill = dummy_fill_square(d, fill_size = (50,50), layers = (0,1), densities = (0.2, 0.2), margin = 100, bbox = None)
+#d.add_device( fill )
+
+d.write_gds('SCE001 SNSPD Integrator.gds')
 
