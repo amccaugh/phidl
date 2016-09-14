@@ -39,10 +39,10 @@ def snspd_integrator(
     fy = D.add_device(pg.flagpole(flag_size = [connector_size[0],connector_size[1]*2], pole_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
     
     t = pg.tee(top_size = pad_flag_size, leg_size = pad_pole_size, taper_type = 'fillet', layer = 0, datatype = 0)
-    pad_array = D.add_array(t, start = [-(t.width+pad_spacing)*num_devices/2, 1000], spacing = [t.width+pad_spacing, 0], num_devices = num_devices)
+    pad_array = D.add_array(t, start = [-(t.xsize+pad_spacing)*num_devices/2, 1000], spacing = [t.xsize+pad_spacing, 0], num_devices = num_devices)
     s = pg.snspd_expanded(wire_width = nanowire_width, wire_pitch = nanowire_width*3, size = snspd_size, connector_width = contact_pad_width,
                                              terminals_same_side = False, layer = 0, datatype = 0).rotate(90)
-    snspd_array = D.add_array(s, start = [-100,300], spacing = [s.width+20, 0], num_devices = num_devices)
+    snspd_array = D.add_array(s, start = [-100,300], spacing = [s.xsize+20, 0], num_devices = num_devices)
                
     y =  D.add_device(pg.ytron_round(rho_intersection, theta_intersection, arm_length, source_length,
                       width_right, width_left, theta_resolution = 10, layer = 0, datatype = 0))
@@ -97,7 +97,7 @@ d = Device()
 rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r, num_devices = 5) )
-    s.move([(s.width + 300)*n, 0])
+    s.move([(s.xsize + 300)*n, 0])
     d.label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
     
     
@@ -107,7 +107,7 @@ for n, r in enumerate(rho):
 rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
-    s.move([(s.width + 300)*n, -(s.height+200)])
+    s.move([(s.xsize + 300)*n, -(s.ysize+200)])
     d.label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
     
     
@@ -117,7 +117,7 @@ for n, r in enumerate(rho):
 rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
-    s.move([(s.width + 300)*n, -2*(s.height+200)])
+    s.move([(s.xsize + 300)*n, -2*(s.ysize+200)])
     d.label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
 
 final_center = d.center

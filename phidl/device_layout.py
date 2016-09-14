@@ -139,14 +139,6 @@ class Device(gdspy.Cell):
         return np.array(self.get_bounding_box())
 
     @property
-    def width(self):
-        return self.bounds('E') - self.bounds('W')
-
-    @property
-    def height(self):
-        return self.bounds('N') - self.bounds('S')
-
-    @property
     def center(self):
         return np.sum(self.bbox,0)/2
 
@@ -186,6 +178,15 @@ class Device(gdspy.Cell):
     def ymin(self, destination):
         self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
         
+    @property
+    def xsize(self):
+        bbox = self.bbox
+        return bbox[1][0] - bbox[0][0]
+        
+    @property
+    def ysize(self):
+        bbox = self.bbox
+        return bbox[1][1] - bbox[0][1]
         
         
     def add_device(self, device, config = None, **kwargs):
@@ -237,18 +238,18 @@ class Device(gdspy.Cell):
     def delete_port(self, name):
         self.ports.pop(name, None)
         
-    def bounds(self, boundary = None):
-        box = self.bbox # Returns like [(-1,-2), (4,5)]
-        boundary = boundary.upper() # Make uppercase
-        if   boundary == 'NE':    return np.array(box[1])
-        elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-        elif boundary == 'SW':    return np.array(box[0])
-        elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-        elif boundary == 'N':     return box[1][1]
-        elif boundary == 'S':     return box[0][1]
-        elif boundary == 'E':     return box[1][0]
-        elif boundary == 'W':     return box[0][0]
-        else: raise ValueError('[DEVICE] bounds() received invalid boundary.  Should be e.g. "NE", or "W"')
+#    def bounds(self, boundary = None):
+#        box = self.bbox # Returns like [(-1,-2), (4,5)]
+#        boundary = boundary.upper() # Make uppercase
+#        if   boundary == 'NE':    return np.array(box[1])
+#        elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
+#        elif boundary == 'SW':    return np.array(box[0])
+#        elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
+#        elif boundary == 'N':     return box[1][1]
+#        elif boundary == 'S':     return box[0][1]
+#        elif boundary == 'E':     return box[1][0]
+#        elif boundary == 'W':     return box[0][0]
+#        else: raise ValueError('[DEVICE] bounds() received invalid boundary.  Should be e.g. "NE", or "W"')
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -426,14 +427,6 @@ class SubDevice(gdspy.CellReference):
         return self.get_bounding_box()
 
     @property
-    def width(self):
-        return self.bounds('E') - self.bounds('W')
-
-    @property
-    def height(self):
-        return self.bounds('N') - self.bounds('S')
-
-    @property
     def center(self):
         return np.sum(self.bbox,0)/2
 
@@ -473,6 +466,16 @@ class SubDevice(gdspy.CellReference):
     def ymin(self, destination):
         self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
 
+    @property
+    def xsize(self):
+        bbox = self.bbox
+        return bbox[1][0] - bbox[0][0]
+        
+    @property
+    def ysize(self):
+        bbox = self.bbox
+        return bbox[1][1] - bbox[0][1]
+        
 
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations (x_ref)
@@ -493,23 +496,23 @@ class SubDevice(gdspy.CellReference):
         
         
         
-    def bounds(self, boundary = 'E'):
-        """ Returns coordinates for edges and vertices of the bounding box
-        ``boundary`` can be specified to be edges
-        or vertices of the bounding box.  For instance specifying east 'E'
-        returns the maximum +x coordinate, while 'NE' returns the max [+x,+y] """
-        box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
-        if type(boundary) is str:
-            boundary = boundary.upper() # Make uppercase
-            if boundary == 'NE':    return np.array(box[1])
-            if boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-            if boundary == 'SW':    return np.array(box[0])
-            if boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-            if boundary == 'N':     return box[1][1]
-            if boundary == 'S':     return box[0][1]
-            if boundary == 'E':     return box[1][0]
-            if boundary == 'W':     return box[0][0]
-        else: return box
+#    def bounds(self, boundary = 'E'):
+#        """ Returns coordinates for edges and vertices of the bounding box
+#        ``boundary`` can be specified to be edges
+#        or vertices of the bounding box.  For instance specifying east 'E'
+#        returns the maximum +x coordinate, while 'NE' returns the max [+x,+y] """
+#        box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
+#        if type(boundary) is str:
+#            boundary = boundary.upper() # Make uppercase
+#            if boundary == 'NE':    return np.array(box[1])
+#            if boundary == 'SE':    return np.array([box[1][0], box[0][1]])
+#            if boundary == 'SW':    return np.array(box[0])
+#            if boundary == 'NW':    return np.array([box[0][0], box[1][1]])
+#            if boundary == 'N':     return box[1][1]
+#            if boundary == 'S':     return box[0][1]
+#            if boundary == 'E':     return box[1][0]
+#            if boundary == 'W':     return box[0][0]
+#        else: return box
         
         
     def move(self, origin = (0,0), destination = None, axis = None):

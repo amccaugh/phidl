@@ -80,39 +80,53 @@ d = Device()
 #==============================================================================
 # Row A: Varying sharpness of yTron intersection (rho_intersection)
 #==============================================================================
-rho = [0.25,0.5,1,1.5,2]
+rho = [0.25,0.5,1,1.5,2,4,8,16]
 
 for n, r in enumerate(rho):
     s = d.add_device( ytron_with_pads(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r) )
     s.move([(s.width + 300)*n, 0])
-    d.label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
-    
-quickplot(d)
-#==============================================================================
-# Row B: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
-#==============================================================================
-rho = [0.25,0.5,1,1.5,2]
-for n, r in enumerate(rho):
-    s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
-    s.move([(s.width + 300)*n, -(s.height+200)])
-    d.label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
+    d.label(('Varying sharpness\n rho = %s\n20um arms' % rho[n]), s.center)
     
     
 #==============================================================================
-# Row C: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
+# Row B: Varying arm widths
 #==============================================================================
-rho = [0.25,0.5,1,1.5,2]
-for n, r in enumerate(rho):
-    s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
-    s.move([(s.width + 300)*n, -2*(s.height+200)])
-    d.label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
+rho = 1
+width_left = 20
+width_right = 2**(np.array(range(-5,3))+1.0)*width_left
 
-final_center = d.center
+y = d.ymin - 500
+x = 0
+for n, w in enumerate(width_right):
+    s = d.add_device( ytron_with_pads(label = 'B'+str(n+1), width_right = w, width_left = 20, rho_intersection = rho) )
+    s.ymax = y
+    s.xmin = x
+    x = s.xmax + 200
+    d.label(('Varying arm width ratio\nLeft arm width = %sum\nLeft arm width = 20um' % width_right[n]), s.center)
+    
+#==============================================================================
+# Row C: Varying source length
+#==============================================================================
+rho = 1
+width_left = 20
+width_right = 20
+source_length = np.arange(10,100,10)
+
+y = d.ymin - 500
+x = 0
+for n, p in enumerate(source_length):
+    s = d.add_device( ytron_with_pads(label = 'C'+str(n+1), width_right = 20, width_left = 20, rho_intersection = rho, source_length = p) )
+    s.ymax = y
+    s.xmin = x
+    x = s.xmax + 200
+    d.label(('Varying source length\nLength = %sum' % p), s.center)
+    
+
+d.center = [0,0]
 die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
+              die_name = 'SCE002', text_size = 300, text_location = 'SW',  layer = 0,  
               datatype = 0, draw_bbox = True,  bbox_layer = 99,  bbox_datatype = 99) )
-die.center = final_center
               
-#quickplot(d)
-d.write_gds('SNSPD Integrator.gds')
+quickplot(d)
+d.write_gds('SCE002 yTron variations.gds')
 

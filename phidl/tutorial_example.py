@@ -46,6 +46,9 @@ quickplot(d)
 #==============================================================================
 # Manipulating geometry 1 - Basic movement and rotation
 #==============================================================================
+# There are several actions we can take to move and rotate the geometry.  These
+# actions include movement, rotation, and reflection.
+
 wg1.move([10,4]) # Shift the second waveguide we created over by dx = 10, dy = 4
 wg2.move(origin = [1,1], destination = [2,2]) # Shift the second waveguide over by dx = 1, dy = 1
 wg3.move([1,1], [5,5], axis = 'y') # Shift the third waveguide over by dx = 0, dy = 4 (motion only along y-axis)
@@ -55,15 +58,34 @@ wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees aroun
 
 wg3.reflect(p1 = [1,1], p2 = [3,1]) # Reflects wg3 across the line formed by p1 and p2
 
-wg1.center # Will print out the center coordinate of its bounding box
+
+#==============================================================================
+# Manipulating geometry 2 - Properties
+#==============================================================================
+# Each Device and SubDevice object has several properties which can be used to learn
+# information about the object (for instance where it's center coordinate is).  Several
+# of these properties can actually be used to move the geometry by assigning them
+# new values
+
+wg1.bbox # Will return the bounding box of wg1 in terms of [(xmin, ymin), (xmax, ymax)]
+wg1.xsize # Will return the width of wg1 in the x dimension
+wg1.ysize # Will return the height of wg1 in the y dimension
+
+wg1.center # Gives you the center coordinate of its bounding box
 wg1.center = [4,4] # Shift wg1 such that the center coordinate of its bounding box is at (4,4)
+
+wg2.xmax # Gives you the rightmost (+x) edge of the wg2 bounding box
+wg2.xmax = 25 # Moves wg2 such that it's rightmost edge is at x = 25
+
+wg3.ymin # Gives you the bottommost (+y) edge of the wg3 bounding box
+wg3.ymin = -14 # Moves wg3 such that it's bottommost edge is at y = -14
 
 
 quickplot(d)
 
 
 #==============================================================================
-# Manipulating geometry 2 - Smarter movement with ports
+# Manipulating geometry 3 - Smarter movement with ports
 #==============================================================================
 # All the waveguides we made have two ports: 'wgport1' and 'wgport2'  We can 
 # use these names in place of (x,y) pairs.  For instance, if we want to move
@@ -83,13 +105,13 @@ quickplot(d)
 
 
 #==============================================================================
-# Manipulating geometry 3 - Chaining commands
+# Manipulating geometry 4 - Chaining commands
 #==============================================================================
 # Many of the functions in Device return the object they manipulate.  We can use
-# this to chain commands in a single line. For instance this is equivalent:
+# this to chain commands in a single line. For instance this:
 wg1.rotate(angle = 15, center = [0,0])
 wg1.move([10,20])
-# ...with this expression
+# ... is equivalent to this expression
 wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 
 
