@@ -100,7 +100,6 @@ class Port(object):
     # FIXME currently broken
     @endpoints.setter
     def endpoints(self, points):
-        print(points)
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
@@ -140,21 +139,55 @@ class Device(gdspy.Cell):
         return np.array(self.get_bounding_box())
 
     @property
-    def width(self):
-        return self.bounds('E') - self.bounds('W')
-
-    @property
-    def height(self):
-        return self.bounds('N') - self.bounds('S')
-
-    @property
     def center(self):
         return np.sum(self.bbox,0)/2
 
     @center.setter
     def center(self, destination):
         self.move(destination = destination, origin = self.center)
+        
+    @property
+    def xmax(self):
+        return self.bbox[1][0]
 
+    @xmax.setter
+    def xmax(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
+        
+    @property
+    def ymax(self):
+        return self.bbox[1][1]
+
+    @ymax.setter
+    def ymax(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
+        
+    @property
+    def xmin(self):
+        return self.bbox[0][0]
+
+    @xmin.setter
+    def xmin(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
+        
+    @property
+    def ymin(self):
+        return self.bbox[0][1]
+
+    @ymin.setter
+    def ymin(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
+        
+    @property
+    def xsize(self):
+        bbox = self.bbox
+        return bbox[1][0] - bbox[0][0]
+        
+    @property
+    def ysize(self):
+        bbox = self.bbox
+        return bbox[1][1] - bbox[0][1]
+        
         
     def add_device(self, device, config = None, **kwargs):
         """ Takes a Device (or Device-making function with config) and adds it
@@ -205,18 +238,18 @@ class Device(gdspy.Cell):
     def delete_port(self, name):
         self.ports.pop(name, None)
         
-    def bounds(self, boundary = None):
-        box = self.bbox # Returns like [(-1,-2), (4,5)]
-        boundary = boundary.upper() # Make uppercase
-        if   boundary == 'NE':    return np.array(box[1])
-        elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-        elif boundary == 'SW':    return np.array(box[0])
-        elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-        elif boundary == 'N':     return box[1][1]
-        elif boundary == 'S':     return box[0][1]
-        elif boundary == 'E':     return box[1][0]
-        elif boundary == 'W':     return box[0][0]
-        else: raise ValueError('[DEVICE] bounds() received invalid boundary.  Should be e.g. "NE", or "W"')
+#    def bounds(self, boundary = None):
+#        box = self.bbox # Returns like [(-1,-2), (4,5)]
+#        boundary = boundary.upper() # Make uppercase
+#        if   boundary == 'NE':    return np.array(box[1])
+#        elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
+#        elif boundary == 'SW':    return np.array(box[0])
+#        elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
+#        elif boundary == 'N':     return box[1][1]
+#        elif boundary == 'S':     return box[0][1]
+#        elif boundary == 'E':     return box[1][0]
+#        elif boundary == 'W':     return box[0][0]
+#        else: raise ValueError('[DEVICE] bounds() received invalid boundary.  Should be e.g. "NE", or "W"')
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -347,20 +380,28 @@ class Device(gdspy.Cell):
 
         if elements is None: elements = self.elements
 
+        dx,dy = np.array(d) - o
+        
+        # Move geometries
         for e in elements:
             if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
-                dx,dy = np.array(d) - o
                 e.translate(dx,dy)
             if type(e) is SubDevice: 
                 e.move(destination = d, origin = o)
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+        
+        # Move labels
+        for l in self.labels:
+            l.translate(dx,dy)
+        
         return self
 
 
     def label(self, text = 'hello', position = (0,0), layer = 89):
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
+        l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
+        return l
             
     # FIXME Make this work for all types of elements    
 #    def reflect(self, p1, p2):
@@ -394,21 +435,55 @@ class SubDevice(gdspy.CellReference):
         return self.get_bounding_box()
 
     @property
-    def width(self):
-        return self.bounds('E') - self.bounds('W')
-
-    @property
-    def height(self):
-        return self.bounds('N') - self.bounds('S')
-
-    @property
     def center(self):
         return np.sum(self.bbox,0)/2
 
     @center.setter
     def center(self, destination):
         self.move(destination = destination, origin = self.center)
+        
+    @property
+    def xmax(self):
+        return self.bbox[1][0]
 
+    @xmax.setter
+    def xmax(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
+        
+    @property
+    def ymax(self):
+        return self.bbox[1][1]
+
+    @ymax.setter
+    def ymax(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
+        
+    @property
+    def xmin(self):
+        return self.bbox[0][0]
+
+    @xmin.setter
+    def xmin(self, destination):
+        self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
+        
+    @property
+    def ymin(self):
+        return self.bbox[0][1]
+
+    @ymin.setter
+    def ymin(self, destination):
+        self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
+
+    @property
+    def xsize(self):
+        bbox = self.bbox
+        return bbox[1][0] - bbox[0][0]
+        
+    @property
+    def ysize(self):
+        bbox = self.bbox
+        return bbox[1][1] - bbox[0][1]
+        
 
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations (x_ref)
@@ -429,23 +504,23 @@ class SubDevice(gdspy.CellReference):
         
         
         
-    def bounds(self, boundary = 'E'):
-        """ Returns coordinates for edges and vertices of the bounding box
-        ``boundary`` can be specified to be edges
-        or vertices of the bounding box.  For instance specifying east 'E'
-        returns the maximum +x coordinate, while 'NE' returns the max [+x,+y] """
-        box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
-        if type(boundary) is str:
-            boundary = boundary.upper() # Make uppercase
-            if boundary == 'NE':    return np.array(box[1])
-            if boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-            if boundary == 'SW':    return np.array(box[0])
-            if boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-            if boundary == 'N':     return box[1][1]
-            if boundary == 'S':     return box[0][1]
-            if boundary == 'E':     return box[1][0]
-            if boundary == 'W':     return box[0][0]
-        else: return box
+#    def bounds(self, boundary = 'E'):
+#        """ Returns coordinates for edges and vertices of the bounding box
+#        ``boundary`` can be specified to be edges
+#        or vertices of the bounding box.  For instance specifying east 'E'
+#        returns the maximum +x coordinate, while 'NE' returns the max [+x,+y] """
+#        box = self.get_bounding_box() # Returns like [(-1,-2), (4,5)]
+#        if type(boundary) is str:
+#            boundary = boundary.upper() # Make uppercase
+#            if boundary == 'NE':    return np.array(box[1])
+#            if boundary == 'SE':    return np.array([box[1][0], box[0][1]])
+#            if boundary == 'SW':    return np.array(box[0])
+#            if boundary == 'NW':    return np.array([box[0][0], box[1][1]])
+#            if boundary == 'N':     return box[1][1]
+#            if boundary == 'S':     return box[0][1]
+#            if boundary == 'E':     return box[1][0]
+#            if boundary == 'W':     return box[0][0]
+#        else: return box
         
         
     def move(self, origin = (0,0), destination = None, axis = None):

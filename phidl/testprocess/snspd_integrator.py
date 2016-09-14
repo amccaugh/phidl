@@ -1,3 +1,7 @@
+from __future__ import division, print_function, absolute_import
+from phidl import Device, quickplot, inset
+import phidl.geometry as pg
+
 
     
 #==============================================================================
@@ -9,7 +13,7 @@ def snspd_integrator(
                     contact_pad_width = 5,
                     snspd_size = [20,20],
                     pad_flag_size = [250,250],
-                    pad_pole_size = [contact_pad_width*10, 50],
+                    pad_pole_size = [50, 50],
                     pad_spacing = 50,
                     connector_size = [400,150],
                     inset_distance = 1,
@@ -30,23 +34,23 @@ def snspd_integrator(
     #==============================================================================
     # Create and place components
     #==============================================================================
-    cpm = D.add_device(compass_multi, size = connector_size, center = [0,-200], ports = {'N':num_devices,'S':1}, layer = 0, datatype = 0)
-    f = D.add_device(flagpole(flag_size = connector_size, pole_size = [width_left,width_left], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
-    fy = D.add_device(flagpole(flag_size = [connector_size[0],connector_size[1]*2], pole_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
+    cpm = D.add_device(pg.compass_multi, size = connector_size, center = [0,-200], ports = {'N':num_devices,'S':1}, layer = 0, datatype = 0)
+    f = D.add_device(pg.flagpole(flag_size = connector_size, pole_size = [width_right,width_right], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
+    fy = D.add_device(pg.flagpole(flag_size = [connector_size[0],connector_size[1]*2], pole_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
     
-    t = tee(top_size = pad_flag_size, leg_size = pad_pole_size, taper_type = 'fillet', layer = 0, datatype = 0)
-    pad_array = D.add_array(t, start = [-(t.width+pad_spacing)*num_devices/2, 1000], spacing = [t.width+pad_spacing, 0], num_devices = num_devices)
-    s = snspd_expanded(wire_width = nanowire_width, wire_pitch = nanowire_width*3, size = snspd_size, connector_width = contact_pad_width,
+    t = pg.tee(top_size = pad_flag_size, leg_size = pad_pole_size, taper_type = 'fillet', layer = 0, datatype = 0)
+    pad_array = D.add_array(t, start = [-(t.xsize+pad_spacing)*num_devices/2, 1000], spacing = [t.xsize+pad_spacing, 0], num_devices = num_devices)
+    s = pg.snspd_expanded(wire_width = nanowire_width, wire_pitch = nanowire_width*3, size = snspd_size, connector_width = contact_pad_width,
                                              terminals_same_side = False, layer = 0, datatype = 0).rotate(90)
-    snspd_array = D.add_array(s, start = [-100,300], spacing = [s.width+20, 0], num_devices = num_devices)
+    snspd_array = D.add_array(s, start = [-100,300], spacing = [s.xsize+20, 0], num_devices = num_devices)
                
-    y =  D.add_device(ytron_round(rho_intersection, theta_intersection, arm_length, source_length,
+    y =  D.add_device(pg.ytron_round(rho_intersection, theta_intersection, arm_length, source_length,
                       width_right, width_left, theta_resolution = 10, layer = 0, datatype = 0))
     D.connect(port = f.ports[2], destination = cpm.ports['S1'])
     D.connect(port = y.ports['right'], destination = f.ports[1])
     D.connect(port = fy.ports[1], destination = y.ports['left']).move([-200*np.sin(5/180*np.pi), 200])
     
-    gnd = D.add_device(compass(size = pad_flag_size, layer = 0, datatype = 0))
+    gnd = D.add_device(pg.compass(size = pad_flag_size, layer = 0, datatype = 0))
     gnd.move(origin = gnd.center, destination = y.ports['source'])
     gnd.move([0,-500])
     
@@ -79,7 +83,7 @@ def snspd_integrator(
     #==============================================================================
     # Label device
     #==============================================================================
-    D.add_device( text(label, justify = 'right', size = 200, layer = 1) ).center = [-500,-500]
+    D.add_device( pg.text(label, justify = 'right', size = 200, layer = 1) ).center = [-500,-500]
 
     return D
 
@@ -90,16 +94,42 @@ def snspd_integrator(
 # Row A: Varying sharpness of yTron intersection (rho_intersection)
 #==============================================================================
 d = Device()
-rho = [0.5,1,2,4,8]
-for n in range(5):
-    s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
-    s.move([(s.width + 300)*n, 0])
-    d.label(('Varying yTron rho\n rho = %s' % rho[n]), s.center)
+rho = [0.25,0.5,1,1.5,2]
+for n, r in enumerate(rho):
+    s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r, num_devices = 5) )
+    s.move([(s.xsize + 300)*n, 0])
+    d.label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
+    
     
 #==============================================================================
-# Row B: Varying sharpness of yTron intersection (rho_intersection)
+# Row B: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
 #==============================================================================
+rho = [0.25,0.5,1,1.5,2]
+for n, r in enumerate(rho):
+    s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+    s.move([(s.xsize + 300)*n, -(s.ysize+200)])
+    d.label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
     
-#quickplot(d)
-d.write_gds('SNSPD Integrator.gds')
+    
+#==============================================================================
+# Row C: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
+#==============================================================================
+rho = [0.25,0.5,1,1.5,2]
+for n, r in enumerate(rho):
+    s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+    s.move([(s.xsize + 300)*n, -2*(s.ysize+200)])
+    d.label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
+
+final_center = d.center
+die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
+              die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
+              datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
+die.center = final_center
+              
+quickplot(d)
+
+#fill = dummy_fill_square(d, fill_size = (50,50), layers = (0,1), densities = (0.2, 0.2), margin = 100, bbox = None)
+#d.add_device( fill )
+
+d.write_gds('SCE001 SNSPD Integrator.gds')
 
