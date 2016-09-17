@@ -85,7 +85,7 @@ rho = [0.25,0.5,1,1.5,2,4,8,16]
 for n, r in enumerate(rho):
     s = d.add_device( ytron_with_pads(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r) )
     s.move([(s.xsize + 300)*n, 0])
-    d.label(('Varying sharpness\n rho = %s\n20um arms' % rho[n]), s.center)
+    d.add_label(('Varying sharpness\n rho = %s\n20um arms' % rho[n]), s.center)
     
     
 #==============================================================================
@@ -102,7 +102,7 @@ for n, w in enumerate(width_right):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    d.label(('Varying arm width ratio\nLeft arm width = %sum\nLeft arm width = 20um' % width_right[n]), s.center)
+    d.add_label(('Varying arm width ratio\nLeft arm width = %sum\nLeft arm width = 20um' % width_right[n]), s.center)
     
 #==============================================================================
 # Row C: Varying source length
@@ -119,7 +119,7 @@ for n, p in enumerate(source_length):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    d.label(('Varying source length\nLength = %sum' % p), s.center)
+    d.add_label(('Varying source length\nLength = %sum' % p), s.center)
     
 #==============================================================================
 # Row D: Varying arm length
@@ -137,7 +137,7 @@ for n, p in enumerate(arm_length):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    d.label(('Varying arm length\nLength = %sum' % p), s.center)
+    d.add_label(('Varying arm length\nLength = %sum' % p), s.center)
     
 
 d.center = [0,0]
@@ -147,7 +147,6 @@ die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, stre
               
 #quickplot(d)
 
-#fill = dummy_fill_square(d, fill_size = (50,50), layers = (0,1), densities = (0.2, 0.2), margin = 100, bbox = None)
-#d.add_device( fill )
+fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
+d.add_device( fill )
 d.write_gds('SCE002 yTron variations.gds')
-

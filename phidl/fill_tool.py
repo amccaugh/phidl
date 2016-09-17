@@ -7,9 +7,9 @@ import phidl.geometry as pg
 
  
 
-from skimage.draw import polygon_perimeter, polygon, line_aa, line, circle
+from skimage.draw import polygon_perimeter, polygon, line_aa, line, ellipse
 from skimage.morphology import binary_dilation
-from itertools import groupby
+import itertools
 
 
 def rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
@@ -23,10 +23,9 @@ def rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy
         y = np.array([v[1] for v in p])
         xpts.append(x)
         ypts.append(y)
-    
     xpts = [(x-bounds[0][0])/dx-0.5 for x in xpts]
     ypts = [(y-bounds[0][1])/dy-0.5 for y in ypts]
-    
+
     # Initialize the raster matrix we'll be writing to
     xsize = int(np.ceil((bounds[1][0]-bounds[0][0]))/dx)
     ysize = int(np.ceil((bounds[1][1]-bounds[0][1]))/dy)
@@ -50,12 +49,12 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, d
     return x,y
 
 
-def expand_raster(raster, distance = 3):
-    if distance <= 0.5: return raster
+def expand_raster(raster, distance = (4,2)):
+    if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
         
-    num_pixels = int(ceil(distance))
-    neighborhood = np.zeros((num_pixels*2+1, num_pixels*2+1), dtype=np.bool)
-    rr, cc = circle(num_pixels, num_pixels, distance+0.5)
+    num_pixels = map(int, ceil(distance))
+    neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
+    rr, cc = ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
     neighborhood[rr, cc] = 1
     
     return binary_dilation(image = raster, selem=neighborhood)
@@ -69,77 +68,41 @@ def expand_raster(raster, distance = 3):
             
             
 def fill_rectangular(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7), datatype = 77):
-    d = Device()
+    d = Device(name = 'fill_cell')
     for layer, density in zip(layers, densities):
         rectangle_size = np.array(size)*np.sqrt(density)
-        d.add_polygon(pg.rectangle_centered(size = rectangle_size, center = (0,0), layer = layer, datatype = datatype))
+        point1 = -np.array(rectangle_size)/2
+        point2 = np.array(rectangle_size)/2
+        d.add(gdspy.Rectangle(point1, point2, layer = layer, datatype = datatype))
     return d
             
-def dummy_fill_square(d, fill_size = (10,10), layers = (0,1,3), densities = (0.5, 0.25, 0.7), margin = 100, bbox = None):
-    fill_cell = fill_rectangular(size = fill_size, layers = layers, densities = densities, datatype = 77)
+def dummy_fill_rectangular(d, fill_size = (40,10), exclude_layers = None, fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7), margin = 100, bbox = None):
+    fill_cell = fill_rectangular(size = fill_size, layers = fill_layers, densities = fill_densities, datatype = 77)
+    fill_pattern = Device(name = 'fill_pattern')
     
-    fill_d = Device()
-    poly = d.get_polygons(by_spec=False, depth=None)
+    if exclude_layers is None:
+        poly = d.get_polygons(by_spec=False, depth=None)
+    elif np.array(exclude_layers).ndim == 1: # Then exclude_layers is a list of just layers e.g. [0,2,3]
+        poly = d.get_polygons(by_spec=True, depth=None)
+        poly = {key:poly[key] for key in poly if key[0] in exclude_layers} # Filter the dict
+        poly = itertools.chain.from_iterable(poly.values()) # Concatenate dict values to long list
+    elif np.array(exclude_layers).ndim == 2: # Then exclude_layers is a list of layers + datatypes e.g. [(0,1),(0,2),(1,0)]
+        poly = d.get_polygons(by_spec=True, depth=None)
+        poly = {key:poly[key] for key in poly if key in exclude_layers}
+        poly = itertools.chain.from_iterable(poly.values())
+        
     if bbox is None:  bbox = d.bbox
+
     raster = rasterize_polygons(polygons = poly, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
-    raster = expand_raster(raster, distance = margin/min(fill_size))
-    
+    raster = expand_raster(raster, distance = margin/np.array(fill_size))
     
     for i in range(np.size(raster,0)):
-        sub_rasters = [list(g) for k, g in groupby(raster[i])]
+        sub_rasters = [list(g) for k, g in itertools.groupby(raster[i])]
         j = 0
         for s in sub_rasters:
             if s[0] == 0:
                 x,y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
-                fill_d.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
+                fill_pattern.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
             j += len(s)
     
-    return fill_d
-
-#plt.imshow(expand_raster(raster, distance = 5),  interpolation='nearest')
-   
-fill_cell = fill_rectangular(size = (20,10), layers = (0,1,3), densities = (0.5, 0.25, 0.7), datatype = 77)
-
-# Test fill tool with large file
-gdspy.Cell.cell_dict.clear()
-filename = "C:/Users/anm16/Documents/Python Scripts/SNSPD Integrator.gds"
-gds_file = gdspy.GdsImport(filename)
-top_cell_name = 'toplevel'
-gds_file.extract(top_cell_name)
-top_cell = gdspy.Cell.cell_dict[top_cell_name]
-top_cell_polygons = top_cell.get_polygons(by_spec=True, depth=None)
-# %timeit check_box_for_polygons(top_cell_polygons, x = 0, y = 0, dx = 0.1, dy = 0.1)
-# %timeit check_box_for_polygons_rtree(top_cell_polygons, idx, x = 0, y = 0, dx = 0.1, dy = 0.1)
-# bool_list  = raster_box_rtree(top_cell_polygons, idx, bbox = [[-4000,-4000],[4000,4000]], dx = 40, dy = 40)
-# %timeit raster_box_rtree(top_cell_polygons, idx, bbox = [[-4000,-4000],[4000,4000]], dx = 400, dy = 400)
-
-
-bounds = [[-6500, -6500], [6500, 6500]]
-dx = 5
-dy = 5
-
-#, precision = 0.001, join_first = False)
-raster = rasterize_polygons(polygons = expand_polygons(top_cell_polygons, expand_distance = 15), bounds = bounds, dx = dx, dy = dy)
-plt.imshow(raster,  interpolation='nearest')
-
-
-fill_cell = gdspy.Cell('fillcell')
-fill_cell.add(gdspy.Polygon([(-dx/2,-dy/2), (-dx/2,dy/2), (dx/2,dy/2),(dx/2,-dy/2)], layer = 98))
-fill_cell.add(gdspy.Polygon([(-dx/4,-dy/4), (-dx/4,dy/4), (dx/4,dy/4),(dx/4,-dy/4)], layer = 2))
-
-
-for i in range(np.size(raster,0)):
-    sub_rasters = [list(g) for k, g in groupby(raster[i])]
-    j = 0
-    for s in sub_rasters:
-        if s[0] == 0:
-            x,y = _raster_index_to_coords(i, j, bounds, dx, dy)
-            top_cell.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = (dx, dy), origin = (x, y)))
-        j += len(s)
-
-gdspy.gds_print('mytestgdsout.gds', unit=1.0e-6, precision=1.0e-9)
-
-
-
-
-
+    return fill_pattern

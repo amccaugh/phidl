@@ -200,6 +200,7 @@ class Device(gdspy.Cell):
         self.subdevices.append(subdevice) # Add to the list of subdevices (for convenience)
         return subdevice                # Return the SubDevice (CellReference)
 
+
     def add_polygon(self, polygon, layer = 0, datatype = 0):
         if type(polygon) is gdspy.Polygon:
             pass
@@ -211,6 +212,7 @@ class Device(gdspy.Cell):
             polygon = gdspy.Polygon(xy2p(polygon), layer, datatype)
         self.add(polygon)
         return polygon
+        
         
     def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
@@ -224,6 +226,7 @@ class Device(gdspy.Cell):
         self.ports[p.name] = p
         return p
         
+        
     def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
          # Check if ``device`` is actually a device-making function
         if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
@@ -235,21 +238,15 @@ class Device(gdspy.Cell):
             subdevices.append(sd)
         return subdevices
         
+
+    def add_label(self, text = 'hello', position = (0,0), layer = 89):
+        if type(text) is not str: text = str(text)
+        l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
+        return l
+        
     def delete_port(self, name):
         self.ports.pop(name, None)
-        
-#    def bounds(self, boundary = None):
-#        box = self.bbox # Returns like [(-1,-2), (4,5)]
-#        boundary = boundary.upper() # Make uppercase
-#        if   boundary == 'NE':    return np.array(box[1])
-#        elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-#        elif boundary == 'SW':    return np.array(box[0])
-#        elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-#        elif boundary == 'N':     return box[1][1]
-#        elif boundary == 'S':     return box[0][1]
-#        elif boundary == 'E':     return box[1][0]
-#        elif boundary == 'W':     return box[0][0]
-#        else: raise ValueError('[DEVICE] bounds() received invalid boundary.  Should be e.g. "NE", or "W"')
+    
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -258,25 +255,7 @@ class Device(gdspy.Cell):
         gdspy.gds_print(filename, cells=[self], name='library', unit=unit, precision=precision)
         self.name = tempname
 
-    # TODO: Write align function that takes a polygon/subdevice and moves it to the destination
-    # def align(self, elements, boundary = 'E', destination = (0,0)):
-    #   """ Allows you to move several ``elements``  """
-    #   boxes = np.array([e.bbox for e in elements])
-    #   xmin = min(boxes[:,0,0])
-    #   xmin = min(boxes[:,1,0])
-    #   ymin = min(boxes[:,0,1])
-    #   ymin = min(boxes[:,1,1])
-    #   if elements is not list: elements = [elements]
-    #     if   boundary == 'NE':    return np.array(box[1])
-    #     elif boundary == 'SE':    return np.array([box[1][0], box[0][1]])
-    #     elif boundary == 'SW':    return np.array(box[0])
-    #     elif boundary == 'NW':    return np.array([box[0][0], box[1][1]])
-    #     elif boundary == 'N':     return box[1][1]
-    #     elif boundary == 'S':     return box[0][1]
-    #     elif boundary == 'E':     return box[1][0]
-    #     elif boundary == 'W':     return box[0][0]
-    #     return elements
-    
+
     def connect(self, port, destination):
         sd = port.parent
         sd.connect(port, destination)
@@ -397,11 +376,6 @@ class Device(gdspy.Cell):
         
         return self
 
-
-    def label(self, text = 'hello', position = (0,0), layer = 89):
-        if type(text) is not str: text = str(text)
-        l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
-        return l
             
     # FIXME Make this work for all types of elements    
 #    def reflect(self, p1, p2):
@@ -604,6 +578,28 @@ def inset(elements, distance = 0.1, join_first = True, layer=0, datatype=0):
     return p
     
     
+
+def load_gds(filename, cell_name, load_ports = True):
+    # Format "Port(name = hello, width = 20, orientation = 180)"
+    gdspy.Cell.cell_dict.clear()
+    gdsii = gdspy.GdsImport(filename)
+    gdsii.extract(cell_name)
+    d = Device(cell_name)
+    d.elements = gdspy.Cell.cell_dict[cell_name].elements
+    for label in gdspy.Cell.cell_dict[cell_name].labels:
+        t = label.text
+        print(t)
+        if t[0:5] == 'Port(' and t[-1] == ')':
+            arguments = t[5:-1]
+            arguments = arguments.replace(' ', '')
+            print('Port adding')
+            args = {a.split('=')[0] : a.split('=')[1] for a in arguments.split(',')}
+            if args['name'].isdigit():args['name'] = int(args['name'])
+            d.add_port(name = args['name'], midpoint = label.position, width = float(args['width']), orientation = float(args['orientation']))
+        else:
+            d.labels.append(label)
+    return d
+
 
 #==============================================================================
 # Helper functions
