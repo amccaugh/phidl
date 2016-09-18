@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+import numpy as np
 from phidl import Device, quickplot, inset
 import phidl.geometry as pg
 

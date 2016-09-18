@@ -1,7 +1,9 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import sqrt, pi, cos, sin
-import scipy.optimize
+from scipy.special import iv as besseli
+from scipy.optimize import fmin, fminbound
+from scipy import integrate
 
 import gdspy
 from phidl import Device
@@ -151,7 +153,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
             if y_desired is None:   return (guessed_x-x_desired)**2 # The error
             else:                   return (guessed_y-y_desired)**2
 
-        found_eta = scipy.optimize.fminbound(fh, x1 = 0, x2 = np.pi, args=())
+        found_eta = fminbound(fh, x1 = 0, x2 = np.pi, args=())
         return step_points(found_eta, W = W, a = a)
 
     if start_width > end_width:
@@ -549,8 +551,93 @@ def _racetrack_gradual_parametric(t, R, N):
     y[ii] = (R**N - (x[ii]+(x0-Rmin/sqrt(2)))**N)**(1/N)
     y[jj] = (x0-Rmin/sqrt(2))+sqrt(Rmin**2-x[jj]**2)
     return x,y
+
+
+
+
+
+
+
+# %% Equations taken from
+# Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+# Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
+def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
+    # Note these equations can be further corrected for thick films (Hammersted Eqs 6-9)
+    # and also for frequency since microstrips are dispersive  (Hammersted Eqs 10-12)
+
+    u = wire_width/dielectric_thickness
+    eta = 376.73 # Vacuum impedance
+    
+    a = 1 + log((u**4 + (u/52)**2)/(u**4 + 0.432))/49 + log(1 + (u/18.1)**3)/18.7;
+    b = 0.564*((eps_r-0.9)/(eps_r+3))**0.053;
+    F = 6 + (2*pi-6)*exp(-(30.666/u)**0.7528);
+    eps_eff = 0.5*(eps_r+1) + 0.5*(eps_r-1)*(1 + 10/u)**(-a*b);
+    Z = eta/(2*pi) * log(F/u + sqrt(1+(2/u)**2)) /sqrt(eps_eff);
+    return Z,eps_eff
+
+
+def _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r):
+    # Use the fact that v = 1/sqrt(L_m*C_m) = 1/sqrt(eps*mu) and
+    # Z = sqrt(L_m/C_m)   [Where L_m is inductance per meter]
+
+    Z, eps_eff =  _microstrip_Z(wire_width, dielectric_thickness, eps_r)
+    eps0 =  8.854e-12
+    mu0 = 4*pi*1e-7
+    
+    eps = eps_eff*eps0
+    mu = mu0
+    L_m = sqrt(eps*mu)*Z
+    C_m = sqrt(eps*mu)/Z
+    return L_m, C_m
+
+
+def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
+    # Add a kinetic inductance and recalculate the impedance, be careful
+    # to input Lk as a per-meter inductance
+
+    L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
+    Lk_m = Lk_per_sq*(1.0/wire_width)
+    Z = sqrt((L_m+Lk_m)/C_m)
+    
+    return Z
     
     
+def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq):
+    
+    def error_fun(wire_width):
+        Z_guessed = _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq)
+        return (Z_guessed-Z_target)**2 # The error
+    
+    x0 = dielectric_thickness
+    w = fmin(error_fun, x0, args=(), disp=False)
+    return w[0]
+
+def _G_integrand(xip, B):
+    return besseli(0, B*sqrt(1-xip**2))
+
+
+def _G(xi, B):
+    return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
+
+def hecken_taper(length = 200, B = 4.0091, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, datatype = 0):
+    d = Device()
+    # xi refers to the normalized length of the wire [-1 to +1]
+    x = np.linspace(0, num_pts, 100)
+    xi = 2*x/l-1
+    Z = np.exp( 0.5*log(Z1*Z2) + 0.5*log(Z2/Z1)*_G(xi, B) )
+    widths = [_find_microstrip_wire_width(z, dielectric_thickness, eps_r, Lk_per_sq) for z in Z]
+    # FIXME start here
+    d.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
+    d.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
+    return Z
+
+
+def hyperbolic_taper(length = 200, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, datatype = 0):
+    # l is the total length of the wire, x is an array from 0 to l
+    # Returns Z(x)
+    a = 6
+    Z = sqrt(Z1*Z2)*exp(tanh(a*(x/l-0.5))/(2*tanh(a/2))*log(Z2/Z1))
+    return Z
     
 #==============================================================================
 # Example code

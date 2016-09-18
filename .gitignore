@@ -2,8 +2,6 @@ MANIFEST
 test.sh
 debug.py
 winbuild*
-*.gds
-*.bat
 docs/_*
 .*.swp
 
@@ -64,3 +62,10 @@ docs/_build/
 
 # PyBuilder
 target/
+
+
+# Extra
+*.gds
+*.DS_Store
+*.gds
+*.bat
