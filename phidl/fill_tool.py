@@ -1,16 +1,15 @@
 from __future__ import division
 import gdspy
 import numpy as np
-from matplotlib import pyplot as plt
-from phidl import Device, quickplot, inset
+from phidl import Device
 import phidl.geometry as pg
 
- 
-
-from skimage.draw import polygon_perimeter, polygon, line_aa, line, ellipse
-from skimage.morphology import binary_dilation
+from skimage import draw, morphology
+#.draw import polygon_perimeter, polygon, line_aa, line, ellipse
+#from skimage.morphology import binary_dilation
 import itertools
 
+from matplotlib import pyplot as plt
 
 def rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
     
@@ -19,25 +18,21 @@ def rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy
     xpts = []
     ypts = []
     for p in polygons:
-        x = np.array([v[0] for v in p])
-        y = np.array([v[1] for v in p])
-        xpts.append(x)
-        ypts.append(y)
-    xpts = [(x-bounds[0][0])/dx-0.5 for x in xpts]
-    ypts = [(y-bounds[0][1])/dy-0.5 for y in ypts]
+        p_array = np.asarray(p)
+        x = p_array[:,0]
+        y = p_array[:,1]
+        xpts.append((x-bounds[0][0])/dx-0.5)
+        ypts.append((y-bounds[0][1])/dy-0.5)
 
     # Initialize the raster matrix we'll be writing to
     xsize = int(np.ceil((bounds[1][0]-bounds[0][0]))/dx)
     ysize = int(np.ceil((bounds[1][1]-bounds[0][1]))/dy)
     raster = np.zeros((ysize, xsize), dtype=np.bool)
     
-    # TODO: Replace this with the scan-line polygon filling algorithm
-    # which is more robust against overlap when the exclude margins are small
-    # TODO: Replace polygon_perimeter with a supercover version of itself
-    # as shown in http://playtechs.blogspot.ca/2007/03/raytracing-on-grid.html
-    for x,y in zip(xpts, ypts):
-        rr, cc = polygon(y, x, shape=raster.shape)
-        rrp, ccp = polygon_perimeter(y, x, shape=raster.shape, clip=False)
+    # TODO: Replace polygon_perimeter with the supercover version
+    for n in range(len(xpts)):
+        rr, cc = draw.polygon(ypts[n], xpts[n], shape=raster.shape)
+        rrp, ccp = draw.polygon_perimeter(ypts[n], xpts[n], shape=raster.shape, clip=False)
         raster[rr, cc] = 1
         raster[rrp, ccp] = 1
         
@@ -54,10 +49,10 @@ def expand_raster(raster, distance = (4,2)):
         
     num_pixels = map(int, ceil(distance))
     neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
-    rr, cc = ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
+    rr, cc = draw.ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
     neighborhood[rr, cc] = 1
     
-    return binary_dilation(image = raster, selem=neighborhood)
+    return morphology.binary_dilation(image = raster, selem=neighborhood)
 
     
 #def expand_polygons(polygons, expand_distance = 10, precision = 0.001, join_first = False):

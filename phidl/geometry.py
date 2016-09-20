@@ -525,9 +525,9 @@ def ramp(length, width, end_width = None, layer = 0, datatype = 0):
     return d
     
 
-def racetrack_gradual(t, R, N, layer = 0, datatype = 0):
-    curve_fun = lambda t: racetrack_gradual_parametric(t, R = 5, N = 3)
-    route_path = gdspy.Path(width = 0.3, initial_point = [0,0])
+def racetrack_gradual(width, R, N, layer = 0, datatype = 0):
+    curve_fun = lambda t: racetrack_gradual_parametric(t, R = R, N = N)
+    route_path = gdspy.Path(width = width, initial_point = (0,0))
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer, datatype=datatype)
     d = Device()
@@ -553,12 +553,7 @@ def _racetrack_gradual_parametric(t, R, N):
     return x,y
 
 
-
-
-
-
-
-# %% Equations taken from
+# Equations taken from
 # Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
 # Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
 def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
@@ -619,17 +614,35 @@ def _G_integrand(xip, B):
 def _G(xi, B):
     return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
-def hecken_taper(length = 200, B = 4.0091, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, datatype = 0):
+
+def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
+                 Lk_per_sq = 250e-12, Z1 = None, Z2 = None, width1 = None, width2 = None,
+                 num_pts = 100, layer = 0, datatype = 0):
+    if width1 is not None:  Z1 = _microstrip_Z_with_Lk(width1*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)
+    if width2 is not None:  Z2 = _microstrip_Z_with_Lk(width2*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)
+    xi_list = np.linspace(-1,1, num_pts) # Normalized length of the wire [-1 to +1]
+    Z = [np.exp( 0.5*log(Z1*Z2) + 0.5*log(Z2/Z1)*_G(xi, B) ) for xi in xi_list]
+    widths = np.array([_find_microstrip_wire_width(z, dielectric_thickness*1e-6, eps_r, Lk_per_sq)*1e6 for z in Z])
+    x = ((xi_list/2)*length)
+    
+    # Create blank device and add taper polygon
     d = Device()
-    # xi refers to the normalized length of the wire [-1 to +1]
-    x = np.linspace(0, num_pts, 100)
-    xi = 2*x/l-1
-    Z = np.exp( 0.5*log(Z1*Z2) + 0.5*log(Z2/Z1)*_G(xi, B) )
-    widths = [_find_microstrip_wire_width(z, dielectric_thickness, eps_r, Lk_per_sq) for z in Z]
-    # FIXME start here
-    d.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
-    d.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
-    return Z
+    xpts = np.concatenate([x, x[::-1]])
+    ypts = np.concatenate([widths/2, -widths[::-1]/2])
+    d.add_polygon((xpts,ypts), layer = layer, datatype = datatype)
+    d.add_port(name = 1, midpoint = (-length/2,0), width = widths[0], orientation = 180)
+    d.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
+    
+    # Add meta information about the taper
+    self.meta['L_m'], self.meta['C_m'] =  = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
+    self.meta['num_squares'] = Lk_per_sq/0.3e-6
+    # FIXME Add meta information about speed of light in this device
+    
+    
+    
+    return d
+
+
 
 
 def hyperbolic_taper(length = 200, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, datatype = 0):
@@ -643,10 +656,13 @@ def hyperbolic_taper(length = 200, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, d
 # Example code
 #==============================================================================
 
-#d = racetrack_gradual(t, R = 5, N=3)
+#d = racetrack_gradual(width, R = 5, N=3)
 #quickplot(d)
 
-
+d = hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
+                 Lk_per_sq = 250e-12, Z1 = 50, width2 = 0.3,
+                 num_pts = 100, layer = 0, datatype = 0)
+quickplot(d)
 
 #t = np.linspace(0,1)
 #x,y = _racetrack_gradual_parametric(t, R = 5, N = 3)
@@ -662,12 +678,6 @@ def hyperbolic_taper(length = 200, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, d
 # Text
 #
 #==============================================================================
-
-
-
-import numpy as np
-from phidl import Device
-
 
 # The DEPLOF font is made by David Elata, MEMS Lab, Technion, Haifa, Israel and
 # and is used with permission.  The raw polygon entries are  sourced from
@@ -891,9 +901,6 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, d
             ascii_val = ord(c)
             if c == ' ':
                 xoffset += 500*scaling
-#            if c == '\n': 
-#                yoffset += 1500*scaling
-#                xoffset = position[0]
             elif 33 <= ascii_val <= 126:
                 for poly in glyph[ascii_val]:
                     xpts = np.array(poly)[:,0]*scaling
