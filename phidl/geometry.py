@@ -386,12 +386,43 @@ def rectangle_centered(size = (2,2), center = (0,0), layer = 0, datatype = 0):
     return rectangle(point1, point2, layer = layer, datatype = datatype)
 
 # TODO: Write ring definition
-def ring(width, layer = 0, datatype = 0):
-    arc()
+def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype = 0):
+    inner_radius = radius-width/2
+    outer_radius = radius+width/2
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    inner_points_x = (inner_radius*cos(t)).tolist()
+    inner_points_y = (inner_radius*sin(t)).tolist()
+    outer_points_x = (outer_radius*cos(t)).tolist()
+    outer_points_y = (outer_radius*sin(t)).tolist()
+    xpts = inner_points_x + outer_points_x[::-1]
+    ypts = inner_points_y + outer_points_y[::-1]
+    
+    d = Device(name = 'ring')
+    d.add_polygon((xpts, ypts), layer = layer, datatype = datatype)
+    return d
+    
     
 # TODO: Write ring definition    
-def arc(radius, width, initial_angle = 0, final_angle = 90, angle_resolution = 5):
-    pass
+def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0, datatype = 0):
+    inner_radius = radius-width/2
+    outer_radius = radius+width/2
+    angle1 = (start_angle)*pi/180
+    angle2 = (start_angle + theta)*pi/180
+    t = np.linspace(angle1, angle2, np.ceil(abs(theta)/angle_resolution))
+    inner_points_x = (inner_radius*cos(t)).tolist()
+    inner_points_y = (inner_radius*sin(t)).tolist()
+    outer_points_x = (outer_radius*cos(t)).tolist()
+    outer_points_y = (outer_radius*sin(t)).tolist()
+    xpts = inner_points_x + outer_points_x[::-1]
+    ypts = inner_points_y + outer_points_y[::-1]
+    
+    
+    d = Device(name = 'arc')
+    d.add_polygon((xpts, ypts), layer = layer, datatype = datatype)
+    d.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
+    d.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
+    d.meta['length'] = abs(theta)*pi*radius/180
+    return d
     
 
 #==============================================================================
@@ -634,23 +665,12 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     d.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
-    self.meta['L_m'], self.meta['C_m'] =  = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
-    self.meta['num_squares'] = Lk_per_sq/0.3e-6
+    self.meta['num_squares'] = 2
     # FIXME Add meta information about speed of light in this device
-    
-    
     
     return d
 
 
-
-
-def hyperbolic_taper(length = 200, Z1 = 50, Z2 = 75, num_pts = 100, layer = 0, datatype = 0):
-    # l is the total length of the wire, x is an array from 0 to l
-    # Returns Z(x)
-    a = 6
-    Z = sqrt(Z1*Z2)*exp(tanh(a*(x/l-0.5))/(2*tanh(a/2))*log(Z2/Z1))
-    return Z
     
 #==============================================================================
 # Example code
