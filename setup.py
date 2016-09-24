@@ -2,9 +2,18 @@
 
 from setuptools import setup
 
+install_requires=[
+   'gdspy>=1.0',
+   'numpy',
+   'matplotlib',
+   'pyyaml',
+   'scikit-image>=0.12',
+]
+
 setup(name='phidl',
-      version='0.2.3',
+      version='0.3.0',
       description='Python Distribution Utilities',
+      install_requires=install_requires,
       author='Adam McCaughan',
       author_email='adam.mccaughan@nist.gov',
       packages=['phidl'],

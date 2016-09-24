@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from numpy import sqrt, pi, cos, sin
+from numpy import sqrt, pi, cos, sin, log, exp, sinh
 from scipy.special import iv as besseli
 from scipy.optimize import fmin, fminbound
 from scipy import integrate
@@ -404,6 +404,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype =
     
 # TODO: Write ring definition    
 def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0, datatype = 0):
+    """ Creates an arc of arclength ``theta`` starting at angle ``start_angle`` """
     inner_radius = radius-width/2
     outer_radius = radius+width/2
     angle1 = (start_angle)*pi/180
@@ -421,9 +422,17 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     d.add_polygon((xpts, ypts), layer = layer, datatype = datatype)
     d.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
     d.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
-    d.meta['length'] = abs(theta)*pi*radius/180
+    d.meta['length'] = abs(theta)*radius*pi/180
     return d
     
+def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0, datatype = 0):
+    """ Starting form a port, create a arc which connects to the port """
+    a = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
+            angle_resolution = angle_resolution, layer = layer, datatype = datatype)
+    a.rotate(angle =  180 + port.orientation - a.ports[1].orientation, center = a.ports[1].midpoint)
+    a.move(origin = a.ports[1], destination = port)
+    return a
+
 
 #==============================================================================
 # Example code
@@ -624,9 +633,16 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
     Lk_m = Lk_per_sq*(1.0/wire_width)
     Z = sqrt((L_m+Lk_m)/C_m)
-    
     return Z
     
+def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
+    # Add a kinetic inductance and recalculate the impedance, be careful
+    # to input Lk as a per-meter inductance
+
+    L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
+    Lk_m = Lk_per_sq*(1.0/wire_width)
+    v = 1/sqrt((L_m+Lk_m)*C_m)
+    return v
     
 def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq):
     
@@ -665,7 +681,8 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     d.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
-    self.meta['num_squares'] = 2
+    dx = x[1]-x[0]
+    d.meta['num_squares'] = np.sum(dx/widths)
     # FIXME Add meta information about speed of light in this device
     
     return d
@@ -679,10 +696,10 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
 #d = racetrack_gradual(width, R = 5, N=3)
 #quickplot(d)
 
-d = hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
-                 Lk_per_sq = 250e-12, Z1 = 50, width2 = 0.3,
-                 num_pts = 100, layer = 0, datatype = 0)
-quickplot(d)
+# d = hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
+#                  Lk_per_sq = 250e-12, Z1 = 50, width2 = 0.3,
+#                  num_pts = 100, layer = 0, datatype = 0)
+# quickplot(d)
 
 #t = np.linspace(0,1)
 #x,y = _racetrack_gradual_parametric(t, R = 5, N = 3)

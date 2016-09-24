@@ -2,19 +2,17 @@
 # Potential improvements
 #==============================================================================
 
-# Add __add__, __and__, etc functinoality to allow boolean operations
-# Make a distribute() function
-# Make a distribute() function
-# Make quickplot use itertools.chain() instead of list.append()
-# Add "select" function which can return subdevices, polygons, etc on specific layers or other criteria
-
+# Add __or__, __and__, etc functionality to allow boolean operations
+# Create DeviceSet
+# Replace origin/destination with source/destination
+# 
 
 #==============================================================================
 # Major TODO
 #==============================================================================
 
-# Add import function
-# Add fill tool
+ # TODO Add flatten()
+ # TODO Move route to geometry
 
 #==============================================================================
 # Imports
@@ -322,6 +320,8 @@ class Device(gdspy.Cell):
         r.connect(1, port1)        
         return r
         
+    def flatten(self, depth = None):
+        pass
 
     def rotate(self, angle = 45, center = (0,0)):
         for e in self.elements:
@@ -388,6 +388,7 @@ class Device(gdspy.Cell):
 class SubDevice(gdspy.CellReference):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         super(SubDevice, self).__init__(device, origin, rotation, magnification, x_reflection)
+        self.parent = device
         self._parent_ports = device.ports
         self._local_ports = deepcopy(device.ports)
     
@@ -404,6 +405,10 @@ class SubDevice(gdspy.CellReference):
             self._local_ports[key].parent = self
         return self._local_ports
 
+    @property
+    def meta(self):
+        return self.parent.meta
+        
     @property
     def bbox(self):
         return self.get_bounding_box()
