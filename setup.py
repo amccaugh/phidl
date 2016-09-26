@@ -11,7 +11,7 @@ install_requires=[
 ]
 
 setup(name='phidl',
-      version='0.3.0',
+      version='0.3.1',
       description='Python Distribution Utilities',
       install_requires=install_requires,
       author='Adam McCaughan',

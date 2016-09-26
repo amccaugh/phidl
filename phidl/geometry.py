@@ -281,9 +281,9 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, center = (0,0), layer = 0
     
 
 # TODO: Fix the fillet here, right now only goes halfway down
-def flagpole(flag_size = (4,2), pole_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
-    f = np.array(flag_size)
-    p = np.array(pole_size)
+def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
+    f = np.array(size)
+    p = np.array(stub_size)
     shape = shape.lower()
 
     assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
@@ -292,14 +292,14 @@ def flagpole(flag_size = (4,2), pole_size = (2,1), shape = 'p', taper_type = 'st
     if shape ==   'p':
         orientation = -90
     elif shape == 'q':
-        f[0], p[0] = -flag_size[0], -pole_size[0]
+        f[0], p[0] = -size[0], -stub_size[0]
         orientation = -90
     elif shape == 'b':
-        f[1], p[1] = -flag_size[1], -pole_size[1]
+        f[1], p[1] = -size[1], -stub_size[1]
         orientation = 90
     elif shape == 'd':
-        f[1], p[1] = -flag_size[1], -pole_size[1]
-        f[0], p[0] = -flag_size[0], -pole_size[0]
+        f[1], p[1] = -size[1], -stub_size[1]
+        f[0], p[0] = -size[0], -stub_size[0]
         orientation = 90
     xpts = [0, 0, f[0], f[0], p[0], p[0], 0]
     ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
@@ -317,9 +317,9 @@ def flagpole(flag_size = (4,2), pole_size = (2,1), shape = 'p', taper_type = 'st
     return d
 
 
-def tee(top_size = (4,2), leg_size = (2,1), taper_type = 'straight', layer = 0, datatype = 0):
-    f = np.array(top_size)
-    p = np.array(leg_size)
+def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, datatype = 0):
+    f = np.array(size)
+    p = np.array(stub_size)
     
     xpts = np.array([f[0], f[0], p[0], p[0], -p[0], -p[0], -f[0], -f[0]])/2
     ypts = [f[1], 0, 0, -p[1], -p[1], 0, 0, f[1]]
@@ -357,11 +357,11 @@ def tee(top_size = (4,2), leg_size = (2,1), taper_type = 'straight', layer = 0, 
 #cpm.add(inset_polygon)
 #quickplot(cpm)
 
-#fp = flagpole(flag_size = [4,2], pole_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0)
+#fp = flagpole(size = [4,2], stub_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0)
 #quickplot(fp)
 
 
-#tp = tee(top_size = [4,2], leg_size = [2,1], taper_type = 'fillet', layer = 0, datatype = 0)
+#tp = tee(size = [4,2], stub_size = [2,1], taper_type = 'fillet', layer = 0, datatype = 0)
 #quickplot(tp)
 
 
@@ -1001,10 +1001,19 @@ def basic_die(size = (10000, 10000),
         s = np.array(size)/2
         d.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer, datatype = bbox_datatype)
     
-    
-    if text_location.upper() == 'SW':
-        justify = 'left'
-        text_position = (-size[0]/2 + street_width*2, -size[1]/2 + street_width*2)
+    if type(text_location) is str:
+        if text_location.upper() == 'SW':
+            justify = 'left'
+            text_position = (-size[0]/2 + street_width*2, -size[1]/2 + street_width*2)
+        elif text_location.upper() == 'S':
+            justify = 'center'
+            text_position = (0, -size[1]/2 + street_width*2)
+        elif text_location.upper() == 'SE':
+            justify = 'right'
+            text_position = (size[0]/2 - street_width*2, -size[1]/2 + street_width*2)
+    else:
+        text_position = text_location
+        justify = 'center'
     d.add_device(text(text = die_name, size = text_size, position=text_position, justify = justify, layer=layer, datatype=datatype))
     
     return d

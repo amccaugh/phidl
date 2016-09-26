@@ -375,7 +375,6 @@ class Device(gdspy.Cell):
             l.translate(dx,dy)
         
         return self
-
             
     # FIXME Make this work for all types of elements    
 #    def reflect(self, p1, p2):
@@ -567,7 +566,10 @@ class SubDevice(gdspy.CellReference):
             p = self.ports[port]
         elif type(port) is Port:
             p = port
-        
+        else:
+            raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
+                ' - received (%s), ports available are (%s)' % (port, self.ports.keys()))
+
         self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         self.move(origin = p, destination = destination)
         return self
@@ -593,11 +595,9 @@ def load_gds(filename, cell_name, load_ports = True):
     d.elements = gdspy.Cell.cell_dict[cell_name].elements
     for label in gdspy.Cell.cell_dict[cell_name].labels:
         t = label.text
-        print(t)
         if t[0:5] == 'Port(' and t[-1] == ')':
             arguments = t[5:-1]
             arguments = arguments.replace(' ', '')
-            print('Port adding')
             args = {a.split('=')[0] : a.split('=')[1] for a in arguments.split(',')}
             if args['name'].isdigit():args['name'] = int(args['name'])
             d.add_port(name = args['name'], midpoint = label.position, width = float(args['width']), orientation = float(args['orientation']))
