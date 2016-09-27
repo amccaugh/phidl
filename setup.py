@@ -12,7 +12,7 @@ install_requires=[
 
 setup(name='phidl',
       version='0.3.1',
-      description='Python Distribution Utilities',
+      description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',
       author_email='adam.mccaughan@nist.gov',

@@ -35,10 +35,10 @@ def snspd_integrator(
     # Create and place components
     #==============================================================================
     cpm = D.add_device(pg.compass_multi, size = connector_size, center = [0,-200], ports = {'N':num_devices,'S':1}, layer = 0, datatype = 0)
-    f = D.add_device(pg.flagpole(flag_size = connector_size, pole_size = [width_right,width_right], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
-    fy = D.add_device(pg.flagpole(flag_size = [connector_size[0],connector_size[1]*2], pole_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
+    f = D.add_device(pg.flagpole(size = connector_size, stub_size = [width_right,width_right], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
+    fy = D.add_device(pg.flagpole(size = [connector_size[0],connector_size[1]*2], stub_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
     
-    t = pg.tee(top_size = pad_flag_size, leg_size = pad_pole_size, taper_type = 'fillet', layer = 0, datatype = 0)
+    t = pg.tee(size = pad_flag_size, stub_size = pad_pole_size, taper_type = 'fillet', layer = 0, datatype = 0)
     pad_array = D.add_array(t, start = [-(t.xsize+pad_spacing)*num_devices/2, 1000], spacing = [t.xsize+pad_spacing, 0], num_devices = num_devices)
     s = pg.snspd_expanded(wire_width = nanowire_width, wire_pitch = nanowire_width*3, size = snspd_size, connector_width = contact_pad_width,
                                              terminals_same_side = False, layer = 0, datatype = 0).rotate(90)
@@ -125,10 +125,11 @@ die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, stre
               die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
               datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
               
-quickplot(d)
-
-fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
+#quickplot(d)
+d.xmin = 0
+d.ymin = 0
+fill = dummy_fill_rectangular(d, fill_size = (10,10), exclude_layers = None, fill_layers = (0,1), fill_densities = (1.0, 1.0), margin = 0, bbox = None)
 d.add_device( fill )
 
-d.write_gds('SCE001 SNSPD Integrator.gds')
+d.write_gds('SCE001 SNSPD Integrator.gds', precision = 1e-9)
 

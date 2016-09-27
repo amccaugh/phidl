@@ -27,11 +27,11 @@ def ytron_with_pads(
     #==============================================================================
     # Create components
     #==============================================================================
-    f_right = D.add_device(pg.flagpole(flag_size = pad_flag_size, pole_size = [width_right,width_right], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
-    f_left = D.add_device(pg.flagpole(flag_size = pad_flag_size, pole_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
+    f_right = D.add_device(pg.flagpole(size = pad_flag_size, stub_size = [width_right,width_right], shape = 'p', taper_type = 'fillet', layer = 0, datatype = 0))
+    f_left = D.add_device(pg.flagpole(size = pad_flag_size, stub_size = [width_left,width_left], shape = 'q', taper_type = 'fillet', layer = 0, datatype = 0))
     y =  D.add_device(pg.ytron_round(rho_intersection, theta_intersection, arm_length, source_length,
                       width_right, width_left, theta_resolution = 10, layer = 0, datatype = 0))
-    gnd = D.add_device( pg.tee(top_size = pad_flag_size, leg_size = [y.ports['source'].width, y.ports['source'].width], taper_type = 'fillet', layer = 0, datatype = 0) ).rotate(180)
+    gnd = D.add_device( pg.tee(size = pad_flag_size, stub_size = [y.ports['source'].width, y.ports['source'].width], taper_type = 'fillet', layer = 0, datatype = 0) ).rotate(180)
     
     
     #==============================================================================
@@ -148,6 +148,6 @@ die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, stre
               
 #quickplot(d)
 
-fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
+fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (1.0, 1.0), margin = 0, bbox = None)
 d.add_device( fill )
 d.write_gds('SCE002 yTron variations.gds')
