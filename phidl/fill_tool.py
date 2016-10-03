@@ -47,7 +47,7 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, d
 def expand_raster(raster, distance = (4,2)):
     if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
         
-    num_pixels = map(int, ceil(distance))
+    num_pixels = map(int, np.ceil(distance))
     neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
     rr, cc = draw.ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
     neighborhood[rr, cc] = 1

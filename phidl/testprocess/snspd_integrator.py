@@ -125,10 +125,7 @@ die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, stre
               die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
               datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
               
-#quickplot(d)
-d.xmin = 0
-d.ymin = 0
-fill = dummy_fill_rectangular(d, fill_size = (10,10), exclude_layers = None, fill_layers = (0,1), fill_densities = (1.0, 1.0), margin = 0, bbox = None)
+fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
 d.add_device( fill )
 
 d.write_gds('SCE001 SNSPD Integrator.gds', precision = 1e-9)

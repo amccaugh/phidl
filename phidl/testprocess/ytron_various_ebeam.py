@@ -6,12 +6,12 @@ import phidl.geometry as pg
 
 def ytron_with_pads(
         pad_flag_size = [300,300],
-        width_right = 20,
-        width_left = 20,
-        rho_intersection = 1,
+        width_right = 0.3,
+        width_left = 0.3,
+        rho_intersection = 0.025,
         theta_intersection = 5,
-        arm_length = 50,
-        source_length = 50,
+        arm_length = 1,
+        source_length = 1,
         inset_distance = 1,
         label = 'A1',
         ):
@@ -143,11 +143,11 @@ for n, p in enumerate(arm_length):
 
 d.center = [0,0]
 die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = 'SCE002', text_size = 300, text_location = 'SW',  layer = 0,  
+              die_name = 'SCE003', text_size = 300, text_location = 'SW',  layer = 0,  
               datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
               
 #quickplot(d)
 
-fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
+fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (1.0, 1.0), margin = 0, bbox = None)
 d.add_device( fill )
-d.write_gds('SCE002 yTron variations.gds')
+d.write_gds('SCE003 yTron ebeam variations.gds')
