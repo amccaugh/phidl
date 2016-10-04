@@ -334,7 +334,7 @@ class Device(gdspy.Cell):
             p.orientation = mod(p.orientation + angle, 360)
         return self
             
-    def move(self, elements = None, origin = (0,0), destination = None, axis = None):
+    def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
@@ -357,12 +357,10 @@ class Device(gdspy.Cell):
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
 
-        if elements is None: elements = self.elements
-
         dx,dy = np.array(d) - o
         
         # Move geometries
-        for e in elements:
+        for e in self.elements:
             if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
                 e.translate(dx,dy)
             if type(e) is SubDevice: 
@@ -381,6 +379,11 @@ class Device(gdspy.Cell):
 #        for e in self.elements:
 #            e.reflect(angle, center)
 
+    def movex(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'x')
+
+    def movey(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'y')
     
     
     

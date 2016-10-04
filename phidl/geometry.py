@@ -6,7 +6,7 @@ from scipy.optimize import fmin, fminbound
 from scipy import integrate
 
 import gdspy
-from phidl import Device
+from phidl import Device, Port, SubDevice
 
 
 ##### Categories:
