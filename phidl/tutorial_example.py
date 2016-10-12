@@ -184,8 +184,8 @@ quickplot(dsquared)
 #==============================================================================
 # This label will display in a GDS viewer, but will not be rendered
 # or printed like the polygons created by the text()
-dsquared.label('First label', mwg1.center)
-dsquared.label('Second label', mwg2.center)
+dsquared.add_label('First label', mwg1.center)
+dsquared.add_label('Second label', mwg2.center)
 
 
 #==============================================================================

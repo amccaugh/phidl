@@ -145,6 +145,24 @@ class Device(gdspy.Cell):
         self.move(destination = destination, origin = self.center)
         
     @property
+    def x(self):
+        return np.sum(self.bbox,0)[0]/2
+
+    @x.setter
+    def x(self, destination):
+        destination = (destination, self.center[1])
+        self.move(destination = destination, origin = self.center, axis = 'x')
+        
+    @property
+    def y(self):
+        return np.sum(self.bbox,0)[1]/2
+
+    @y.setter
+    def y(self, destination):
+        destination = ( self.center[0], destination)
+        self.move(destination = destination, origin = self.center, axis = 'y')
+        
+    @property
     def xmax(self):
         return self.bbox[1][0]
 
@@ -216,7 +234,10 @@ class Device(gdspy.Cell):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
-        if type(port) == Port: p = port
+        if type(port) == Port: p = deepcopy(port)
+        elif type(name) == Port:
+            p = deepcopy(name)
+            name = p.name
         else:                  p = Port(name, midpoint, width, orientation, parent = self)
         if name is not None: p.name = name
         if self.ports.has_key(p.name):
@@ -254,10 +275,10 @@ class Device(gdspy.Cell):
         self.name = tempname
 
 
-    def connect(self, port, destination):
-        sd = port.parent
-        sd.connect(port, destination)
-        return sd
+#    def connect(self, port, destination):
+#        sd = port.parent
+#        sd.connect(port, destination)
+#        return sd
         
             
     def route(self, port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0):
@@ -419,6 +440,24 @@ class SubDevice(gdspy.CellReference):
     @center.setter
     def center(self, destination):
         self.move(destination = destination, origin = self.center)
+        
+    @property
+    def x(self):
+        return np.sum(self.bbox,0)[0]/2
+
+    @x.setter
+    def x(self, destination):
+        destination = (destination, self.center[1])
+        self.move(destination = destination, origin = self.center, axis = 'x')
+        
+    @property
+    def y(self):
+        return np.sum(self.bbox,0)[1]/2
+
+    @y.setter
+    def y(self, destination):
+        destination = ( self.center[0], destination)
+        self.move(destination = destination, origin = self.center, axis = 'y')
         
     @property
     def xmax(self):
