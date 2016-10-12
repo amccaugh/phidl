@@ -2,7 +2,8 @@ from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
 
 
 from phidl import Device, quickplot
-
+import numpy as np
+import phidl.geometry as pg
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
 # and makes us a simple waveguide
@@ -173,7 +174,7 @@ quickplot(dsquared)
 #==============================================================================
 # The function text() creates a Device, just like waveguide.  Use it and 
 # manipulate it like any other Device
-t = dsquared.add_device( text('Hello\nworld!', size = 10, justify = 'center'))
+t = dsquared.add_device( pg.text('Hello\nworld!', size = 10, justify = 'center'))
 t.move([0,40]).rotate(45)
 quickplot(dsquared)
 
