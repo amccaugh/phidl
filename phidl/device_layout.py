@@ -74,6 +74,7 @@ def translate_points(points, d = [1,2]):
 
     
     
+class _GeometryHelper(object):
     """ This is a helper class. It can be added to any other class which has 
     the functions move() and the property ``bbox`` (as in self.bbox).  It uses
     that function+property to enable you to do things like check what the center
@@ -189,6 +190,7 @@ class Port(object):
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
 
         
+class Device(gdspy.Cell, _GeometryHelper):
     uid = 0
     
     def __init__(self, name = 'Unnamed', exclude_from_global=True):
@@ -433,6 +435,7 @@ class Port(object):
     
     
     
+class SubDevice(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         super(SubDevice, self).__init__(device, origin, rotation, magnification, x_reflection)
         self.parent = device
