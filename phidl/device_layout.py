@@ -263,6 +263,7 @@ class Device(gdspy.Cell):
         l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
         return l
         
+
     def delete_port(self, name):
         self.ports.pop(name, None)
     
@@ -274,12 +275,30 @@ class Device(gdspy.Cell):
         gdspy.gds_print(filename, cells=[self], name='library', unit=unit, precision=precision)
         self.name = tempname
 
-
 #    def connect(self, port, destination):
 #        sd = port.parent
 #        sd.connect(port, destination)
 #        return sd
-        
+
+
+    def distribute(self, elements, direction = 'x', spacing = 100, separation = True):
+        multiplier = 1
+        if   direction[0] == '+':
+            direction = direction[1:]
+        elif direction[0] == '-':
+            direction = direction[1:]
+            multiplier = -1
+
+        xy = np.array([0,0])
+        for e in elements:
+            e.center = xy
+            if direction == 'x':
+                xy = xy + (np.array([spacing, 0]) + np.array([e.xsize, 0])*(separation==True))*multiplier
+            elif direction == 'y':
+                xy = xy + (np.array([0, spacing]) + np.array([0, e.ysize])*(separation==True))*multiplier
+            else:
+                raise ValueError('[PHIDL] Distribute() needs a direction of "x", "+y", "-x", etc')
+
             
     def route(self, port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0):
         # Assuming they're both Ports for now
@@ -355,7 +374,7 @@ class Device(gdspy.Cell):
             p.orientation = mod(p.orientation + angle, 360)
         return self
             
-    def move(self, elements = None, origin = (0,0), destination = None, axis = None):
+    def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
@@ -378,12 +397,10 @@ class Device(gdspy.Cell):
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
 
-        if elements is None: elements = self.elements
-
         dx,dy = np.array(d) - o
         
         # Move geometries
-        for e in elements:
+        for e in self.elements:
             if type(e) is gdspy.Polygon or type(e) is gdspy.PolygonSet: 
                 e.translate(dx,dy)
             if type(e) is SubDevice: 
@@ -402,6 +419,11 @@ class Device(gdspy.Cell):
 #        for e in self.elements:
 #            e.reflect(angle, center)
 
+    def movex(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'x')
+
+    def movey(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'y')
     
     
     
@@ -566,6 +588,14 @@ class SubDevice(gdspy.CellReference):
 
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
         return self
+
+
+    def movex(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'x')
+
+
+    def movey(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'y')
         
         
     def rotate(self, angle = 45, center = (0,0)):

@@ -50,16 +50,25 @@ def snspd_imager_rounded(
         t = D.add_device(Turn).connect(2, s.ports['W'])
         s = D.add_device(Straight).connect('W', t.ports[1])
     taper_east = D.add_device(Taper).connect(2, s.ports['E'])
-    pad_east = D.add_device(Pad).connect(1, taper_east.ports[1])
-    pad_west = D.add_device(Pad).connect(1, taper_west.ports[1])
+    ext_east = D.add_device(pg.taper(length = taper_width, port = taper_east.ports[1], layer = 0, datatype = 0))
+    ext_west = D.add_device(pg.taper(length = taper_width, port = taper_west.ports[1], layer = 0, datatype = 0))
+    pad_east = D.add_device(Pad).connect(1, ext_east.ports[2])
+    pad_west = D.add_device(Pad).connect(1, ext_west.ports[2])
     
     
     #==============================================================================
     # Add gold pads which are slightly inset
     #==============================================================================
     
-    D.add_polygon( inset(pad_east, distance = 2, layer=1, datatype=0) )
-    D.add_polygon( inset(pad_west, distance = 2, layer=1, datatype=0) )
+    D.add_polygon( inset([pad_east, ext_east], distance = 2, layer=1, datatype=0) )
+    D.add_polygon( inset([pad_west, ext_west], distance = 2, layer=1, datatype=0) )
+    
+    #==============================================================================
+    # Remove gold underneath pads to avoid bonding issues
+    #==============================================================================
+    
+    D.add_polygon( inset([pad_east], distance = -5, layer=3, datatype=0) )
+    D.add_polygon( inset([pad_west], distance = -5, layer=3, datatype=0) )
     
     
     #==============================================================================
@@ -149,7 +158,7 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 2: Varying meander size
 #==============================================================================
 D = Device()
-die_name = 'Ansel02'
+die_name = 'SE004'
 
 y = 0
 imager_heights = 2.0**np.array(range(0,6))*(5.5)
