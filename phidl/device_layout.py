@@ -72,70 +72,14 @@ def translate_points(points, d = [1,2]):
     return points
     
 
-
-
-class Port(object):
-    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 90, parent = None):
-        self.name = name
-        self.midpoint = midpoint
-        self.width = width
-        self.orientation = mod(orientation,360)
-        self.parent = parent
-        if self.width <= 0: raise ValueError('[DEVICE] Port creation error: width cannot be negative or zero')
-        
-    def __repr__(self):
-        return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
-                (self.name, self.midpoint, self.width, self.orientation))
-       
-    @property
-    def endpoints(self):
-        dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
-        dy = self.width/2*np.sin((self.orientation - 90)*np.pi/180)
-        left_point = self.midpoint - np.array([dx,dy])
-        right_point = self.midpoint + np.array([dx,dy])
-        return np.array([left_point, right_point])
     
-    # FIXME currently broken
-    @endpoints.setter
-    def endpoints(self, points):
-        p1, p2 = np.array(points[0]), np.array(points[1])
-        self.midpoint = (p1+p2)/2
-        dx, dy = p2-p1
-        self.orientation = np.arctan2(-dy,dx)*180/np.pi
-        self.width = sqrt(dx**2 + dy**2)
-        
-    @property
-    def normal(self):
-        dx = np.cos((self.orientation)*np.pi/180)
-        dy = np.sin((self.orientation)*np.pi/180)
-        return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
-        
-
-
-        
-class Device(gdspy.Cell):
-    uid = 0
     
-    def __init__(self, name = 'Unnamed', exclude_from_global=True):
-        self.ports = {}
-        self.parameters = {}
-        self.meta = {}
-        self.subdevices = []
-        Device.uid += 1
-        name = '%s%06d' % (name, Device.uid) # Write name e.g. 'Unnamed000005'
-        # TODO: Add logic here to test name length
-        super(Device, self).__init__(name, exclude_from_global)
-
-
-    @property
-    def layers(self):
-        return self.get_layers()
-
-    @property
-    def bbox(self):
-        self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
-        return np.array(self.get_bounding_box())
-
+    """ This is a helper class. It can be added to any other class which has 
+    the functions move() and the property ``bbox`` (as in self.bbox).  It uses
+    that function+property to enable you to do things like check what the center
+    of the bounding box is (self.center), and also to do things like move the
+    bounding box such that its maximum x value is 5.2 (self.xmax = 5.2) """
+    
     @property
     def center(self):
         return np.sum(self.bbox,0)/2
@@ -203,7 +147,69 @@ class Device(gdspy.Cell):
     def ysize(self):
         bbox = self.bbox
         return bbox[1][1] - bbox[0][1]
+
+
+
+
+
+class Port(object):
+    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 90, parent = None):
+        self.name = name
+        self.midpoint = midpoint
+        self.width = width
+        self.orientation = mod(orientation,360)
+        self.parent = parent
+        if self.width <= 0: raise ValueError('[DEVICE] Port creation error: width cannot be negative or zero')
         
+    def __repr__(self):
+        return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
+                (self.name, self.midpoint, self.width, self.orientation))
+       
+    @property
+    def endpoints(self):
+        dx = self.width/2*np.cos((self.orientation - 90)*np.pi/180)
+        dy = self.width/2*np.sin((self.orientation - 90)*np.pi/180)
+        left_point = self.midpoint - np.array([dx,dy])
+        right_point = self.midpoint + np.array([dx,dy])
+        return np.array([left_point, right_point])
+    
+    # FIXME currently broken
+    @endpoints.setter
+    def endpoints(self, points):
+        p1, p2 = np.array(points[0]), np.array(points[1])
+        self.midpoint = (p1+p2)/2
+        dx, dy = p2-p1
+        self.orientation = np.arctan2(-dy,dx)*180/np.pi
+        self.width = sqrt(dx**2 + dy**2)
+        
+    @property
+    def normal(self):
+        dx = np.cos((self.orientation)*np.pi/180)
+        dy = np.sin((self.orientation)*np.pi/180)
+        return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
+
+        
+    uid = 0
+    
+    def __init__(self, name = 'Unnamed', exclude_from_global=True):
+        self.ports = {}
+        self.parameters = {}
+        self.meta = {}
+        self.subdevices = []
+        Device.uid += 1
+        name = '%s%06d' % (name, Device.uid) # Write name e.g. 'Unnamed000005'
+        # TODO: Add logic here to test name length
+        super(Device, self).__init__(name, exclude_from_global)
+
+    @property
+    def layers(self):
+        return self.get_layers()
+
+    @property
+    def bbox(self):
+        self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
+        return np.array(self.get_bounding_box())
+
         
     def add_device(self, device, config = None, **kwargs):
         """ Takes a Device (or Device-making function with config) and adds it
@@ -427,7 +433,6 @@ class Device(gdspy.Cell):
     
     
     
-class SubDevice(gdspy.CellReference):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         super(SubDevice, self).__init__(device, origin, rotation, magnification, x_reflection)
         self.parent = device
@@ -455,75 +460,7 @@ class SubDevice(gdspy.CellReference):
     def bbox(self):
         return self.get_bounding_box()
 
-    @property
-    def center(self):
-        return np.sum(self.bbox,0)/2
-
-    @center.setter
-    def center(self, destination):
-        self.move(destination = destination, origin = self.center)
         
-    @property
-    def x(self):
-        return np.sum(self.bbox,0)[0]/2
-
-    @x.setter
-    def x(self, destination):
-        destination = (destination, self.center[1])
-        self.move(destination = destination, origin = self.center, axis = 'x')
-        
-    @property
-    def y(self):
-        return np.sum(self.bbox,0)[1]/2
-
-    @y.setter
-    def y(self, destination):
-        destination = ( self.center[0], destination)
-        self.move(destination = destination, origin = self.center, axis = 'y')
-        
-    @property
-    def xmax(self):
-        return self.bbox[1][0]
-
-    @xmax.setter
-    def xmax(self, destination):
-        self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
-        
-    @property
-    def ymax(self):
-        return self.bbox[1][1]
-
-    @ymax.setter
-    def ymax(self, destination):
-        self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
-        
-    @property
-    def xmin(self):
-        return self.bbox[0][0]
-
-    @xmin.setter
-    def xmin(self, destination):
-        self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
-        
-    @property
-    def ymin(self):
-        return self.bbox[0][1]
-
-    @ymin.setter
-    def ymin(self, destination):
-        self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
-
-    @property
-    def xsize(self):
-        bbox = self.bbox
-        return bbox[1][0] - bbox[0][0]
-        
-    @property
-    def ysize(self):
-        bbox = self.bbox
-        return bbox[1][1] - bbox[0][1]
-        
-
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations (x_ref)
         new_point = np.array(point)
