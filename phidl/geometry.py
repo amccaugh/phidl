@@ -385,7 +385,6 @@ def rectangle_centered(size = (2,2), center = (0,0), layer = 0, datatype = 0):
     point2 = np.array(center) + np.array(size)/2
     return rectangle(point1, point2, layer = layer, datatype = datatype)
 
-# TODO: Write ring definition
 def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype = 0):
     inner_radius = radius-width/2
     outer_radius = radius+width/2
