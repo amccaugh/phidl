@@ -3,7 +3,6 @@ from phidl import Device, quickplot, inset
 import phidl.geometry as pg
 import numpy as np
 
-
     
 #==============================================================================
 # SNSPD Imager with rounded bends
@@ -20,7 +19,7 @@ def snspd_imager_rounded(
                 Zout = 50,
                 label = 'A1',
                 ):
-    
+
     # Create blank device
     D = Device('SNSPD-imager-rounded')
     
@@ -85,6 +84,8 @@ def snspd_imager_rounded(
     a = nanowire_spacing/2
     b = a + nanowire_width
     D.meta['Ic_reduction'] = 1 - a*np.log(b/a)/(b-a)
+    D.meta['f_cutoff1_MHz'] = Taper.meta['f_cutoff1']/1e6
+    D.meta['f_cutoff2_MHz'] = Taper.meta['f_cutoff2']/1e6
     
     
     #==============================================================================
@@ -122,7 +123,7 @@ taper_length = (die_width - 2*edge_gold_width - 2*pad_width - imager_width - 500
 # Die 1: Varying meander size
 #==============================================================================
 D = Device()
-die_name = 'Ansel01'
+die_name = 'SE004'
 
 y = 0
 imager_heights = 2.0**np.array(range(0,6))*(5.5)
@@ -158,7 +159,7 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 2: Varying meander size
 #==============================================================================
 D = Device()
-die_name = 'SE004'
+die_name = 'SE005'
 
 y = 0
 imager_heights = 2.0**np.array(range(0,6))*(5.5)

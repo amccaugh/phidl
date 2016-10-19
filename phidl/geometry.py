@@ -242,7 +242,6 @@ def compass(size = (4,2), center = (0,0), layer = 0, datatype = 0):
     return d
     
     
-# TODO fix centering of this
 def compass_multi(size = (4,2), ports = {'N':3,'S':4}, center = (0,0), layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
@@ -564,34 +563,6 @@ def ramp(length, width, end_width = None, layer = 0, datatype = 0):
     return d
     
 
-def racetrack_gradual(width, R, N, layer = 0, datatype = 0):
-    curve_fun = lambda t: racetrack_gradual_parametric(t, R = R, N = N)
-    route_path = gdspy.Path(width = width, initial_point = (0,0))
-    route_path.parametric(curve_fun, number_of_evaluations=99,\
-            max_points=199,  final_distance=None, layer=layer, datatype=datatype)
-    d = Device()
-    d.add(route_path)
-    return d
-    
-
-def _racetrack_gradual_parametric(t, R, N):
-    """ Takes in a parametric value ``t`` on (0,1), returns the x,y coordinates
-    of a racetrack bent according to 20090810_EOS4_modulator_designs_excerptForJasonGradualBends.ppt """
-    x0 = R/2**(1/N)
-    Rmin = 2**(0.5-1/N)/(N-1)*R
-    R0 = R-(x0-Rmin/sqrt(2))
-    t = np.array(t)
-    x,y = np.zeros(t.shape), np.zeros(t.shape)
-    
-    # Doing the math
-    x = np.cos(t*np.pi/2)*R0 # t (0-1) while x (0 to R0)
-    ii =  (Rmin/sqrt(2) < x) & (x <= R0)
-    jj =  (0 < x) & (x <= Rmin/sqrt(2))
-    y[ii] = (R**N - (x[ii]+(x0-Rmin/sqrt(2)))**N)**(1/N)
-    y[jj] = (x0-Rmin/sqrt(2))+sqrt(Rmin**2-x[jj]**2)
-    return x,y
-
-
 # Equations taken from
 # Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
 # Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
@@ -635,9 +606,6 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     return Z
     
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
-    # Add a kinetic inductance and recalculate the impedance, be careful
-    # to input Lk as a per-meter inductance
-
     L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
     Lk_m = Lk_per_sq*(1.0/wire_width)
     v = 1/sqrt((L_m+Lk_m)*C_m)
@@ -682,7 +650,17 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     # Add meta information about the taper
     dx = x[1]-x[0]
     d.meta['num_squares'] = np.sum(dx/widths)
-    # FIXME Add meta information about speed of light in this device
+    d.meta['width1'] = widths[0]
+    d.meta['width2'] = widths[-1]
+    d.meta['Z1'] = Z[0]
+    d.meta['Z2'] = Z[-1]
+    # Note there are two values for v/c (and f_cutoff) because the speed of
+    # light is different at the beginning and end of the taper
+    d.meta['v1/c'] = _microstrip_v_with_Lk(widths[0]*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)/3e8
+    d.meta['v2/c'] = _microstrip_v_with_Lk(widths[-1]*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)/3e8
+    BetaLmin = np.sqrt(B**2 + 6.523)
+    d.meta['f_cutoff1'] = BetaLmin*d.meta['v2/c']*3e8/(2*pi*length*1e-6)
+    d.meta['f_cutoff2'] = BetaLmin*d.meta['v2/c']*3e8/(2*pi*length*1e-6)
     
     return d
 
@@ -1040,7 +1018,7 @@ def basic_die(size = (10000, 10000),
 
 
 def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0, datatype = 0):
-    curve_fun = lambda t: racetrack_gradual_parametric(t, R = 5, N = 3)
+    curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer, datatype=datatype)

@@ -39,9 +39,9 @@ def ytron_ebeam_with_pads(
     # Connect/place components
     #==============================================================================
     
-    D.connect(port = f_right.ports[1], destination = y.ports['right']).move([50*np.sin(theta_intersection/180*np.pi), 50])
-    D.connect(port = f_left.ports[1], destination = y.ports['left']).move([-50*np.sin(theta_intersection/180*np.pi), 50])
-    D.connect(port = gnd.ports['S'], destination = y.ports['source']).move([0,-20])
+    f_right.connect(port = 1, destination = y.ports['right']).move([50*np.sin(theta_intersection/180*np.pi), 50])
+    f_left.connect(port = 1, destination = y.ports['left']).move([-50*np.sin(theta_intersection/180*np.pi), 50])
+    gnd.connect(port = 'S', destination = y.ports['source']).move([0,-20])
     
     
     
@@ -113,7 +113,7 @@ for n, r in enumerate(rho):
 
 #==============================================================================
 # Row C: Varying arm widths
-#==============================================================================
+#==============================================================================.
 rho = 0.040
 width_left = 1
 width_right = 2**(np.array(range(-4,3))+1.0)*width_left
