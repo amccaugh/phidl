@@ -639,6 +639,11 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     widths = np.array([_find_microstrip_wire_width(z, dielectric_thickness*1e-6, eps_r, Lk_per_sq)*1e6 for z in Z])
     x = ((xi_list/2)*length)
     
+    # TODO: Compensate for varying speed of light in the microstrip
+    # by shortening and lengthening sections according to the speed of light
+    # in that section
+    v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
+    
     # Create blank device and add taper polygon
     d = Device()
     xpts = np.concatenate([x, x[::-1]])
@@ -656,15 +661,65 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     d.meta['Z2'] = Z[-1]
     # Note there are two values for v/c (and f_cutoff) because the speed of
     # light is different at the beginning and end of the taper
-    d.meta['v1/c'] = _microstrip_v_with_Lk(widths[0]*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)/3e8
-    d.meta['v2/c'] = _microstrip_v_with_Lk(widths[-1]*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)/3e8
+    d.meta['w'] = widths
+    d.meta['x'] = x
+    d.meta['Z'] = Z
+    d.meta['v/c'] = v/3e8
     BetaLmin = np.sqrt(B**2 + 6.523)
-    d.meta['f_cutoff1'] = BetaLmin*d.meta['v2/c']*3e8/(2*pi*length*1e-6)
-    d.meta['f_cutoff2'] = BetaLmin*d.meta['v2/c']*3e8/(2*pi*length*1e-6)
+    d.meta['f_cutoff'] = BetaLmin*d.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
     
     return d
 
 
+
+def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, min_spacing = 0.5):
+    
+    def taper_width(x):
+        return np.interp(x, x_taper, w_taper)
+        
+        
+    def taper_section(x_start, x_end, num_pts = 30):
+        D = Device()
+        length =  x_end - x_start
+        x = np.linspace(0, length, num_pts)
+        widths = np.linspace(taper_width(x_start), taper_width(x_end), num_pts)
+        xpts = np.concatenate([x, x[::-1]])
+        ypts = np.concatenate([widths/2, -widths[::-1]/2])
+        D.add_polygon((xpts,ypts), layer = 0, datatype = 0)
+        D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
+        D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
+        return D
+        
+    def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0, datatype = 0):
+        D = Device()
+        path1 = gdspy.Path(width = width1, initial_point = (0, 0))
+        path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
+        [D.add_polygon(p, layer = layer, datatype = datatype) for p in path1.polygons]
+        D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
+        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/np.pi)
+        return D
+        
+    D = Device('meander-taper')
+    xpos1 = min(x_taper)
+    xpos2 = min(x_taper) + meander_length
+    t = D.add_device( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50) )
+    D.add_port(t.ports[1])
+    dir_toggle = -1
+    while xpos2 < max(x_taper):
+        arc_width1 = taper_width(xpos2)
+        arc_radius = max(spacing_factor*arc_width1, min_spacing)
+        arc_length = np.pi*arc_radius
+        arc_width2 = taper_width(xpos2 + arc_length)
+        a = D.add_device(  arc_tapered(radius = arc_radius, width1 = arc_width1, width2 = arc_width2, theta = 180*dir_toggle) )
+        a.connect(port = 1, destination = t.ports[2])
+        dir_toggle = -dir_toggle
+        xpos1 = xpos2 + arc_length
+        xpos2 = xpos1 + meander_length
+        t = D.add_device( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30) )
+        t.connect(port = 1, destination = a.ports[2])
+    D.add_port(t.ports[2])
+        
+    return D
     
 #==============================================================================
 # Example code

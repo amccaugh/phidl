@@ -149,6 +149,12 @@ class _GeometryHelper(object):
         bbox = self.bbox
         return bbox[1][1] - bbox[0][1]
 
+    def movex(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'x')
+
+    def movey(self, origin = (0,0), destination = None):
+        self.move(origin = origin, destination = destination, axis = 'y')
+        
 
 
 
@@ -422,17 +428,16 @@ class Device(gdspy.Cell, _GeometryHelper):
         
         return self
             
-    # FIXME Make this work for all types of elements    
-#    def reflect(self, p1, p2):
-#        for e in self.elements:
-#            e.reflect(angle, center)
-
-    def movex(self, origin = (0,0), destination = None):
-        self.move(origin = origin, destination = destination, axis = 'x')
-
-    def movey(self, origin = (0,0), destination = None):
-        self.move(origin = origin, destination = destination, axis = 'y')
-    
+    def reflect(self, p1, p2):
+        for e in self.elements:
+            if isinstance(e, gdspy.Polygon):
+                e.points = reflect_points(e.points, p1, p2)
+            elif isinstance(e, gdspy.PolygonSet):
+                for p in e.polygons:
+                    p.points = reflect_points(p.points, p1, p2)
+            elif isinstance(e, SubDevice):
+                e.reflect(p1, p2)
+                
     
     
 class SubDevice(gdspy.CellReference, _GeometryHelper):
@@ -529,14 +534,6 @@ class SubDevice(gdspy.CellReference, _GeometryHelper):
         self.origin = np.array(self.origin) + np.array(d) - np.array(o)
         return self
 
-
-    def movex(self, origin = (0,0), destination = None):
-        self.move(origin = origin, destination = destination, axis = 'x')
-
-
-    def movey(self, origin = (0,0), destination = None):
-        self.move(origin = origin, destination = destination, axis = 'y')
-        
         
     def rotate(self, angle = 45, center = (0,0)):
         if type(center) is Port:  center = center.midpoint
