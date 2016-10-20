@@ -194,6 +194,8 @@ class Port(object):
         dx = np.cos((self.orientation)*np.pi/180)
         dy = np.sin((self.orientation)*np.pi/180)
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
+        
+        
 
         
 class Device(gdspy.Cell, _GeometryHelper):
@@ -433,10 +435,14 @@ class Device(gdspy.Cell, _GeometryHelper):
             if isinstance(e, gdspy.Polygon):
                 e.points = reflect_points(e.points, p1, p2)
             elif isinstance(e, gdspy.PolygonSet):
-                for p in e.polygons:
-                    p.points = reflect_points(p.points, p1, p2)
+                for poly in e.polygons:
+                    poly.points = reflect_points(poly.points, p1, p2)
             elif isinstance(e, SubDevice):
                 e.reflect(p1, p2)
+        for p in self.ports.values():
+            p.midpoint = reflect_points(p.midpoint, p1, p2)
+            phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/np.pi
+            p.orientation = 2*phi - p.orientation
                 
     
     
