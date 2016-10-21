@@ -502,8 +502,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
     step_device = optimal_step(start_width = wire_width, end_width = connector_width, num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3)
     step1 = d.add_device(step_device)
     step2 = d.add_device(step_device)
-    d.connect(step1.ports[1], destination = s.ports[1])
-    d.connect(step2.ports[1], destination = s.ports[2])
+    step1.connect(port = 1, destination = s.ports[1])
+    step2.connect(port = 1, destination = s.ports[2])
     d.add_port(name = 1, port = step1.ports[2])
     d.add_port(name = 2, port = step2.ports[2])
     

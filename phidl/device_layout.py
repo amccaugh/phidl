@@ -162,7 +162,7 @@ class _GeometryHelper(object):
 class Port(object):
     def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 90, parent = None):
         self.name = name
-        self.midpoint = midpoint
+        self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
         self.orientation = mod(orientation,360)
         self.parent = parent
@@ -521,7 +521,7 @@ class SubDevice(gdspy.CellReference, _GeometryHelper):
         # If only one set of coordinates is defined, make sure it's used to move things
         if destination is None:
             destination = origin
-            origin = [0,0]
+            origin = (0,0)
 
         if type(origin) is Port:            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
@@ -529,7 +529,7 @@ class SubDevice(gdspy.CellReference, _GeometryHelper):
         else: raise ValueError('[SubDevice.move()] ``origin`` not array-like, a port, or port name')
             
         if type(destination) is Port:           d = destination.midpoint
-        elif np.array(destination).size == 2:        d = destination
+        elif np.array(destination).size == 2:   d = destination
         elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
         else: raise ValueError('[SubDevice.move()] ``destination`` not array-like, a port, or port name')
             
@@ -537,7 +537,9 @@ class SubDevice(gdspy.CellReference, _GeometryHelper):
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
 
-        self.origin = np.array(self.origin) + np.array(d) - np.array(o)
+        # This needs to be done in two steps otherwise floating point errors can accrue
+        dxdy = np.array(d) - np.array(o)
+        self.origin = np.array(self.origin) + dxdy
         return self
 
         
@@ -592,8 +594,12 @@ class SubDevice(gdspy.CellReference, _GeometryHelper):
 #==============================================================================
 
     
-def inset(elements, distance = 0.1, join_first = True, layer=0, datatype=0):
-    p = gdspy.offset(elements, -distance, join='miter', tolerance=2, precision=0.001, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
+def inset(elements, distance = 0.1, join_first = True, precision=0.001, layer=0, datatype=0):
+    # This pre-joining (by expanding by precision) is makes this take twice as
+    # long but is necessary because of floating point errors which otherwise
+    # separate polygons which are nominally joined
+    joined = gdspy.offset(elements, precision, join='miter', tolerance=2, precision=precision, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
+    p = gdspy.offset(joined, -distance, join='miter', tolerance=2, precision=precision, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
     return p
     
     
