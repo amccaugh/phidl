@@ -207,7 +207,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.meta = {}
         self.subdevices = []
         Device.uid += 1
-        name = '%s%06d' % (name, Device.uid) # Write name e.g. 'Unnamed000005'
+        name = '%s%06d' % (name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
         # TODO: Add logic here to test name length
         super(Device, self).__init__(name, exclude_from_global)
 
