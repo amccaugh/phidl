@@ -13,26 +13,33 @@ except:
 
     
     
+class Layer(object):
+    def __init__(self, layer, datatype, shortname, description):
+        self.gds_layer = gds_layer
+        self.shortname = shortname
+        self.description = description
+    
+    
 class ProcessStep(object):
     
-    def __init__(self, recipe, description, gds_layer, gds_inverted):
+    def __init__(self, recipe, description, gds_layer):
         self.recipe = recipe
         self.description = description
         self.gds_layer = gds_layer
-        self.gds_inverted = gds_inverted
         
         
 class Process(object):
     
-    def __init__(self, recipes_dir):
+    def __init__(self, recipes_dir, gds_files = None):
         self.steps = []
+        self.gds_files = gds_files
         self.recipes_dir = recipes_dir
         self.recipes = self.load_recipes_directory(recipes_dir)
 
-    def add_step(self, recipe, description, gds_layer, gds_inverted = False):
+    def add_step(self, recipe, description, gds_layer):
         if recipe not in self.recipes:
             raise ValueError('No step named "%s" exists in the loaded recipes. Please check %s' % (recipe,self.recipes_dir))
-        new_step = ProcessStep(recipe, description, gds_layer, gds_inverted)
+        new_step = ProcessStep(recipe, description, gds_layer)
         self.steps.append(new_step)
 
         
@@ -46,14 +53,16 @@ class Process(object):
             
             
     def write_pdf(self, filename = None):
-        header = '\\newpage'
-        footer = 'This is the footer\n'
+        footer = ''
         md_output = ''
-        for s in self.steps:
+        for n, s in enumerate(self.steps):
+            header = """\n\\newpage\n\n# Processing step %s (%s)\n\n-----\n\n""" % (n+1, s.recipe)
             instructions = self.recipes[s.recipe]
             md_output += header + instructions + footer
+            
         pypandoc.convert_text(source = md_output, format = 'markdown', to = 'pdf', 
                               outputfile='hello214214.pdf', extra_args=['-s'])
+        return md_output
         
     
 #    def load_recipes_multiple_single_file(self, filename):
@@ -80,29 +89,28 @@ class Process(object):
 
 
 
-files = [
-'SE004.gds',
-'SE005.gds',
-'SE006.gds',
-'SE007.gds',
+gds_files = [
+'SE0004.gds',
+'SE0005.gds',
+'SE0006.gds',
+'SE0007.gds',
         ]
-
           
-P = Process(recipes_dir = 'C:/Users/anm16/amcc/Code/device-layout/phidl/recipes/')
+P = Process(recipes_dir = 'C:/Users/anm16/amcc/Code/device-layout/phidl/recipes/', gds_files = gds_files)
 
 # Create patterned gold and dielectric layer
-P.add_step(recipe = 'gold_liftoff_01', description = 'Gold ground', gds_layer = 3, gds_inverted = True)
-P.add_step(recipe = 'gold_liftoff_02', description = 'Gold contacts', gds_layer = 3, gds_inverted = True)
+P.add_step(recipe = 'stepper_setup_01', description = 'Stepper setup', gds_layer = None)
+P.add_step(recipe = 'gold_liftoff_01', description = 'Gold ground', gds_layer = 3)
 P.check_gds_layers()
-P.write_pdf(1)
+md = P.write_pdf(1)
 
-P.add_step(recipe = 'sio2_01', description = 'SiO2 dielectric', gds_layer = None)
-
-# Do
-P.add_step(name = 'wsi_deposition_01', description = 'WSi deposition for SNSPDs', gds_layer = None)
-P.add_step(name = 'wsi_nanowires_01', description = 'WSi nanowire patterning', gds_layer = 0)
-P.add_step(name = 'wsi_etch_01', description = 'WSi SNSPD', gds_layer = 0)
-P.add_step(name = 'gold_liftoff_01', description = 'Gold contacts', gds_layer = 3, gds_inverted = True)
+#P.add_step(recipe = 'sio2_01', description = 'SiO2 dielectric', gds_layer = None)
+#
+## Do
+#P.add_step(name = 'wsi_deposition_01', description = 'WSi deposition for SNSPDs', gds_layer = None)
+#P.add_step(name = 'wsi_nanowires_01', description = 'WSi nanowire patterning', gds_layer = 0)
+#P.add_step(name = 'wsi_etch_01', description = 'WSi SNSPD', gds_layer = 0)
+#P.add_step(name = 'gold_liftoff_01', description = 'Gold contacts', gds_layer = 3, gds_inverted = True)
 
 #%% 
 
