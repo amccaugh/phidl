@@ -120,8 +120,8 @@ wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 #==============================================================================
 # Connecting devices with connect()
 #==============================================================================
-d.connect(port = wg1.ports['wgport1'], destination = wg2.ports['wgport2'])
-d.connect(port = wg3.ports['wgport2'], destination = wg2.ports['wgport1'])
+wg1.connect(port = 'wgport1', destination = wg2.ports['wgport2'])
+wg3.connect(port = 'wgport2', destination = wg2.ports['wgport1'])
 
 quickplot(d)
 
@@ -154,7 +154,7 @@ mwg2.move(destination = [10,10])
 quickplot(dsquared)
 
 # Like before, let's connect mwg1 and mwg2 together then offset them slightly
-dsquared.connect(port = mwg1.ports[1], destination = mwg2.ports[2])
+mwg1.connect(port = 1, destination = mwg2.ports[2])
 mwg2.move(destination = [30,30])
 
 quickplot(dsquared)

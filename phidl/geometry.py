@@ -1,17 +1,19 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
+import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
 from scipy.special import iv as besseli
 from scipy.optimize import fmin, fminbound
 from scipy import integrate
 
 import gdspy
-from phidl import Device, Port, SubDevice
+from phidl import Device, Port
+
+from skimage import draw, morphology
 
 
 ##### Categories:
-# Connectors
-# Current-crowding (optimal) curves
+# Optimal (current-crowding) curves
 # Pads
 # Shapes
 # SNSPD
@@ -20,39 +22,7 @@ from phidl import Device, Port, SubDevice
 # Wafer / Die
 # Waveguide
 # yTron
-
-
-
-#==============================================================================
-#
-# Connectors
-#
-#==============================================================================
-
-def eastwest(center = [0,0], width = 1):
-    d = Device(name = 'twoportEW')
-    d.add_port(name = 'E', midpoint = [dx/2, 0],  width = width, orientation = 0)
-    d.add_port(name = 'W', midpoint = [-dx/2, 0], width = width, orientation = 180)
-    return d
-
-
-
-def northsouth(center = [0,0], width = 1):
-    d = Device(name = 'twoportNS')
-    d.add_port(name = 'N', midpoint = [0, dy/2],  width = width, orientation = 90)
-    d.add_port(name = 'S', midpoint = [0, -dy/2], width = width, orientation = -90)
-    return d
-    
-#==============================================================================
-# Example code
-#==============================================================================
-
-# d = basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-#               die_name = 'chip99', text_size = 300, text_location = 'SW',  layer = 0,  
-#               datatype = 0, draw_bbox = True,  bbox_layer = 99,  bbox_datatype = 99)
-# quickplot(d)
-
-
+# Fill tool
 
 
 
@@ -1131,7 +1101,6 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
-    rho = rho_intersection
     theta = theta_intersection*pi/180
     theta_resolution = theta_resolution*pi/180
     thetalist = np.linspace(-(pi-theta),-theta, int((pi-2*theta)/theta_resolution) + 2)
@@ -1178,3 +1147,105 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
 #y = ytron_round(rho_intersection = 5, theta_intersection = 5, theta_resolution = 10, arm_length = 500, \
 #                source_length = 500, width_right = 200, width_left = 200, layer = 0, datatype = 0)
 #quickplot(y)
+
+
+
+
+
+#==============================================================================
+#
+# Fill
+#
+#==============================================================================
+
+
+def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
+    
+    # Prepare polygon array by shifting all points into the first quadrant and 
+    # separating points into x and y lists
+    xpts = []
+    ypts = []
+    for p in polygons:
+        p_array = np.asarray(p)
+        x = p_array[:,0]
+        y = p_array[:,1]
+        xpts.append((x-bounds[0][0])/dx-0.5)
+        ypts.append((y-bounds[0][1])/dy-0.5)
+
+    # Initialize the raster matrix we'll be writing to
+    xsize = int(np.ceil((bounds[1][0]-bounds[0][0]))/dx)
+    ysize = int(np.ceil((bounds[1][1]-bounds[0][1]))/dy)
+    raster = np.zeros((ysize, xsize), dtype=np.bool)
+    
+    # TODO: Replace polygon_perimeter with the supercover version
+    for n in range(len(xpts)):
+        rr, cc = draw.polygon(ypts[n], xpts[n], shape=raster.shape)
+        rrp, ccp = draw.polygon_perimeter(ypts[n], xpts[n], shape=raster.shape, clip=False)
+        raster[rr, cc] = 1
+        raster[rrp, ccp] = 1
+        
+    return raster
+    
+def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
+    x = (j+0.5)*dx + bounds[0][0]
+    y = (i+0.5)*dy + bounds[0][1]
+    return x,y
+
+
+def _expand_raster(raster, distance = (4,2)):
+    if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
+        
+    num_pixels = map(int, np.ceil(distance))
+    neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
+    rr, cc = draw.ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
+    neighborhood[rr, cc] = 1
+    
+    return morphology.binary_dilation(image = raster, selem=neighborhood)
+
+    
+            
+def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7), datatype = 77):
+    D = Device(name = 'fill_cell')
+    for layer, density in zip(layers, densities):
+        rectangle_size = np.array(size)*np.sqrt(density)
+        point1 = -np.array(rectangle_size)/2
+        point2 = np.array(rectangle_size)/2
+        D.add(gdspy.Rectangle(point1, point2, layer = layer, datatype = datatype))
+    return D
+
+    
+def _fill_cell_device(size = None, datatype = 77):
+    D = Device(name = 'fill_cell')
+    return D
+
+    
+def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7), margin = 100, bbox = None):
+    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers, densities = fill_densities, datatype = 77)
+    F = Device(name = 'fill_pattern')
+    
+    if exclude_layers is None:
+        poly = D.get_polygons(by_spec=False, depth=None)
+    elif np.array(exclude_layers).ndim == 1: # Then exclude_layers is a list of just layers e.g. [0,2,3]
+        poly = D.get_polygons(by_spec=True, depth=None)
+        poly = {key:poly[key] for key in poly if key[0] in exclude_layers} # Filter the dict
+        poly = itertools.chain.from_iterable(poly.values()) # Concatenate dict values to long list
+    elif np.array(exclude_layers).ndim == 2: # Then exclude_layers is a list of layers + datatypes e.g. [(0,1),(0,2),(1,0)]
+        poly = D.get_polygons(by_spec=True, depth=None)
+        poly = {key:poly[key] for key in poly if key in exclude_layers}
+        poly = itertools.chain.from_iterable(poly.values())
+        
+    if bbox is None:  bbox = D.bbox
+
+    raster = _rasterize_polygons(polygons = poly, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
+    raster = _expand_raster(raster, distance = margin/np.array(fill_size))
+    
+    for i in range(np.size(raster,0)):
+        sub_rasters = [list(g) for k, g in itertools.groupby(raster[i])]
+        j = 0
+        for s in sub_rasters:
+            if s[0] == 0:
+                x,y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
+                F.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
+            j += len(s)
+    
+    return F
