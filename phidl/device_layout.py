@@ -149,11 +149,19 @@ class _GeometryHelper(object):
         bbox = self.bbox
         return bbox[1][1] - bbox[0][1]
 
-    def movex(self, origin = (0,0), destination = None):
-        self.move(origin = origin, destination = destination, axis = 'x')
+    def movex(self, origin = 0, destination = None):
+        if destination is None:
+            destination = origin
+            origin = 0
+        self.move(origin = (origin,0), destination = (destination,0))
+        return self
 
-    def movey(self, origin = (0,0), destination = None):
-        self.move(origin = origin, destination = destination, axis = 'y')
+    def movey(self, origin = 0, destination = None):
+        if destination is None:
+            destination = origin
+            origin = 0
+        self.move(origin = (0,origin), destination = (0,destination))
+        return self
         
 
 

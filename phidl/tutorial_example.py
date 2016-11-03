@@ -53,6 +53,9 @@ quickplot(d)
 wg1.move([10,4]) # Shift the second waveguide we created over by dx = 10, dy = 4
 wg2.move(origin = [1,1], destination = [2,2]) # Shift the second waveguide over by dx = 1, dy = 1
 wg3.move([1,1], [5,5], axis = 'y') # Shift the third waveguide over by dx = 0, dy = 4 (motion only along y-axis)
+wg3.movey(4) # Same as specifying axis='y' in the move() command
+wg3.movex(4) # Same as specifying axis='x'' in the move() command
+wg3.movex(30,40) # Moves "from" x=30 "to" x=40 (e.g. shifts wg3 by +10 in the x-direction)
 
 wg1.rotate(45) # Rotate the first waveguie by 45 degrees around (0,0)
 wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees around (1,1)
