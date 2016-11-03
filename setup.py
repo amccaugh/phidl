@@ -7,11 +7,11 @@ install_requires=[
    'numpy',
    'matplotlib',
    'pyyaml',
-   'scikit-image>=0.12',
+   'scikit-image>=0.11',
 ]
 
 setup(name='phidl',
-      version='0.4.0',
+      version='0.4.1',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',
