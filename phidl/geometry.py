@@ -426,7 +426,7 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     xsize = size[0]
     ysize = size[1]
     num_meanders = int(ysize/wire_pitch)
-    if terminals_same_side: num_meanders += mod(num_meanders,2) # Make number of meanders even
+    if terminals_same_side: num_meanders += np.mod(num_meanders,2) # Make number of meanders even
     
     d = Device(name = 'snspd')
     hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20)
@@ -460,6 +460,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     d.add_port(port = c_nw.ports['W'], name = 1)
     d.add_port(port = c_se.ports['W'], name = 2)
     
+    d.meta['num_squares'] = (int(ysize/wire_pitch)*xsize/2)/wire_width
+    
     return d
 
     
@@ -476,6 +478,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
     step2.connect(port = 1, destination = s.ports[2])
     d.add_port(name = 1, port = step1.ports[2])
     d.add_port(name = 2, port = step2.ports[2])
+    
+    d.meta = s.meta
     
     return d
     

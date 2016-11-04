@@ -282,7 +282,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return subdevices
         
 
-    def add_label(self, text = 'hello', position = (0,0), layer = 89):
+    def annotate(self, text = 'hello', position = (0,0), layer = 89):
         if type(text) is not str: text = str(text)
         l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
         return l
