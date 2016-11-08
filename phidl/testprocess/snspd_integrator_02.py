@@ -12,18 +12,16 @@ def snspd_integrator(
                     nanowire_width = 0.5,
                     fill_factor = 1/3,
                     contact_pad_width = 5,
-                    snspd_size = [20,20],
+                    snspd_size = [100,100],
                     pad_flag_size = [250,250],
                     pad_pole_size = [50, 50],
                     pad_spacing = 50,
                     connector_size = [400,150],
-                    inset_distance = 1,
+                    inset_distance = 0.5,
                     num_devices = 5,
                     label = 'A1',
-                    rho_intersection = 1,
-                    theta_intersection = 5,
-                    arm_length = 50,
-                    source_length = 50,
+                    rho_intersection = 0.5,
+                    theta_intersection = 2.5,
                     width_right = 20,
                     width_left = 20,
                     ):
@@ -31,6 +29,8 @@ def snspd_integrator(
     # Create blank device
     D = Device('SNSPD-yTron-integator')
 
+    source_length = (width_right + width_left)
+    arm_length = max([width_right, width_left])*2
 
     #==============================================================================
     # Create and place components
@@ -49,7 +49,7 @@ def snspd_integrator(
                       width_right, width_left, theta_resolution = 10, layer = 0, datatype = 0))
     f.connect(port = 2, destination = cpm.ports['S1'])
     y.connect(port = 'right', destination = f.ports[1])
-    fy.connect(port = 1, destination = y.ports['left']).move([-200*np.sin(5/180*np.pi), 200])
+    fy.connect(port = 1, destination = y.ports['left']).move([-200*np.sin(theta_intersection/180*np.pi), 200])
     
     gnd = D.add_device(pg.compass(size = pad_flag_size, layer = 0, datatype = 0))
     gnd.move(origin = gnd.center, destination = y.ports['source'])
@@ -86,48 +86,59 @@ def snspd_integrator(
     #==============================================================================
     D.add_device( pg.text(label, justify = 'right', size = 200, layer = 1) ).center = [-500,-500]
 
+
+
     return D
 
-
-
+    
 
 #==============================================================================
-# Row A: Varying sharpness of yTron intersection (rho_intersection)
+# To change in this version
 #==============================================================================
-d = Device()
-rho = [0.25,0.5,1,1.5,2]
+# Wire-bondable resistor shunt for ytron integrator arm?
+# Inductor on yTron readout arm
+
+die_name = 'SE005'
+D = Device()
+
+#==============================================================================
+# Row A: Varying rho with right arm (SNSPD-integrator)
+#==============================================================================
+rho = [0.2,0.3,0.4,0.5,0.75]
 for n, r in enumerate(rho):
-    s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r, num_devices = 5) )
+    s = D.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 5, width_left = 5, rho_intersection = r, num_devices = 5) )
     s.move([(s.xsize + 300)*n, 0])
-    d.add_label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
+    D.annotate(('Varying yTron rho\n rho = %s\n5um arms' % rho[n]), s.center)
     
     
 #==============================================================================
-# Row B: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
+# Row B: Varying right arm (SNSPD-integrator) widths with left arm 3 um
 #==============================================================================
-rho = [0.25,0.5,1,1.5,2]
-for n, r in enumerate(rho):
-    s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+right_arm = [2,2.5,3,3.5,4]
+for n, r in enumerate(right_arm):
+    s = D.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = r, width_left = 3, rho_intersection = 0.3, num_devices = 5) )
     s.move([(s.xsize + 300)*n, -(s.ysize+200)])
-    d.add_label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
+    D.annotate(('Varying yTron right arm width\n Right arm = %sum\nLeft arm = 3um' % r), s.center)
     
     
 #==============================================================================
-# Row C: Varying sharpness of yTron intersection (rho_intersection) (different arm width)
+# Row C: Varying left arm (readout arm) widths with right arm 3 um
 #==============================================================================
-rho = [0.25,0.5,1,1.5,2]
-for n, r in enumerate(rho):
-    s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
+left_arm = [3,6,9,12,15]
+for n, l in enumerate(left_arm):
+    s = D.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 3, width_left = l, rho_intersection = 0.3, num_devices = 5) )
     s.move([(s.xsize + 300)*n, -2*(s.ysize+200)])
-    d.add_label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
+    D.annotate(('Varying yTron right arm width\nRight arm = 3um\n Left arm = %sum' % l), s.center)
+    
 
-d.center = (0,0)
-die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
+    
+D.center = (0,0)
+die = D.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
+              die_name = die_name, text_size = 300, text_location = 'SW',  layer = 0,  
               datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
               
-F = pg.fill_rectangle(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
-d.add_device( F )
+#D.add_device( pg.fill_rectangle(D, fill_size = (50,50), exclude_layers = None,
+#                                fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None) )
 
-d.write_gds('SCE001 SNSPD Integrator.gds', precision = 1e-9)
+D.write_gds('%s SNSPD Integrator.gds' % die_name, precision = 1e-9)
 
