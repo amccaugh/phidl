@@ -210,14 +210,14 @@ spec4 = {'layer': 3, 'datatype': 0} # Gold contacts
 # Die 1: Varying meander size - nanowire width 300 nm
 #==============================================================================
 D = Device()
-die_name = 'SE0004'
+die_name = 'SE006'
 
 y = 0
 imager_heights = 2.0**np.array(range(0,6))*(5.5)
 for n, h in enumerate(imager_heights):
     S = snspd_imager_rounded(label = ('A%s' % (n+1)), size = [imager_width, h], nanowire_width = 0.3,
                              nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
-    l = S.add_label(str(S.meta).replace(",", "\n"))
+    l = S.annotate(str(S.meta).replace(",", "\n"))
     l.center = S.center
     s = D.add_device(S)
     s.ymax = y
@@ -246,14 +246,14 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 2: Varying meander size - nanowire width 500 nm
 #==============================================================================
 D = Device()
-die_name = 'SE0005'
+die_name = 'SE007'
 
 y = 0
 imager_heights = 2.0**np.array(range(0,6))*(5.5)
 for n, h in enumerate(imager_heights):
     S = snspd_imager_rounded(label = ('A%s' % (n+1)), size = [imager_width, h], nanowire_width = 0.5,
                              nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
-    l = S.add_label(str(S.meta).replace(",", "\n"))
+    l = S.annotate(str(S.meta).replace(",", "\n"))
     l.center = S.center
     s = D.add_device(S)
     s.ymax = y
@@ -284,7 +284,7 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 3: Large device - 300 nm width
 #==============================================================================
 D = Device()
-die_name = 'SE0006'
+die_name = 'SE009'
 
 imager_height = 2500
 imager_width = 2500
@@ -292,7 +292,7 @@ taper_width = 2000
 taper_length = taper_width*21
 S = snspd_imager_rounded(label = ('A%s' % (1)), size = [imager_width, imager_height], nanowire_width = 0.3,
                          nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
-l = S.add_label(str(S.meta).replace(",", "\n"))
+l = S.annotate(str(S.meta).replace(",", "\n"))
 l.center = S.center
 s = D.add_device(S)
 D.center = [0,0]
@@ -319,7 +319,7 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 3: Large device - 500 nm width
 #==============================================================================
 D = Device()
-die_name = 'SE0007'
+die_name = 'SE010'
 
 imager_height = 2500
 imager_width = 2500
@@ -327,7 +327,7 @@ taper_width = 2000
 taper_length = taper_width*21
 S = snspd_imager_rounded(label = ('A%s' % (1)), size = [imager_width, imager_height], nanowire_width = 0.5,
                          nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
-l = S.add_label(str(S.meta).replace(",", "\n"))
+l = S.annotate(str(S.meta).replace(",", "\n"))
 l.center = S.center
 s = D.add_device(S)
 D.center = [0,0]

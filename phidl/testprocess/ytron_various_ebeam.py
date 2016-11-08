@@ -91,7 +91,7 @@ x = 0
 for n, r in enumerate(rho):
     s = D.add_device( ytron_ebeam_with_pads(label = 'A'+str(n+1), width_right = 0.3, width_left = 0.3, rho_intersection = r) )
     s.move([(s.xsize + 300)*n, 0])
-    D.add_label(('Varying sharpness\n rho = %s\n300nm arms' % rho[n]), s.center)
+    D.annotate(('Varying sharpness\n rho = %s\n300nm arms' % rho[n]), s.center)
 
 
 
@@ -107,7 +107,7 @@ for n, r in enumerate(rho):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    D.add_label(('Varying sharpness\n rho = %s\n600nm arms' % rho[n]), s.center)
+    D.annotate(('Varying sharpness\n rho = %s\n600nm arms' % rho[n]), s.center)
 
 
 
@@ -125,7 +125,7 @@ for n, w in enumerate(width_right):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    D.add_label(('Varying arm width ratio\nRight arm width = %sum\nLeft arm width = 1um' % width_right[n]), s.center)
+    D.annotate(('Varying arm width ratio\nRight arm width = %sum\nLeft arm width = 1um' % width_right[n]), s.center)
 
     
 D2 = Device()

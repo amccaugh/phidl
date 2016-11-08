@@ -99,7 +99,7 @@ rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r, num_devices = 5) )
     s.move([(s.xsize + 300)*n, 0])
-    d.add_label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
+    d.annotate(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
     
     
 #==============================================================================
@@ -109,7 +109,7 @@ rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
     s.move([(s.xsize + 300)*n, -(s.ysize+200)])
-    d.add_label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
+    d.annotate(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
     
     
 #==============================================================================
@@ -119,7 +119,7 @@ rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
     s.move([(s.xsize + 300)*n, -2*(s.ysize+200)])
-    d.add_label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
+    d.annotate(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
 
 d.center = (0,0)
 die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
