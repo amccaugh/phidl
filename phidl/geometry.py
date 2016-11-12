@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
-from numpy import sqrt, pi, cos, sin, log, exp, sinh
+from numpy import sqrt, pi, cos, sin, log, exp, sinh, mod
+from numpy.linalg import norm
 from scipy.special import iv as besseli
 from scipy.optimize import fmin, fminbound
 from scipy import integrate
@@ -13,9 +14,9 @@ from skimage import draw, morphology
 
 
 ##### Categories:
+# Polygons / shapes
 # Optimal (current-crowding) curves
 # Pads
-# Shapes
 # SNSPD
 # Taper
 # Text
@@ -23,6 +24,8 @@ from skimage import draw, morphology
 # Waveguide
 # yTron
 # Fill tool
+# Routing
+# Boolean functions
 
 
 
@@ -49,7 +52,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     xpts = [x]; ypts = [y]
     while (y < 0) & (n<1e6):
         s = x + 1j*y
-        w = np.sqrt(1 - np.exp(np.pi*s/a))
+        w = np.sqrt(1 - np.exp(pi*s/a))
         wx = np.real(w); wy = np.imag(w)
         wx = wx/np.sqrt(wx**2+wy**2); wy = wy/np.sqrt(wx**2+wy**2)
         x = x + wx*dl; y = y + wy*dl
@@ -74,16 +77,16 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
-    d = Device(name = 'hairpin')
-    d.add_polygon([xpts,ypts])
-    d.add_polygon([xpts,-ypts])
+    D = Device(name = 'hairpin')
+    D.add_polygon([xpts,ypts])
+    D.add_polygon([xpts,-ypts])
     
     xports = min(xpts)
     yports = -a + width/2
-    d.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
-    d.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
+    D.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
+    D.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
     
-    return d
+    return D
     
     
 
@@ -108,7 +111,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
         w = np.exp(1j*eta)
 
-        zeta = 4*1j/np.pi*(W*np.arctan(np.sqrt((w-gamma)/(gamma+1))) \
+        zeta = 4*1j/pi*(W*np.arctan(np.sqrt((w-gamma)/(gamma+1))) \
                            + a*np.arctan(np.sqrt((gamma-1)/(w-gamma))))
 
         x = np.real(zeta)
@@ -123,7 +126,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
             if y_desired is None:   return (guessed_x-x_desired)**2 # The error
             else:                   return (guessed_y-y_desired)**2
 
-        found_eta = fminbound(fh, x1 = 0, x2 = np.pi, args=())
+        found_eta = fminbound(fh, x1 = 0, x2 = pi, args=())
         return step_points(found_eta, W = W, a = a)
 
     if start_width > end_width:
@@ -160,13 +163,13 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
-    d = Device(name = 'step')
-    d.add_polygon([xpts,ypts])
+    D = Device(name = 'step')
+    D.add_polygon([xpts,ypts])
     
-    d.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
-    d.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+    D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
+    D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
     
-    return d
+    return D
     
     
     
@@ -194,31 +197,31 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 #==============================================================================
 
 
-def compass(size = (4,2), center = (0,0), layer = 0, datatype = 0):
+def compass(size = (4,2), layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west)
     """
     
-    d = Device(name = 'compass')
-    d.add_polygon(rectangle_centered(size, center), layer = layer, datatype = datatype)
+    D = Device(name = 'compass')
+    D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
     
     dx = size[0]
     dy = size[1]
-    d.add_port(name = 'N', midpoint = [0, dy/2],  width = dx, orientation = 90)
-    d.add_port(name = 'S', midpoint = [0, -dy/2], width = dx, orientation = -90)
-    d.add_port(name = 'E', midpoint = [dx/2, 0],  width = dy, orientation = 0)
-    d.add_port(name = 'W', midpoint = [-dx/2, 0], width = dy, orientation = 180)
+    D.add_port(name = 'N', midpoint = [0, dy/2],  width = dx, orientation = 90)
+    D.add_port(name = 'S', midpoint = [0, -dy/2], width = dx, orientation = -90)
+    D.add_port(name = 'E', midpoint = [dx/2, 0],  width = dy, orientation = 0)
+    D.add_port(name = 'W', midpoint = [-dx/2, 0], width = dy, orientation = 180)
     
-    return d
+    return D
     
     
-def compass_multi(size = (4,2), ports = {'N':3,'S':4}, center = (0,0), layer = 0, datatype = 0):
+def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
     """
     
-    d = Device(name = 'compass_multi')
-    d.add_polygon(rectangle_centered(size, center = [0,0]))
+    D = Device(name = 'compass_multi')
+    D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
     
     dx = size[0]/2
     dy = size[1]/2
@@ -227,25 +230,24 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, center = (0,0), layer = 0
         num_ports = ports['N']
         m = dx-dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [d.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],  width = dx/num_ports*2, orientation = 90) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],  width = dx/num_ports*2, orientation = 90) for n,p in enumerate(p_list)]
     if ports.has_key('S'):
         num_ports = ports['S']
         m = dx-dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [d.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],  width = dx/num_ports*2, orientation = -90) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],  width = dx/num_ports*2, orientation = -90) for n,p in enumerate(p_list)]
     if ports.has_key('E'):
         num_ports = ports['E']
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [d.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],  width = dy/num_ports*2, orientation = 0) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],  width = dy/num_ports*2, orientation = 0) for n,p in enumerate(p_list)]
     if ports.has_key('W'):
         num_ports = ports['W']
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [d.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],  width = dy/num_ports*2, orientation = 180) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],  width = dy/num_ports*2, orientation = 180) for n,p in enumerate(p_list)]
     
-    d.move(origin = [0,0], destination = center)
-    return d
+    return D
     
     
 
@@ -255,7 +257,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     p = np.array(stub_size)
     shape = shape.lower()
 
-    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
+    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or D'
     assert taper_type in ['straight','fillet'], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
     
     if shape ==   'p':
@@ -266,24 +268,24 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     elif shape == 'b':
         f[1], p[1] = -size[1], -stub_size[1]
         orientation = 90
-    elif shape == 'd':
+    elif shape == 'D':
         f[1], p[1] = -size[1], -stub_size[1]
         f[0], p[0] = -size[0], -stub_size[0]
         orientation = 90
     xpts = [0, 0, f[0], f[0], p[0], p[0], 0]
     ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
     
-    d = Device(name = 'flagpole')
-    pad_poly = d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D = Device(name = 'flagpole')
+    pad_poly = D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,0,0,taper_amount,0,0])
     elif taper_type == 'straight':
-        d.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
+        D.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
             
-    d.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = abs(p[0]), orientation = orientation)
-    d.add_port(name = 2, midpoint = [f[0]/2, f[1]],  width = abs(f[0]), orientation = orientation-180)
-    return d
+    D.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = abs(p[0]), orientation = orientation)
+    D.add_port(name = 2, midpoint = [f[0]/2, f[1]],  width = abs(f[0]), orientation = orientation-180)
+    return D
 
 
 def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, datatype = 0):
@@ -293,20 +295,20 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, dat
     xpts = np.array([f[0], f[0], p[0], p[0], -p[0], -p[0], -f[0], -f[0]])/2
     ypts = [f[1], 0, 0, -p[1], -p[1], 0, 0, f[1]]
     
-    d = Device(name = 'tee')
-    pad_poly = d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D = Device(name = 'tee')
+    pad_poly = D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,taper_amount,0,0,taper_amount,0,0])
     if taper_type == 'straight':
-        taper_poly1 = d.add_polygon([xpts[1:4],ypts[1:4]], layer = layer, datatype = datatype)
-        taper_poly2 = d.add_polygon([xpts[4:7],ypts[4:7]], layer = layer, datatype = datatype)
+        taper_poly1 = D.add_polygon([xpts[1:4],ypts[1:4]], layer = layer, datatype = datatype)
+        taper_poly2 = D.add_polygon([xpts[4:7],ypts[4:7]], layer = layer, datatype = datatype)
         
-    d.add_port(name = 'N', midpoint = [0, f[1]],  width = f[0], orientation = 90)
-    d.add_port(name = 'S', midpoint = [0, -p[1]],  width = p[0], orientation = -90)
-    d.add_port(name = 'E', midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
-    d.add_port(name = 'W', midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
-    return d
+    D.add_port(name = 'N', midpoint = [0, f[1]],  width = f[0], orientation = 90)
+    D.add_port(name = 'S', midpoint = [0, -p[1]],  width = p[0], orientation = -90)
+    D.add_port(name = 'E', midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
+    D.add_port(name = 'W', midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
+    return D
     
 
 #==============================================================================
@@ -337,26 +339,40 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, dat
 
 #==============================================================================
 #
-# Shapes (basic)
+# Polygons / Shapes
 #
 #==============================================================================
 
-
-def rectangle(point1 = (2,2), point2 = (0,0), layer = 0, datatype = 0):
-    """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
-    points = np.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
-    return gdspy.Polygon(points, layer = layer, datatype = datatype)
     
+# def _xy2p(*args):
+#     """ Takes in lists of x points and y points, e.g. [1,2,3],[5,6,7] and
+#     converts it to the point format e.g. [[1,5],[2,6],[3,7]].  Can either be
+#     called as xy2p(xpts, ypts) or as xy2p(xy) where xy = [xpts, ypts]
+#     """
+#     if len(args) == 1:      x,y = args[0][0], args[0][1] 
+#     elif len(args) == 2:    x,y = args[0],    args[1]
+#     points = np.array(zip(*[x,y]))
+#     return points
 
-def rectangle_centered(size = (2,2), center = (0,0), layer = 0, datatype = 0):
-    """ Creates a rectangle polygon of size ``size`` and centered at ``center`` """
-    point1 = np.array(center) - np.array(size)/2
-    point2 = np.array(center) + np.array(size)/2
-    return rectangle(point1, point2, layer = layer, datatype = datatype)
+# def polygon(points, layer = 0, datatype = 0, name = 'polygon'):
+#     D = Device('polygon')
+#     if len(points[0]) > 2: # Then it must be of the form [[1,3,5],[2,4,6]]
+#         points = _xy2p(points)
+#     D.add_polygon(points, layer, datatype)
+#     return D
+        
+
+def rectangle(point1 = (4,2), point2 = (0,0), layer = 0, datatype = 0):
+    """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
+    D = Device(name = 'rectangle')
+    points = np.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
+    D.add_polygon(points, layer = layer, datatype = datatype)
+    return D
+
 
 def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype = 0):
-    inner_radius = radius-width/2
-    outer_radius = radius+width/2
+    inner_radius = radius - width/2
+    outer_radius = radius + width/2
     t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
     inner_points_x = (inner_radius*cos(t)).tolist()
     inner_points_y = (inner_radius*sin(t)).tolist()
@@ -364,13 +380,10 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype =
     outer_points_y = (outer_radius*sin(t)).tolist()
     xpts = inner_points_x + outer_points_x[::-1]
     ypts = inner_points_y + outer_points_y[::-1]
-    
-    d = Device(name = 'ring')
-    d.add_polygon((xpts, ypts), layer = layer, datatype = datatype)
-    return d
+    D = polygon(points = (xpts,ypts), name = 'ring', layer = layer, datatype = datatype)
+    return D
     
     
-# TODO: Write ring definition    
 def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0, datatype = 0):
     """ Creates an arc of arclength ``theta`` starting at angle ``start_angle`` """
     inner_radius = radius-width/2
@@ -385,29 +398,29 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     xpts = inner_points_x + outer_points_x[::-1]
     ypts = inner_points_y + outer_points_y[::-1]
     
-    
-    d = Device(name = 'arc')
-    d.add_polygon((xpts, ypts), layer = layer, datatype = datatype)
-    d.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
-    d.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
-    d.meta['length'] = abs(theta)*radius*pi/180
-    return d
-    
+    D = Device('arc')
+    D.add_polygon(points = (xpts,ypts), layer = layer, datatype = datatype)
+    D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
+    D.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
+    D.meta['length'] = (abs(theta)*pi/180)*radius
+    return D
+
+
 def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0, datatype = 0):
     """ Starting form a port, create a arc which connects to the port """
-    a = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
+    D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
             angle_resolution = angle_resolution, layer = layer, datatype = datatype)
-    a.rotate(angle =  180 + port.orientation - a.ports[1].orientation, center = a.ports[1].midpoint)
-    a.move(origin = a.ports[1], destination = port)
-    return a
+    D.rotate(angle =  180 + port.orientation - a.ports[1].orientation, center = a.ports[1].midpoint)
+    D.move(origin = a.ports[1], destination = port)
+    return D
 
 
 #==============================================================================
 # Example code
 #==============================================================================
     
-#r = rectangle_centered([5,50], layer = 5, datatype = 15)
-#quickplot(r)
+#R = rectangle(point1 = (4,2), point2 = (0,0), layer = 0, datatype = 0)
+#quickplot(R)
 
 
 
@@ -428,17 +441,17 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     num_meanders = int(ysize/wire_pitch)
     if terminals_same_side: num_meanders += np.mod(num_meanders,2) # Make number of meanders even
     
-    d = Device(name = 'snspd')
+    D = Device(name = 'snspd')
     hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20)
     
-    hp2 = d.add_device(hairpin)
+    hp2 = D.add_ref(hairpin)
     top_port = hp2.ports[1]
     while num_meanders > 1:
-        # Repeatedly add two new subdevices
-        hp1 = d.add_device(hairpin)
+        # Repeatedly add two new device references
+        hp1 = D.add_ref(hairpin)
         hp1.rotate(180)
         hp1.connect(2, hp2.ports[2])
-        hp2 = d.add_device(hairpin)
+        hp2 = D.add_ref(hairpin)
         hp2.connect(1, hp1.ports[1])
         
         num_meanders -= 2
@@ -446,42 +459,42 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     bottom_port = hp2.ports[2]
     
     if terminals_same_side is False:
-        hp1 = d.add_device(hairpin)
+        hp1 = D.add_ref(hairpin)
         hp1.rotate(180)
         hp1.connect(2, hp2.ports[2])
         bottom_port = hp1.ports[1]
     
     
-    c_nw = d.add_device(compass(size = [xsize/2 ,wire_width]))
-    c_se = d.add_device(compass(size = [xsize/2 ,wire_width]))
+    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width]))
+    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width]))
     c_nw.connect('E', top_port)
     c_se.connect('E', bottom_port)
     
-    d.add_port(port = c_nw.ports['W'], name = 1)
-    d.add_port(port = c_se.ports['W'], name = 2)
+    D.add_port(port = c_nw.ports['W'], name = 1)
+    D.add_port(port = c_se.ports['W'], name = 2)
     
-    d.meta['num_squares'] = (int(ysize/wire_pitch)*xsize/2)/wire_width
+    D.meta['num_squares'] = (int(ysize/wire_pitch)*xsize/2)/wire_width
     
-    return d
+    return D
 
     
 def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_width = 1,
            num_pts = 20, terminals_same_side = False, layer = 0, datatype = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
-    d = Device('snspd_expanded')
-    s = d.add_device(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
+    D = Device('snspd_expanded')
+    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
                      terminals_same_side = terminals_same_side, layer = layer, datatype = datatype))
     step_device = optimal_step(start_width = wire_width, end_width = connector_width, num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3)
-    step1 = d.add_device(step_device)
-    step2 = d.add_device(step_device)
+    step1 = D.add_ref(step_device)
+    step2 = D.add_ref(step_device)
     step1.connect(port = 1, destination = s.ports[1])
     step2.connect(port = 1, destination = s.ports[2])
-    d.add_port(name = 1, port = step1.ports[2])
-    d.add_port(name = 2, port = step2.ports[2])
+    D.add_port(name = 1, port = step1.ports[2])
+    D.add_port(name = 2, port = step2.ports[2])
     
-    d.meta = s.meta
+    D.meta = s.meta
     
-    return d
+    return D
     
     
 
@@ -510,31 +523,31 @@ def snspd_squares(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), num_pts = 20
 #==============================================================================
 
 
-def taper(length, width = None, end_width = None, port = None, layer = 0, datatype = 0):
-    if type(port) is Port and width is None: width = port.width
-    if end_width is None: end_width = width
+def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0, datatype = 0):
+    if type(port) is Port and width1 is None: width1 = port.width
+    if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
-    ypts = [width/2, end_width/2, -end_width/2, -width/2]
+    ypts = [width1/2, width2/2, -width2/2, -width1/2]
     
-    d = Device('taper')
-    d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
-    d.add_port(name = 1, midpoint = [0, 0], width = width, orientation = 180)
-    d.add_port(name = 2, midpoint = [length, 0], width = end_width, orientation = 0)
+    D = Device('taper')
+    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_port(name = 1, midpoint = [0, 0], width = width1, orientation = 180)
+    D.add_port(name = 2, midpoint = [length, 0], width = width2, orientation = 0)
     if type(port) is Port: 
-        d.rotate(angle = port.orientation, center = [0,0])
-        d.move(origin = [0,0], destination = port.midpoint)
-    return d
+        D.rotate(angle = port.orientation, center = [0,0])
+        D.move(origin = [0,0], destination = port.midpoint)
+    return D
     
     
-def ramp(length, width, end_width = None, layer = 0, datatype = 0):
-    if end_width is None: end_width = width
-    xpts = [0, width/2, width/2, 0]
-    ypts = [width/2, end_width/2, 0, 0]
-    d = Device('ramp')
-    d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
-    d.add_port(name = 1, midpoint = [0, 0], width = width, orientation = 180)
-    d.add_port(name = 2, midpoint = [length, end_width/2], width = end_width, orientation = 0)
-    return d
+def ramp(length = 10, width1 = 5, width2 = 8, layer = 0, datatype = 0):
+    if width2 is None: width2 = width1
+    xpts = [0, width1/2, width1/2, 0]
+    ypts = [width1/2, width2/2, 0, 0]
+    D = Device('ramp')
+    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_port(name = 1, midpoint = [0, 0], width = width1, orientation = 180)
+    D.add_port(name = 2, midpoint = [length, width2/2], width = width2, orientation = 0)
+    return D
     
 
 # Equations taken from
@@ -619,30 +632,30 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
     
     # Create blank device and add taper polygon
-    d = Device()
+    D = Device()
     xpts = np.concatenate([x, x[::-1]])
     ypts = np.concatenate([widths/2, -widths[::-1]/2])
-    d.add_polygon((xpts,ypts), layer = layer, datatype = datatype)
-    d.add_port(name = 1, midpoint = (-length/2,0), width = widths[0], orientation = 180)
-    d.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
+    D.add_polygon((xpts,ypts), layer = layer, datatype = datatype)
+    D.add_port(name = 1, midpoint = (-length/2,0), width = widths[0], orientation = 180)
+    D.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
     dx = x[1]-x[0]
-    d.meta['num_squares'] = np.sum(dx/widths)
-    d.meta['width1'] = widths[0]
-    d.meta['width2'] = widths[-1]
-    d.meta['Z1'] = Z[0]
-    d.meta['Z2'] = Z[-1]
+    D.meta['num_squares'] = np.sum(dx/widths)
+    D.meta['width1'] = widths[0]
+    D.meta['width2'] = widths[-1]
+    D.meta['Z1'] = Z[0]
+    D.meta['Z2'] = Z[-1]
     # Note there are two values for v/c (and f_cutoff) because the speed of
     # light is different at the beginning and end of the taper
-    d.meta['w'] = widths
-    d.meta['x'] = x
-    d.meta['Z'] = Z
-    d.meta['v/c'] = v/3e8
+    D.meta['w'] = widths
+    D.meta['x'] = x
+    D.meta['Z'] = Z
+    D.meta['v/c'] = v/3e8
     BetaLmin = np.sqrt(B**2 + 6.523)
-    d.meta['f_cutoff'] = BetaLmin*d.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
+    D.meta['f_cutoff'] = BetaLmin*D.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
     
-    return d
+    return D
 
 
 
@@ -667,29 +680,29 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
     def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0, datatype = 0):
         D = Device()
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
-        path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
-        [D.add_polygon(p, layer = layer, datatype = datatype) for p in path1.polygons]
+        path1.turn(radius = radius, angle = theta*pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
+        [D.add_polygon(p.points, layer = layer, datatype = datatype) for p in path1.polygons]
         D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
-        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/np.pi)
+        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/pi)
         return D
         
     D = Device('meander-taper')
     xpos1 = min(x_taper)
     xpos2 = min(x_taper) + meander_length
-    t = D.add_device( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50) )
+    t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50) )
     D.add_port(t.ports[1])
     dir_toggle = -1
     while xpos2 < max(x_taper):
         arc_width1 = taper_width(xpos2)
         arc_radius = max(spacing_factor*arc_width1, min_spacing)
-        arc_length = np.pi*arc_radius
+        arc_length = pi*arc_radius
         arc_width2 = taper_width(xpos2 + arc_length)
-        a = D.add_device(  arc_tapered(radius = arc_radius, width1 = arc_width1, width2 = arc_width2, theta = 180*dir_toggle) )
+        a = D.add_ref(  arc_tapered(radius = arc_radius, width1 = arc_width1, width2 = arc_width2, theta = 180*dir_toggle) )
         a.connect(port = 1, destination = t.ports[2])
         dir_toggle = -dir_toggle
         xpos1 = xpos2 + arc_length
         xpos2 = xpos1 + meander_length
-        t = D.add_device( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30) )
+        t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30) )
         t.connect(port = 1, destination = a.ports[2])
     D.add_port(t.ports[2])
         
@@ -699,13 +712,13 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
 # Example code
 #==============================================================================
 
-#d = racetrack_gradual(width, R = 5, N=3)
-#quickplot(d)
+#D = racetrack_gradual(width, R = 5, N=3)
+#quickplot(D)
 
-# d = hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
+# D = hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
 #                  Lk_per_sq = 250e-12, Z1 = 50, width2 = 0.3,
 #                  num_pts = 100, layer = 0, datatype = 0)
-# quickplot(d)
+# quickplot(D)
 
 #t = np.linspace(0,1)
 #x,y = _racetrack_gradual_parametric(t, R = 5, N = 3)
@@ -723,7 +736,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
 #==============================================================================
 
 # The DEPLOF font is made by David Elata, MEMS Lab, Technion, Haifa, Israel and
-# and is used with permission.  The raw polygon entries are  sourced from
+# and is used with permission.  The raw polygon entries are sourced from
 # Ulf Griesmann's modified DEPLOF implementation used in the MATLAB gdsii 
 # toolbox https://github.com/ulfgri/gdsii-toolbox/ and are used with permission
 
@@ -951,11 +964,11 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, d
                     l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer, datatype=datatype)
                 xoffset += (width[ascii_val] + indent[ascii_val])*scaling
             else: ValueError('No glyph for character with ascii value %s' % ascii_val)
-        t.add_device(l)
+        t.add_ref(l)
         yoffset -= 1500*scaling
         xoffset = position[0]
     justify = justify.lower()
-    for l in t.subdevices:
+    for l in t.references:
         if justify == 'left':   pass
         if justify == 'right':  l.xmax = position[0]# l.move(origin = l.bounds('NE'), destination = position, axis = 'x')
         if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
@@ -966,8 +979,8 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, d
 # Example code    
 #==============================================================================
     
-#d = text('the quick brown\n fox jumped over\nthe lazy dog', justify = 'center', size = 800)
-#quickplot(d)
+#D = text('the quick brown\n fox jumped over\nthe lazy dog', justify = 'center', size = 800)
+#quickplot(D)
 
 
 
@@ -995,17 +1008,17 @@ def basic_die(size = (10000, 10000),
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
-    d = Device(name = 'die')
+    D = Device(name = 'die')
     xpts = np.array([size[0]/2, size[0]/2, size[0]/2-street_width, size[0]/2-street_width, size[0]/2-street_length, size[0]/2-street_length])
     ypts = np.array([size[1]/2, size[1]/2-street_length, size[0]/2-street_length, size[0]/2-street_width, size[0]/2-street_width, size[1]/2])
-    d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
-    d.add_polygon([-xpts,ypts], layer = layer, datatype = datatype)
-    d.add_polygon([xpts,-ypts], layer = layer, datatype = datatype)
-    d.add_polygon([-xpts,-ypts], layer = layer, datatype = datatype)
+    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_polygon([-xpts,ypts], layer = layer, datatype = datatype)
+    D.add_polygon([xpts,-ypts], layer = layer, datatype = datatype)
+    D.add_polygon([-xpts,-ypts], layer = layer, datatype = datatype)
     
     if draw_bbox is True:
         s = np.array(size)/2
-        d.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer, datatype = bbox_datatype)
+        D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer, datatype = bbox_datatype)
     
     if type(text_location) is str:
         if text_location.upper() == 'SW':
@@ -1020,9 +1033,9 @@ def basic_die(size = (10000, 10000),
     else:
         text_position = text_location
         justify = 'center'
-    d.add_device(text(text = die_name, size = text_size, position=text_position, justify = justify, layer=layer, datatype=datatype))
+    D.add_ref(text(text = die_name, size = text_size, position=text_position, justify = justify, layer=layer, datatype=datatype))
     
-    return d
+    return D
     
     
     
@@ -1030,10 +1043,10 @@ def basic_die(size = (10000, 10000),
 # Example code
 #==============================================================================
 
-# d = basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
+# D = basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
 #               die_name = 'chip99', text_size = 300, text_location = 'SW',  layer = 0,  
 #               datatype = 0, draw_bbox = True,  bbox_layer = 99,  bbox_datatype = 99)
-# quickplot(d)
+# quickplot(D)
 
 
 
@@ -1051,9 +1064,9 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0, datatype = 0):
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer, datatype=datatype)
-    d = Device()
-    d.add(route_path)
-    return d
+    D = Device()
+    D.add(route_path)
+    return D
     
 
 def _racetrack_gradual_parametric(t, R, N):
@@ -1066,7 +1079,7 @@ def _racetrack_gradual_parametric(t, R, N):
     x,y = np.zeros(t.shape), np.zeros(t.shape)
     
     # Doing the math
-    x = np.cos(t*np.pi/2)*R0 # t (0-1) while x (0 to R0)
+    x = cos(t*pi/2)*R0 # t (0-1) while x (0 to R0)
     ii =  (Rmin/sqrt(2) < x) & (x <= R0)
     jj =  (0 < x) & (x <= Rmin/sqrt(2))
     y[ii] = (R**N - (x[ii]+(x0-Rmin/sqrt(2)))**N)**(1/N)
@@ -1079,8 +1092,8 @@ def _racetrack_gradual_parametric(t, R, N):
 # Example code
 #==============================================================================
 
-# d = racetrack_gradual(width = 0.3, R = 5, N = 3)
-# quickplot(d)
+# D = racetrack_gradual(width = 0.3, R = 5, N = 3)
+# quickplot(D)
 
 
 
@@ -1126,21 +1139,21 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
-    d = Device(name = 'ytron')
-    d.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
-    d.add_port(name = 'left', midpoint = [-(xc+arm_x+width_left/2), yc+arm_y],  width = width_left, orientation = 90)
-    d.add_port(name = 'right', midpoint = [xc+arm_x+width_right/2, yc+arm_y],  width = width_right, orientation = 90)
-    d.add_port(name = 'source', midpoint = [0+(width_right-width_left)/2, -source_length+yc],  width = width_left + width_right + 2*xc, orientation = -90)
+    D = Device(name = 'ytron')
+    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_port(name = 'left', midpoint = [-(xc+arm_x+width_left/2), yc+arm_y],  width = width_left, orientation = 90)
+    D.add_port(name = 'right', midpoint = [xc+arm_x+width_right/2, yc+arm_y],  width = width_right, orientation = 90)
+    D.add_port(name = 'source', midpoint = [0+(width_right-width_left)/2, -source_length+yc],  width = width_left + width_right + 2*xc, orientation = -90)
     
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
-    d.meta['rho'] = rho_intersection
-    d.meta['left_width'] = width_left
-    d.meta['right_width'] = width_right
-    d.meta['source_width'] = width_left + width_right + 2*xc
+    D.meta['rho'] = rho_intersection
+    D.meta['left_width'] = width_left
+    D.meta['right_width'] = width_right
+    D.meta['source_width'] = width_left + width_right + 2*xc
 
-    return d
+    return D
     
     
     
@@ -1253,3 +1266,89 @@ def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = 
             j += len(s)
     
     return F
+
+
+#==============================================================================
+#
+# Routing
+#
+#==============================================================================
+        
+def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0):
+    # Assuming they're both Ports for now
+    point_a = np.array(port1.midpoint)
+    if width1 is None:  width1 = port1.width
+    point_b = np.array(port2.midpoint)
+    if width2 is None:  width2 = port2.width
+    if round(abs(mod(port1.orientation - port2.orientation,360)),3) != 180:
+        raise ValueError('[DEVICE] route() error: Ports do not face each other (orientations must be 180 apart)') 
+    orientation = port1.orientation
+    
+    separation = point_b - point_a  # Vector drawn from A to B
+    distance = norm(separation) # Magnitude of vector from A to B
+    rotation = np.arctan2(separation[1],separation[0])*180/pi # Rotation of vector from A to B
+    angle = rotation - orientation   # If looking out along the normal of ``a``, the angle you would have to look to see ``b``
+    forward_distance = distance*cos(angle*pi/180)
+    lateral_distance = distance*sin(angle*pi/180)
+    
+    # Create a path assuming starting at the origin and setting orientation = 0
+    # use the "connect" function later to move the path to the correct location
+    xf = forward_distance
+    yf = lateral_distance
+    if path_type == 'straight':
+        curve_fun = lambda t: [xf*t, yf*t]
+        curve_deriv_fun = lambda t: [xf + t*0, t*0]
+    if path_type == 'sine':
+        curve_fun = lambda t: [xf*t, yf*(1-cos(t*pi))/2]
+        curve_deriv_fun = lambda t: [xf  + t*0, yf*(sin(t*pi)*pi)/2]
+    #if path_type == 'semicircle':
+    #    def semicircle(t):
+    #        t = np.array(t)
+    #        x,y = np.zeros(t.shape), np.zeros(t.shape)
+    #        ii = (0 <= t) & (t <= 0.5)
+    #        jj = (0.5 < t) & (t <= 1)
+    #        x[ii] = (cos(-pi/2 + t[ii]*pi/2))*xf
+    #        y[ii] = (sin(-pi/2 + t[ii]*pi/2)+1)*yf*2
+    #        x[jj] = (cos(pi*3/2 - t[jj]*pi)+2)*xf/2
+    #        y[jj] = (sin(pi*3/2 - t[jj]*pi)+1)*yf/2
+    #        return x,y
+    #    curve_fun = semicircle
+    #    curve_deriv_fun = None
+    if width_type == 'straight':
+        width_fun = lambda t: (width2 - width1)*t + width1
+    if width_type == 'sine':
+        width_fun = lambda t: (width2 - width1)*(1-cos(t*pi))/2 + width1
+    
+    route_path = gdspy.Path(width = width1, initial_point = (0,0))
+    route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts, \
+            max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
+    
+    # Make the route path into a Device with ports, and use "connect" to move it
+    # into the proper location
+    D = Device()
+    D.add(route_path)
+    p1 = D.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
+    p2 = D.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
+    D.meta['length'] = route_path.length
+
+    D.rotate(angle =  180 + port1.orientation - p1.orientation, center = p1.midpoint)
+    D.move(origin = p1, destination = port1)
+    return D
+
+
+#==============================================================================
+#
+# Boolean functions
+#
+#==============================================================================
+
+def inset(elements, distance = 0.1, join_first = True, precision=0.001, layer=0, datatype=0):
+    # This pre-joining (by expanding by precision) is makes this take twice as
+    # long but is necessary because of floating point errors which otherwise
+    # separate polygons which are nominally joined
+    D = Device()
+    joined = gdspy.offset(elements, precision, join='miter', tolerance=2, precision=precision, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
+    p = gdspy.offset(joined, -distance, join='miter', tolerance=2, precision=precision, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
+    D.add_polygon(p)
+    return D
+    

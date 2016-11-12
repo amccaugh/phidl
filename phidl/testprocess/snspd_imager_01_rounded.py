@@ -284,7 +284,7 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 3: Large device - 300 nm width
 #==============================================================================
 D = Device()
-die_name = 'SE009'
+die_name = 'SE008'
 
 imager_height = 2500
 imager_width = 2500
@@ -319,7 +319,7 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 # Die 3: Large device - 500 nm width
 #==============================================================================
 D = Device()
-die_name = 'SE010'
+die_name = 'SE009'
 
 imager_height = 2500
 imager_width = 2500
