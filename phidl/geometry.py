@@ -1345,16 +1345,17 @@ def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = No
 #
 #==============================================================================
 
-def inset(elements, distance = 0.1, join_first = True, precision=0.001, layer=0, datatype=0):
-    # This pre-joining (by expanding by precision) is makes this take twice as
-    # long but is necessary because of floating point errors which otherwise
-    # separate polygons which are nominally joined
+def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0, datatype = 0):
+
     if type(elements) is not list: elements = [elements]
     new_elements = []
     for e in elements:
         if isinstance(e, Device): new_elements += e.get_polygons()
         else: new_elements.append(e)
         
+    # This pre-joining (by expanding by precision) is makes this take twice as
+    # long but is necessary because of floating point errors which otherwise
+    # separate polygons which are nominally joined
     joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
                           max_points=199, layer=layer, datatype=datatype)
@@ -1362,6 +1363,6 @@ def inset(elements, distance = 0.1, join_first = True, precision=0.001, layer=0,
                      precision=precision, join_first=join_first,
                      max_points=199, layer=layer, datatype=datatype)
     D = Device()
-    D.add_polygon(p)
+    D.add_polygon(p, layer=layer, datatype=datatype)
     return D
     
