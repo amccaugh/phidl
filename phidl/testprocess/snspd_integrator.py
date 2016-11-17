@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 from phidl import Device, quickplot, inset
 import phidl.geometry as pg
+import numpy as np
 
 
     
@@ -46,9 +47,9 @@ def snspd_integrator(
                
     y =  D.add_device(pg.ytron_round(rho_intersection, theta_intersection, arm_length, source_length,
                       width_right, width_left, theta_resolution = 10, layer = 0, datatype = 0))
-    D.connect(port = f.ports[2], destination = cpm.ports['S1'])
-    D.connect(port = y.ports['right'], destination = f.ports[1])
-    D.connect(port = fy.ports[1], destination = y.ports['left']).move([-200*np.sin(5/180*np.pi), 200])
+    f.connect(port = 2, destination = cpm.ports['S1'])
+    y.connect(port = 'right', destination = f.ports[1])
+    fy.connect(port = 1, destination = y.ports['left']).move([-200*np.sin(5/180*np.pi), 200])
     
     gnd = D.add_device(pg.compass(size = pad_flag_size, layer = 0, datatype = 0))
     gnd.move(origin = gnd.center, destination = y.ports['source'])

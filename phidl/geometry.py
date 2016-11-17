@@ -6,7 +6,7 @@ from scipy.optimize import fmin, fminbound
 from scipy import integrate
 
 import gdspy
-from phidl import Device
+from phidl import Device, Port, SubDevice
 
 
 ##### Categories:
@@ -242,7 +242,6 @@ def compass(size = (4,2), center = (0,0), layer = 0, datatype = 0):
     return d
     
     
-# TODO fix centering of this
 def compass_multi(size = (4,2), ports = {'N':3,'S':4}, center = (0,0), layer = 0, datatype = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
@@ -503,8 +502,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
     step_device = optimal_step(start_width = wire_width, end_width = connector_width, num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3)
     step1 = d.add_device(step_device)
     step2 = d.add_device(step_device)
-    d.connect(step1.ports[1], destination = s.ports[1])
-    d.connect(step2.ports[1], destination = s.ports[2])
+    step1.connect(port = 1, destination = s.ports[1])
+    step2.connect(port = 1, destination = s.ports[2])
     d.add_port(name = 1, port = step1.ports[2])
     d.add_port(name = 2, port = step2.ports[2])
     
@@ -564,34 +563,6 @@ def ramp(length, width, end_width = None, layer = 0, datatype = 0):
     return d
     
 
-def racetrack_gradual(width, R, N, layer = 0, datatype = 0):
-    curve_fun = lambda t: racetrack_gradual_parametric(t, R = R, N = N)
-    route_path = gdspy.Path(width = width, initial_point = (0,0))
-    route_path.parametric(curve_fun, number_of_evaluations=99,\
-            max_points=199,  final_distance=None, layer=layer, datatype=datatype)
-    d = Device()
-    d.add(route_path)
-    return d
-    
-
-def _racetrack_gradual_parametric(t, R, N):
-    """ Takes in a parametric value ``t`` on (0,1), returns the x,y coordinates
-    of a racetrack bent according to 20090810_EOS4_modulator_designs_excerptForJasonGradualBends.ppt """
-    x0 = R/2**(1/N)
-    Rmin = 2**(0.5-1/N)/(N-1)*R
-    R0 = R-(x0-Rmin/sqrt(2))
-    t = np.array(t)
-    x,y = np.zeros(t.shape), np.zeros(t.shape)
-    
-    # Doing the math
-    x = np.cos(t*np.pi/2)*R0 # t (0-1) while x (0 to R0)
-    ii =  (Rmin/sqrt(2) < x) & (x <= R0)
-    jj =  (0 < x) & (x <= Rmin/sqrt(2))
-    y[ii] = (R**N - (x[ii]+(x0-Rmin/sqrt(2)))**N)**(1/N)
-    y[jj] = (x0-Rmin/sqrt(2))+sqrt(Rmin**2-x[jj]**2)
-    return x,y
-
-
 # Equations taken from
 # Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
 # Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
@@ -635,9 +606,6 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     return Z
     
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
-    # Add a kinetic inductance and recalculate the impedance, be careful
-    # to input Lk as a per-meter inductance
-
     L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
     Lk_m = Lk_per_sq*(1.0/wire_width)
     v = 1/sqrt((L_m+Lk_m)*C_m)
@@ -671,6 +639,11 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     widths = np.array([_find_microstrip_wire_width(z, dielectric_thickness*1e-6, eps_r, Lk_per_sq)*1e6 for z in Z])
     x = ((xi_list/2)*length)
     
+    # TODO: Compensate for varying speed of light in the microstrip
+    # by shortening and lengthening sections according to the speed of light
+    # in that section
+    v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
+    
     # Create blank device and add taper polygon
     d = Device()
     xpts = np.concatenate([x, x[::-1]])
@@ -682,11 +655,71 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     # Add meta information about the taper
     dx = x[1]-x[0]
     d.meta['num_squares'] = np.sum(dx/widths)
-    # FIXME Add meta information about speed of light in this device
+    d.meta['width1'] = widths[0]
+    d.meta['width2'] = widths[-1]
+    d.meta['Z1'] = Z[0]
+    d.meta['Z2'] = Z[-1]
+    # Note there are two values for v/c (and f_cutoff) because the speed of
+    # light is different at the beginning and end of the taper
+    d.meta['w'] = widths
+    d.meta['x'] = x
+    d.meta['Z'] = Z
+    d.meta['v/c'] = v/3e8
+    BetaLmin = np.sqrt(B**2 + 6.523)
+    d.meta['f_cutoff'] = BetaLmin*d.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
     
     return d
 
 
+
+def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, min_spacing = 0.5):
+    
+    def taper_width(x):
+        return np.interp(x, x_taper, w_taper)
+        
+        
+    def taper_section(x_start, x_end, num_pts = 30):
+        D = Device()
+        length =  x_end - x_start
+        x = np.linspace(0, length, num_pts)
+        widths = np.linspace(taper_width(x_start), taper_width(x_end), num_pts)
+        xpts = np.concatenate([x, x[::-1]])
+        ypts = np.concatenate([widths/2, -widths[::-1]/2])
+        D.add_polygon((xpts,ypts), layer = 0, datatype = 0)
+        D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
+        D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
+        return D
+        
+    def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0, datatype = 0):
+        D = Device()
+        path1 = gdspy.Path(width = width1, initial_point = (0, 0))
+        path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
+        [D.add_polygon(p, layer = layer, datatype = datatype) for p in path1.polygons]
+        D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
+        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/np.pi)
+        return D
+        
+    D = Device('meander-taper')
+    xpos1 = min(x_taper)
+    xpos2 = min(x_taper) + meander_length
+    t = D.add_device( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50) )
+    D.add_port(t.ports[1])
+    dir_toggle = -1
+    while xpos2 < max(x_taper):
+        arc_width1 = taper_width(xpos2)
+        arc_radius = max(spacing_factor*arc_width1, min_spacing)
+        arc_length = np.pi*arc_radius
+        arc_width2 = taper_width(xpos2 + arc_length)
+        a = D.add_device(  arc_tapered(radius = arc_radius, width1 = arc_width1, width2 = arc_width2, theta = 180*dir_toggle) )
+        a.connect(port = 1, destination = t.ports[2])
+        dir_toggle = -dir_toggle
+        xpos1 = xpos2 + arc_length
+        xpos2 = xpos1 + meander_length
+        t = D.add_device( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30) )
+        t.connect(port = 1, destination = a.ports[2])
+    D.add_port(t.ports[2])
+        
+    return D
     
 #==============================================================================
 # Example code
@@ -1040,7 +1073,7 @@ def basic_die(size = (10000, 10000),
 
 
 def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0, datatype = 0):
-    curve_fun = lambda t: racetrack_gradual_parametric(t, R = 5, N = 3)
+    curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer, datatype=datatype)
