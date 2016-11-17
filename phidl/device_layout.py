@@ -363,75 +363,18 @@ class Device(gdspy.Cell, _GeometryHelper):
             else:
                 raise ValueError('[PHIDL] distribute() needs a direction of "x", "+y", "-x", etc')
 
-            
-    # def route(self, port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0):
-    #     # Assuming they're both Ports for now
-    #     point_a = np.array(port1.midpoint)
-    #     if width1 is None:  width1 = port1.width
-    #     point_b = np.array(port2.midpoint)
-    #     if width2 is None:  width2 = port2.width
-    #     if round(abs(mod(port1.orientation - port2.orientation,360)),3) != 180:
-    #         raise ValueError('[DEVICE] route() error: Ports do not face each other (orientations must be 180 apart)') 
-    #     orientation = port1.orientation
-        
-    #     separation = point_b - point_a  # Vector drawn from A to B
-    #     distance = norm(separation) # Magnitude of vector from A to B
-    #     rotation = np.arctan2(separation[1],separation[0])*180/pi # Rotation of vector from A to B
-    #     angle = rotation - orientation   # If looking out along the normal of ``a``, the angle you would have to look to see ``b``
-    #     forward_distance = distance*np.cos(angle*pi/180)
-    #     lateral_distance = distance*np.sin(angle*pi/180)
-        
-    #     # Create a path assuming starting at the origin and setting orientation = 0
-    #     # use the "connect" function later to move the path to the correct location
-    #     xf = forward_distance
-    #     yf = lateral_distance
-    #     if path_type == 'straight':
-    #         curve_fun = lambda t: [xf*t, yf*t]
-    #         curve_deriv_fun = lambda t: [xf + t*0, t*0]
-    #     if path_type == 'sine':
-    #         curve_fun = lambda t: [xf*t, yf*(1-np.cos(t*pi))/2]
-    #         curve_deriv_fun = lambda t: [xf  + t*0, yf*(np.sin(t*pi)*pi)/2]
-    #     #if path_type == 'semicircle':
-    #     #    def semicircle(t):
-    #     #        t = np.array(t)
-    #     #        x,y = np.zeros(t.shape), np.zeros(t.shape)
-    #     #        ii = (0 <= t) & (t <= 0.5)
-    #     #        jj = (0.5 < t) & (t <= 1)
-    #     #        x[ii] = (np.cos(-pi/2 + t[ii]*pi/2))*xf
-    #     #        y[ii] = (np.sin(-pi/2 + t[ii]*pi/2)+1)*yf*2
-    #     #        x[jj] = (np.cos(pi*3/2 - t[jj]*pi)+2)*xf/2
-    #     #        y[jj] = (np.sin(pi*3/2 - t[jj]*pi)+1)*yf/2
-    #     #        return x,y
-    #     #    curve_fun = semicircle
-    #     #    curve_deriv_fun = None
-    #     if width_type == 'straight':
-    #         width_fun = lambda t: (width2 - width1)*t + width1
-    #     if width_type == 'sine':
-    #         width_fun = lambda t: (width2 - width1)*(1-np.cos(t*pi))/2 + width1
-        
-    #     route_path = gdspy.Path(width = width1, initial_point = (0,0))
-    #     route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts, \
-    #             max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
-        
-    #     # Make the route path into a Device with ports, and use "connect" to move it
-    #     # into the proper location
-    #     d = Device()
-    #     d.add(route_path)
-    #     d.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
-    #     d.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
-    #     d.meta['length'] = route_path.length
-    #     r = self.add_ref(d)
-    #     r.connect(1, port1)        
-    #     return r
         
     def flatten(self, depth = None):
         pass
 
+    
     def rotate(self, angle = 45, center = (0,0)):
         for e in self.elements:
-            if isinstance(e, (gdspy.Polygon, gdspy.PolygonSet)):
+            if isinstance(e, Polygon):
+                e.rotate(angle = angle, center = center)
+            elif isinstance(e, (gdspy.Polygon, gdspy.PolygonSet)):
                 e.rotate(angle = angle*pi/180, center = center)
-            if isinstance(e, DeviceReference):
+            elif isinstance(e, DeviceReference):
                 e.rotate(angle, center)
         for p in self.ports.values():
             p.midpoint = rotate_points(p.midpoint, angle, center)

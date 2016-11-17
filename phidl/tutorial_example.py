@@ -1,8 +1,8 @@
 from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
+import numpy as np
 
 
 from phidl import Device, quickplot
-import numpy as np
 import phidl.geometry as pg
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
@@ -24,8 +24,16 @@ def waveguide(width = 10, height = 1):
 # and add a few waveguides to it to start out.  add_ref() returns
 # the referenced object you added, allowing you to manipulate it later
 D = Device('MultiWaveguide')
-wg1 = D.add_ref(waveguide(width=10, height = 1))
-wg2 = D.add_ref(waveguide(width=12, height = 2))
+
+# We can instantiate the waveguide device by itself.  Note that when we make
+# a device, we usually assign it a variable name with a capital letter
+Wg1 = waveguide(width=10, height = 1)
+Wg2 = waveguide(width=12, height = 2)
+
+# 
+
+wg1 = D.add_ref(Wg1)
+wg2 = D.add_ref(Wg2)
 wg3 = D.add_ref(waveguide(width=14, height = 3))
 
 quickplot(D)
@@ -58,16 +66,16 @@ poly1.movey(4) # Same as specifying axis='y' in the move() command
 poly2.movex(4) # Same as specifying axis='x'' in the move() command
 wg3.movex(30,40) # Moves "from" x=30 "to" x=40 (e.g. shifts wg3 by +10 in the x-direction)
 
-wg1.rotate(45) # Rotate the first waveguie by 45 degrees around (0,0)
+wg1.rotate(45) # Rotate the first waveguide by 45 degrees around (0,0)
 wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees around (1,1)
 
-wg3.reflect(p1 = [1,1], p2 = [3,1]) # Reflects wg3 across the line formed by p1 and p2
+wg1.reflect(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 and p2
 
 
 #==============================================================================
 # Manipulating geometry 2 - Properties
 #==============================================================================
-# Each Device and SubDevice object has several properties which can be used to learn
+# Each Device and DeviceReference object has several properties which can be used to learn
 # information about the object (for instance where it's center coordinate is).  Several
 # of these properties can actually be used to move the geometry by assigning them
 # new values
@@ -97,7 +105,7 @@ quickplot(D)
 # wg1 such that its port 'wgport1' rests on the origin, we do:
 wg1.move(origin = 'wgport1', destination = [0,0])
 # Alternatively, we can use the Port object itself in the same manner.  We can
-# access the Port objects for any Device (or SubDevice) by calling device.ports,
+# access the Port objects for any Device (or DeviceReference) by calling device.ports,
 # --which returns a Python dictionary--and accessing its value with the key
 wg3.move(origin = wg3.ports['wgport1'], destination = [0,0])
 # We can even move one port to another 

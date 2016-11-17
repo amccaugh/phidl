@@ -99,7 +99,7 @@ def snspd_integrator(
 # Wire-bondable resistor shunt for ytron integrator arm?
 # Inductor on yTron readout arm
 
-die_name = 'SE005'
+die_name = 'SE005test'
 D = Device()
 
 #==============================================================================

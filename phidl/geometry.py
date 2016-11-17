@@ -203,7 +203,8 @@ def compass(size = (4,2), layer = 0, datatype = 0):
     """
     
     D = Device(name = 'compass')
-    D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
+    r = D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
+    r.center = (0,0)
     
     dx = size[0]
     dy = size[1]
@@ -221,7 +222,8 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0, datatype = 0):
     """
     
     D = Device(name = 'compass_multi')
-    D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
+    r = D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
+    r.center = (0,0)
     
     dx = size[0]/2
     dy = size[1]/2
@@ -371,6 +373,7 @@ def rectangle(point1 = (4,2), point2 = (0,0), layer = 0, datatype = 0):
 
 
 def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype = 0):
+    D = Device(name = 'ring')
     inner_radius = radius - width/2
     outer_radius = radius + width/2
     t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
@@ -380,7 +383,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype =
     outer_points_y = (outer_radius*sin(t)).tolist()
     xpts = inner_points_x + outer_points_x[::-1]
     ypts = inner_points_y + outer_points_y[::-1]
-    D = polygon(points = (xpts,ypts), name = 'ring', layer = layer, datatype = datatype)
+    D.add_polygon(points = (xpts,ypts), layer = layer, datatype = datatype)
     return D
     
     
@@ -410,8 +413,8 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0, data
     """ Starting form a port, create a arc which connects to the port """
     D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
             angle_resolution = angle_resolution, layer = layer, datatype = datatype)
-    D.rotate(angle =  180 + port.orientation - a.ports[1].orientation, center = a.ports[1].midpoint)
-    D.move(origin = a.ports[1], destination = port)
+    D.rotate(angle =  180 + port.orientation - D.ports[1].orientation, center = D.ports[1].midpoint)
+    D.move(origin = D.ports[1], destination = port)
     return D
 
 
@@ -541,11 +544,11 @@ def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0, datatype 
     
 def ramp(length = 10, width1 = 5, width2 = 8, layer = 0, datatype = 0):
     if width2 is None: width2 = width1
-    xpts = [0, width1/2, width1/2, 0]
-    ypts = [width1/2, width2/2, 0, 0]
+    xpts = [0, length, length, 0]
+    ypts = [width1, width2, 0, 0]
     D = Device('ramp')
     D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
-    D.add_port(name = 1, midpoint = [0, 0], width = width1, orientation = 180)
+    D.add_port(name = 1, midpoint = [0, width1/2], width = width1, orientation = 180)
     D.add_port(name = 2, midpoint = [length, width2/2], width = width2, orientation = 0)
     return D
     
@@ -1346,9 +1349,19 @@ def inset(elements, distance = 0.1, join_first = True, precision=0.001, layer=0,
     # This pre-joining (by expanding by precision) is makes this take twice as
     # long but is necessary because of floating point errors which otherwise
     # separate polygons which are nominally joined
+    if type(elements) is not list: elements = [elements]
+    new_elements = []
+    for e in elements:
+        if isinstance(e, Device): new_elements += e.get_polygons()
+        else: new_elements.append(e)
+        
+    joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
+                          precision=precision, join_first=join_first,
+                          max_points=199, layer=layer, datatype=datatype)
+    p = gdspy.offset(joined, -distance, join='miter', tolerance=2,
+                     precision=precision, join_first=join_first,
+                     max_points=199, layer=layer, datatype=datatype)
     D = Device()
-    joined = gdspy.offset(elements, precision, join='miter', tolerance=2, precision=precision, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
-    p = gdspy.offset(joined, -distance, join='miter', tolerance=2, precision=precision, join_first=join_first, max_points=199, layer=layer, datatype=datatype)
     D.add_polygon(p)
     return D
     
