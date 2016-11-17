@@ -33,6 +33,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon as PolygonPatch
 from matplotlib.collections import PatchCollection
 
+__version__ = '0.5.2'
 
 #==============================================================================
 # Useful transformation functions
@@ -71,7 +72,15 @@ def translate_points(points, d = [1,2]):
     return points
     
 
-    
+class Layer(object):
+    def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
+                 description = 'Gold pads liftoff', inverted = False,
+                 color = (.5, .5, .5)):
+        self.name = name
+        self.gds_layer = gds_layer
+        self.gds_datatype = gds_datatype
+        self.description = description
+        
     
 class _GeometryHelper(object):
     """ This is a helper class. It can be added to any other class which has 
@@ -285,16 +294,29 @@ class Device(gdspy.Cell, _GeometryHelper):
         return device_ref                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = 0, datatype = 0):
+    def add_polygon(self, points, layer = 0):
         if isinstance(points, gdspy.Polygon):
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
-            return [self.add_polygon(p, layer, datatype) for p in points.polygons]
+            return [self.add_polygon(p, layer) for p in points.polygons]
+                
+        # Check if the variable layer is a Layer object, a 2-element list like
+        # [0,1] representing layer=0 and datatype=1, or just a layer number
+        if isinstance(layer, Layer):
+            gds_layer = layer.gds_layer
+            gds_datatype = layer.gds_datatype
+        elif np.size(layer) == 2:
+            gds_layer = layer[0]
+            gds_datatype = layer[1]
+        else:
+            gds_layer = layer
+            gds_datatype = 0
+            
         
         if len(points[0]) == 2: # Then it must be of the form [[1,2],[3,4],[5,6]]
-            polygon = Polygon(points, layer, datatype)
+            polygon = Polygon(points, gds_layer, gds_datatype)
         elif len(points[0]) > 2: # Then it must be of the form [[1,3,5],[2,4,6]]
-            polygon = Polygon(xy2p(points), layer, datatype)
+            polygon = Polygon(xy2p(points), gds_layer, gds_datatype)
         self.add(polygon)
         return polygon
         
@@ -332,10 +354,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
         return l
         
-
-    def delete_port(self, name):
-        self.ports.pop(name, None)
-    
+#
+#    def delete_port(self, name):
+#        self.ports.pop(name, None)
+#    
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
