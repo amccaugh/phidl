@@ -86,7 +86,7 @@ rho = [0.25,0.5,1,1.5,2,4,8,16]
 for n, r in enumerate(rho):
     s = d.add_device( ytron_with_pads(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r) )
     s.move([(s.xsize + 300)*n, 0])
-    d.add_label(('Varying sharpness\n rho = %s\n20um arms' % rho[n]), s.center)
+    d.annotate(('Varying sharpness\n rho = %s\n20um arms' % rho[n]), s.center)
     
     
 #==============================================================================
@@ -103,7 +103,7 @@ for n, w in enumerate(width_right):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    d.add_label(('Varying arm width ratio\nLeft arm width = %sum\nLeft arm width = 20um' % width_right[n]), s.center)
+    d.annotate(('Varying arm width ratio\nLeft arm width = %sum\nLeft arm width = 20um' % width_right[n]), s.center)
     
 #==============================================================================
 # Row C: Varying source length
@@ -120,7 +120,7 @@ for n, p in enumerate(source_length):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    d.add_label(('Varying source length\nLength = %sum' % p), s.center)
+    d.annotate(('Varying source length\nLength = %sum' % p), s.center)
     
 #==============================================================================
 # Row D: Varying arm length
@@ -138,7 +138,7 @@ for n, p in enumerate(arm_length):
     s.ymax = y
     s.xmin = x
     x = s.xmax + 200
-    d.add_label(('Varying arm length\nLength = %sum' % p), s.center)
+    d.annotate(('Varying arm length\nLength = %sum' % p), s.center)
     
 
 d.center = [0,0]

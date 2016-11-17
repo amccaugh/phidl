@@ -99,7 +99,7 @@ rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'A'+str(n+1), width_right = 20, width_left = 20, rho_intersection = r, num_devices = 5) )
     s.move([(s.xsize + 300)*n, 0])
-    d.add_label(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
+    d.annotate(('Varying yTron rho\n rho = %s\n20um arms' % rho[n]), s.center)
     
     
 #==============================================================================
@@ -109,7 +109,7 @@ rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'B'+str(n+1), width_right = 10, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
     s.move([(s.xsize + 300)*n, -(s.ysize+200)])
-    d.add_label(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
+    d.annotate(('Varying yTron rho\n rho = %s\n20 & 10um arms' % rho[n]), s.center)
     
     
 #==============================================================================
@@ -119,15 +119,15 @@ rho = [0.25,0.5,1,1.5,2]
 for n, r in enumerate(rho):
     s = d.add_device( snspd_integrator(label = 'C'+str(n+1), width_right = 5, width_left = 20, rho_intersection = rho[n], num_devices = 5) )
     s.move([(s.xsize + 300)*n, -2*(s.ysize+200)])
-    d.add_label(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
+    d.annotate(('Varying yTron rho\n rho = %s\n20 & 5um arms' % rho[n]), s.center)
 
 d.center = (0,0)
 die = d.add_device( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
               die_name = 'SCE001', text_size = 300, text_location = 'SW',  layer = 0,  
               datatype = 0, draw_bbox = False,  bbox_layer = 99,  bbox_datatype = 99) )
               
-fill = dummy_fill_rectangular(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
-d.add_device( fill )
+F = pg.fill_rectangle(d, fill_size = (50,50), exclude_layers = None, fill_layers = (0,1), fill_densities = (0.2, 0.2), margin = 100, bbox = None)
+d.add_device( F )
 
 d.write_gds('SCE001 SNSPD Integrator.gds', precision = 1e-9)
 
