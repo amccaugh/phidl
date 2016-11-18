@@ -526,7 +526,7 @@ def snspd_squares(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), num_pts = 20
 #==============================================================================
 
 
-def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0, datatype = 0):
+def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0):
     if type(port) is Port and width1 is None: width1 = port.width
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
