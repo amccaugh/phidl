@@ -8,6 +8,7 @@ install_requires=[
    'matplotlib',
    'pyyaml',
    'scikit-image>=0.11',
+   'webcolors',
 ]
 
 setup(name='phidl',

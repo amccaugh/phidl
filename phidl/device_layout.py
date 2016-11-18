@@ -73,7 +73,6 @@ def translate_points(points, d = [1,2]):
     return points
     
     
-    
 
 class Layer(object):
     def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
@@ -307,18 +306,18 @@ class Device(gdspy.Cell, _GeometryHelper):
     def bbox(self):
         self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
         return np.array(self.get_bounding_box())
-
+        
         
     def add_ref(self, device, config = None, **kwargs):
         """ Takes a Device (or Device-making function with config) and adds it
         as a DeviceReference to the current Device.  """
          # Check if ``device`` is actually a device-making function
-        if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
-        else:                   d = device
-        device_ref = DeviceReference(d)   # Create a DeviceReference (CellReference)
-        self.add(device_ref)             # Add DeviceReference (CellReference) to Device (Cell)
-        self.references.append(device_ref) # Add to the list of references (for convenience)
-        return device_ref                # Return the DeviceReference (CellReference)
+        if callable(device):    D = makedevice(fun = device, config = config, **kwargs)
+        else:                   D = device
+        d = DeviceReference(D)   # Create a DeviceReference (CellReference)
+        self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
+        self.references.append(d) # Add to the list of references (for convenience)
+        return d                # Return the DeviceReference (CellReference)
 
 
     def add_polygon(self, points, layer = 0):
@@ -658,7 +657,8 @@ def xy2p(*args):
     return points
     
     
-def quickplot(items, overlay_ports = True, overlay_subports = True, label_ports = True, new_window = True):
+def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
+              label_ports = True, new_window = True):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if new_window: fig, ax = plt.subplots(1)
@@ -719,22 +719,26 @@ def makedevice(fun, config = None, **kwargs):
     elif type(config) is dict:   config_dict = config
     config_dict.update(**kwargs)
     return fun(**config_dict)
-#
-#    
-#def useconfig(filename = 'myconfig.yaml', **kwargs):
-#    with open(filename) as f:  config_dict = yaml.load(f) # Load arguments from config file
-#    config_dict.update(**kwargs)                          # Replace any additional arguments  
-#    return config_dict
-#
-#    
-#filename = 'C:/Users/anm16/Downloads/temp.yaml'
-#d = _load_config_file(filename)
-#
-#
+    
 #y = makedevice(beamsplitter, filename, arm_length = 50)
 #quickplot(y)
+
+
+
+
+#gold_pads = Layer(name = 'goldpads', gds_layer = 0, gds_datatype = 0,
+#                 description = 'Gold pads liftoff', inverted = False,
+#                 color = None)
+#D = Device()
+#D.add_polygon(points = [(0, 40), (15, 40), (10, 50)], layer = gold_pads)
 #
-#y = beamsplitter(**useconfig(filename, arm_length = 50))
-#quickplot(y)
-
-
+#pts = [(0, 40), (15, 40), (10, 50)]
+#patch = PolygonPatch(pts, closed=True, color = 'red', alpha = 0.4)
+#pc = PatchCollection([patch])
+#fig, ax = plt.subplots(1)
+#ax.add_collection(pc)
+#plt.axis('equal')
+#ax.grid(True, which='both', alpha = 0.4)
+#ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
+#ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
+#plt.draw()
