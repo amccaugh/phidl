@@ -28,6 +28,7 @@ from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
+import webcolors
 
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon as PolygonPatch
@@ -71,16 +72,36 @@ def translate_points(points, d = [1,2]):
     points = np.array(points) + d
     return points
     
+    
+    
 
 class Layer(object):
     def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
                  description = 'Gold pads liftoff', inverted = False,
-                 color = (.5, .5, .5)):
+                 color = None):
         self.name = name
         self.gds_layer = gds_layer
         self.gds_datatype = gds_datatype
         self.description = description
-        
+        try:
+            if color is None: # not specified
+                self.color = None
+            elif np.size(color) == 3: # in format (0.5, 0.5, 0.5)
+                self.color = webcolors.rgb_to_hex(np.array(color)*255)
+            elif color[0] == '#': # in format #1d2e3f
+                self.color = webcolors.hex_to_rgb(color)
+                self.color = webcolors.rgb_to_hex(self.color)
+            else: # in named format 'gold'
+                self.color = webcolors.name_to_hex(color)
+        except:
+            raise ValueError("""[PHIDL] Layer() color must be specified as a
+            0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex  color 
+            (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or
+            see http://www.w3schools.com/colors/colors_names.asp )
+            """)
+
+
+
     
 class _GeometryHelper(object):
     """ This is a helper class. It can be added to any other class which has 
@@ -215,6 +236,12 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
+    def __init__(self, points, layer = 0, datatype = 0,  color = None):
+        gdspy.Polygon.__init__(self, points = points, layer = layer,
+                               datatype = datatype, verbose=True)
+        self.color = color
+        
+    
     @property
     def bbox(self):
         return np.asarray( (np.min(self.points, axis = 0), np.max(self.points, axis = 0)))
@@ -592,8 +619,8 @@ def _load_gds(filename, cell_name, load_ports = True):
     gdspy.Cell.cell_dict.clear()
     gdsii = gdspy.GdsImport(filename)
     gdsii.extract(cell_name)
-    d = Device(cell_name)
-    d.elements = gdspy.Cell.cell_dict[cell_name].elements
+    D = Device(cell_name)
+    D.elements = gdspy.Cell.cell_dict[cell_name].elements
     for label in gdspy.Cell.cell_dict[cell_name].labels:
         t = label.text
         if t[0:5] == 'Port(' and t[-1] == ')':
@@ -601,10 +628,10 @@ def _load_gds(filename, cell_name, load_ports = True):
             arguments = arguments.replace(' ', '')
             args = {a.split('=')[0] : a.split('=')[1] for a in arguments.split(',')}
             if args['name'].isdigit():args['name'] = int(args['name'])
-            d.add_port(name = args['name'], midpoint = label.position, width = float(args['width']), orientation = float(args['orientation']))
+            D.add_port(name = args['name'], midpoint = label.position, width = float(args['width']), orientation = float(args['orientation']))
         else:
-            d.labels.append(label)
-    return d
+            D.labels.append(label)
+    return D
 
 
 #==============================================================================

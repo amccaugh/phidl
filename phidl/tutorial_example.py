@@ -215,37 +215,35 @@ D2.write_gds('MultiMultiWaveguideTutorial.gds')
 # different layers
 DL = Device()
 
-########
 # You can specify any layer in one of three ways:
-########
 # 1) as a single number 0-255 representing the gds layer number, e.g. layer = 1
-#    where the gds layer datatype will be automatically set to zero
+# where the gds layer datatype will be automatically set to zero
 DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
 
 
 # 2) as a 2-element list [0,1] or tuple (0,1) representing the gds layer 
-#    number (0-255) and gds layer datatype (0-255)  
+# number (0-255) and gds layer datatype (0-255)  
 DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
 
 
 # 3) as a Layer object  
 gold = Layer(name = 'goldpads', gds_layer = 3, gds_datatype = 0,
-                 description = 'Gold pads liftoff', inverted = False)
+                 description = 'Gold pads liftoff')
 DL.add_ref( pg.text('Layer3', size = 10, layer = gold) ).movey(-40)
 
 
 # What you can also do is make a dictionary of layers, which lets you
 # conveniently call each Layer object just by its name
 layers = {
-        'titanium' : Layer(gds_layer = 4, gds_datatype = 1, description = 'Gold pads liftoff', inverted = False),
-        'niobium'  : Layer(gds_layer = 5, gds_datatype = 2, description = 'Gold pads liftoff', inverted = False),
-        'nb_etch'  : Layer(gds_layer = 6, gds_datatype = 3, description = 'Niobium etch', inverted = False),
+        'titanium' : Layer(gds_layer = 4, gds_datatype = 1, description = 'Titanium resistor'),
+        'niobium'  : Layer(gds_layer = 5, gds_datatype = 2, description = 'Niobium liftoff'),
+        'nb_etch'  : Layer(gds_layer = 6, gds_datatype = 3, description = 'Niobium etch'),
          }
 
 # Now that our layers are defined, we can pass them to our text function
-DL.add_ref( pg.text('Titanium', size = 10, layer = layers['titanium']) ).movey(-60)
-DL.add_ref( pg.text('Niobium', size = 10, layer = layers['niobium']) ).movey(-80)
-DL.add_ref( pg.text('Nb Etch', size = 10, layer = layers['nb_etch']) ).movey(-100)
+DL.add_ref( pg.text('Titanium layer', size = 10, layer = layers['titanium']) ).movey(-60)
+DL.add_ref( pg.text('Niobium layer', size = 10, layer = layers['niobium']) ).movey(-80)
+DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = layers['nb_etch']) ).movey(-100)
 
 quickplot(DL)
 

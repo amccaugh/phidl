@@ -3,21 +3,14 @@ from __future__ import unicode_literals, division, print_function, absolute_impo
 import io
 import glob
 import os
-import pypandoc
-try:
-    pypandoc.get_pandoc_version()
-except:
-    print('pandoc installation not found, attempting to download it')
-    pypandoc.download_pandoc()
-    pypandoc.get_pandoc_version()
+#import pypandoc
+#try:
+#    pypandoc.get_pandoc_version()
+#except:
+#    print('pandoc installation not found, attempting to download it')
+#    pypandoc.download_pandoc()
+#    pypandoc.get_pandoc_version()
 
-    
-    
-class Layer(object):
-    def __init__(self, layer, datatype, shortname, description):
-        self.gds_layer = gds_layer
-        self.shortname = shortname
-        self.description = description
     
     
 class ProcessStep(object):
@@ -163,3 +156,8 @@ with open(filename) as f:
 
 pypandoc.convert_text(source = y['wsi_deposition_01']['instructions'], format = 'markdown', to = 'pdf', 
                       outputfile='hello63414214.pdf', extra_args=['-s'])
+
+
+
+
+#%% Trying creating a .lyp file
