@@ -325,24 +325,12 @@ class Device(gdspy.Cell, _GeometryHelper):
     def layers(self):
         return self.get_layers()
 
+        
     @property
     def bbox(self):
         self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
         return np.array(self.get_bounding_box())
         
-#    @property
-#    def polygons(self):
-#        polygons = []
-#        for e in self.elements: #Returns list of Polygons and DeviceReferences
-#            if isinstance(e, Polygon):
-#                e._ATM = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-#                polygons.append(e)
-#            if isinstance(e, DeviceReference):
-#                for p in e.parent.polygons:
-#                    print('Old ATM: %s\n New ATM: %s' % (p._ATM, e._ATM*p._ATM))
-#                    p._ATM = e._ATM*p._ATM
-#                    polygons.append(p)
-#        return polygons
         
     def add_ref(self, device, config = None, **kwargs):
         """ Takes a Device (or Device-making function with config) and adds it
@@ -549,27 +537,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def bbox(self):
         return self.get_bounding_box()
         
-#    @property
-#    def polygons(self):
-#        for e in self.parent.elements: #Returns list of Polygons and DeviceReferences
-#            if isinstance(e, Polygon):
-#                e.ats.append()
-#        
-#    @property
-#    def _ATM(self):
-#        """ Return a 3x3 affine transformation matrix correpsonding to the 
-#        translation/rotation/x_reflection operations of the DeviceReference.
-#        https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
-#        """
-#        ct = cos(self.rotation*pi/180)
-#        st = sin(self.rotation*pi/180)
-#        tx = self.origin[0]
-#        ty = self.origin[1]
-#        R = np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]])
-#        T = np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-#        X = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
-#        if self.x_reflection:   return T*R*X
-#        else:                   return T*R
         
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations to a port (x_ref)
@@ -728,30 +695,31 @@ class PolygonViewable(object):
         return self.affine_transform_points(points = self.polygon.points,
                                             atm = self.atm)
 
-    def apply_atm(self, rotation, origin, x_reflection):
-        """ Return a 3x3 affine transformation matrix correpsonding to the 
-        translation/rotation/x_reflection operations of the DeviceReference.
-        https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
-        """
-        ct = cos(rotation*pi/180)
-        st = sin(rotation*pi/180)
-        tx = origin[0]
-        ty = origin[1]
-        R = np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]])
-        T = np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-        X = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        if x_reflection:    self.atm = T*R*X * self.atm
-        else:               self.atm = T*R   * self.atm
-        
         
     def affine_transform_points(self, points, atm):
         """ Takes an [N][2] array of points, and a 3x4 affine transformation matrix
         (atm) and returns a transformed [N][2] array of points """
         return (atm[:2,:2]*points.T + atm[:2,2]).T
 
-    
 
     
+def _calc_atm(rotation, origin, x_reflection):
+    """ Return a 3x3 affine transformation matrix correpsonding to the 
+    translation/rotation/x_reflection operations of the DeviceReference.
+    https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
+    """
+    ct = cos(rotation*pi/180)
+    st = sin(rotation*pi/180)
+    tx = origin[0]
+    ty = origin[1]
+    R = np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]])
+    T = np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
+    X = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    if x_reflection:    return T*R*X
+    else:               return T*R
+        
+    
+
 def _get_polygons_viewable(D):
     """ Gets all the polygons in D and any of its other DeviceReferences,
     and returns each polygon with an affine tranformation matrix (ATM) which
@@ -762,12 +730,16 @@ def _get_polygons_viewable(D):
             pv = PolygonViewable(polygon = e)
             polygons_viewable.append(pv)
         elif isinstance(e, gdspy.CellReference):
-            for pv in _get_polygons_viewable(e.parent):
-#                print('Old ATM: %s\n New ATM: %s' % (p._ATM, e._ATM*p._ATM))
-                pv.apply_atm(e.rotation, e.origin, e.x_reflection)
-                polygons_viewable.append(pv)
+            atm = _calc_atm(e.rotation, e.origin, e.x_reflection)
+            new_pv = _get_polygons_viewable(e.parent)
+#            for pv in new_pv:
+#                pv.atm = atm * pv.atm
+            polygons_viewable += new_pv
+#            polygons_viewable += [pv.apply_atm(e.rotation, e.origin, e.x_reflection) for pv in _get_polygons_viewable(e.parent)]
     return polygons_viewable
 
+%timeit D.get_polygons()
+%timeit _get_polygons_viewable(D)
 
 def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
               label_ports = True, new_window = True):
