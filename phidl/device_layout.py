@@ -708,15 +708,24 @@ def _calc_atm(rotation, origin, x_reflection):
     translation/rotation/x_reflection operations of the DeviceReference.
     https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
     """
-    ct = cos(rotation*pi/180)
-    st = sin(rotation*pi/180)
-    tx = origin[0]
-    ty = origin[1]
-    R = np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]])
-    T = np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-    X = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    if x_reflection:    return T*R*X
-    else:               return T*R
+    if x_reflection:
+        A = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    else:
+        A = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    if (rotation is not None) and (rotation != 0):
+        ct = cos(rotation*pi/180)
+        st = sin(rotation*pi/180)
+        A = np.dot( np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]]), A)
+    if  (origin[0] != 0) or (origin[1] != 0):
+        tx = origin[0]
+        ty = origin[1]
+        A = np.dot( np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]]), A)
+#    R = np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]])
+#    T = np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
+#    X = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
+#    if x_reflection:    return T*R*X
+#    else:               return T*R
+    return A
         
     
 
@@ -740,6 +749,11 @@ def _get_polygons_viewable(D):
 
 %timeit D.get_polygons()
 %timeit _get_polygons_viewable(D)
+%timeit _calc_atm(random.random(), origin = (1,2 + random.random()), x_reflection = True)
+Z = np.matrix([[random.random(), 0, 0], [random.random(), 1, 0], [0, 0, random.random()]])
+%timeit np.dot(np.matrix([[random.random(), 0, 0], [random.random(), 1, 0], [0, 0, random.random()]]),np.matrix([[5, 0, 0], [random.random(), 1, 0], [0, 0, random.random()]]), out = Z)
+%timeit random.random()
+
 
 def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
               label_ports = True, new_window = True):
