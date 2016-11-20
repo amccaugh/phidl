@@ -50,9 +50,9 @@ def rotate_points(points, angle = 45, center = (0,0)):
     sa = sin(angle)
     sa = np.array((-sa, sa))
     c0 = np.array(center)
-    if np.array(points).ndim == 2: 
+    if np.asarray(points).ndim == 2: 
         return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
-    if np.array(points).ndim == 1: 
+    if np.asarray(points).ndim == 1: 
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
 def reflect_points(points, p1 = (0,0), p2 = (1,0)):
@@ -61,36 +61,30 @@ def reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
-    if np.array(points).ndim == 1: 
+    if np.asarray(points).ndim == 1: 
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(points-p1))/norm(p2-p1)**2) - points
-    if np.array(points).ndim == 2: 
+    if np.asarray(points).ndim == 2: 
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
         
-def _transform_points(points, origin=None, rotation=None, x_reflection=False):
-    """ Transforms an array of points according to the GDS specification.
-    The applied order of transformation is: x_reflection, rotation,
-    and translation """
-    # Apply GDS-type transformations (x_ref)
-    if x_reflection:
-        xrefl = np.array([1, -1], dtype=int)
-    if rotation is not None:
-        ct = cos(rotation*pi/180)
-        st = sin(rotation*pi/180)
-        st = np.array([-st, st])
-    if origin is not None:
-        orgn = np.array(origin)
-    if x_reflection:            points *= xrefl
-    if rotation is not None:    points = points * ct + points[:, ::-1] * st
-    if origin is not None:      points = points + orgn
-    return points
+#def _transform_points(points, origin=None, rotation=None, x_reflection=False):
+#    """ Transforms an array of points according to the GDS specification.
+#    The applied order of transformation is: x_reflection, rotation,
+#    and translation """
+#    # Apply GDS-type transformations (x_ref)
+#    if x_reflection:
+#        xrefl = np.array([1, -1], dtype=int)
+#    if (rotation is not None) and (rotation != 0):
+#        ct = cos(rotation*pi/180)
+#        st = sin(rotation*pi/180)
+#        st = np.array([-st, st])
+#    if origin is not None:
+#        orgn = np.array(origin)
+#    if x_reflection:            points *= xrefl
+#    if rotation is not None:    points = points * ct + points[:, ::-1] * st
+#    if origin is not None:      points = points + orgn
+#    return points
         
-
-def _affine_transform_points(points, ATM):
-    """ Takes an [N][2] array of points, and a 3x4 affine transformation matrix
-    (ATM) and returns a transformed [N][2] array of points """
-    return (ATM[:2,:2]*points.T + ATM[:2,2]).T
-    
 
 
 
@@ -255,14 +249,6 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
-    def __init__(self, points, layer = 0, datatype = 0,  color = None):
-        gdspy.Polygon.__init__(self, points = points, layer = layer,
-                               datatype = datatype, verbose=True)
-        self.color = color
-         # A temporary storage element which holds an affine transformation
-         # matrix, used for convenience in the property "polygons"
-        self._ATM = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        
     
     @property
     def bbox(self):
@@ -684,76 +670,48 @@ def xy2p(*args):
 # Plotting functions
 #==============================================================================
 
-class PolygonViewable(object):
 
-    def __init__(self, polygon, atm  = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])):
-        self.polygon = polygon
-        self.atm = atm
-        
-    @property
-    def points_viewable(self):
-        return self.affine_transform_points(points = self.polygon.points,
-                                            atm = self.atm)
-
-        
-    def affine_transform_points(self, points, atm):
-        """ Takes an [N][2] array of points, and a 3x4 affine transformation matrix
-        (atm) and returns a transformed [N][2] array of points """
-        return (atm[:2,:2]*points.T + atm[:2,2]).T
-
-
-    
-def _calc_atm(rotation, origin, x_reflection):
-    """ Return a 3x3 affine transformation matrix correpsonding to the 
-    translation/rotation/x_reflection operations of the DeviceReference.
-    https://en.wikipedia.org/wiki/Transformation_matrix#Affine_transformations
-    """
-    if x_reflection:
-        A = np.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    else:
-        A = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    if (rotation is not None) and (rotation != 0):
-        ct = cos(rotation*pi/180)
-        st = sin(rotation*pi/180)
-        A = np.dot( np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]]), A)
-    if  (origin[0] != 0) or (origin[1] != 0):
-        tx = origin[0]
-        ty = origin[1]
-        A = np.dot( np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]]), A)
-#    R = np.matrix([[ct, -st, 0], [st, ct, 0], [0,0,1]])
-#    T = np.matrix([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-#    X = np.matrix([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
-#    if x_reflection:    return T*R*X
-#    else:               return T*R
-    return A
-        
-    
-
-def _get_polygons_viewable(D):
-    """ Gets all the polygons in D and any of its other DeviceReferences,
-    and returns each polygon with an affine tranformation matrix (ATM) which
-    can be applied to the polygon and puts it in the correct position within D """
-    polygons_viewable = []
-    for e in D.elements: #Returns list of Polygons and DeviceReferences
-        if isinstance(e, gdspy.Polygon):
-            pv = PolygonViewable(polygon = e)
-            polygons_viewable.append(pv)
-        elif isinstance(e, gdspy.CellReference):
-            atm = _calc_atm(e.rotation, e.origin, e.x_reflection)
-            new_pv = _get_polygons_viewable(e.parent)
-#            for pv in new_pv:
-#                pv.atm = atm * pv.atm
-            polygons_viewable += new_pv
-#            polygons_viewable += [pv.apply_atm(e.rotation, e.origin, e.x_reflection) for pv in _get_polygons_viewable(e.parent)]
-    return polygons_viewable
-
-%timeit D.get_polygons()
-%timeit _get_polygons_viewable(D)
-%timeit _calc_atm(random.random(), origin = (1,2 + random.random()), x_reflection = True)
-Z = np.matrix([[random.random(), 0, 0], [random.random(), 1, 0], [0, 0, random.random()]])
-%timeit np.dot(np.matrix([[random.random(), 0, 0], [random.random(), 1, 0], [0, 0, random.random()]]),np.matrix([[5, 0, 0], [random.random(), 1, 0], [0, 0, random.random()]]), out = Z)
-%timeit random.random()
-
+#def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
+#              label_ports = True, new_window = True):
+#    """ Takes a list of devices/references/polygons or single one of those, and
+#    plots them.  Also has the option to overlay their ports """
+#    if new_window: fig, ax = plt.subplots(1)
+#    else:
+#        ax = plt.gca()  # Get current figure
+#        ax.cla()        # Clears the axes of all previous polygons
+#    
+#    # Iterate through each each Device/DeviceReference/Polygon
+#    patches = []
+#    if type(items) is not list:  items = [items]
+#    for item in items:
+#        if isinstance(item, (Device, DeviceReference)):
+#            polygons = item.get_polygons(by_spec=False, depth=None)
+#            for p in polygons:
+#                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
+#            for name, port in item.ports.items():
+#                _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+#                plt.text(port.midpoint[0], port.midpoint[1], name)
+#        if isinstance(item, Device) and overlay_subports is True:
+#            for sd in item.references:
+#                for name, port in sd.ports.items():
+#                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+#                    plt.text(port.midpoint[0], port.midpoint[1], name)
+#        if isinstance(item, gdspy.Polygon):
+#            patches.append(PolygonPatch(item.points, closed=True, alpha = 0.4))
+#        if isinstance(item, gdspy.PolygonSet):
+#            for p in item.polygons:
+#                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
+#    pc = PatchCollection(patches, alpha=0.4)
+#    # TODO: Change this to per-layer coloring    
+#    np.random.seed(0)
+#    colors = 100*np.random.rand(len(patches))
+#    pc.set_array(np.array(colors))
+#    ax.add_collection(pc)
+#    plt.axis('equal')
+#    ax.grid(True, which='both', alpha = 0.4)
+#    ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
+#    ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
+#    plt.draw()
 
 def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
               label_ports = True, new_window = True):
@@ -763,40 +721,91 @@ def quickplot(items, layers = None, overlay_ports = True, overlay_subports = Tru
     else:
         ax = plt.gca()  # Get current figure
         ax.cla()        # Clears the axes of all previous polygons
-    
-    # Iterate through each each Device/DeviceReference/Polygon
-    patches = []
-    if type(items) is not list:  items = [items]
-    for item in items:
-        if isinstance(item, (Device, DeviceReference)):
-            polygons = item.get_polygons(by_spec=False, depth=None)
-            for p in polygons:
-                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-            for name, port in item.ports.items():
-                _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                plt.text(port.midpoint[0], port.midpoint[1], name)
-        if isinstance(item, Device) and overlay_subports is True:
-            for sd in item.references:
-                for name, port in sd.ports.items():
-                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                    plt.text(port.midpoint[0], port.midpoint[1], name)
-        if isinstance(item, gdspy.Polygon):
-            patches.append(PolygonPatch(item.points, closed=True, alpha = 0.4))
-        if isinstance(item, gdspy.PolygonSet):
-            for p in item.polygons:
-                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-    pc = PatchCollection(patches, alpha=0.4)
-    # TODO: Change this to per-layer coloring    
-    np.random.seed(0)
-    colors = 100*np.random.rand(len(patches))
-    pc.set_array(np.array(colors))
-    ax.add_collection(pc)
     plt.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
+    
+
+    # Assemble a dictionary of which maps gds layer and datatype to 
+    # layer color, e.g. layercolors[(1,0)] = '#ffd700'
+    layercolors = {}
+    if layers is not None:
+        for key, l in layers.items():
+            layercolors[(l.gds_layer, l.gds_datatype)] = l.color
+            
+
+    # Iterate through each each Device/DeviceReference/Polygon
+    np.random.seed(0)
+    if type(items) is not list:  items = [items]
+    for item in items:
+        if isinstance(item, (Device, DeviceReference)):
+            polygons_spec = item.get_polygons(by_spec=True, depth=None)
+            for key in sorted(polygons_spec):
+                polygons = polygons_spec[key]
+                if layercolors.has_key(key):  poly_color = layercolors[key]
+                else:                         poly_color = None
+                if poly_color is None:
+                    poly_color = np.random.rand(3,1)
+                _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
+                for name, port in item.ports.items():
+                    _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                    plt.text(port.midpoint[0], port.midpoint[1], name)
+        elif isinstance(item, Device) and overlay_subports is True:
+            for sd in item.references:
+                for name, port in sd.ports.items():
+                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                    plt.text(port.midpoint[0], port.midpoint[1], name)
+        elif isinstance(item, gdspy.Polygon):
+            polygons = [item.points]
+            layer_datatype = (item.layer,item.datatype)
+            if layercolors.has_key(layer_datatype):  poly_color = layercolors[layer_datatype]
+            else:                         poly_color = None
+            if poly_color is None:
+                poly_color = np.random.rand(3,1)
+            _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
+        elif isinstance(item, gdspy.PolygonSet):
+            polygons = item.polygons
+            layer_datatype = (item.layer,item.datatype)
+            if layercolors.has_key(layer_datatype):  poly_color = layercolors[layer_datatype]
+            else:                         poly_color = None
+            if poly_color is None:
+                poly_color = np.random.rand(3,1)
+            _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
+#            for p in item.polygons:
+#                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
+#    pc = PatchCollection(patches, match_original=True)
+    # TODO: Change this to per-layer coloring    
+#    np.random.seed(0)
+#    colors = 100*np.random.rand(len(patches))
+#    pc.set_array(np.array(colors))
+#    ax.add_collection(pc)
     plt.draw()
 
+    
+def _draw_polygons(polygons, ax, **kwargs):
+    """ This function uses a trick where all polygon points are concatenated, 
+    separated only by NaN values.  This speeds up drawing considerably, see
+    http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
+    """
+    nan_pt = np.array([[np.nan, np.nan]])
+    polygons_with_nans = [np.concatenate((p, nan_pt), axis = 0) for p in polygons]
+    all_polygons = np.vstack(polygons_with_nans)
+    plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
+#    plt.fill(all_polygons[:,0], all_polygons[:,1], facecolor='b',alpha=0.8, edgecolor='k')
+#
+#quickplot(D, layers)
+#    
+#pp1 = PolygonPatch([[1,2],[3,3],[5,8]], closed=True, alpha = 0.4, color = '#ffd700')
+#pp2 = PolygonPatch([[0,0],[12,3],[5,8]], closed=True, alpha = 0.4, color = '#ffd700')
+#patches = [pp1, pp2]
+#pc = PatchCollection(patches, match_original=True)
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
+#ax.add_collection(pc)
+#
+#plt.draw()
+    
 
 def _draw_port(port, arrow_scale = 1, **kwargs):
     x = port.midpoint[0]
