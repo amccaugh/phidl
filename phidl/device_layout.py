@@ -35,7 +35,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon as PolygonPatch
 from matplotlib.collections import PatchCollection
 
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 
 #==============================================================================
 # Useful transformation functions
@@ -292,7 +292,45 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         return self
 
 
+
         
+# Want to be able to call device like
+# D = Device()
+# D = Device('snspd')
+# D = Device(name = 'snspd')
+# D = Device(beamsplitter, config = 'myconfig.yaml', output_width = 10, name = 'bs1')
+#_makedevice(fun, config = None, **kwargs)
+#class DeviceMeta(object):
+#    def __new__(cls, *args, **kwargs):
+#        if (len(args) > 0) and callable(args[0]):
+#            return _makedevice(*args, **kwargs)
+#        else:
+#            return Device(*args, **kwargs)
+#        # D = Device()
+#        if (len(args) == 0) and (len(kwargs) == 0):
+#            return super(Device, cls).__new__(cls)
+#        # D = Device('snspd')
+#        if (len(args) == 1) and (len(kwargs) == 0):
+#            return super(Device, cls).__new__(cls)
+#        # D = Device(name = 'snspd')
+#        elif (len(args) == 0) and (len(kwargs) == 1) and kwargs.has_key('name'):
+#            return super(Device, cls).__new__(cls)
+#        # D = Device(beamsplitter, config = 'myconfig.yaml', output_width = 10, name = 'bs1')
+#        else:
+#            return _makedevice(*args, **kwargs)
+    
+    
+
+def _makedevice(fun, config = None, **kwargs):
+    config_dict = {}
+    if type(config) is str:
+        with open(config) as f:  config_dict = yaml.load(f) # Load arguments from config file
+    elif type(config) is dict:   config_dict = config
+    config_dict.update(**kwargs)
+    return fun(**config_dict)
+    
+
+
 class Device(gdspy.Cell, _GeometryHelper):
     uid = 0
     
@@ -305,7 +343,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         Device.uid += 1
         name = '%s%06d' % (name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
 
-        super(Device, self).__init__(name, exclude_from_global=True)
+        super(Device, self).__init__(name = name, exclude_from_global=True)
 
     @property
     def layers(self):
@@ -322,7 +360,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ Takes a Device (or Device-making function with config) and adds it
         as a DeviceReference to the current Device.  """
          # Check if ``device`` is actually a device-making function
-        if callable(device):    D = makedevice(fun = device, config = config, **kwargs)
+        if callable(device):    D = _makedevice(fun = device, config = config, **kwargs)
         else:                   D = device
         d = DeviceReference(D)   # Create a DeviceReference (CellReference)
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
@@ -743,10 +781,7 @@ def quickplot(items, layers = None, overlay_ports = True, overlay_subports = Tru
             polygons_spec = item.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]
-                if layercolors.has_key(key):  poly_color = layercolors[key]
-                else:                         poly_color = None
-                if poly_color is None:
-                    poly_color = np.random.rand(3,1)
+                poly_color = _get_layercolor(layercolors, layer = key[0], datatype = key[1])
                 _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
                 for name, port in item.ports.items():
                     _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
@@ -758,30 +793,22 @@ def quickplot(items, layers = None, overlay_ports = True, overlay_subports = Tru
                     plt.text(port.midpoint[0], port.midpoint[1], name)
         elif isinstance(item, gdspy.Polygon):
             polygons = [item.points]
-            layer_datatype = (item.layer,item.datatype)
-            if layercolors.has_key(layer_datatype):  poly_color = layercolors[layer_datatype]
-            else:                         poly_color = None
-            if poly_color is None:
-                poly_color = np.random.rand(3,1)
+            poly_color = _get_layercolor(layercolors, item.layer, item.datatype)
             _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
         elif isinstance(item, gdspy.PolygonSet):
             polygons = item.polygons
-            layer_datatype = (item.layer,item.datatype)
-            if layercolors.has_key(layer_datatype):  poly_color = layercolors[layer_datatype]
-            else:                         poly_color = None
-            if poly_color is None:
-                poly_color = np.random.rand(3,1)
+            poly_color = _get_layercolor(layercolors, item.layer, item.datatype)
             _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
-#            for p in item.polygons:
-#                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-#    pc = PatchCollection(patches, match_original=True)
-    # TODO: Change this to per-layer coloring    
-#    np.random.seed(0)
-#    colors = 100*np.random.rand(len(patches))
-#    pc.set_array(np.array(colors))
-#    ax.add_collection(pc)
     plt.draw()
 
+    
+def _get_layercolor(layercolors, layer, datatype):
+    if layercolors.has_key((layer, datatype)):  poly_color = layercolors[(layer, datatype)]
+    else:                         poly_color = None
+    if poly_color is None:
+        poly_color = np.random.rand(3,1)
+    return poly_color
+    
     
 def _draw_polygons(polygons, ax, **kwargs):
     """ This function uses a trick where all polygon points are concatenated, 
@@ -792,20 +819,7 @@ def _draw_polygons(polygons, ax, **kwargs):
     polygons_with_nans = [np.concatenate((p, nan_pt), axis = 0) for p in polygons]
     all_polygons = np.vstack(polygons_with_nans)
     plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
-#    plt.fill(all_polygons[:,0], all_polygons[:,1], facecolor='b',alpha=0.8, edgecolor='k')
-#
-#quickplot(D, layers)
-#    
-#pp1 = PolygonPatch([[1,2],[3,3],[5,8]], closed=True, alpha = 0.4, color = '#ffd700')
-#pp2 = PolygonPatch([[0,0],[12,3],[5,8]], closed=True, alpha = 0.4, color = '#ffd700')
-#patches = [pp1, pp2]
-#pc = PatchCollection(patches, match_original=True)
-#fig = plt.figure()
-#ax = fig.add_subplot(111)
-#ax.add_collection(pc)
-#
-#plt.draw()
-    
+
 
 def _draw_port(port, arrow_scale = 1, **kwargs):
     x = port.midpoint[0]
@@ -819,14 +833,6 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
 
 
-def makedevice(fun, config = None, **kwargs):
-    config_dict = {}
-    if type(config) is str:
-        with open(config) as f:  config_dict = yaml.load(f) # Load arguments from config file
-    elif type(config) is dict:   config_dict = config
-    config_dict.update(**kwargs)
-    return fun(**config_dict)
-    
 #y = makedevice(beamsplitter, filename, arm_length = 50)
 #quickplot(y)
 
