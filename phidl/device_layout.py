@@ -327,23 +327,37 @@ def _makedevice(fun, config = None, **kwargs):
         with open(config) as f:  config_dict = yaml.load(f) # Load arguments from config file
     elif type(config) is dict:   config_dict = config
     config_dict.update(**kwargs)
-    return fun(**config_dict)
+    D = fun(**config_dict)
+    # TODO: Add check to make sure it was of type Device)
+    return D
     
 
 
 class Device(gdspy.Cell, _GeometryHelper):
     uid = 0
     
-    def __init__(self, name = 'Unnamed'):
-        self.ports = {}
-        self.parameters = {}
-        self.meta = {}
-        self.references = []
-
+    def __init__(self, *args, **kwargs):
         Device.uid += 1
-        name = '%s%06d' % (name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
+        
+        # Allow name to be set like Device('arc') or Device(name = 'arc')
+        if kwargs.has_key('name'):                      gds_name = kwargs['name']
+        elif (len(args) == 1) and (len(kwargs) == 0):   gds_name = args[0]
+        else:                                           gds_name = 'Unnamed'
+        
+        # Check if first argument was a Device-making function.
+        # If so, use that function and any other arguments to generate a device
+        if (len(args) > 0) and callable(args[0]):
+            D = _makedevice(fun = args[0], *args[1:], **kwargs)
+            self.__dict__ = D.__dict__.copy() 
+        # Otherwise, make a blank device
+        else:
+            self.ports = {}
+            self.parameters = {}
+            self.meta = {}
+            self.references = []
+            gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
+            super(Device, self).__init__(name = gds_name, exclude_from_global=True)
 
-        super(Device, self).__init__(name = name, exclude_from_global=True)
 
     @property
     def layers(self):
@@ -387,9 +401,9 @@ class Device(gdspy.Cell, _GeometryHelper):
             gds_datatype = 0
             
         
-        if len(points[0]) == 2: # Then it must be of the form [[1,2],[3,4],[5,6]]
+        if len(points[0]) == 2: # Then it has the form [[1,2],[3,4],[5,6]]
             polygon = Polygon(points, gds_layer, gds_datatype)
-        elif len(points[0]) > 2: # Then it must be of the form [[1,3,5],[2,4,6]]
+        elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
             polygon = Polygon(xy2p(points), gds_layer, gds_datatype)
         self.add(polygon)
         return polygon
@@ -413,7 +427,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         
     def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
          # Check if ``device`` is actually a device-making function
-        if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
+        if callable(device):    d = _makedevice(fun = device, config = config, **kwargs)
         else:                   d = device
         references = []
         for n in range(num_devices):
