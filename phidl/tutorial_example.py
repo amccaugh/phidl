@@ -278,7 +278,7 @@ DL.write_gds('MultipleLayerText.gds')
 
 
 #==============================================================================
-# Constructing a Device from a parameter list (dictionary or config file)
+# Constructing a Device from set of parameters (dictionary or config file)
 #==============================================================================
 # Say we want to make a more complicated waveguide which requires more
 # parameters.  Instead of passing them individually, we can store them in a
@@ -318,13 +318,15 @@ C3 = Device(complicated_waveguide, config = cwg_parameters, width = 500, rotatio
 quickplot(C3)
 
 
-# The most useful implementation of this is to keep a standard set of parameters
-# and then override certain parts of them while without touching them
-
+# The most useful implementation of this is to keep a standard set of 
+# parameters and then override certain parameters each iteration of the for 
+# loop. Say we want to use our standard cwg_parameters but change the height
+#  each time:
 D = Device()
-for r in [0,5,10,15,25,45,90]:
-    C4 = Device(complicated_waveguide, config = cwg_parameters, rotation = r)
-    D.add_ref( C4 )
+for h in [0.1, 0.5, 1, 2, 4]:
+    C4 = Device(complicated_waveguide, config = cwg_parameters, height = h)
+    c4 = D.add_ref( C4 )
+    c4.ymin = D.ymax + 10
 quickplot(D)
 
 
