@@ -31,6 +31,21 @@ from skimage import draw, morphology
 
 #==============================================================================
 #
+# Connectors
+#
+#==============================================================================
+
+def connector(midpoint = (0,0), width = 1, orientation = 0):
+    """ Creates a Device which has back-to-back ports """
+    D = Device(name = 'connector')
+    D.add_port(name = 1, midpoint = [midpoint[0]/2, midpoint[1]/2],  width = width, orientation = orientation)
+    D.add_port(name = 2, midpoint = [midpoint[0]/2, midpoint[1]/2], width = width, orientation = orientation-180)
+    return D
+
+
+
+#==============================================================================
+#
 # Optimal current-crowding superconducting structures
 #
 #==============================================================================
@@ -406,7 +421,6 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
     
 #R = rectangle(size = (4,2), layer = 0)
 #quickplot(R)
-
 
 
 

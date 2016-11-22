@@ -772,11 +772,6 @@ def _get_layerprop(layer, datatype):
     else:
         color = layer_colors[np.mod(layer, len(layer_colors))]
         alpha = 0.8
-#        rgb = np.array(webcolors.hex_to_rgb(color))/255
-#        hls = colorsys.rgb_to_hls(*rgb)
-#        rgb = np.array(webcolors.hex_to_rgb(color))/255
-#        
-#        color = layer_colors[np.mod(layer, len(layer_colors))]
     return {'color':color, 'alpha':alpha}
     
     
@@ -802,26 +797,3 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
 
-
-#y = makedevice(beamsplitter, filename, arm_length = 50)
-#quickplot(y)
-
-
-
-
-#gold_pads = Layer(name = 'goldpads', gds_layer = 0, gds_datatype = 0,
-#                 description = 'Gold pads liftoff', inverted = False,
-#                 color = None)
-#D = Device()
-#D.add_polygon(points = [(0, 40), (15, 40), (10, 50)], layer = gold_pads)
-#
-#pts = [(0, 40), (15, 40), (10, 50)]
-#patch = PolygonPatch(pts, closed=True, color = 'red', alpha = 0.4)
-#pc = PatchCollection([patch])
-#fig, ax = plt.subplots(1)
-#ax.add_collection(pc)
-#plt.axis('equal')
-#ax.grid(True, which='both', alpha = 0.4)
-#ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
-#ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
-#plt.draw()
