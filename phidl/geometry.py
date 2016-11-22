@@ -348,9 +348,8 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0):
 
 
 def rectangle(size = (4,2), layer = 0):
-    """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
     D = Device(name = 'rectangle')
-    points = np.array([[size[0], size[1]], [size[0], point2[1]], [point2[0], point2[1]], [point2[0], size[1]]])
+    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
     D.add_polygon(points, layer = layer)
     return D
 
@@ -405,7 +404,7 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 # Example code
 #==============================================================================
     
-#R = rectangle(point1 = (4,2), point2 = (0,0), layer = 0)
+#R = rectangle(size = (4,2), layer = 0)
 #quickplot(R)
 
 
@@ -1211,9 +1210,8 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.2
     D = Device(name = 'fill_cell')
     for layer, density in zip(layers, densities):
         rectangle_size = np.array(size)*np.sqrt(density)
-        point1 = -np.array(rectangle_size)/2
-        point2 = np.array(rectangle_size)/2
-        D.add(gdspy.Rectangle(point1, point2, layer = layer))
+        D.add(gdspy.Rectangle(size = rectangle_size, layer = layer))
+        D.center = (0,0)
     return D
 
     

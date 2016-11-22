@@ -28,14 +28,15 @@ from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
-import webcolors
-from collections import namedtuple
+import webcolors, colorsys
 
 from matplotlib import pyplot as plt
-from matplotlib.patches import Polygon as PolygonPatch
-from matplotlib.collections import PatchCollection
+#from matplotlib.patches import Polygon as PolygonPatch
+#from matplotlib.collections import PatchCollection
 
 __version__ = '0.5.3'
+
+
 
 #==============================================================================
 # Useful transformation functions
@@ -85,17 +86,23 @@ def reflect_points(points, p1 = (0,0), p2 = (1,0)):
 #    if origin is not None:      points = points + orgn
 #    return points
         
-
+def reset():
+    Layer.layer_dict = {}
+    Device.uid = 0
 
 
 class Layer(object):
+    layer_dict = {}
+    
     def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
                  description = 'Gold pads liftoff', inverted = False,
-                 color = None):
+                 color = None, alpha = 0.6):
         self.name = name
         self.gds_layer = gds_layer
         self.gds_datatype = gds_datatype
         self.description = description
+        self.alpha = alpha
+        
         try:
             if color is None: # not specified
                 self.color = None
@@ -112,9 +119,22 @@ class Layer(object):
             (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or
             see http://www.w3schools.com/colors/colors_names.asp )
             """)
+            
+        Layer.layer_dict[(gds_layer, gds_datatype)] = self
 
+                         
+def _parse_layer(layer):
+    """ Check if the variable layer is a Layer object, a 2-element list like
+    [0,1] representing layer=0 and datatype=1, or just a layer number """
+    if isinstance(layer, Layer):
+        gds_layer, gds_datatype = layer.gds_layer, layer.gds_datatype
+    elif np.size(layer) == 2:
+        gds_layer, gds_datatype = layer[0], layer[1]
+    else:
+        gds_layer, gds_datatype = layer, 0
+    return (gds_layer, gds_datatype)
 
-
+    
     
 class _GeometryHelper(object):
     """ This is a helper class. It can be added to any other class which has 
@@ -291,44 +311,26 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         self.points = reflect_points(self.points, p1, p2)
         return self
 
-
-
-        
-# Want to be able to call device like
-# D = Device()
-# D = Device('snspd')
-# D = Device(name = 'snspd')
-# D = Device(beamsplitter, config = 'myconfig.yaml', output_width = 10, name = 'bs1')
-#_makedevice(fun, config = None, **kwargs)
-#class DeviceMeta(object):
-#    def __new__(cls, *args, **kwargs):
-#        if (len(args) > 0) and callable(args[0]):
-#            return _makedevice(*args, **kwargs)
-#        else:
-#            return Device(*args, **kwargs)
-#        # D = Device()
-#        if (len(args) == 0) and (len(kwargs) == 0):
-#            return super(Device, cls).__new__(cls)
-#        # D = Device('snspd')
-#        if (len(args) == 1) and (len(kwargs) == 0):
-#            return super(Device, cls).__new__(cls)
-#        # D = Device(name = 'snspd')
-#        elif (len(args) == 0) and (len(kwargs) == 1) and kwargs.has_key('name'):
-#            return super(Device, cls).__new__(cls)
-#        # D = Device(beamsplitter, config = 'myconfig.yaml', output_width = 10, name = 'bs1')
-#        else:
-#            return _makedevice(*args, **kwargs)
-    
     
 
 def _makedevice(fun, config = None, **kwargs):
     config_dict = {}
     if type(config) is str:
-        with open(config) as f:  config_dict = yaml.load(f) # Load arguments from config file
-    elif type(config) is dict:   config_dict = config
+        with open(config) as f:
+            config_dict = yaml.load(f) # Load arguments from config file
+    elif type(config) is dict:
+        config_dict = deepcopy(config)
+    elif config is None:
+        pass
+    else:
+        raise TypeError("""[PHIDL] When creating Device() from a function, the
+        second argument should be a ``config`` argument which is either a
+        filename or a dictionary containing arguments for the function.
+        e.g. Device(arc, config = 'myconfig.yaml') """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
-    # TODO: Add check to make sure it was of type Device)
+#    if not isinstance(D, Device):
+#        raise ValueError('[PHIDL] Device() was passed a function, but that function did not return an instance of Device')
     return D
     
 
@@ -337,7 +339,6 @@ class Device(gdspy.Cell, _GeometryHelper):
     uid = 0
     
     def __init__(self, *args, **kwargs):
-        Device.uid += 1
         
         # Allow name to be set like Device('arc') or Device(name = 'arc')
         if kwargs.has_key('name'):                      gds_name = kwargs['name']
@@ -347,10 +348,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Check if first argument was a Device-making function.
         # If so, use that function and any other arguments to generate a device
         if (len(args) > 0) and callable(args[0]):
-            D = _makedevice(fun = args[0], *args[1:], **kwargs)
+            D = _makedevice(*args, **kwargs)
             self.__dict__ = D.__dict__.copy() 
-        # Otherwise, make a blank device
+        # Otherwise, make a new blank device
         else:
+            Device.uid += 1
             self.ports = {}
             self.parameters = {}
             self.meta = {}
@@ -388,19 +390,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         elif isinstance(points, gdspy.PolygonSet):
             return [self.add_polygon(p, layer) for p in points.polygons]
                 
-        # Check if the variable layer is a Layer object, a 2-element list like
-        # [0,1] representing layer=0 and datatype=1, or just a layer number
-        if isinstance(layer, Layer):
-            gds_layer = layer.gds_layer
-            gds_datatype = layer.gds_datatype
-        elif np.size(layer) == 2:
-            gds_layer = layer[0]
-            gds_datatype = layer[1]
-        else:
-            gds_layer = layer
-            gds_datatype = 0
+        gds_layer, gds_datatype = _parse_layer(layer)
             
-        
         if len(points[0]) == 2: # Then it has the form [[1,2],[3,4],[5,6]]
             polygon = Polygon(points, gds_layer, gds_datatype)
         elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
@@ -437,15 +428,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         return references
         
 
-    def annotate(self, text = 'hello', position = (0,0), layer = 89):
+    def annotate(self, text = 'hello', position = (0,0), layer = 255):
+        gds_layer, gds_datatype = _parse_layer(layer)
+
         if type(text) is not str: text = str(text)
-        l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
-        return l
+        self.add(gdspy.Label(text = text, position = position, anchor = 'o',
+                                 layer = gds_layer, texttype = gds_datatype))
+        return self
         
-#
-#    def delete_port(self, name):
-#        self.ports.pop(name, None)
-#    
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -723,49 +713,7 @@ def xy2p(*args):
 #==============================================================================
 
 
-#def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
-#              label_ports = True, new_window = True):
-#    """ Takes a list of devices/references/polygons or single one of those, and
-#    plots them.  Also has the option to overlay their ports """
-#    if new_window: fig, ax = plt.subplots(1)
-#    else:
-#        ax = plt.gca()  # Get current figure
-#        ax.cla()        # Clears the axes of all previous polygons
-#    
-#    # Iterate through each each Device/DeviceReference/Polygon
-#    patches = []
-#    if type(items) is not list:  items = [items]
-#    for item in items:
-#        if isinstance(item, (Device, DeviceReference)):
-#            polygons = item.get_polygons(by_spec=False, depth=None)
-#            for p in polygons:
-#                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-#            for name, port in item.ports.items():
-#                _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-#                plt.text(port.midpoint[0], port.midpoint[1], name)
-#        if isinstance(item, Device) and overlay_subports is True:
-#            for sd in item.references:
-#                for name, port in sd.ports.items():
-#                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-#                    plt.text(port.midpoint[0], port.midpoint[1], name)
-#        if isinstance(item, gdspy.Polygon):
-#            patches.append(PolygonPatch(item.points, closed=True, alpha = 0.4))
-#        if isinstance(item, gdspy.PolygonSet):
-#            for p in item.polygons:
-#                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-#    pc = PatchCollection(patches, alpha=0.4)
-#    # TODO: Change this to per-layer coloring    
-#    np.random.seed(0)
-#    colors = 100*np.random.rand(len(patches))
-#    pc.set_array(np.array(colors))
-#    ax.add_collection(pc)
-#    plt.axis('equal')
-#    ax.grid(True, which='both', alpha = 0.4)
-#    ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
-#    ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
-#    plt.draw()
-
-def quickplot(items, layers = None, overlay_ports = True, overlay_subports = True,
+def quickplot(items, overlay_ports = True, overlay_subports = True,
               label_ports = True, new_window = True):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
@@ -778,15 +726,6 @@ def quickplot(items, layers = None, overlay_ports = True, overlay_subports = Tru
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
     
-
-    # Assemble a dictionary of which maps gds layer and datatype to 
-    # layer color, e.g. layercolors[(1,0)] = '#ffd700'
-    layercolors = {}
-    if layers is not None:
-        for key, l in layers.items():
-            layercolors[(l.gds_layer, l.gds_datatype)] = l.color
-            
-
     # Iterate through each each Device/DeviceReference/Polygon
     np.random.seed(0)
     if type(items) is not list:  items = [items]
@@ -795,33 +734,50 @@ def quickplot(items, layers = None, overlay_ports = True, overlay_subports = Tru
             polygons_spec = item.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]
-                poly_color = _get_layercolor(layercolors, layer = key[0], datatype = key[1])
-                _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
+                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+                _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                               edgecolor = 'k', alpha = layerprop['alpha'])
                 for name, port in item.ports.items():
                     _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
                     plt.text(port.midpoint[0], port.midpoint[1], name)
-        elif isinstance(item, Device) and overlay_subports is True:
-            for sd in item.references:
-                for name, port in sd.ports.items():
-                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                    plt.text(port.midpoint[0], port.midpoint[1], name)
+            if isinstance(item, Device) and overlay_subports is True:
+                for sd in item.references:
+                    for name, port in sd.ports.items():
+                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                        plt.text(port.midpoint[0], port.midpoint[1], name)
         elif isinstance(item, gdspy.Polygon):
             polygons = [item.points]
-            poly_color = _get_layercolor(layercolors, item.layer, item.datatype)
-            _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
+            layerprop = _get_layerprop(item.layer, item.datatype)
+            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                           edgecolor = 'k', alpha = layerprop['alpha'])
         elif isinstance(item, gdspy.PolygonSet):
             polygons = item.polygons
-            poly_color = _get_layercolor(layercolors, item.layer, item.datatype)
-            _draw_polygons(polygons, ax, facecolor = poly_color, edgecolor = 'k', alpha = 0.8)
+            layerprop = _get_layerprop(item.layer, item.datatype)
+            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                           edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
 
     
-def _get_layercolor(layercolors, layer, datatype):
-    if layercolors.has_key((layer, datatype)):  poly_color = layercolors[(layer, datatype)]
-    else:                         poly_color = None
-    if poly_color is None:
-        poly_color = np.random.rand(3,1)
-    return poly_color
+
+
+def _get_layerprop(layer, datatype):
+    # Colors generated from here: http://phrogz.net/css/distinct-colors.html
+    layer_colors = ['#3dcc5c', '#2b0fff', '#cc3d3d', '#e5dd45', '#7b3dcc',
+    '#cc860c', '#73ff0f', '#2dccb4', '#ff0fa3', '#0ec2e6', '#3d87cc', '#e5520e']
+                     
+    l = Layer.layer_dict.get((layer, datatype))
+    if l is not None:
+        color = l.color
+        alpha = l.alpha
+    else:
+        color = layer_colors[np.mod(layer, len(layer_colors))]
+        alpha = 0.8
+#        rgb = np.array(webcolors.hex_to_rgb(color))/255
+#        hls = colorsys.rgb_to_hls(*rgb)
+#        rgb = np.array(webcolors.hex_to_rgb(color))/255
+#        
+#        color = layer_colors[np.mod(layer, len(layer_colors))]
+    return {'color':color, 'alpha':alpha}
     
     
 def _draw_polygons(polygons, ax, **kwargs):
