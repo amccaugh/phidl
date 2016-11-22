@@ -228,22 +228,22 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0):
     dx = size[0]/2
     dy = size[1]/2
     
-    if ports.has_key('N'):
+    if 'N' in ports:
         num_ports = ports['N']
         m = dx-dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],  width = dx/num_ports*2, orientation = 90) for n,p in enumerate(p_list)]
-    if ports.has_key('S'):
+    if 'S' in ports:
         num_ports = ports['S']
         m = dx-dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],  width = dx/num_ports*2, orientation = -90) for n,p in enumerate(p_list)]
-    if ports.has_key('E'):
+    if 'E' in ports:
         num_ports = ports['E']
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],  width = dy/num_ports*2, orientation = 0) for n,p in enumerate(p_list)]
-    if ports.has_key('W'):
+    if 'W' in ports:
         num_ports = ports['W']
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)

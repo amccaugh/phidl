@@ -290,12 +290,12 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
@@ -341,9 +341,9 @@ class Device(gdspy.Cell, _GeometryHelper):
     def __init__(self, *args, **kwargs):
         
         # Allow name to be set like Device('arc') or Device(name = 'arc')
-        if kwargs.has_key('name'):                      gds_name = kwargs['name']
-        elif (len(args) == 1) and (len(kwargs) == 0):   gds_name = args[0]
-        else:                                           gds_name = 'Unnamed'
+        if 'name' in kwargs:                          gds_name = kwargs['name']
+        elif (len(args) == 1) and (len(kwargs) == 0): gds_name = args[0]
+        else:                                         gds_name = 'Unnamed'
         
         # Check if first argument was a Device-making function.
         # If so, use that function and any other arguments to generate a device
@@ -410,7 +410,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             name = p.name
         else:                  p = Port(name, midpoint, width, orientation, parent = self)
         if name is not None: p.name = name
-        if self.ports.has_key(p.name):
+        if p.name in self.ports:
             raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
         self.ports[p.name] = p
         return p
@@ -493,12 +493,12 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
@@ -596,12 +596,12 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:   d = destination
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
             
         # Lock one axis if necessary
@@ -647,7 +647,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         
     def connect(self, port, destination):
         # ``port`` can either be a string with the name or an actual Port
-        if self.ports.has_key(port):
+        if port in self.ports: # Then ``port`` is a key for the ports dict
             p = self.ports[port]
         elif type(port) is Port:
             p = port
