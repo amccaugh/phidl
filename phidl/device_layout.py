@@ -12,7 +12,6 @@
 #==============================================================================
 
  # TODO Add flatten()
- # TODO Move route to geometry
 
 #==============================================================================
 # Imports
@@ -28,7 +27,7 @@ from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
-import webcolors, colorsys
+import webcolors
 
 from matplotlib import pyplot as plt
 #from matplotlib.patches import Polygon as PolygonPatch
