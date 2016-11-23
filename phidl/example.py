@@ -12,51 +12,99 @@ from phidl import Device, quickplot
 import numpy as np
 import phidl.geometry as pg
 import basicPhotonics as bP
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 #
-##
+#
 interaction_length = 10
 gap1 = 1
 gap2 = 0.1
-port1 = 0.4
-port2 = 0.5
+#port1 = 0.4
+#port2 = 0.5
 port3 = 0.4
-port4 = 0.4
-hSines = 3
-rMin = 10
-lSines = np.sqrt((np.pi**2)*hSines*rMin/2)
-
+#port4 = 0.4
+#hSines = 3
+#rMin = 10
+#lSines = np.sqrt((np.pi**2)*hSines*rMin/2)
 #
-D = Device("adiabatic beam splitter")
+##
+FSR = 0.05
+ng = 4
+rMin = 30
+wavelength = 1.55
+dL = wavelength**2/ng/FSR
+
+# for a given ratio of hSines and lSines we can analytically estimate the FSR based 
+#on the length of a sine from 2*pi to 0 = 7.64. For some reason here we have a scale factor to 6.66
 #
-# start with the actual beamsplitter part
-xpts_upper = [0, 0, interaction_length, interaction_length]
-ypts_upper = [0, port1, port3, 0]
-
-wg_upper = D.add_ref(bP.polygon(xcoords = xpts_upper, ycoords = ypts_upper, layer = 0))
+#lSines_approx = dL/(9/2/np.pi-1)
+#r = 2*lSines_approx/np.pi**2/rMin
+#MZI_factors = np.load('MZI_factors.npy')
+#f = interp1d(MZI_factors[:,0],MZI_factors[:,1],kind='cubic')
+#F = f(r)
+#lSines = dL/(F/(2*np.pi)-1)
+#hSines = r*lSines
 #
-xpts_lower = [0, 0, interaction_length, interaction_length]
-ypts_lower = [-gap1, -gap1-port2, -gap2-port4, -gap2]
-wg_lower = D.add_ref(bP.polygon(xcoords = xpts_lower, ycoords = ypts_lower, layer = 0))
+#D = Device()
+#BS = Device()
+#B = BS.add_ref(bP.adiabaticBeamsplitter(interaction_length = 100, hSines = 20))
+#bS1 = D.add_ref(B)
+#bS2 = D.add_ref(B)
+#bS1.reflect(p1 = bS1.ports[3], p2 = bS1.ports[4])
+#P = Device()
+#P.add_port(name = 1, midpoint = bS1.ports[3].midpoint+[lSines/2,hSines], width = port3, orientation = 180)
+#P.add_port(name = 2, midpoint = bS1.ports[3].midpoint+[lSines/2,hSines], width = port3, orientation = 0)
+#D.add_ref(P)
+#bS1.movex(lSines)
+#route1 = D.add_ref(pg.route(port1 = P.ports[1], port2 = bS2.ports[3], path_type = 'sine'))
+#route2 = D.add_ref(pg.route(port1 = P.ports[2], port2 = bS1.ports[3], path_type = 'sine'))
+#route3 = D.add_ref(pg.route(port1 = bS1.ports[4], port2 = bS2.ports[4]))
+#calc_length = route1.meta['length']+route2.meta['length']-route3.meta['length']
+#
+#print('Calculated FSR:', calc_fsr)
+#G = Device()
+G = bP.grating(wGrating = 5)
+#g.connect(port = g.ports[1], destination = bS2.ports[1])
+#D.add_ref(g)
+##D.add_port(port = bS2.ports['port 1'], name = 'port 1')
+#D.add_port(port = bS2.ports[2], name = 2)
+#D.add_port(port = bS1.ports[1], name = 3)
+#D.add_port(port = bS1.ports[2], name = 4)
+#quickplot(D)
 
-#locate the straight sections after the sine bends
-P = Device('ports')
-P.add_port(name = 'port 1', midpoint = [wg_upper.xmin-lsines, wg_upper.center[1]+hsines], width = port1, orientation = 0)
-P.add_port(name = 'port 2', midpoint = [wg_lower.xmin-lsines, wg_lower.center[1]-hsines], width = port1, orientation = 0)
-P.add_port(name = 'port 3', midpoint = [wg_upper.xmax+lsines, wg_upper.center[1]+hsines], width = port1, orientation = 180)
-P.add_port(name = 'port 4', midpoint = [wg_lower.xmax+lsines, wg_lower.center[1]-hsines], width = port1, orientation = 180)
-route1 = D.add_ref(pg.route(port1 = P.ports['port 1'], port2 = wg_upper.ports['0'], path_type = 'sine'))
-route2 = D.add_ref(pg.route(port1 = P.ports['port 2'], port2 = wg_lower.ports['0'], path_type = 'sine'))
-route3 = D.add_ref(pg.route(port1 = P.ports['port 3'], port2 = wg_upper.ports['2'], path_type = 'sine'))
-route4 = D.add_ref(pg.route(port1 = P.ports['port 4'], port2 = wg_lower.ports['2'], path_type = 'sine'))
-
-D.add_port(port = route1.ports[1], name = 'port 1')
-D.add_port(port = route2.ports[1], name = 'port 2')
-D.add_port(port = route3.ports[1], name = 'port 3')
-D.add_port(port = route4.ports[1], name = 'port 4')
-
-
+ABS = bP.adiabaticBeamsplitter()
+D = bP.MZI(FSR = 0.05, ng = 4, rMin = 30, wavelength = 1.55, BS = ABS, Port1Device = G, Port2Device = G)
 quickplot(D)
+
+##
+## start with the actual beamsplitter part
+#xpts_upper = [0, 0, interaction_length, interaction_length]
+#ypts_upper = [0, port1, port3, 0]
+#
+#wg_upper = D.add_ref(bP.polygon(xcoords = xpts_upper, ycoords = ypts_upper, layer = 0))
+##
+#xpts_lower = [0, 0, interaction_length, interaction_length]
+#ypts_lower = [-gap1, -gap1-port2, -gap2-port4, -gap2]
+#wg_lower = D.add_ref(bP.polygon(xcoords = xpts_lower, ycoords = ypts_lower, layer = 0))
+#
+##locate the straight sections after the sine bends
+#P = Device('ports')
+#P.add_port(name = 'port 1', midpoint = [wg_upper.xmin-lsines, wg_upper.center[1]+hsines], width = port1, orientation = 0)
+#P.add_port(name = 'port 2', midpoint = [wg_lower.xmin-lsines, wg_lower.center[1]-hsines], width = port1, orientation = 0)
+#P.add_port(name = 'port 3', midpoint = [wg_upper.xmax+lsines, wg_upper.center[1]+hsines], width = port1, orientation = 180)
+#P.add_port(name = 'port 4', midpoint = [wg_lower.xmax+lsines, wg_lower.center[1]-hsines], width = port1, orientation = 180)
+#route1 = D.add_ref(pg.route(port1 = P.ports['port 1'], port2 = wg_upper.ports['0'], path_type = 'sine'))
+#route2 = D.add_ref(pg.route(port1 = P.ports['port 2'], port2 = wg_lower.ports['0'], path_type = 'sine'))
+#route3 = D.add_ref(pg.route(port1 = P.ports['port 3'], port2 = wg_upper.ports['2'], path_type = 'sine'))
+#route4 = D.add_ref(pg.route(port1 = P.ports['port 4'], port2 = wg_lower.ports['2'], path_type = 'sine'))
+#
+#D.add_port(port = route1.ports[1], name = 'port 1')
+#D.add_port(port = route2.ports[1], name = 'port 2')
+#D.add_port(port = route3.ports[1], name = 'port 3')
+#D.add_port(port = route4.ports[1], name = 'port 4')
+#
+#quickplot(D)
 
 #wg = D.add_ref(pg.compass(size=[lWg,wWg],layer=wgLayer))
 #wRegion = D.add_ref(pg.compass(size=[lWg,wE],layer=wLayer))

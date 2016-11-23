@@ -5,6 +5,7 @@ from phidl import Device, quickplot
 import numpy as np
 import phidl.geometry as pg
 import gdspy
+from scipy.interpolate import interp1d
 
 ## parameters for rings
 #radius = 10
@@ -160,35 +161,81 @@ def adiabaticBeamsplitter(interaction_length = 10, gap1 = 1, gap2 = 0.1,
     xpts_upper = [0, 0, interaction_length, interaction_length]
     ypts_upper = [0, port1, port3, 0]
     
-    wg_upper = D.add_ref(bP.polygon(xcoords = xpts_upper, ycoords = ypts_upper, layer = 0))
+    wg_upper = D.add_ref(polygon(xcoords = xpts_upper, ycoords = ypts_upper, layer = 0))
     #
     xpts_lower = [0, 0, interaction_length, interaction_length]
     ypts_lower = [-gap1, -gap1-port2, -gap2-port4, -gap2]
-    wg_lower = D.add_ref(bP.polygon(xcoords = xpts_lower, ycoords = ypts_lower, layer = 0))
+    wg_lower = D.add_ref(polygon(xcoords = xpts_lower, ycoords = ypts_lower, layer = 0))
     
     #locate the straight sections after the sine bends
     P = Device('ports')
-    P.add_port(name = 'port 1', midpoint = [wg_upper.xmin-lsines, wg_upper.center[1]+hsines], width = port1, orientation = 0)
-    P.add_port(name = 'port 2', midpoint = [wg_lower.xmin-lsines, wg_lower.center[1]-hsines], width = port1, orientation = 0)
-    P.add_port(name = 'port 3', midpoint = [wg_upper.xmax+lsines, wg_upper.center[1]+hsines], width = port1, orientation = 180)
-    P.add_port(name = 'port 4', midpoint = [wg_lower.xmax+lsines, wg_lower.center[1]-hsines], width = port1, orientation = 180)
+    P.add_port(name = 'port 1', midpoint = [wg_upper.xmin-lSines, wg_upper.center[1]+hSines], width = port1, orientation = 0)
+    P.add_port(name = 'port 2', midpoint = [wg_lower.xmin-lSines, wg_lower.center[1]-hSines], width = port1, orientation = 0)
+    P.add_port(name = 'port 3', midpoint = [wg_upper.xmax+lSines, wg_upper.center[1]+hSines], width = port1, orientation = 180)
+    P.add_port(name = 'port 4', midpoint = [wg_lower.xmax+lSines, wg_lower.center[1]-hSines], width = port1, orientation = 180)
     route1 = D.add_ref(pg.route(port1 = P.ports['port 1'], port2 = wg_upper.ports['0'], path_type = 'sine'))
     route2 = D.add_ref(pg.route(port1 = P.ports['port 2'], port2 = wg_lower.ports['0'], path_type = 'sine'))
     route3 = D.add_ref(pg.route(port1 = P.ports['port 3'], port2 = wg_upper.ports['2'], path_type = 'sine'))
     route4 = D.add_ref(pg.route(port1 = P.ports['port 4'], port2 = wg_lower.ports['2'], path_type = 'sine'))
     
-    D.add_port(port = route1.ports[1], name = 'port 1')
-    D.add_port(port = route2.ports[1], name = 'port 2')
-    D.add_port(port = route3.ports[1], name = 'port 3')
-    D.add_port(port = route4.ports[1], name = 'port 4')
+    D.add_port(port = route1.ports[1], name = 1)
+    D.add_port(port = route2.ports[1], name = 2)
+    D.add_port(port = route3.ports[1], name = 3)
+    D.add_port(port = route4.ports[1], name = 4)
     
     return D
 
 def beamTap():
     pass
 
-def MZI():
-    pass
+def MZI(FSR = 0.05, ng = 4, rMin = 10, wavelength = 1.55, BS = gdspy.Cell, **kwargs):
+    # MZI. input the FSR and ng and it calculates the largest hSines for a given minimum radius of curvature.
+# optionally you can input devices for the four ports of the MZI. If you leave them empty it will just put ports on.
+
+
+    # for a given ratio of hSines and lSines we can analytically estimate the FSR based 
+    #on the length of a sine from 2*pi to 0 = 7.64. For some reason here we have a scale factor to 6.66
+    dL = wavelength**2/ng/FSR
+    # ok, but we still have to make our best initial guess at lSines
+    lSines_approx = dL/(9/2/np.pi-1)
+    # based on that guess + the rMin we calculate the ratio of hSines/lSines
+    r = 2*lSines_approx/np.pi**2/rMin
+    # now using that ratio we actually calculate the factor F, which is an elliptic integral
+    MZI_factors = np.load('MZI_factors.npy')
+    f = interp1d(MZI_factors[:,0],MZI_factors[:,1],kind='cubic')
+    F = f(r)
+    # now we can recalculate lSines and hSines
+    lSines = dL/(F/(2*np.pi)-1)
+    hSines = r*lSines
+    
+    # build the device
+    D = Device()
+    bS1 = D.add_ref(BS)
+    bS2 = D.add_ref(BS)
+    bS1.reflect(p1 = bS1.ports[3], p2 = bS1.ports[4])
+    P = Device()
+    P.add_port(name = 1, midpoint = bS1.ports[3].midpoint+[lSines/2,hSines], width = bS1.ports[3].width, orientation = 180)
+    P.add_port(name = 2, midpoint = bS1.ports[3].midpoint+[lSines/2,hSines], width = bS1.ports[3].width, orientation = 0)
+    D.add_ref(P)
+    bS1.movex(lSines)
+    route1 = D.add_ref(pg.route(port1 = P.ports[1], port2 = bS2.ports[3], path_type = 'sine'))
+    route2 = D.add_ref(pg.route(port1 = P.ports[2], port2 = bS1.ports[3], path_type = 'sine'))
+    route3 = D.add_ref(pg.route(port1 = bS1.ports[4], port2 = bS2.ports[4]))
+    calc_length = route1.meta['length']+route2.meta['length']-route3.meta['length']
+    calc_fsr = wavelength**2/ng/calc_length
+    D.meta['Calculated FSR'] = calc_fsr
+    # now we put either devices or ports on the 4 outputs of the MZI
+    n = len(kwargs)
+    dest = {0: bS2.ports[1], 1: bS2.ports[2], 2: bS1.ports[1], 3: bS1.ports[2]}
+    
+    for i in range(0, len(kwargs)):
+        dP = D.add_ref(kwargs[kwargs.keys()[i]])
+        dP.connect(port = dP.ports[1], destination = dest[i])
+        D.add_ref(dP)
+    for i in range(len(kwargs), 4):
+        D.add_port(port = dest[i], name = i+1)
+
+    return D
 
 def wgSNSPD():
     pass
