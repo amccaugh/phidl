@@ -328,8 +328,9 @@ def _makedevice(fun, config = None, **kwargs):
         e.g. Device(arc, config = 'myconfig.yaml') """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
-#    if not isinstance(D, Device):
-#        raise ValueError('[PHIDL] Device() was passed a function, but that function did not return an instance of Device')
+    if not isinstance(D, Device):
+        raise ValueError("""[PHIDL] Device() was passed a function, but that
+        function does not produce a Device.""")
     return D
     
 
@@ -371,12 +372,12 @@ class Device(gdspy.Cell, _GeometryHelper):
         return np.array(self.get_bounding_box())
         
         
-    def add_ref(self, device, config = None, **kwargs):
-        """ Takes a Device (or Device-making function with config) and adds it
-        as a DeviceReference to the current Device.  """
-         # Check if ``device`` is actually a device-making function
-        if callable(device):    D = _makedevice(fun = device, config = config, **kwargs)
-        else:                   D = device
+    def add_ref(self, D):
+        """ Takes a Device and adds it as a DeviceReference to the current
+        Device.  """
+        if not isinstance(D, Device):
+            raise TypeError("""[PHIDL] add_ref() was passed something that
+            was not a Device object. """)
         d = DeviceReference(D)   # Create a DeviceReference (CellReference)
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
         self.references.append(d) # Add to the list of references (for convenience)
