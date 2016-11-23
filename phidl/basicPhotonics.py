@@ -185,8 +185,35 @@ def adiabaticBeamsplitter(interaction_length = 10, gap1 = 1, gap2 = 0.1,
     
     return D
 
-def beamTap():
-    pass
+def beamTap(interaction_length = 10, hSines = 5, rMin = 10, gap = 0.5, wWg= 0.4): 
+                                   
+    lSines = np.sqrt(hSines*np.pi**2*rMin/2)    
+    D = Device()
+    
+    WG = pg.compass(size=[interaction_length, wWg])
+    wg1 = D.add_ref(WG)
+    wg2 = D.add_ref(WG)
+    
+    wg1.center = wg2.center
+    wg1.ymin = wg1.ymax + gap
+    
+    P = Device()
+    port1 = P.add_port(name = 1, midpoint = wg1.ports['W'].midpoint+[-1*lSines, hSines], width = wWg, orientation = 0)
+    port2 = P.add_port(name = 2, midpoint = wg2.ports['W'].midpoint+[-1*lSines, 0], width = wWg, orientation = 0)
+    port3 = P.add_port(name = 3, midpoint = wg1.ports['E'].midpoint+[lSines,hSines], width = wWg, orientation = 180)
+    port4 = P.add_port(name = 4, midpoint = wg2.ports['E'].midpoint+[lSines, 0], width = wWg, orientation = 180)
+    
+    route1 = D.add_ref(pg.route(port1 = wg1.ports['W'], port2 = port1))
+    route2 = D.add_ref(pg.route(port1 = wg2.ports['W'], port2 = port2))
+    route3 = D.add_ref(pg.route(port1 = wg1.ports['E'], port2 = port3))
+    route4 = D.add_ref(pg.route(port1 = wg2.ports['E'], port2 = port4))
+    D.add_ref(P)
+    
+    D.add_port(port = route1.ports[2], name = 1)
+    D.add_port(port = route2.ports[2], name = 2)
+    D.add_port(port = route3.ports[2], name = 3)
+    D.add_port(port = route4.ports[2], name = 4)
+    quickplot(D)
 
 def MZI(FSR = 0.05, ng = 4, rMin = 10, wavelength = 1.55, BS = gdspy.Cell, **kwargs):
     # MZI. input the FSR and ng and it calculates the largest hSines for a given minimum radius of curvature.
