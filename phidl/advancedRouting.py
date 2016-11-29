@@ -3,10 +3,27 @@
 advancedRouting
 PHIDL module
 created by JTC 2016
+
+contains several modules and subroutines useful for photonic waveguide routing
+
+################
+gradualBend() - variable radius-of-curvature bends for low-loss routing
+note - these are not bezier spline curves, but are instead constructed by
+subdividing the coverage angle into equal segments and implementing a gradual
+decrease in bending radius until the minimum is reached.
+
+################
+routeManhattan() - routing between any two ports rotated in 90 degree increments
+note - ports must be located diagonally from each other and oriented along 
+cardinal directions.  Routing can be done with circular or gradual bends.
+Waveguide width is set by the width parameter of the first port.
+
+################
+routeManhattanAuto() - handy routine which performs routeManhattan() on a
+vector of ports provided to it, allowing easy connecting of many objects.
+
 """
-from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
-
-
+from __future__ import division
 from phidl import Device, quickplot
 import numpy as np
 import phidl.geometry as pg
@@ -23,17 +40,17 @@ def gradualBend(
     start_angle=0,
     direction='ccw'
     ):
-    #
-    #######################
-    #creates a 90-degree bent waveguide
-    #the bending radius is gradually increased until it reaches the minimum
-    #value of the radius at the "angular coverage" angle.
-    #it essentially creates a smooth transition to a bent waveguide mode.
-    #user can control number of steps provided.
-    #direction determined by start angle and cw or ccw switch
-    ############
-    #with the default 10 "nsteps" and 15 degree coverage, effective radius is about 1.5*radius.
     
+    """
+    creates a 90-degree bent waveguide
+    the bending radius is gradually increased until it reaches the minimum
+    value of the radius at the "angular coverage" angle.
+    it essentially creates a smooth transition to a bent waveguide mode.
+    user can control number of steps provided.
+    direction determined by start angle and cw or ccw switch
+    ############
+    with the default 10 "nsteps" and 15 degree coverage, effective radius is about 1.5*radius.
+    """
     angularCoverage=np.deg2rad(angularCoverage)
     D = Device()
     
@@ -41,10 +58,9 @@ def gradualBend(
     inc_rad =(radius**-1)/(nsteps)
     angle_step = angularCoverage/nsteps
     
+    #construct a series of sub-arcs with equal angles but gradually decreasing bend radius
     arcs = []
     for x in xrange(nsteps):
-        #print 1/((x+1)*inc_rad)
-        #print np.rad2deg(angle_step)
         A = pg.arc(radius=1/((x+1)*inc_rad),width=wWg,theta=np.rad2deg(angle_step),start_angle=x*np.rad2deg(angle_step),angle_resolution=angle_resolution,layer=layer)
         a = D.add_ref(A)
         arcs.append(a)
@@ -70,7 +86,6 @@ def gradualBend(
     D2.connect(port=2,destination=D1.ports[2])
     total.xmin=0
     total.ymin=0
- 
     
     #orient to default settings...
     total.reflect(p1=[0,0],p2=[1,1])
@@ -92,9 +107,9 @@ def routeManhattan(
     layer=0,
     radius=20
     ):
-    #route between two ports using grid-style routing
-    #bendType can be 'circular' or 'gradual'
-	#NOTE: ports must be parallel or anti-parallel at the moment.
+    #route along cardinal directions between any two ports placed diagonally
+    #from each other
+    
     total = Device()
     wWg=port1.width
     #first map into uniform plane with normal x,y coords
@@ -112,18 +127,108 @@ def routeManhattan(
     if port1.orientation==270:
         p2=[-port2.midpoint[1],port2.midpoint[0]]
         p1=[-port1.midpoint[1],port1.midpoint[0]]
-#    if port1.orientation==0:
-#        p2=[port2.midpoint[0],port2.midpoint[1]]
-#        p1=[port1.midpoint[0],port1.midpoint[1]]
-#    if port1.orientation==90:
-#        p2=[port2.midpoint[1],-port2.midpoint[0]]
-#        p1=[port1.midpoint[1],-port1.midpoint[0]]
-#    if port1.orientation==180:
-#        p2=[-port2.midpoint[0],port2.midpoint[1]]
-#        p1=[-port1.midpoint[0],port1.midpoint[1]]
-#    if port1.orientation==270:
-#        p2=[-port2.midpoint[1],port2.midpoint[0]]
-#        p1=[-port1.midpoint[1],port1.midpoint[0]]
+
+    total.add_port(name=1,port=port1)
+    total.add_port(name=2,port=port2)   
+
+    if p2[1] == p1[1] or p2[0] == p1[0]:
+        raise ValueError('Error - ports must be at different x AND y values.')
+    
+    #if it is parallel or anti-parallel, route with 180 option
+    if (np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3) == 180) or (np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3) == 0):
+        R1 = routeManhattan180(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
+        r1 = total.add(R1)
+
+    else:
+        #first quadrant case
+        if (p2[1] > p1[1]) & (p2[0] > p1[0]):
+            #simple 90 degree single-bend case
+            if port2.orientation == port1.orientation-90 or port2.orientation == port1.orientation+270:
+                R1 = routeManhattan90(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
+                r1 = total.add(R1)
+            elif port2.orientation == port1.orientation+90 or port2.orientation == port1.orientation-270: 
+                if bendType == 'circular':
+                    B1=pg.arc(radius=radius,width=wWg,layer=layer,angle_resolution=1,start_angle=port1.orientation,theta=90)
+                    radiusEff=radius
+                if bendType == 'gradual':
+                    B1=gradualBend(radius=radius,wWg=wWg,layer=layer,start_angle=port1.orientation,direction='ccw')
+                    radiusEff=B1.xsize-wWg/2
+                b1=total.add_ref(B1)
+                b1.connect(port=1,destination=port1)
+
+                R1 = routeManhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                r1 = total.add(R1)  
+        #second quadrant case
+        if (p2[1] > p1[1]) & (p2[0] < p1[0]):
+            if np.abs(port1.orientation-port2.orientation) == 90 or np.abs(port1.orientation-port2.orientation) == 270: 
+                if bendType == 'circular':
+                    B1=pg.arc(radius=radius,width=wWg,layer=layer,angle_resolution=1,start_angle=port1.orientation,theta=90)
+                    radiusEff=radius
+                if bendType == 'gradual':
+                    B1=gradualBend(radius=radius,wWg=wWg,layer=layer,start_angle=port1.orientation,direction='ccw')
+                    radiusEff=B1.xsize-wWg/2
+                b1=total.add_ref(B1)
+                b1.connect(port=1,destination=port1)
+                R1 = routeManhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                r1 = total.add(R1)   
+        #third quadrant case
+        if (p2[1] < p1[1]) & (p2[0] < p1[0]):
+            if np.abs(port1.orientation-port2.orientation) == 90 or np.abs(port1.orientation-port2.orientation) == 270: 
+                if bendType == 'circular':
+                    B1=pg.arc(radius=radius,width=wWg,layer=layer,angle_resolution=1,start_angle=port1.orientation,theta=-90)
+                    radiusEff=radius
+                if bendType == 'gradual':
+                    B1=gradualBend(radius=radius,wWg=wWg,layer=layer,start_angle=port1.orientation,direction='cw')
+                    radiusEff=B1.xsize-wWg/2
+                b1=total.add_ref(B1)
+                b1.connect(port=1,destination=port1)
+                R1 = routeManhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                r1 = total.add(R1)   
+        #fourth quadrant case
+        if (p2[1] < p1[1]) & (p2[0] > p1[0]):
+            #simple 90 degree single-bend case
+            if port2.orientation == port1.orientation+90 or port2.orientation == port1.orientation-270:
+                R1 = routeManhattan90(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
+                r1 = total.add(R1)
+            elif port2.orientation == port1.orientation-90 or port2.orientation == port1.orientation+270: 
+                if bendType == 'circular':
+                    B1=pg.arc(radius=radius,width=wWg,layer=layer,angle_resolution=1,start_angle=port1.orientation,theta=-90)
+                    radiusEff=radius
+                if bendType == 'gradual':
+                    B1=gradualBend(radius=radius,wWg=wWg,layer=layer,start_angle=port1.orientation,direction='cw')
+                    radiusEff=B1.xsize-wWg/2
+                b1=total.add_ref(B1)
+                b1.connect(port=1,destination=port1)
+                R1 = routeManhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                r1 = total.add(R1) 
+    return total
+
+def routeManhattan180(
+    port1,
+    port2,
+    bendType='circular',
+    layer=0,
+    radius=20
+    ):
+    #this is a subroutine of routeManhattan() and should not be used by itself.
+    total = Device()
+    wWg=port1.width
+    #first map into uniform plane with normal x,y coords
+    #allows each situation to be put into uniform cases of quadrants for routing.
+    #this is because bends change direction and positioning.
+    if port1.orientation==0:
+        p2=[port2.midpoint[0],port2.midpoint[1]]
+        p1=[port1.midpoint[0],port1.midpoint[1]]
+    if port1.orientation==90:
+        p2=[port2.midpoint[1],-port2.midpoint[0]]
+        p1=[port1.midpoint[1],-port1.midpoint[0]]
+    if port1.orientation==180:
+        p2=[-port2.midpoint[0],-port2.midpoint[1]]
+        p1=[-port1.midpoint[0],-port1.midpoint[1]]
+    if port1.orientation==270:
+        p2=[-port2.midpoint[1],port2.midpoint[0]]
+        p1=[-port1.midpoint[1],port1.midpoint[0]]
+
     #create placeholder ports based on the imaginary coordinates we created
     total.add_port(name='t1',midpoint=[0,0],orientation=0,width=wWg)
     if(port1.orientation!=port2.orientation):
@@ -353,6 +458,82 @@ def routeManhattan(
     total.move(origin = total.ports['t1'], destination = port1)
     return total
 
+def routeManhattan90(
+    port1,
+    port2,
+    bendType='circular',
+    layer=0,
+    radius=20
+    ):
+    #this is a subroutine of routeManhattan() and should not be used by itself.
+    total = Device()
+    wWg=port1.width
+    #first map into uniform plane with normal x,y coords
+    #allows each situation to be put into uniform cases of quadrants for routing.
+    #this is because bends change direction and positioning.
+    if port1.orientation==0:
+        p2=[port2.midpoint[0],port2.midpoint[1]]
+        p1=[port1.midpoint[0],port1.midpoint[1]]
+    if port1.orientation==90:
+        p2=[port2.midpoint[1],-port2.midpoint[0]]
+        p1=[port1.midpoint[1],-port1.midpoint[0]]
+    if port1.orientation==180:
+        p2=[-port2.midpoint[0],-port2.midpoint[1]]
+        p1=[-port1.midpoint[0],-port1.midpoint[1]]
+    if port1.orientation==270:
+        p2=[-port2.midpoint[1],port2.midpoint[0]]
+        p1=[-port1.midpoint[1],port1.midpoint[0]]
+
+    #create placeholder ports based on the imaginary coordinates we created
+    total.add_port(name='t1',midpoint=[0,0],orientation=0,width=wWg)
+
+    #CHECK THIS
+
+
+    #first quadrant target, route upward
+    if (p2[1] > p1[1]) & (p2[0] > p1[0]):
+        total.add_port(name='t2',midpoint=list(np.subtract(p2,p1)),orientation=-90,width=wWg)
+        if bendType == 'circular':
+            B1=pg.arc(radius=radius,width=wWg,layer=layer,angle_resolution=1,start_angle=0,theta=90)
+            radiusEff=radius
+        if bendType == 'gradual':
+            B1=gradualBend(radius=radius,wWg=wWg,layer=layer,start_angle=0,direction='ccw')
+            radiusEff=B1.xsize-wWg/2
+        b1=total.add_ref(B1)
+        b1.connect(port=b1.ports[1],destination=total.ports['t1'])
+        b1.move([p2[0]-p1[0]-radiusEff,0])
+
+        R1 = pg.route(port1=total.ports['t1'],port2=b1.ports[1],layer=layer)
+        R2 = pg.route(port1=b1.ports[2],port2=total.ports['t2'],layer=layer)
+        r1 = total.add_ref(R1)
+        r2 = total.add_ref(R2)
+        total.add_port(name=1,port=r1.ports[1])
+        total.add_port(name=2,port=r2.ports[2])  
+    
+    #fourth quadrant target, route downward
+    if (p2[1] < p1[1]) & (p2[0] > p1[0]):
+        total.add_port(name='t2',midpoint=list(np.subtract(p2,p1)),orientation=90,width=wWg)
+        if bendType == 'circular':
+            B1=pg.arc(radius=radius,width=wWg,layer=layer,angle_resolution=1,start_angle=0,theta=-90)
+            radiusEff=radius
+        if bendType == 'gradual':
+            B1=gradualBend(radius=radius,wWg=wWg,layer=layer,start_angle=0,direction='cw')
+            radiusEff=B1.xsize-wWg/2
+        b1=total.add_ref(B1)
+        b1.connect(port=b1.ports[1],destination=total.ports['t1'])
+        b1.move([p2[0]-p1[0]-radiusEff,0])
+        R1 = pg.route(port1=total.ports['t1'],port2=b1.ports[1],layer=layer)
+        R2 = pg.route(port1=b1.ports[2],port2=total.ports['t2'],layer=layer)
+        r1 = total.add_ref(R1)
+        r2 = total.add_ref(R2)
+        total.add_port(name=1,port=r1.ports[1])
+        total.add_port(name=2,port=r2.ports[2])  
+    total.rotate(angle =  port1.orientation, center = p1)
+    total.move(origin = total.ports['t1'], destination = port1)    
+    
+    return total
+
+
 def routeManhattanAuto(
     ports,    
     bendType='circular',
@@ -369,22 +550,37 @@ def routeManhattanAuto(
 
     return total
     
-    
-#D = Device()
-#b = gradual_bend()
-#A=pg.compass()
-#a1=D.add_ref(A)
-#a2=D.add_ref(A)
-#a3=D.add_ref(A)
-#a1.center=(100,100)
-#a2.center=(300,300)
-#a3.center=(500,600)
-#ports=[]
-#ports.append(a1.ports['E'])
-#ports.append(a2.ports['W'])
-#ports.append(a2.ports['E'])
-#ports.append(a3.ports['E'])
-#c = routeManhattanAuto(ports=ports,bendType='circular')
-#D.add(c)
 
-#quickplot(D)
+"""
+The code below is a test-case for routeManhattan().
+
+D=Device()
+A=pg.compass()
+A.add_port(name=1,port=A.ports['N'])
+A.add_port(name=2,port=A.ports['E'])
+A.add_port(name=3,port=A.ports['S'])
+A.add_port(name=4,port=A.ports['W'])
+points=[]
+points.append((300,300))
+points.append((-300,300))
+points.append((-300,-300))
+points.append((300,-300))
+
+xoff=0
+yoff=0
+for x in xrange(4):
+    for y in xrange(4):
+        for z in xrange(4):
+            a = D.add_ref(A)
+            b = D.add_ref(A)
+            a.center=(xoff,yoff)
+            b.center=(xoff+(points[y])[0],yoff+(points[y])[1])
+            C = routeManhattan(bendType='gradual',port1=a.ports[z+1],port2=b.ports[x+1])
+            c=D.add_ref(C)
+            yoff+=600
+        yoff+=600
+    xoff+=600
+    yoff=0
+
+quickplot(D)
+"""
