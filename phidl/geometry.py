@@ -962,7 +962,7 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
                     ypts = np.array(poly)[:,1]*scaling
                     l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer)
                 xoffset += (width[ascii_val] + indent[ascii_val])*scaling
-            else: ValueError('No glyph for character with ascii value %s' % ascii_val)
+            else: ValueError('[PHIDL] text(): No glyph for character with ascii value %s' % ascii_val)
         t.add_ref(l)
         yoffset -= 1500*scaling
         xoffset = position[0]
