@@ -1221,11 +1221,11 @@ def _expand_raster(raster, distance = (4,2)):
     
             
 def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7)):
-    D = Device(name = 'fill_cell')
+    D = Device()
     for layer, density in zip(layers, densities):
         rectangle_size = np.array(size)*np.sqrt(density)
-        D.add(gdspy.Rectangle(size = rectangle_size, layer = layer))
-        D.center = (0,0)
+        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
+        r.center = (0,0)
     return D
 
     
