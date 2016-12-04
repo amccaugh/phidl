@@ -784,7 +784,7 @@ def _draw_polygons(polygons, ax, **kwargs):
     http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
     """
     nan_pt = np.array([[np.nan, np.nan]])
-    polygons_with_nans = [np.concatenate((p, nan_pt), axis = 0) for p in polygons]
+    polygons_with_nans = [np.concatenate((p, [p[0]], nan_pt), axis = 0) for p in polygons]
     all_polygons = np.vstack(polygons_with_nans)
     plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
 
