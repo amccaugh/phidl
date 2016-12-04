@@ -392,10 +392,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                 
         gds_layer, gds_datatype = _parse_layer(layer)
             
-        if len(points[0]) == 2: # Then it has the form [[1,2],[3,4],[5,6]]
-            polygon = Polygon(points, gds_layer, gds_datatype)
-        elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
-            polygon = Polygon(xy2p(points), gds_layer, gds_datatype)
+        if len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
+            # Convert to form [[1,2],[3,4],[5,6]]
+            points = np.column_stack((points))
+        # # Close polygon manually
+        # if not np.array_equal(points[0],points[-1]):
+        #     points = np.vstack((points, points[0]))
+        polygon = Polygon(points, gds_layer, gds_datatype)
         self.add(polygon)
         return polygon
         
@@ -698,15 +701,15 @@ def p2xy(points):
     y = p[:,1]
     return np.array([x,y])
     
-def xy2p(*args):
-    """ Takes in lists of x points and y points, e.g. [1,2,3],[5,6,7] and
-    converts it to the point format e.g. [[1,5],[2,6],[3,7]].  Can either be
-    called as xy2p(xpts, ypts) or as xy2p(xy) where xy = [xpts, ypts]
-    """
-    if len(args) == 1:      x,y = args[0][0], args[0][1] 
-    elif len(args) == 2:    x,y = args[0],    args[1]
-    points = np.array(zip(*[x,y]))
-    return points
+# def xy2p(*args):
+#     """ Takes in lists of x points and y points, e.g. [1,2,3],[5,6,7] and
+#     converts it to the point format e.g. [[1,5],[2,6],[3,7]].  Can either be
+#     called as xy2p(xpts, ypts) or as xy2p(xy) where xy = [xpts, ypts]
+#     """
+#     if len(args) == 1:      x,y = args[0][0], args[0][1] 
+#     elif len(args) == 2:    x,y = args[0],    args[1]
+#     points = np.array(zip(*[x,y]))
+#     return points
     
 #==============================================================================
 # Plotting functions
