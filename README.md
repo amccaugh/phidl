@@ -2,6 +2,10 @@
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
 # Changelog
+## 0.5.5
+### Bugfixes
+ - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
+
 ## 0.5.4
 ### Changes
  - A few under-the-hood optimizations
