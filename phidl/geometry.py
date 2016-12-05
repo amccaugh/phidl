@@ -9,6 +9,7 @@ from scipy import integrate
 
 import gdspy
 from phidl import Device, Port
+from phidl.device_layout import _parse_layer
 
 from skimage import draw, morphology
 
@@ -1240,14 +1241,19 @@ def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = 
     
     if exclude_layers is None:
         poly = D.get_polygons(by_spec=False, depth=None)
-    elif np.array(exclude_layers).ndim == 1: # Then exclude_layers is a list of just layers e.g. [0,2,3]
-        poly = D.get_polygons(by_spec=True, depth=None)
-        poly = {key:poly[key] for key in poly if key[0] in exclude_layers} # Filter the dict
-        poly = itertools.chain.from_iterable(poly.values()) # Concatenate dict values to long list
-    elif np.array(exclude_layers).ndim == 2: # Then exclude_layers is a list of layers + datatypes e.g. [(0,1),(0,2),(1,0)]
+    else:
+        exclude_layers = [_parse_layer(l) for l in exclude_layers]
         poly = D.get_polygons(by_spec=True, depth=None)
         poly = {key:poly[key] for key in poly if key in exclude_layers}
         poly = itertools.chain.from_iterable(poly.values())
+#    elif np.array(exclude_layers).ndim == 1: # Then exclude_layers is a list of just layers e.g. [0,2,3]
+#        poly = D.get_polygons(by_spec=True, depth=None)
+#        poly = {key:poly[key] for key in poly if key[0] in exclude_layers} # Filter the dict
+#        poly = itertools.chain.from_iterable(poly.values()) # Concatenate dict values to long list
+#    elif np.array(exclude_layers).ndim == 2: # Then exclude_layers is a list of layers + datatypes e.g. [(0,1),(0,2),(1,0)]
+#        poly = D.get_polygons(by_spec=True, depth=None)
+#        poly = {key:poly[key] for key in poly if key in exclude_layers}
+#        poly = itertools.chain.from_iterable(poly.values())
         
     if bbox is None:  bbox = D.bbox
 
@@ -1318,8 +1324,10 @@ def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = No
         width_fun = lambda t: (width2 - width1)*(1-cos(t*pi))/2 + width1
     
     route_path = gdspy.Path(width = width1, initial_point = (0,0))
-    route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts, \
-            max_points=199, final_width=width_fun, final_distance=None, layer=layer)
+    gds_layer, gds_datatype = _parse_layer(layer)
+    route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts,
+            max_points=199, final_width=width_fun, final_distance=None,
+            layer=gds_layer, datatype = gds_datatype)
     
     # Make the route path into a Device with ports, and use "connect" to move it
     # into the proper location
@@ -1348,15 +1356,16 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
         if isinstance(e, Device): new_elements += e.get_polygons()
         else: new_elements.append(e)
         
+    gds_layer, gds_datatype = _parse_layer(layer)
     # This pre-joining (by expanding by precision) is makes this take twice as
     # long but is necessary because of floating point errors which otherwise
     # separate polygons which are nominally joined
     joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
-                          max_points=199, layer=layer)
+                          max_points=199, layer=gds_layer, datatype = gds_datatype)
     p = gdspy.offset(joined, -distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
-                     max_points=199, layer=layer)
+                     max_points=199, layer=gds_layer, datatype = gds_datatype)
     D = Device()
     D.add_polygon(p, layer=layer)
     return D
