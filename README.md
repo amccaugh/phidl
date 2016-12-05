@@ -2,6 +2,12 @@
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
 # Changelog
+## 0.5.4
+### Changes
+ - A few under-the-hood optimizations
+### Bugfixes
+ - Fixed error with quickplot where the last edge of a polygon was not rendered
+
 ## 0.5.3
 ### New features
  - Layers() are now implemented.  See tutorial_example.py "Using Layers" section for a demonstration
