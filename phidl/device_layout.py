@@ -33,7 +33,7 @@ from matplotlib import pyplot as plt
 #from matplotlib.patches import Polygon as PolygonPatch
 #from matplotlib.collections import PatchCollection
 
-__version__ = '0.5.3'
+__version__ = '0.5.4'
 
 
 
@@ -66,24 +66,7 @@ def reflect_points(points, p1 = (0,0), p2 = (1,0)):
     if np.asarray(points).ndim == 2: 
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
-        
-#def _transform_points(points, origin=None, rotation=None, x_reflection=False):
-#    """ Transforms an array of points according to the GDS specification.
-#    The applied order of transformation is: x_reflection, rotation,
-#    and translation """
-#    # Apply GDS-type transformations (x_ref)
-#    if x_reflection:
-#        xrefl = np.array([1, -1], dtype=int)
-#    if (rotation is not None) and (rotation != 0):
-#        ct = cos(rotation*pi/180)
-#        st = sin(rotation*pi/180)
-#        st = np.array([-st, st])
-#    if origin is not None:
-#        orgn = np.array(origin)
-#    if x_reflection:            points *= xrefl
-#    if rotation is not None:    points = points * ct + points[:, ::-1] * st
-#    if origin is not None:      points = points + orgn
-#    return points
+
         
 def reset():
     Layer.layer_dict = {}
@@ -392,10 +375,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                 
         gds_layer, gds_datatype = _parse_layer(layer)
             
-        if len(points[0]) == 2: # Then it has the form [[1,2],[3,4],[5,6]]
-            polygon = Polygon(points, gds_layer, gds_datatype)
-        elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
-            polygon = Polygon(xy2p(points), gds_layer, gds_datatype)
+        if len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
+            # Convert to form [[1,2],[3,4],[5,6]]
+            points = np.column_stack((points))
+        # # Close polygon manually
+        # if not np.array_equal(points[0],points[-1]):
+        #     points = np.vstack((points, points[0]))
+        polygon = Polygon(points, gds_layer, gds_datatype)
         self.add(polygon)
         return polygon
         
@@ -686,29 +672,6 @@ def _load_gds(filename, cell_name, load_ports = True):
 
 
 #==============================================================================
-# Helper functions
-#==============================================================================
-
-def p2xy(points):
-    """ Takes in a list of [x,y] pairs and converts them to lists of x points 
-    and y points.  So p2xy([[1,5],[2,6],[3,7]]) returns [[1,2,3],[5,6,7]]
-    """
-    p = np.array(points)
-    x = p[:,0]
-    y = p[:,1]
-    return np.array([x,y])
-    
-def xy2p(*args):
-    """ Takes in lists of x points and y points, e.g. [1,2,3],[5,6,7] and
-    converts it to the point format e.g. [[1,5],[2,6],[3,7]].  Can either be
-    called as xy2p(xpts, ypts) or as xy2p(xy) where xy = [xpts, ypts]
-    """
-    if len(args) == 1:      x,y = args[0][0], args[0][1] 
-    elif len(args) == 2:    x,y = args[0],    args[1]
-    points = np.array(zip(*[x,y]))
-    return points
-    
-#==============================================================================
 # Plotting functions
 #==============================================================================
 
@@ -781,7 +744,7 @@ def _draw_polygons(polygons, ax, **kwargs):
     http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
     """
     nan_pt = np.array([[np.nan, np.nan]])
-    polygons_with_nans = [np.concatenate((p, nan_pt), axis = 0) for p in polygons]
+    polygons_with_nans = [np.concatenate((p, [p[0]], nan_pt), axis = 0) for p in polygons]
     all_polygons = np.vstack(polygons_with_nans)
     plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
 
@@ -792,7 +755,7 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     nv = port.normal
     n = (nv[1]-nv[0])*arrow_scale
     dx, dy = n[0], n[1]
-    xbound, ybound = p2xy(port.endpoints)
+    xbound, ybound = np.column_stack(port.endpoints)
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
     plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
