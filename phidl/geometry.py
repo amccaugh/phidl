@@ -1112,8 +1112,8 @@ def _racetrack_gradual_parametric(t, R, N):
 #==============================================================================
 
 
-def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, source_length = 500,
-                  width_right = 200, width_left = 200, theta_resolution = 10, layer = 0):
+def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (500,300),  source_length = 500,
+                  arm_widths = (200, 200), theta_resolution = 10, layer = 0):
     
     #==========================================================================
     #  Create the basic geometry
@@ -1127,34 +1127,35 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
     # Rest of yTron
     xc = rho_intersection*cos(theta) 
     yc = rho_intersection*sin(theta) 
-    arm_x = arm_length*sin(theta) 
-    arm_y = arm_length*cos(theta) 
+    arm_x_left  = arm_lengths[0]*sin(theta) 
+    arm_y_left  = arm_lengths[0]*cos(theta) 
+    arm_x_right = arm_lengths[1]*sin(theta) 
+    arm_y_right = arm_lengths[1]*cos(theta) 
 
     # Write out x and y coords for yTron polygon
-    xpts = semicircle_x.tolist() + [xc+arm_x, xc+arm_x+width_right, xc+width_right, \
-           xc+width_right, 0, -(xc+width_left), -(xc+width_left), -(xc+arm_x+width_left), -(xc+arm_x)] 
-    ypts = semicircle_y.tolist() + [yc+arm_y,      yc+arm_y,      yc,   yc-source_length, yc-source_length,  \
-            yc-source_length,        yc,        yc+arm_y,    yc+arm_y] 
+    xpts = semicircle_x.tolist() + [xc+arm_x_right, xc+arm_x_right+arm_widths[1], xc+arm_widths[1], \
+           xc+arm_widths[1], 0, -(xc+arm_widths[0]), -(xc+arm_widths[0]), -(xc+arm_x_left+arm_widths[0]), -(xc+arm_x_left)] 
+    ypts = semicircle_y.tolist() + [yc+arm_y_right,      yc+arm_y_right,      yc,   yc-source_length, yc-source_length,  \
+            yc-source_length,        yc,        yc+arm_y_left,    yc+arm_y_left] 
     
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'ytron')
     D.add_polygon([xpts,ypts], layer = layer)
-    D.add_port(name = 'left', midpoint = [-(xc+arm_x+width_left/2), yc+arm_y],  width = width_left, orientation = 90)
-    D.add_port(name = 'right', midpoint = [xc+arm_x+width_right/2, yc+arm_y],  width = width_right, orientation = 90)
-    D.add_port(name = 'source', midpoint = [0+(width_right-width_left)/2, -source_length+yc],  width = width_left + width_right + 2*xc, orientation = -90)
+    D.add_port(name = 'left', midpoint = [-(xc+arm_x_left+arm_widths[0]/2), yc+arm_y_left],  width = arm_widths[0], orientation = 90)
+    D.add_port(name = 'right', midpoint = [xc+arm_x_right+arm_widths[1]/2, yc+arm_y_right],  width = arm_widths[1], orientation = 90)
+    D.add_port(name = 'source', midpoint = [0+(arm_widths[1]-arm_widths[0])/2, -source_length+yc],  width = arm_widths[0] + arm_widths[1] + 2*xc, orientation = -90)
     
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
     D.meta['rho'] = rho_intersection
-    D.meta['left_width'] = width_left
-    D.meta['right_width'] = width_right
-    D.meta['source_width'] = width_left + width_right + 2*xc
+    D.meta['left_width'] =   arm_widths[0]
+    D.meta['right_width'] =  arm_widths[1]
+    D.meta['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
 
     return D
-    
     
     
 #==============================================================================
@@ -1221,9 +1222,9 @@ def _expand_raster(raster, distance = (4,2)):
 
     
             
-def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7)):
+def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
     D = Device()
-    for layer, density in zip(layers, densities):
+    for layer, density, inv in zip(layers, densities, inverted):
         rectangle_size = np.array(size)*np.sqrt(density)
         r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
         r.center = (0,0)
@@ -1369,4 +1370,26 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
     D = Device()
     D.add_polygon(p, layer=layer)
     return D
+
     
+def invert(elements, border = 10, precision = 0.001, layer = 0):
+    
+    D = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): D.add_ref(e)
+        else: D.elements.append(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+    
+    # Build the rectangle around the device D
+    R = pg.rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
+    R.center = D.center
+    
+    operandA = R.get_polygons()
+    operandB = D.get_polygons()
+    p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
+                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+        
+    D = Device()
+    D.add_polygon(p, layer=layer)
+    return D
