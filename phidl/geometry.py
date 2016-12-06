@@ -1222,22 +1222,35 @@ def _expand_raster(raster, distance = (4,2)):
 
     
             
-def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
+def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
+                         densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
     D = Device()
     for layer, density, inv in zip(layers, densities, inverted):
         rectangle_size = np.array(size)*np.sqrt(density)
-        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
-        r.center = (0,0)
+#        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
+        R = rectangle(size = rectangle_size, layer = layer)
+        R.center = (0,0)
+        if inv is True:
+            A = rectangle(size = size)
+            A.center = (0,0)
+            A = A.get_polygons()
+            B = R.get_polygons()
+            p = gdspy.fast_boolean(A, B, operation = 'not')
+            D.add_polygon(p, layer = layer)
+        else:
+            D.add_ref(R)
     return D
 
-    
-def _fill_cell_device(size = None):
-    D = Device(name = 'fill_cell')
-    return D
 
     
-def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7), margin = 100, bbox = None):
-    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers, densities = fill_densities)
+def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, margin = 100,
+                   fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7),
+                   fill_inverted = None, bbox = None):
+    
+    # Create the fill cell.  If fill_inverted is not specified, assume all False
+    if fill_inverted is None: fill_inverted = [False]*len(fill_layers)
+    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers,
+                                     densities = fill_densities, inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
     
     if exclude_layers is None:
@@ -1382,7 +1395,7 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     gds_layer, gds_datatype = _parse_layer(layer)
     
     # Build the rectangle around the device D
-    R = pg.rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
+    R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
     R.center = D.center
     
     operandA = R.get_polygons()
