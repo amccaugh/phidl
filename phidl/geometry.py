@@ -522,8 +522,8 @@ def snspd_squares(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), num_pts = 20
 #
 #==============================================================================
 
-
-def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0):
+# TODO change this so "width1" and "width2" arguments can accept Port directly
+def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     if type(port) is Port and width1 is None: width1 = port.width
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
@@ -659,20 +659,21 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
 
 
 
-def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, min_spacing = 0.5):
+def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
+                  min_spacing = 0.5, layer = 0):
     
     def taper_width(x):
         return np.interp(x, x_taper, w_taper)
         
         
-    def taper_section(x_start, x_end, num_pts = 30):
+    def taper_section(x_start, x_end, num_pts = 30, layer = 0):
         D = Device()
         length =  x_end - x_start
         x = np.linspace(0, length, num_pts)
         widths = np.linspace(taper_width(x_start), taper_width(x_end), num_pts)
         xpts = np.concatenate([x, x[::-1]])
         ypts = np.concatenate([widths/2, -widths[::-1]/2])
-        D.add_polygon((xpts,ypts), layer = 0)
+        D.add_polygon((xpts,ypts), layer = layer)
         D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
         D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
         return D
@@ -680,29 +681,31 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
     def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0):
         D = Device()
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
-        path1.turn(radius = radius, angle = theta*pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
-        [D.add_polygon(p.points, layer = layer) for p in path1.polygons]
+        path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
+        [D.add_polygon(p, layer = layer) for p in path1.polygons]
         D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
-        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/pi)
+        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/np.pi)
         return D
         
     D = Device('meander-taper')
     xpos1 = min(x_taper)
     xpos2 = min(x_taper) + meander_length
-    t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50) )
+    t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50, layer = layer) )
     D.add_port(t.ports[1])
     dir_toggle = -1
     while xpos2 < max(x_taper):
         arc_width1 = taper_width(xpos2)
         arc_radius = max(spacing_factor*arc_width1, min_spacing)
-        arc_length = pi*arc_radius
+        arc_length = np.pi*arc_radius
         arc_width2 = taper_width(xpos2 + arc_length)
-        a = D.add_ref(  arc_tapered(radius = arc_radius, width1 = arc_width1, width2 = arc_width2, theta = 180*dir_toggle) )
+        A = arc_tapered(radius = arc_radius, width1 = arc_width1,
+                        width2 = arc_width2, theta = 180*dir_toggle, layer = layer)
+        a = D.add_ref(A)
         a.connect(port = 1, destination = t.ports[2])
         dir_toggle = -dir_toggle
         xpos1 = xpos2 + arc_length
         xpos2 = xpos1 + meander_length
-        t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30) )
+        t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30, layer = layer) )
         t.connect(port = 1, destination = a.ports[2])
     D.add_port(t.ports[2])
         
