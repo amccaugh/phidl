@@ -291,19 +291,23 @@ def MZI(FSR = 0.05, ng = 4, rMin = 10, wavelength = 1.55, BS = gdspy.Cell, **kwa
 
     return D
 
-def wgSNSPD(meanderWireWidth = 0.4, meanderPitch = 0.8, meanderLength = 50, 
-            nsquares = 5000, wgNwWidth = 0.1, wgNwPitch = 0.3, wgNwLength = 100, 
+def wgSNSPD(meanderWireWidth = 0.4, meanderPitch = 0.8, nsquares = 1000, 
+            wgNwWidth = 0.1, wgNwPitch = 0.3, wgNwLength = 100, 
             padDistance = 500, landingPadOffset = 10, 
             nwLayer = 6, wgLayer = 1, metalLayer = 2, DblPadDevice = gdspy.Cell):
     
+    # the length and width of the meander are chosen so that it is approximately 
+    # square
     
     D = Device()
+    meanderLength = np.sqrt(nsquares)*meanderWireWidth*2
     nsquares_per_turn = (meanderLength/2-(meanderWireWidth+meanderPitch))/meanderWireWidth + 1
-    meanderOffset = 4*meanderPitch
+    
     # the number of turns that we will actually make. Must be an odd number if the leads need to come out the same side
     nturns = np.floor(nsquares/nsquares_per_turn)-1
     
     meanderWidth = nturns*meanderPitch
+    meanderOffset = 4*meanderPitch
     SNSPD = pg.snspd(wire_width = meanderWireWidth, wire_pitch = meanderPitch, size = (meanderLength,meanderWidth),
               terminals_same_side = True, layer = nwLayer)
     SNSPD.add_port(name = 3, midpoint = [SNSPD.xmin+meanderWireWidth/2, SNSPD.ymin], width = meanderWireWidth, orientation = -90)
@@ -405,6 +409,7 @@ def wgSNSPD(meanderWireWidth = 0.4, meanderPitch = 0.8, meanderLength = 50,
     landingPad2.xmin = nwPad1.xmin - 1
     Route3 = pg.route(port1 = landingPad1.ports['W'], port2 = landingPad2.ports['E'], layer = wgLayer)
     D.add_ref(Route3)
+    D.meta['num_squares'] = meander.meta['num_squares']
     return D
 
 def LED(wWg=1, lWg=10, wDopeOffset=0.2, wDope=5, wE=1, wTaper = 0.4, lTaper = 10, 
