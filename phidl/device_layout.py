@@ -12,7 +12,6 @@
 #==============================================================================
 
  # TODO Add flatten()
- # TODO Move route to geometry
 
 #==============================================================================
 # Imports
@@ -28,10 +27,14 @@ from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
+import webcolors
 
 from matplotlib import pyplot as plt
-from matplotlib.patches import Polygon as PolygonPatch
-from matplotlib.collections import PatchCollection
+#from matplotlib.patches import Polygon as PolygonPatch
+#from matplotlib.collections import PatchCollection
+
+__version__ = '0.5.3'
+
 
 
 #==============================================================================
@@ -47,9 +50,9 @@ def rotate_points(points, angle = 45, center = (0,0)):
     sa = sin(angle)
     sa = np.array((-sa, sa))
     c0 = np.array(center)
-    if np.array(points).ndim == 2: 
+    if np.asarray(points).ndim == 2: 
         return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
-    if np.array(points).ndim == 1: 
+    if np.asarray(points).ndim == 1: 
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
 def reflect_points(points, p1 = (0,0), p2 = (1,0)):
@@ -58,18 +61,77 @@ def reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
-    if np.array(points).ndim == 1: 
+    if np.asarray(points).ndim == 1: 
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(points-p1))/norm(p2-p1)**2) - points
-    if np.array(points).ndim == 2: 
+    if np.asarray(points).ndim == 2: 
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
-def translate_points(points, d = [1,2]):
-    """ Reflects points across the line formed by p1 and p2.  ``points`` may be
-    input as either single points [1,2] or array-like[N][2], and will return in kind
-    """
-    points = np.array(points) + d
-    return points
+        
+#def _transform_points(points, origin=None, rotation=None, x_reflection=False):
+#    """ Transforms an array of points according to the GDS specification.
+#    The applied order of transformation is: x_reflection, rotation,
+#    and translation """
+#    # Apply GDS-type transformations (x_ref)
+#    if x_reflection:
+#        xrefl = np.array([1, -1], dtype=int)
+#    if (rotation is not None) and (rotation != 0):
+#        ct = cos(rotation*pi/180)
+#        st = sin(rotation*pi/180)
+#        st = np.array([-st, st])
+#    if origin is not None:
+#        orgn = np.array(origin)
+#    if x_reflection:            points *= xrefl
+#    if rotation is not None:    points = points * ct + points[:, ::-1] * st
+#    if origin is not None:      points = points + orgn
+#    return points
+        
+def reset():
+    Layer.layer_dict = {}
+    Device.uid = 0
+
+
+class Layer(object):
+    layer_dict = {}
     
+    def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
+                 description = 'Gold pads liftoff', inverted = False,
+                 color = None, alpha = 0.6):
+        self.name = name
+        self.gds_layer = gds_layer
+        self.gds_datatype = gds_datatype
+        self.description = description
+        self.alpha = alpha
+        
+        try:
+            if color is None: # not specified
+                self.color = None
+            elif np.size(color) == 3: # in format (0.5, 0.5, 0.5)
+                self.color = webcolors.rgb_to_hex(np.array(color)*255)
+            elif color[0] == '#': # in format #1d2e3f
+                self.color = webcolors.hex_to_rgb(color)
+                self.color = webcolors.rgb_to_hex(self.color)
+            else: # in named format 'gold'
+                self.color = webcolors.name_to_hex(color)
+        except:
+            raise ValueError("""[PHIDL] Layer() color must be specified as a
+            0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex  color 
+            (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or
+            see http://www.w3schools.com/colors/colors_names.asp )
+            """)
+            
+        Layer.layer_dict[(gds_layer, gds_datatype)] = self
+
+                         
+def _parse_layer(layer):
+    """ Check if the variable layer is a Layer object, a 2-element list like
+    [0,1] representing layer=0 and datatype=1, or just a layer number """
+    if isinstance(layer, Layer):
+        gds_layer, gds_datatype = layer.gds_layer, layer.gds_datatype
+    elif np.size(layer) == 2:
+        gds_layer, gds_datatype = layer[0], layer[1]
+    else:
+        gds_layer, gds_datatype = layer, 0
+    return (gds_layer, gds_datatype)
 
     
     
@@ -206,6 +268,7 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
+    
     @property
     def bbox(self):
         return np.asarray( (np.min(self.points, axis = 0), np.max(self.points, axis = 0)))
@@ -226,12 +289,12 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
@@ -247,54 +310,92 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         self.points = reflect_points(self.points, p1, p2)
         return self
 
+    
 
-        
+def _makedevice(fun, config = None, **kwargs):
+    config_dict = {}
+    if type(config) is str:
+        with open(config) as f:
+            config_dict = yaml.load(f) # Load arguments from config file
+    elif type(config) is dict:
+        config_dict = deepcopy(config)
+    elif config is None:
+        pass
+    else:
+        raise TypeError("""[PHIDL] When creating Device() from a function, the
+        second argument should be a ``config`` argument which is either a
+        filename or a dictionary containing arguments for the function.
+        e.g. Device(arc, config = 'myconfig.yaml') """)
+    config_dict.update(**kwargs)
+    D = fun(**config_dict)
+    if not isinstance(D, Device):
+        raise ValueError("""[PHIDL] Device() was passed a function, but that
+        function does not produce a Device.""")
+    return D
+    
+
+
 class Device(gdspy.Cell, _GeometryHelper):
     uid = 0
     
-    def __init__(self, name = 'Unnamed'):
-        self.ports = {}
-        self.parameters = {}
-        self.meta = {}
-        self.references = []
+    def __init__(self, *args, **kwargs):
+        
+        # Allow name to be set like Device('arc') or Device(name = 'arc')
+        if 'name' in kwargs:                          gds_name = kwargs['name']
+        elif (len(args) == 1) and (len(kwargs) == 0): gds_name = args[0]
+        else:                                         gds_name = 'Unnamed'
+        
+        # Check if first argument was a Device-making function.
+        # If so, use that function and any other arguments to generate a device
+        if (len(args) > 0) and callable(args[0]):
+            D = _makedevice(*args, **kwargs)
+            self.__dict__ = D.__dict__.copy() 
+        # Otherwise, make a new blank device
+        else:
+            Device.uid += 1
+            self.ports = {}
+            self.parameters = {}
+            self.meta = {}
+            self.references = []
+            gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
+            super(Device, self).__init__(name = gds_name, exclude_from_global=True)
 
-        Device.uid += 1
-        name = '%s%06d' % (name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
-
-        super(Device, self).__init__(name, exclude_from_global=True)
 
     @property
     def layers(self):
         return self.get_layers()
 
+        
     @property
     def bbox(self):
         self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
         return np.array(self.get_bounding_box())
-
         
-    def add_ref(self, device, config = None, **kwargs):
-        """ Takes a Device (or Device-making function with config) and adds it
-        as a DeviceReference to the current Device.  """
-         # Check if ``device`` is actually a device-making function
-        if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
-        else:                   d = device
-        device_ref = DeviceReference(d)   # Create a DeviceReference (CellReference)
-        self.add(device_ref)             # Add DeviceReference (CellReference) to Device (Cell)
-        self.references.append(device_ref) # Add to the list of references (for convenience)
-        return device_ref                # Return the DeviceReference (CellReference)
+        
+    def add_ref(self, D):
+        """ Takes a Device and adds it as a DeviceReference to the current
+        Device.  """
+        if not isinstance(D, Device):
+            raise TypeError("""[PHIDL] add_ref() was passed something that
+            was not a Device object. """)
+        d = DeviceReference(D)   # Create a DeviceReference (CellReference)
+        self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
+        self.references.append(d) # Add to the list of references (for convenience)
+        return d                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = 0, datatype = 0):
+    def add_polygon(self, points, layer = 0):
         if isinstance(points, gdspy.Polygon):
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
-            return [self.add_polygon(p, layer, datatype) for p in points.polygons]
-        
-        if len(points[0]) == 2: # Then it must be of the form [[1,2],[3,4],[5,6]]
-            polygon = Polygon(points, layer, datatype)
-        elif len(points[0]) > 2: # Then it must be of the form [[1,3,5],[2,4,6]]
-            polygon = Polygon(xy2p(points), layer, datatype)
+            return [self.add_polygon(p, layer) for p in points.polygons]
+                
+        gds_layer, gds_datatype = _parse_layer(layer)
+            
+        if len(points[0]) == 2: # Then it has the form [[1,2],[3,4],[5,6]]
+            polygon = Polygon(points, gds_layer, gds_datatype)
+        elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
+            polygon = Polygon(xy2p(points), gds_layer, gds_datatype)
         self.add(polygon)
         return polygon
         
@@ -309,7 +410,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             name = p.name
         else:                  p = Port(name, midpoint, width, orientation, parent = self)
         if name is not None: p.name = name
-        if self.ports.has_key(p.name):
+        if p.name in self.ports:
             raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
         self.ports[p.name] = p
         return p
@@ -317,7 +418,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         
     def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
          # Check if ``device`` is actually a device-making function
-        if callable(device):    d = makedevice(fun = device, config = config, **kwargs)
+        if callable(device):    d = _makedevice(fun = device, config = config, **kwargs)
         else:                   d = device
         references = []
         for n in range(num_devices):
@@ -327,15 +428,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         return references
         
 
-    def annotate(self, text = 'hello', position = (0,0), layer = 89):
-        if type(text) is not str: text = str(text)
-        l = self.add(gdspy.Label(text = text, position = position, anchor = 'o', layer=layer))
-        return l
-        
+    def annotate(self, text = 'hello', position = (0,0), layer = 255):
+        gds_layer, gds_datatype = _parse_layer(layer)
 
-    def delete_port(self, name):
-        self.ports.pop(name, None)
-    
+        if type(text) is not str: text = str(text)
+        self.add(gdspy.Label(text = text, position = position, anchor = 'o',
+                                 layer = gds_layer, texttype = gds_datatype))
+        return self
+        
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -393,12 +493,12 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
@@ -464,10 +564,10 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     @property
     def bbox(self):
         return self.get_bounding_box()
-
+        
         
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
-        # Apply GDS-type transformations (x_ref)
+        # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
         
@@ -496,12 +596,12 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
-        elif self.ports.has_key(origin):    o = self.ports[origin].midpoint
+        elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:   d = destination
-        elif self.ports.has_key(destination):   d = self.ports[destination].midpoint
+        elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
             
         # Lock one axis if necessary
@@ -547,7 +647,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         
     def connect(self, port, destination):
         # ``port`` can either be a string with the name or an actual Port
-        if self.ports.has_key(port):
+        if port in self.ports: # Then ``port`` is a key for the ports dict
             p = self.ports[port]
         elif type(port) is Port:
             p = port
@@ -570,8 +670,8 @@ def _load_gds(filename, cell_name, load_ports = True):
     gdspy.Cell.cell_dict.clear()
     gdsii = gdspy.GdsImport(filename)
     gdsii.extract(cell_name)
-    d = Device(cell_name)
-    d.elements = gdspy.Cell.cell_dict[cell_name].elements
+    D = Device(cell_name)
+    D.elements = gdspy.Cell.cell_dict[cell_name].elements
     for label in gdspy.Cell.cell_dict[cell_name].labels:
         t = label.text
         if t[0:5] == 'Port(' and t[-1] == ')':
@@ -579,10 +679,10 @@ def _load_gds(filename, cell_name, load_ports = True):
             arguments = arguments.replace(' ', '')
             args = {a.split('=')[0] : a.split('=')[1] for a in arguments.split(',')}
             if args['name'].isdigit():args['name'] = int(args['name'])
-            d.add_port(name = args['name'], midpoint = label.position, width = float(args['width']), orientation = float(args['orientation']))
+            D.add_port(name = args['name'], midpoint = label.position, width = float(args['width']), orientation = float(args['orientation']))
         else:
-            d.labels.append(label)
-    return d
+            D.labels.append(label)
+    return D
 
 
 #==============================================================================
@@ -608,47 +708,82 @@ def xy2p(*args):
     points = np.array(zip(*[x,y]))
     return points
     
-    
-def quickplot(items, overlay_ports = True, overlay_subports = True, label_ports = True, new_window = True):
+#==============================================================================
+# Plotting functions
+#==============================================================================
+
+
+def quickplot(items, overlay_ports = True, overlay_subports = True,
+              label_ports = True, new_window = True):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if new_window: fig, ax = plt.subplots(1)
     else:
         ax = plt.gca()  # Get current figure
         ax.cla()        # Clears the axes of all previous polygons
-    
-    # Iterate through each each Device/DeviceReference/Polygon
-    patches = []
-    if type(items) is not list:  items = [items]
-    for item in items:
-        if isinstance(item, (Device, DeviceReference)):
-            polygons = item.get_polygons(by_spec=False, depth=None)
-            for p in polygons:
-                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-            for name, port in item.ports.items():
-                _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                plt.text(port.midpoint[0], port.midpoint[1], name)
-        if isinstance(item, Device) and overlay_subports is True:
-            for sd in item.references:
-                for name, port in sd.ports.items():
-                    _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                    plt.text(port.midpoint[0], port.midpoint[1], name)
-        if isinstance(item, gdspy.Polygon):
-            patches.append(PolygonPatch(item.points, closed=True, alpha = 0.4))
-        if isinstance(item, gdspy.PolygonSet):
-            for p in item.polygons:
-                patches.append(PolygonPatch(p, closed=True, alpha = 0.4))
-    pc = PatchCollection(patches, alpha=0.4)
-    # TODO: Change this to per-layer coloring    
-    np.random.seed(0)
-    colors = 100*np.random.rand(len(patches))
-    pc.set_array(np.array(colors))
-    ax.add_collection(pc)
     plt.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
+    
+    # Iterate through each each Device/DeviceReference/Polygon
+    np.random.seed(0)
+    if type(items) is not list:  items = [items]
+    for item in items:
+        if isinstance(item, (Device, DeviceReference)):
+            polygons_spec = item.get_polygons(by_spec=True, depth=None)
+            for key in sorted(polygons_spec):
+                polygons = polygons_spec[key]
+                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+                _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                               edgecolor = 'k', alpha = layerprop['alpha'])
+                for name, port in item.ports.items():
+                    _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                    plt.text(port.midpoint[0], port.midpoint[1], name)
+            if isinstance(item, Device) and overlay_subports is True:
+                for sd in item.references:
+                    for name, port in sd.ports.items():
+                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                        plt.text(port.midpoint[0], port.midpoint[1], name)
+        elif isinstance(item, gdspy.Polygon):
+            polygons = [item.points]
+            layerprop = _get_layerprop(item.layer, item.datatype)
+            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                           edgecolor = 'k', alpha = layerprop['alpha'])
+        elif isinstance(item, gdspy.PolygonSet):
+            polygons = item.polygons
+            layerprop = _get_layerprop(item.layer, item.datatype)
+            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                           edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
+
+    
+
+
+def _get_layerprop(layer, datatype):
+    # Colors generated from here: http://phrogz.net/css/distinct-colors.html
+    layer_colors = ['#3dcc5c', '#2b0fff', '#cc3d3d', '#e5dd45', '#7b3dcc',
+    '#cc860c', '#73ff0f', '#2dccb4', '#ff0fa3', '#0ec2e6', '#3d87cc', '#e5520e']
+                     
+    l = Layer.layer_dict.get((layer, datatype))
+    if l is not None:
+        color = l.color
+        alpha = l.alpha
+    else:
+        color = layer_colors[np.mod(layer, len(layer_colors))]
+        alpha = 0.8
+    return {'color':color, 'alpha':alpha}
+    
+    
+def _draw_polygons(polygons, ax, **kwargs):
+    """ This function uses a trick where all polygon points are concatenated, 
+    separated only by NaN values.  This speeds up drawing considerably, see
+    http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
+    """
+    nan_pt = np.array([[np.nan, np.nan]])
+    polygons_with_nans = [np.concatenate((p, nan_pt), axis = 0) for p in polygons]
+    all_polygons = np.vstack(polygons_with_nans)
+    plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
 
 
 def _draw_port(port, arrow_scale = 1, **kwargs):
@@ -661,31 +796,4 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
     plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
-
-
-def makedevice(fun, config = None, **kwargs):
-    config_dict = {}
-    if type(config) is str:
-        with open(config) as f:  config_dict = yaml.load(f) # Load arguments from config file
-    elif type(config) is dict:   config_dict = config
-    config_dict.update(**kwargs)
-    return fun(**config_dict)
-#
-#    
-#def useconfig(filename = 'myconfig.yaml', **kwargs):
-#    with open(filename) as f:  config_dict = yaml.load(f) # Load arguments from config file
-#    config_dict.update(**kwargs)                          # Replace any additional arguments  
-#    return config_dict
-#
-#    
-#filename = 'C:/Users/anm16/Downloads/temp.yaml'
-#d = _load_config_file(filename)
-#
-#
-#y = makedevice(beamsplitter, filename, arm_length = 50)
-#quickplot(y)
-#
-#y = beamsplitter(**useconfig(filename, arm_length = 50))
-#quickplot(y)
-
 

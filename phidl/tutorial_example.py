@@ -2,7 +2,7 @@ from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
 import numpy as np
 
 
-from phidl import Device, quickplot
+from phidl import Device, Layer, quickplot
 import phidl.geometry as pg
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
@@ -10,11 +10,11 @@ import phidl.geometry as pg
 #==============================================================================
 
 def waveguide(width = 10, height = 1):
-    wg = Device('waveguide')
-    wg.add_polygon( [(0, 0), (width, 0), (width, height), (0, height)] )
-    wg.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
-    wg.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
-    return wg
+    WG = Device('waveguide')
+    WG.add_polygon( [(0, 0), (width, 0), (width, height), (0, height)] )
+    WG.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
+    WG.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
+    return WG
    
 
 #==============================================================================
@@ -26,14 +26,17 @@ def waveguide(width = 10, height = 1):
 D = Device('MultiWaveguide')
 
 # We can instantiate the waveguide device by itself.  Note that when we make
-# a device, we usually assign it a variable name with a capital letter
-Wg1 = waveguide(width=10, height = 1)
-Wg2 = waveguide(width=12, height = 2)
+# a Device, we usually assign it a variable name with a capital letter
+WG1 = waveguide(width=10, height = 1)
+WG2 = waveguide(width=12, height = 2)
 
-# 
+# We can add references from the devices WG1 and WG2 to our blank device D.
+# After adding WG1, we see that the add_ref() function returns a handle to our
+# reference, which we will label with lowercase letters wg1 and wg2
+wg1 = D.add_ref(WG1)
+wg2 = D.add_ref(WG2)
 
-wg1 = D.add_ref(Wg1)
-wg2 = D.add_ref(Wg2)
+# Alternatively, we can do this all on one line
 wg3 = D.add_ref(waveguide(width=14, height = 3))
 
 quickplot(D)
@@ -191,6 +194,7 @@ t.move([0,40]).rotate(45)
 quickplot(D2)
 
 
+
 #==============================================================================
 # Labeling
 #==============================================================================
@@ -204,4 +208,128 @@ D2.annotate('Second label', mwg2.center)
 # Saving the file as a .gds
 #==============================================================================
 D2.write_gds('MultiMultiWaveguideTutorial.gds')
+
+
+
+#==============================================================================
+# Using Layers
+#==============================================================================
+# Let's make a new blank device DL and add some text to it, but this time on
+# different layers
+DL = Device()
+
+# You can specify any layer in one of three ways:
+# 1) as a single number 0-255 representing the gds layer number, e.g. layer = 1
+# where the gds layer datatype will be automatically set to zero
+DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
+
+
+# 2) as a 2-element list [0,1] or tuple (0,1) representing the gds layer 
+# number (0-255) and gds layer datatype (0-255)  
+DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
+
+
+# 3) as a Layer object  
+gold = Layer(name = 'goldpads', gds_layer = 3, gds_datatype = 0,
+                 description = 'Gold pads liftoff')
+DL.add_ref( pg.text('Layer3', size = 10, layer = gold) ).movey(-40)
+
+
+# What you can also do is make a dictionary of layers, which lets you
+# conveniently call each Layer object just by its name.  You can also specify
+# the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
+# (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'
+# see http://www.w3schools.com/colors/colors_names.asp )
+# The 'alpha' argument also lets you specify how transparent that layer should
+# look when using quickplot (has no effect on the written GDS file)
+layers = {
+        'titanium' : Layer(gds_layer = 4, gds_datatype = 0, description = 'Titanium resistor', color = 'gray'),
+        'niobium'  : Layer(gds_layer = 5, gds_datatype = 0, description = 'Niobium liftoff', color = (0.4,0.1,0.1)),
+        'nb_etch'  : Layer(gds_layer = 6, gds_datatype = 3, description = 'Niobium etch', color = 'lightblue', alpha = 0.2),
+         }
+
+# Now that our layers are defined, we can pass them to our text function
+l1 = DL.add_ref( pg.text('Titanium layer', size = 10, layer = layers['titanium']) ).movey(-60)
+l2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = layers['niobium']) ).movey(-80)
+l3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = layers['nb_etch']) ).movey(-90).movex(5)
+
+quickplot(DL)
+
+DL.write_gds('MultipleLayerText.gds')
+
+#==============================================================================
+# Annotation
+#==============================================================================
+# We can also annotate our devices, in order to record information directly
+# into the final GDS file without putting any extra geometry onto any layer
+
+# Let's add an annotation to our Multi-Layer Text GDS file
+DL.annotate(text = 'This is layer1\nit will be titanium', position = l1.center)
+DL.annotate(text = 'This is niobium', position = l2.center)
+
+# It's very useful for recording information about the devices or layout
+DL.annotate(text = 'The x size of this\nlayout is %s' % DL.xsize,
+            position = (DL.xmax, DL.ymax), layer = 255)
+
+# Again, note we have to write the GDS for it to be visible (view in KLayout)
+DL.write_gds('MultipleLayerText.gds')
+
+
+
+
+#==============================================================================
+# Constructing a Device from set of parameters (dictionary or config file)
+#==============================================================================
+# Say we want to make a more complicated waveguide which requires more
+# parameters.  Instead of passing them individually, we can store them in a
+# dictionary (or configuration file) and pass that dictionary to the Device()
+# function.
+
+def complicated_waveguide(width = 10, height = 1, x = 10, y = 25, rotation = 15):
+    C = Device('complicated_waveguide')
+    C.add_polygon( [(0, 0), (width, 0), (width, height), (0, height)] )
+    C.add_port(name = 1, midpoint = [0,height/2], width = height, orientation = 180)
+    C.add_port(name = 2, midpoint = [width,height/2], width = height, orientation = 0)
+    C.rotate(angle = rotation, center = (0,0))
+    C.move((x,y))
+    return C
+    
+cwg_parameters = {
+            'width' : 14,
+            'height' : 1,
+            'x' : 15,
+            'y' : 20,
+            'rotation' : 0
+            }
+
+# We can either create the complicated_waveguide() the normal way
+C1 = complicated_waveguide(width = 14, height = 1, x = 15, y = 20, rotation = 0)
+quickplot(C1)
+
+# Or we can pass the complicated_waveguide function and our parameter list
+# to the Device() function which will generate it for us using our config
+C2 = Device(complicated_waveguide, config = cwg_parameters)
+quickplot(C2)
+
+
+# We can also override any parameter we like in our dictionary of parameters
+# by adding keyword arguments -- the input dictionary is untouched afterwards
+C3 = Device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
+quickplot(C3)
+
+
+# The most useful implementation of this is to keep a standard set of 
+# parameters and then override certain parameters each iteration of the for 
+# loop. Say we want to use our standard cwg_parameters but change the height
+#  each time:
+D = Device()
+for h in [0.1, 0.5, 1, 2, 4]:
+    C4 = Device(complicated_waveguide, config = cwg_parameters, height = h)
+    c4 = D.add_ref( C4 )
+    c4.ymin = D.ymax + 10
+quickplot(D)
+
+
+
+
 

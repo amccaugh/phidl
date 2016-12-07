@@ -8,10 +8,11 @@ install_requires=[
    'matplotlib',
    'pyyaml',
    'scikit-image>=0.11',
+   'webcolors',
 ]
 
 setup(name='phidl',
-      version='0.5.0',
+      version='0.5.3',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',

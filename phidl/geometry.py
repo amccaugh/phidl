@@ -31,12 +31,27 @@ from skimage import draw, morphology
 
 #==============================================================================
 #
+# Connectors
+#
+#==============================================================================
+
+def connector(midpoint = (0,0), width = 1, orientation = 0):
+    """ Creates a Device which has back-to-back ports """
+    D = Device(name = 'connector')
+    D.add_port(name = 1, midpoint = [midpoint[0]/2, midpoint[1]/2],  width = width, orientation = orientation)
+    D.add_port(name = 2, midpoint = [midpoint[0]/2, midpoint[1]/2], width = width, orientation = orientation-180)
+    return D
+
+
+
+#==============================================================================
+#
 # Optimal current-crowding superconducting structures
 #
 #==============================================================================
 
 
-def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer = 0, datatype = 0):
+def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -197,13 +212,13 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 #==============================================================================
 
 
-def compass(size = (4,2), layer = 0, datatype = 0):
+def compass(size = (4,2), layer = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west)
     """
     
     D = Device(name = 'compass')
-    r = D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
+    r = D.add_ref( rectangle(size, layer = layer) )
     r.center = (0,0)
     
     dx = size[0]
@@ -216,34 +231,34 @@ def compass(size = (4,2), layer = 0, datatype = 0):
     return D
     
     
-def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0, datatype = 0):
+def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
     """
     
     D = Device(name = 'compass_multi')
-    r = D.add_ref( rectangle(size, layer = layer, datatype = datatype) )
+    r = D.add_ref( rectangle(size, layer = layer) )
     r.center = (0,0)
     
     dx = size[0]/2
     dy = size[1]/2
     
-    if ports.has_key('N'):
+    if 'N' in ports:
         num_ports = ports['N']
         m = dx-dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],  width = dx/num_ports*2, orientation = 90) for n,p in enumerate(p_list)]
-    if ports.has_key('S'):
+    if 'S' in ports:
         num_ports = ports['S']
         m = dx-dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],  width = dx/num_ports*2, orientation = -90) for n,p in enumerate(p_list)]
-    if ports.has_key('E'):
+    if 'E' in ports:
         num_ports = ports['E']
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],  width = dy/num_ports*2, orientation = 0) for n,p in enumerate(p_list)]
-    if ports.has_key('W'):
+    if 'W' in ports:
         num_ports = ports['W']
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
@@ -254,7 +269,7 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0, datatype = 0):
     
 
 # TODO: Fix the fillet here, right now only goes halfway down
-def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0, datatype = 0):
+def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0):
     f = np.array(size)
     p = np.array(stub_size)
     shape = shape.lower()
@@ -278,19 +293,19 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
     
     D = Device(name = 'flagpole')
-    pad_poly = D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    pad_poly = D.add_polygon([xpts,ypts], layer = layer)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,0,0,taper_amount,0,0])
     elif taper_type == 'straight':
-        D.add_polygon([xpts[3:6],ypts[3:6]], layer = layer, datatype = datatype)
+        D.add_polygon([xpts[3:6],ypts[3:6]], layer = layer)
             
     D.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = abs(p[0]), orientation = orientation)
     D.add_port(name = 2, midpoint = [f[0]/2, f[1]],  width = abs(f[0]), orientation = orientation-180)
     return D
 
 
-def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, datatype = 0):
+def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0):
     f = np.array(size)
     p = np.array(stub_size)
     
@@ -298,13 +313,13 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, dat
     ypts = [f[1], 0, 0, -p[1], -p[1], 0, 0, f[1]]
     
     D = Device(name = 'tee')
-    pad_poly = D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    pad_poly = D.add_polygon([xpts,ypts], layer = layer)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,taper_amount,0,0,taper_amount,0,0])
     if taper_type == 'straight':
-        taper_poly1 = D.add_polygon([xpts[1:4],ypts[1:4]], layer = layer, datatype = datatype)
-        taper_poly2 = D.add_polygon([xpts[4:7],ypts[4:7]], layer = layer, datatype = datatype)
+        taper_poly1 = D.add_polygon([xpts[1:4],ypts[1:4]], layer = layer)
+        taper_poly2 = D.add_polygon([xpts[4:7],ypts[4:7]], layer = layer)
         
     D.add_port(name = 'N', midpoint = [0, f[1]],  width = f[0], orientation = 90)
     D.add_port(name = 'S', midpoint = [0, -p[1]],  width = p[0], orientation = -90)
@@ -321,20 +336,20 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, dat
 #quickplot(cp)
 
 
-#cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
+#cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0)
 #quickplot(cpm)
 
 
-#cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0, datatype = 0)
-#inset_polygon = inset(cpm, distance = 2, layer = 1, datatype = 1)
+#cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0)
+#inset_polygon = inset(cpm, distance = 2, layer = 1)
 #cpm.add(inset_polygon)
 #quickplot(cpm)
 
-#fp = flagpole(size = [4,2], stub_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0, datatype = 0)
+#fp = flagpole(size = [4,2], stub_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0)
 #quickplot(fp)
 
 
-#tp = tee(size = [4,2], stub_size = [2,1], taper_type = 'fillet', layer = 0, datatype = 0)
+#tp = tee(size = [4,2], stub_size = [2,1], taper_type = 'fillet', layer = 0)
 #quickplot(tp)
 
 
@@ -345,34 +360,16 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0, dat
 #
 #==============================================================================
 
-    
-# def _xy2p(*args):
-#     """ Takes in lists of x points and y points, e.g. [1,2,3],[5,6,7] and
-#     converts it to the point format e.g. [[1,5],[2,6],[3,7]].  Can either be
-#     called as xy2p(xpts, ypts) or as xy2p(xy) where xy = [xpts, ypts]
-#     """
-#     if len(args) == 1:      x,y = args[0][0], args[0][1] 
-#     elif len(args) == 2:    x,y = args[0],    args[1]
-#     points = np.array(zip(*[x,y]))
-#     return points
 
-# def polygon(points, layer = 0, datatype = 0, name = 'polygon'):
-#     D = Device('polygon')
-#     if len(points[0]) > 2: # Then it must be of the form [[1,3,5],[2,4,6]]
-#         points = _xy2p(points)
-#     D.add_polygon(points, layer, datatype)
-#     return D
-        
 
-def rectangle(point1 = (4,2), point2 = (0,0), layer = 0, datatype = 0):
-    """ Creates a rectangle polygon by specifying opposing corners ``point1`` and ``point2`` """
+def rectangle(size = (4,2), layer = 0):
     D = Device(name = 'rectangle')
-    points = np.array([[point1[0], point1[1]], [point1[0], point2[1]], [point2[0], point2[1]], [point2[0], point1[1]]])
-    D.add_polygon(points, layer = layer, datatype = datatype)
+    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
+    D.add_polygon(points, layer = layer)
     return D
 
 
-def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype = 0):
+def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ring')
     inner_radius = radius - width/2
     outer_radius = radius + width/2
@@ -383,11 +380,11 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0, datatype =
     outer_points_y = (outer_radius*sin(t)).tolist()
     xpts = inner_points_x + outer_points_x[::-1]
     ypts = inner_points_y + outer_points_y[::-1]
-    D.add_polygon(points = (xpts,ypts), layer = layer, datatype = datatype)
+    D.add_polygon(points = (xpts,ypts), layer = layer)
     return D
     
     
-def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0, datatype = 0):
+def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
     """ Creates an arc of arclength ``theta`` starting at angle ``start_angle`` """
     inner_radius = radius-width/2
     outer_radius = radius+width/2
@@ -402,17 +399,17 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     ypts = inner_points_y + outer_points_y[::-1]
     
     D = Device('arc')
-    D.add_polygon(points = (xpts,ypts), layer = layer, datatype = datatype)
+    D.add_polygon(points = (xpts,ypts), layer = layer)
     D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
     D.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
     D.meta['length'] = (abs(theta)*pi/180)*radius
     return D
 
 
-def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0, datatype = 0):
+def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
     """ Starting form a port, create a arc which connects to the port """
     D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
-            angle_resolution = angle_resolution, layer = layer, datatype = datatype)
+            angle_resolution = angle_resolution, layer = layer)
     D.rotate(angle =  180 + port.orientation - D.ports[1].orientation, center = D.ports[1].midpoint)
     D.move(origin = D.ports[1], destination = port)
     return D
@@ -422,9 +419,8 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0, data
 # Example code
 #==============================================================================
     
-#R = rectangle(point1 = (4,2), point2 = (0,0), layer = 0, datatype = 0)
+#R = rectangle(size = (4,2), layer = 0)
 #quickplot(R)
-
 
 
 
@@ -438,7 +434,7 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0, data
 
 
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
-          terminals_same_side = False, layer = 0, datatype = 0):
+          terminals_same_side = False, layer = 0):
     xsize = size[0]
     ysize = size[1]
     num_meanders = int(ysize/wire_pitch)
@@ -482,11 +478,11 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
 
     
 def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_width = 1,
-           num_pts = 20, terminals_same_side = False, layer = 0, datatype = 0):
+           num_pts = 20, terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
     s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
-                     terminals_same_side = terminals_same_side, layer = layer, datatype = datatype))
+                     terminals_same_side = terminals_same_side, layer = layer))
     step_device = optimal_step(start_width = wire_width, end_width = connector_width, num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3)
     step1 = D.add_ref(step_device)
     step2 = D.add_ref(step_device)
@@ -502,7 +498,7 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
     
 
 def snspd_squares(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), num_pts = 20,
-                  terminals_same_side = False, layer = 0, datatype = 0):
+                  terminals_same_side = False, layer = 0):
     pass
     
 #==============================================================================
@@ -533,7 +529,7 @@ def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0):
     ypts = [width1/2, width2/2, -width2/2, -width1/2]
     
     D = Device('taper')
-    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_polygon([xpts,ypts], layer = layer)
     D.add_port(name = 1, midpoint = [0, 0], width = width1, orientation = 180)
     D.add_port(name = 2, midpoint = [length, 0], width = width2, orientation = 0)
     if type(port) is Port: 
@@ -542,12 +538,12 @@ def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0):
     return D
     
     
-def ramp(length = 10, width1 = 5, width2 = 8, layer = 0, datatype = 0):
+def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
     ypts = [width1, width2, 0, 0]
     D = Device('ramp')
-    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_polygon([xpts,ypts], layer = layer)
     D.add_port(name = 1, midpoint = [0, width1/2], width = width1, orientation = 180)
     D.add_port(name = 2, midpoint = [length, width2/2], width = width2, orientation = 0)
     return D
@@ -621,7 +617,7 @@ def _G(xi, B):
 
 def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
                  Lk_per_sq = 250e-12, Z1 = None, Z2 = None, width1 = None, width2 = None,
-                 num_pts = 100, layer = 0, datatype = 0):
+                 num_pts = 100, layer = 0):
     if width1 is not None:  Z1 = _microstrip_Z_with_Lk(width1*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)
     if width2 is not None:  Z2 = _microstrip_Z_with_Lk(width2*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq)
     xi_list = np.linspace(-1,1, num_pts) # Normalized length of the wire [-1 to +1]
@@ -638,7 +634,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D = Device()
     xpts = np.concatenate([x, x[::-1]])
     ypts = np.concatenate([widths/2, -widths[::-1]/2])
-    D.add_polygon((xpts,ypts), layer = layer, datatype = datatype)
+    D.add_polygon((xpts,ypts), layer = layer)
     D.add_port(name = 1, midpoint = (-length/2,0), width = widths[0], orientation = 180)
     D.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
     
@@ -675,16 +671,16 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
         widths = np.linspace(taper_width(x_start), taper_width(x_end), num_pts)
         xpts = np.concatenate([x, x[::-1]])
         ypts = np.concatenate([widths/2, -widths[::-1]/2])
-        D.add_polygon((xpts,ypts), layer = 0, datatype = 0)
+        D.add_polygon((xpts,ypts), layer = 0)
         D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
         D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
         return D
         
-    def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0, datatype = 0):
+    def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0):
         D = Device()
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
         path1.turn(radius = radius, angle = theta*pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
-        [D.add_polygon(p.points, layer = layer, datatype = datatype) for p in path1.polygons]
+        [D.add_polygon(p.points, layer = layer) for p in path1.polygons]
         D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
         D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/pi)
         return D
@@ -720,7 +716,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
 
 # D = hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
 #                  Lk_per_sq = 250e-12, Z1 = 50, width2 = 0.3,
-#                  num_pts = 100, layer = 0, datatype = 0)
+#                  num_pts = 100, layer = 0)
 # quickplot(D)
 
 #t = np.linspace(0,1)
@@ -949,7 +945,7 @@ width[125] = 500;  indent[125] = 100  # }
 width[126] = 800;  indent[126] = 100  # ~
 width[230] = 700;  indent[230] = 100  # Greek mu
 
-def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, datatype=0):
+def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0):
     scaling = size/800
     xoffset = position[0]
     yoffset = position[1]
@@ -964,7 +960,7 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, d
                 for poly in glyph[ascii_val]:
                     xpts = np.array(poly)[:,0]*scaling
                     ypts = np.array(poly)[:,1]*scaling
-                    l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer, datatype=datatype)
+                    l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer)
                 xoffset += (width[ascii_val] + indent[ascii_val])*scaling
             else: ValueError('No glyph for character with ascii value %s' % ascii_val)
         t.add_ref(l)
@@ -996,17 +992,17 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer=0, d
 
 
 
-def basic_die(size = (10000, 10000),
+def basic_die(
+              size = (10000, 10000),
               street_width = 100,
               street_length = 1000,
               die_name = 'chip99',
               text_size = 100,
               text_location = 'SW', 
               layer = 0, 
-              datatype = 0,
               draw_bbox = True, 
-              bbox_layer = 99, 
-              bbox_datatype = 99):
+              bbox_layer = 99,
+              ):
     
     #==========================================================================
     #  Create the basic geometry
@@ -1014,14 +1010,14 @@ def basic_die(size = (10000, 10000),
     D = Device(name = 'die')
     xpts = np.array([size[0]/2, size[0]/2, size[0]/2-street_width, size[0]/2-street_width, size[0]/2-street_length, size[0]/2-street_length])
     ypts = np.array([size[1]/2, size[1]/2-street_length, size[0]/2-street_length, size[0]/2-street_width, size[0]/2-street_width, size[1]/2])
-    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
-    D.add_polygon([-xpts,ypts], layer = layer, datatype = datatype)
-    D.add_polygon([xpts,-ypts], layer = layer, datatype = datatype)
-    D.add_polygon([-xpts,-ypts], layer = layer, datatype = datatype)
+    D.add_polygon([xpts,ypts], layer = layer)
+    D.add_polygon([-xpts,ypts], layer = layer)
+    D.add_polygon([xpts,-ypts], layer = layer)
+    D.add_polygon([-xpts,-ypts], layer = layer)
     
     if draw_bbox is True:
         s = np.array(size)/2
-        D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer, datatype = bbox_datatype)
+        D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer)
     
     if type(text_location) is str:
         if text_location.upper() == 'SW':
@@ -1036,7 +1032,7 @@ def basic_die(size = (10000, 10000),
     else:
         text_position = text_location
         justify = 'center'
-    D.add_ref(text(text = die_name, size = text_size, position=text_position, justify = justify, layer=layer, datatype=datatype))
+    D.add_ref(text(text = die_name, size = text_size, position=text_position, justify = justify, layer=layer))
     
     return D
     
@@ -1048,7 +1044,7 @@ def basic_die(size = (10000, 10000),
 
 # D = basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
 #               die_name = 'chip99', text_size = 300, text_location = 'SW',  layer = 0,  
-#               datatype = 0, draw_bbox = True,  bbox_layer = 99,  bbox_datatype = 99)
+#               draw_bbox = True,  bbox_layer = 99)
 # quickplot(D)
 
 
@@ -1062,11 +1058,11 @@ def basic_die(size = (10000, 10000),
 #==============================================================================
 
 
-def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0, datatype = 0):
+def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
-            max_points=199,  final_distance=None, layer=layer, datatype=datatype)
+            max_points=199,  final_distance=None, layer=layer)
     D = Device()
     D.add(route_path)
     return D
@@ -1116,7 +1112,7 @@ def _racetrack_gradual_parametric(t, R, N):
 
 
 def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, source_length = 500,
-                  width_right = 200, width_left = 200, theta_resolution = 10, layer = 0, datatype = 0):
+                  width_right = 200, width_left = 200, theta_resolution = 10, layer = 0):
     
     #==========================================================================
     #  Create the basic geometry
@@ -1143,7 +1139,7 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'ytron')
-    D.add_polygon([xpts,ypts], layer = layer, datatype = datatype)
+    D.add_polygon([xpts,ypts], layer = layer)
     D.add_port(name = 'left', midpoint = [-(xc+arm_x+width_left/2), yc+arm_y],  width = width_left, orientation = 90)
     D.add_port(name = 'right', midpoint = [xc+arm_x+width_right/2, yc+arm_y],  width = width_right, orientation = 90)
     D.add_port(name = 'source', midpoint = [0+(width_right-width_left)/2, -source_length+yc],  width = width_left + width_right + 2*xc, orientation = -90)
@@ -1165,7 +1161,7 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
 #==============================================================================
 
 #y = ytron_round(rho_intersection = 5, theta_intersection = 5, theta_resolution = 10, arm_length = 500, \
-#                source_length = 500, width_right = 200, width_left = 200, layer = 0, datatype = 0)
+#                source_length = 500, width_right = 200, width_left = 200, layer = 0)
 #quickplot(y)
 
 
@@ -1224,23 +1220,22 @@ def _expand_raster(raster, distance = (4,2)):
 
     
             
-def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7), datatype = 77):
+def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7)):
     D = Device(name = 'fill_cell')
     for layer, density in zip(layers, densities):
         rectangle_size = np.array(size)*np.sqrt(density)
-        point1 = -np.array(rectangle_size)/2
-        point2 = np.array(rectangle_size)/2
-        D.add(gdspy.Rectangle(point1, point2, layer = layer, datatype = datatype))
+        D.add(gdspy.Rectangle(size = rectangle_size, layer = layer))
+        D.center = (0,0)
     return D
 
     
-def _fill_cell_device(size = None, datatype = 77):
+def _fill_cell_device(size = None):
     D = Device(name = 'fill_cell')
     return D
 
     
 def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7), margin = 100, bbox = None):
-    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers, densities = fill_densities, datatype = 77)
+    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers, densities = fill_densities)
     F = Device(name = 'fill_pattern')
     
     if exclude_layers is None:
@@ -1277,7 +1272,7 @@ def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = 
 #
 #==============================================================================
         
-def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0, datatype = 0):
+def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0):
     # Assuming they're both Ports for now
     point_a = np.array(port1.midpoint)
     if width1 is None:  width1 = port1.width
@@ -1324,7 +1319,7 @@ def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = No
     
     route_path = gdspy.Path(width = width1, initial_point = (0,0))
     route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts, \
-            max_points=199, final_width=width_fun, final_distance=None, layer=layer, datatype=datatype)
+            max_points=199, final_width=width_fun, final_distance=None, layer=layer)
     
     # Make the route path into a Device with ports, and use "connect" to move it
     # into the proper location
@@ -1345,7 +1340,7 @@ def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = No
 #
 #==============================================================================
 
-def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0, datatype = 0):
+def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
 
     if type(elements) is not list: elements = [elements]
     new_elements = []
@@ -1358,11 +1353,11 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
     # separate polygons which are nominally joined
     joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
-                          max_points=199, layer=layer, datatype=datatype)
+                          max_points=199, layer=layer)
     p = gdspy.offset(joined, -distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
-                     max_points=199, layer=layer, datatype=datatype)
+                     max_points=199, layer=layer)
     D = Device()
-    D.add_polygon(p, layer=layer, datatype=datatype)
+    D.add_polygon(p, layer=layer)
     return D
     
