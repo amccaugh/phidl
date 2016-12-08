@@ -626,18 +626,21 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     widths = np.array([_find_microstrip_wire_width(z, dielectric_thickness*1e-6, eps_r, Lk_per_sq)*1e6 for z in Z])
     x = ((xi_list/2)*length)
     
-    # TODO: Compensate for varying speed of light in the microstrip
-    # by shortening and lengthening sections according to the speed of light
-    # in that section
+    # Compensate for varying speed of light in the microstrip by shortening 
+    # and lengthening sections according to the speed of light in that section
     v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
+    dx = np.diff(x)
+    dx_compensated = dx/v[:-1]
+    x_compensated = np.cumsum(dx_compensated)
+    x = np.hstack([0,x_compensated])/max(x_compensated)*length
     
     # Create blank device and add taper polygon
     D = Device()
     xpts = np.concatenate([x, x[::-1]])
     ypts = np.concatenate([widths/2, -widths[::-1]/2])
     D.add_polygon((xpts,ypts), layer = layer)
-    D.add_port(name = 1, midpoint = (-length/2,0), width = widths[0], orientation = 180)
-    D.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
+    D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
+    D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
     dx = x[1]-x[0]
