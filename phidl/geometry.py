@@ -643,8 +643,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
-    dx = x[1]-x[0]
-    D.meta['num_squares'] = np.sum(dx/widths)
+    D.meta['num_squares'] = np.sum(dx_compensated/widths[:-1])
     D.meta['width1'] = widths[0]
     D.meta['width2'] = widths[-1]
     D.meta['Z1'] = Z[0]
