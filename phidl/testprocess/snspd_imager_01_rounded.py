@@ -2,7 +2,6 @@ from __future__ import division, print_function, absolute_import
 from phidl import Device, quickplot, Layer
 import phidl.geometry as pg
 import numpy as np
-import gdspy
 
 #    
 #def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, min_spacing = 0.5):
@@ -108,7 +107,7 @@ def snspd_imager_rounded(
                             eps_r = dielectric_eps_r, Lk_per_sq = Lk_per_sq,
                             Z1 = Zout, width2 = nanowire_width, num_pts = 99,
                             layer = L_wsi)
-    Meander_taper = meander_taper(x_taper = Taper.meta['x'], w_taper = Taper.meta['w'],
+    Meander_taper = pg.meander_taper(x_taper = Taper.meta['x'], w_taper = Taper.meta['w'],
                                  meander_length = taper_width, spacing_factor = 3,
                                  min_spacing = 5, layer = L_wsi)
     mtwidth= Meander_taper.ports[1].width
@@ -175,8 +174,8 @@ def snspd_imager_rounded(
     #==============================================================================
     # Label device
     #==============================================================================
-    l1 = D.add_ref( pg.text(label, size = 200, layer = 1) )
-    l2 = D.add_ref( pg.text(label, size = 200, layer = 1) )
+    l1 = D.add_ref( pg.text(label, size = 200, layer = L_goldpads) )
+    l2 = D.add_ref( pg.text(label, size = 200, layer = L_goldpads) )
     l1.ymin = pad_west.ymax + 100
     l1.xmin = pad_west.xmin 
     l2.ymax = pad_east.ymin - 100
@@ -191,7 +190,7 @@ def snspd_imager_rounded(
 #==============================================================================
 
 # Material parameters
-dielectric_thickness = 0.94
+dielectric_thickness = 0.100
 dielectric_eps_r = 3.8
 Lk_per_sq = 244e-12
 
@@ -210,8 +209,8 @@ taper_length = taper_width*11
 
 
 layers = {
-        'gndplane'  : Layer(gds_layer = 0, gds_datatype = 0, description = 'Ground plane', color = 'DarkGoldenRod'),
-        'wsi'  : Layer(gds_layer = 1, gds_datatype = 0, description = 'WSi', color = 'lightgreen'),
+        'gndplane'  : Layer(gds_layer = 0, gds_datatype = 0, description = 'Ground plane', color = 'DarkGoldenRod', inverted = True),
+        'wsi'  : Layer(gds_layer = 1, gds_datatype = 0, description = 'WSi etch', color = 'lightgreen', inverted = True),
         'goldpads' : Layer(gds_layer = 2, gds_datatype = 0, description = 'Gold pads', color = 'gold'),
         'gndetch' : Layer(gds_layer = 3, gds_datatype = 0, description = 'Etch through to ground plane', color = 'blue'),
          }
@@ -226,9 +225,9 @@ snspi_config = {
         'nanowire_spacing' : 5,
         'pad_size' : [300,500],
         'taper_width' : 1000,
-        'taper_length' : 11000,
+        'taper_length' : 21800,
         'taper_separation' : 200,
-        'dielectric_thickness' : 0.25,
+        'dielectric_thickness' : 0.100,
         'dielectric_eps_r' : 3.8,
         'Lk_per_sq' : 250e-12,
         'Zout' : 50,
@@ -242,17 +241,16 @@ snspi_config = {
 
 
 #==============================================================================
-# Die 1: Varying meander size - nanowire width 300 nm
+# Die 1: Varying SNSPI length - nanowire width 300 nm
 #==============================================================================
 D = Device()
 die_name = 'SE006'
 
 y = 0
-imager_heights = 2.0**np.array(range(0,6))*(5.5)
+imager_heights = 2.0**np.array(range(0,4))*(5.5)
 for n, h in enumerate(imager_heights):
-    S = Device(snspd_imager_rounded, config = snspi_config)
-    S = snspd_imager_rounded(label = ('A%s' % (n+1)), size = [imager_width, h], nanowire_width = 0.3,
-                             nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
+    S = Device(snspd_imager_rounded, config = snspi_config, label = ('A%s' % (n+1)),
+               nanowire_width = 0.3, size = [2000, h])
     l = S.annotate(str(S.meta).replace(",", "\n"))
     l.center = S.center
     s = D.add_ref(S)
@@ -262,33 +260,31 @@ D.center = [0,0]
 
 # Create die, label, and streets
 die = D.add_ref( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = die_name, text_size = 250, text_location = 'S',  layer = 0,  
+              die_name = die_name, text_size = 250, text_location = 'S',  layer = layers['goldpads'],  
               draw_bbox = False) )
 
 
 # Create edge gold sidebars
-R = Device()
-R.add_ref( pg.rectangle([edge_gold_width, 10000-200], layer = 2))
-r1, r2 = D.add_ref(R), D.add_ref(R)
-r1.xmin = die.xmin + 100
-r1.ymin = die.ymin + 100
-r2.xmax = die.xmax - 100
-r2.ymin = die.ymin + 100
+R = pg.rectangle((9300, 9300))
+Rinv = pg.invert(R, border = 300, layer = layers['gndetch'])
+Rinv.center = D.center
+D.add_ref(Rinv)
 
 D.write_gds('%s SNSPD Imager.gds' % die_name)
 
 
+
 #==============================================================================
-# Die 2: Varying meander size - nanowire width 500 nm
+# Die 2: Varying SNSPI length - nanowire width 500 nm
 #==============================================================================
 D = Device()
 die_name = 'SE007'
 
 y = 0
-imager_heights = 2.0**np.array(range(0,6))*(5.5)
+imager_heights = 2.0**np.array(range(0,4))*(5.5)
 for n, h in enumerate(imager_heights):
-    S = snspd_imager_rounded(label = ('A%s' % (n+1)), size = [imager_width, h], nanowire_width = 0.5,
-                             nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
+    S = Device(snspd_imager_rounded, config = snspi_config, label = ('A%s' % (n+1)),
+               nanowire_width = 0.5, size = [2000, h])
     l = S.annotate(str(S.meta).replace(",", "\n"))
     l.center = S.center
     s = D.add_ref(S)
@@ -298,21 +294,17 @@ D.center = [0,0]
 
 # Create die, label, and streets
 die = D.add_ref( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = die_name, text_size = 250, text_location = 'S',  layer = 0,  
+              die_name = die_name, text_size = 250, text_location = 'S',  layer = layers['goldpads'],  
               draw_bbox = False) )
 
 
 # Create edge gold sidebars
-R = Device()
-R.add_ref( pg.rectangle([edge_gold_width, 10000-200], layer = 2))
-r1, r2 = D.add_ref(R), D.add_ref(R)
-r1.xmin = die.xmin + 100
-r1.ymin = die.ymin + 100
-r2.xmax = die.xmax - 100
-r2.ymin = die.ymin + 100
+R = pg.rectangle((9300, 9300))
+Rinv = pg.invert(R, border = 300, layer = layers['gndetch'])
+Rinv.center = D.center
+D.add_ref(Rinv)
 
 D.write_gds('%s SNSPD Imager.gds' % die_name)
-
 
 
 
@@ -322,12 +314,9 @@ D.write_gds('%s SNSPD Imager.gds' % die_name)
 D = Device()
 die_name = 'SE008'
 
-imager_height = 2500
-imager_width = 2500
-taper_width = 2000
-taper_length = taper_width*21
-S = snspd_imager_rounded(label = ('A%s' % (1)), size = [imager_width, imager_height], nanowire_width = 0.3,
-                         nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
+S = Device(snspd_imager_rounded, config = snspi_config, label = ('A1'),
+           nanowire_width = 0.3, size = [2500, 2500])
+
 l = S.annotate(str(S.meta).replace(",", "\n"))
 l.center = S.center
 s = D.add_ref(S)
@@ -335,34 +324,27 @@ D.center = [0,0]
 
 # Create die, label, and streets
 die = D.add_ref( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = die_name, text_size = 250, text_location = 'S',  layer = 0,  
+              die_name = die_name, text_size = 250, text_location = 'S',  layer = layers['goldpads'],  
               draw_bbox = False) )
 
 
 # Create edge gold sidebars
-R = Device()
-R.add_ref( pg.rectangle([edge_gold_width, 10000-200], layer = 2))
-r1, r2 = D.add_ref(R), D.add_ref(R)
-r1.xmin = die.xmin + 100
-r1.ymin = die.ymin + 100
-r2.xmax = die.xmax - 100
-r2.ymin = die.ymin + 100
+R = pg.rectangle((9300, 9300))
+Rinv = pg.invert(R, border = 300, layer = layers['gndetch'])
+Rinv.center = D.center
+D.add_ref(Rinv)
 
 D.write_gds('%s SNSPD Imager.gds' % die_name)
 
-
 #==============================================================================
-# Die 3: Large device - 500 nm width
+# Die 4: Large device - 500 nm width
 #==============================================================================
 D = Device()
 die_name = 'SE009'
 
-imager_height = 2500
-imager_width = 2500
-taper_width = 2000
-taper_length = taper_width*21
-S = snspd_imager_rounded(label = ('A%s' % (1)), size = [imager_width, imager_height], nanowire_width = 0.5,
-                         nanowire_spacing = 5, taper_length = taper_length, taper_width = taper_width)
+S = Device(snspd_imager_rounded, config = snspi_config, label = ('A1'),
+           nanowire_width = 0.5, size = [2500, 2500])
+
 l = S.annotate(str(S.meta).replace(",", "\n"))
 l.center = S.center
 s = D.add_ref(S)
@@ -370,17 +352,15 @@ D.center = [0,0]
 
 # Create die, label, and streets
 die = D.add_ref( pg.basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-              die_name = die_name, text_size = 250, text_location = 'S',  layer = 0,  
+              die_name = die_name, text_size = 250, text_location = 'S',  layer = layers['goldpads'],  
               draw_bbox = False) )
 
 
 # Create edge gold sidebars
-R = Device()
-R.add_ref( pg.rectangle([edge_gold_width, 10000-200], layer = 2))
-r1, r2 = D.add_ref(R), D.add_ref(R)
-r1.xmin = die.xmin + 100
-r1.ymin = die.ymin + 100
-r2.xmax = die.xmax - 100
-r2.ymin = die.ymin + 100
+R = pg.rectangle((9300, 9300))
+Rinv = pg.invert(R, border = 300, layer = layers['gndetch'])
+Rinv.center = D.center
+D.add_ref(Rinv)
 
 D.write_gds('%s SNSPD Imager.gds' % die_name)
+
