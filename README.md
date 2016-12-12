@@ -2,6 +2,24 @@
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
 # Changelog
+## 0.5.6
+### Bugfixes
+ - Fixes to phidl.geometry.hecken_taper()
+
+### Changes
+ - pg.taper() now has a default argument of width2=None
+
+### New features
+ - Fill tool (phidl.geometry.fill_rectangle) now allows you to invert the fill
+- New function pg.invert() which will perform a boolean inversion on elements
+
+## 0.5.5
+### Bugfixes
+ - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
+
+## 0.5.4
+### Changes
+ - A few under-the-hood optimizations
 ## 0.5.5
 ### Bugfixes
  - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
