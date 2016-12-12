@@ -522,8 +522,8 @@ def snspd_squares(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), num_pts = 20
 #
 #==============================================================================
 
-
-def taper(length = 10, width1 = 5, width2 = 8, port = None, layer = 0):
+# TODO change this so "width1" and "width2" arguments can accept Port directly
+def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     if type(port) is Port and width1 is None: width1 = port.width
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
@@ -626,22 +626,24 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     widths = np.array([_find_microstrip_wire_width(z, dielectric_thickness*1e-6, eps_r, Lk_per_sq)*1e6 for z in Z])
     x = ((xi_list/2)*length)
     
-    # TODO: Compensate for varying speed of light in the microstrip
-    # by shortening and lengthening sections according to the speed of light
-    # in that section
+    # Compensate for varying speed of light in the microstrip by shortening 
+    # and lengthening sections according to the speed of light in that section
     v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
+    dx = np.diff(x)
+    dx_compensated = dx/v[:-1]
+    x_compensated = np.cumsum(dx_compensated)
+    x = np.hstack([0,x_compensated])/max(x_compensated)*length
     
     # Create blank device and add taper polygon
     D = Device()
     xpts = np.concatenate([x, x[::-1]])
     ypts = np.concatenate([widths/2, -widths[::-1]/2])
     D.add_polygon((xpts,ypts), layer = layer)
-    D.add_port(name = 1, midpoint = (-length/2,0), width = widths[0], orientation = 180)
-    D.add_port(name = 2, midpoint = (length/2,0), width = widths[-1], orientation = 0)
+    D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
+    D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
-    dx = x[1]-x[0]
-    D.meta['num_squares'] = np.sum(dx/widths)
+    D.meta['num_squares'] = np.sum(dx_compensated/widths[:-1])
     D.meta['width1'] = widths[0]
     D.meta['width2'] = widths[-1]
     D.meta['Z1'] = Z[0]
@@ -659,20 +661,21 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
 
 
 
-def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, min_spacing = 0.5):
+def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
+                  min_spacing = 0.5, layer = 0):
     
     def taper_width(x):
         return np.interp(x, x_taper, w_taper)
         
         
-    def taper_section(x_start, x_end, num_pts = 30):
+    def taper_section(x_start, x_end, num_pts = 30, layer = 0):
         D = Device()
         length =  x_end - x_start
         x = np.linspace(0, length, num_pts)
         widths = np.linspace(taper_width(x_start), taper_width(x_end), num_pts)
         xpts = np.concatenate([x, x[::-1]])
         ypts = np.concatenate([widths/2, -widths[::-1]/2])
-        D.add_polygon((xpts,ypts), layer = 0)
+        D.add_polygon((xpts,ypts), layer = layer)
         D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
         D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
         return D
@@ -680,29 +683,31 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3, m
     def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0):
         D = Device()
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
-        path1.turn(radius = radius, angle = theta*pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
-        [D.add_polygon(p.points, layer = layer) for p in path1.polygons]
+        path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
+        [D.add_polygon(p, layer = layer) for p in path1.polygons]
         D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
-        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/pi)
+        D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/np.pi)
         return D
         
     D = Device('meander-taper')
     xpos1 = min(x_taper)
     xpos2 = min(x_taper) + meander_length
-    t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50) )
+    t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 50, layer = layer) )
     D.add_port(t.ports[1])
     dir_toggle = -1
     while xpos2 < max(x_taper):
         arc_width1 = taper_width(xpos2)
         arc_radius = max(spacing_factor*arc_width1, min_spacing)
-        arc_length = pi*arc_radius
+        arc_length = np.pi*arc_radius
         arc_width2 = taper_width(xpos2 + arc_length)
-        a = D.add_ref(  arc_tapered(radius = arc_radius, width1 = arc_width1, width2 = arc_width2, theta = 180*dir_toggle) )
+        A = arc_tapered(radius = arc_radius, width1 = arc_width1,
+                        width2 = arc_width2, theta = 180*dir_toggle, layer = layer)
+        a = D.add_ref(A)
         a.connect(port = 1, destination = t.ports[2])
         dir_toggle = -dir_toggle
         xpos1 = xpos2 + arc_length
         xpos2 = xpos1 + meander_length
-        t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30) )
+        t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30, layer = layer) )
         t.connect(port = 1, destination = a.ports[2])
     D.add_port(t.ports[2])
         
@@ -1112,8 +1117,8 @@ def _racetrack_gradual_parametric(t, R, N):
 #==============================================================================
 
 
-def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, source_length = 500,
-                  width_right = 200, width_left = 200, theta_resolution = 10, layer = 0):
+def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (500,300),  source_length = 500,
+                  arm_widths = (200, 200), theta_resolution = 10, layer = 0):
     
     #==========================================================================
     #  Create the basic geometry
@@ -1127,34 +1132,35 @@ def ytron_round(rho_intersection = 1, theta_intersection = 5, arm_length = 500, 
     # Rest of yTron
     xc = rho_intersection*cos(theta) 
     yc = rho_intersection*sin(theta) 
-    arm_x = arm_length*sin(theta) 
-    arm_y = arm_length*cos(theta) 
+    arm_x_left  = arm_lengths[0]*sin(theta) 
+    arm_y_left  = arm_lengths[0]*cos(theta) 
+    arm_x_right = arm_lengths[1]*sin(theta) 
+    arm_y_right = arm_lengths[1]*cos(theta) 
 
     # Write out x and y coords for yTron polygon
-    xpts = semicircle_x.tolist() + [xc+arm_x, xc+arm_x+width_right, xc+width_right, \
-           xc+width_right, 0, -(xc+width_left), -(xc+width_left), -(xc+arm_x+width_left), -(xc+arm_x)] 
-    ypts = semicircle_y.tolist() + [yc+arm_y,      yc+arm_y,      yc,   yc-source_length, yc-source_length,  \
-            yc-source_length,        yc,        yc+arm_y,    yc+arm_y] 
+    xpts = semicircle_x.tolist() + [xc+arm_x_right, xc+arm_x_right+arm_widths[1], xc+arm_widths[1], \
+           xc+arm_widths[1], 0, -(xc+arm_widths[0]), -(xc+arm_widths[0]), -(xc+arm_x_left+arm_widths[0]), -(xc+arm_x_left)] 
+    ypts = semicircle_y.tolist() + [yc+arm_y_right,      yc+arm_y_right,      yc,   yc-source_length, yc-source_length,  \
+            yc-source_length,        yc,        yc+arm_y_left,    yc+arm_y_left] 
     
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'ytron')
     D.add_polygon([xpts,ypts], layer = layer)
-    D.add_port(name = 'left', midpoint = [-(xc+arm_x+width_left/2), yc+arm_y],  width = width_left, orientation = 90)
-    D.add_port(name = 'right', midpoint = [xc+arm_x+width_right/2, yc+arm_y],  width = width_right, orientation = 90)
-    D.add_port(name = 'source', midpoint = [0+(width_right-width_left)/2, -source_length+yc],  width = width_left + width_right + 2*xc, orientation = -90)
+    D.add_port(name = 'left', midpoint = [-(xc+arm_x_left+arm_widths[0]/2), yc+arm_y_left],  width = arm_widths[0], orientation = 90)
+    D.add_port(name = 'right', midpoint = [xc+arm_x_right+arm_widths[1]/2, yc+arm_y_right],  width = arm_widths[1], orientation = 90)
+    D.add_port(name = 'source', midpoint = [0+(arm_widths[1]-arm_widths[0])/2, -source_length+yc],  width = arm_widths[0] + arm_widths[1] + 2*xc, orientation = -90)
     
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
     D.meta['rho'] = rho_intersection
-    D.meta['left_width'] = width_left
-    D.meta['right_width'] = width_right
-    D.meta['source_width'] = width_left + width_right + 2*xc
+    D.meta['left_width'] =   arm_widths[0]
+    D.meta['right_width'] =  arm_widths[1]
+    D.meta['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
 
     return D
-    
     
     
 #==============================================================================
@@ -1221,22 +1227,35 @@ def _expand_raster(raster, distance = (4,2)):
 
     
             
-def _fill_cell_rectangle(size = (20,20), layers = (0,1,3), densities = (0.5, 0.25, 0.7)):
+def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
+                         densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
     D = Device()
-    for layer, density in zip(layers, densities):
+    for layer, density, inv in zip(layers, densities, inverted):
         rectangle_size = np.array(size)*np.sqrt(density)
-        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
-        r.center = (0,0)
+#        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
+        R = rectangle(size = rectangle_size, layer = layer)
+        R.center = (0,0)
+        if inv is True:
+            A = rectangle(size = size)
+            A.center = (0,0)
+            A = A.get_polygons()
+            B = R.get_polygons()
+            p = gdspy.fast_boolean(A, B, operation = 'not')
+            D.add_polygon(p, layer = layer)
+        else:
+            D.add_ref(R)
     return D
 
-    
-def _fill_cell_device(size = None):
-    D = Device(name = 'fill_cell')
-    return D
 
     
-def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7), margin = 100, bbox = None):
-    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers, densities = fill_densities)
+def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, margin = 100,
+                   fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7),
+                   fill_inverted = None, bbox = None):
+    
+    # Create the fill cell.  If fill_inverted is not specified, assume all False
+    if fill_inverted is None: fill_inverted = [False]*len(fill_layers)
+    fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers,
+                                     densities = fill_densities, inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
     
     if exclude_layers is None:
@@ -1369,4 +1388,26 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
     D = Device()
     D.add_polygon(p, layer=layer)
     return D
+
     
+def invert(elements, border = 10, precision = 0.001, layer = 0):
+    
+    D = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): D.add_ref(e)
+        else: D.elements.append(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+    
+    # Build the rectangle around the device D
+    R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
+    R.center = D.center
+    
+    operandA = R.get_polygons()
+    operandB = D.get_polygons()
+    p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
+                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+        
+    D = Device()
+    D.add_polygon(p, layer=layer)
+    return D
