@@ -2,6 +2,18 @@
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
 # Changelog
+## 0.6.0
+
+### Changes
+ - phidl.geometry.route() works still but is being deprecated, will now be in phid.routing.route_basic().  pg.route() will be deleted in the near future
+
+### New features
+ - Several new photonic geometries by Sonia Buckley
+ - Advanced Manhattan routing written by Jeff Chiles
+
+### Bugfixes
+ - Very likely we added more bugs than we fixed in this version!
+
 ## 0.5.6
 ### Bugfixes
  - Fixes to phidl.geometry.hecken_taper()

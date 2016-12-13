@@ -33,7 +33,7 @@ from matplotlib import pyplot as plt
 #from matplotlib.patches import Polygon as PolygonPatch
 #from matplotlib.collections import PatchCollection
 
-__version__ = '0.5.6'
+__version__ = '0.6.0'
 
 
 

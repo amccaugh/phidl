@@ -12,12 +12,12 @@ install_requires=[
 ]
 
 setup(name='phidl',
-      version='0.5.6',
+      version='0.6.0',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',
       author_email='adam.mccaughan@nist.gov',
       packages=['phidl'],
-      py_modules=['phidl.geometry'],
+      py_modules=['phidl.geometry', 'phidl.routing'],
       package_dir = {'phidl': 'phidl'},
      )
