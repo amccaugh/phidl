@@ -6,6 +6,7 @@ import numpy as np
 import phidl.geometry as pg
 import gdspy
 from scipy.interpolate import interp1d
+import advancedRouting as aR
 
 ## parameters for rings
 #radius = 10
@@ -45,7 +46,7 @@ def grating(nperiods = 20, period = 0.75, ff = 0.5, wGrating = 20, lTaper = 10, 
     if partialetch is 0:
         # make the grating teeth
         for i in range(nperiods):
-            cgrating = G.add_ref(pg.compass(size=[period*ff,wGrating]), layer = 0)
+            cgrating = G.add_ref(pg.compass(size=[period*ff,wGrating], layer = 0))
             cgrating.x+=i*period
             
         # make the taper
@@ -119,8 +120,10 @@ def ccRings(radius = 10, gaps = [0.1, 0.2, 0.3], wRing = 0.5, wWg = 0.4, dR = 0.
     
     return D
     
-def lossRings(radius = 10, gaps = [0.1, 0.2, 0.3], wRing = 0.5, wWg = 0.4, dR = 0.15, period = 30, GratingDevice = gdspy.Cell, wgLayer = 0):
+def lossRings(radius = 10, rMin = 5, gaps = [0.1, 0.2, 0.3], wRing = 0.5, wWg = 0.4, period_vary = 0,
+              dR = 0.15, lBeamDump = 10, wMinBeamDump = 0.2, GratingDevice = gdspy.Cell, wgLayer = 0):
     
+    period = lBeamDump + radius + rMin + GratingDevice.xmax-GratingDevice.xmin + rMin + period_vary
     D = Device("loss rings")
     nrings = len(gaps)
     lWg = (nrings + 1)*period
@@ -144,23 +147,20 @@ def lossRings(radius = 10, gaps = [0.1, 0.2, 0.3], wRing = 0.5, wWg = 0.4, dR = 
         r = R.add_ref(pg.ring(radius = radius + dR*i, width = wRing, angle_resolution = 1, layer = wgLayer)) 
         r.move([period*i,0])
         r.ymax = wg.ymin - g
-        rwg = R.add_ref(pg.compass(size=[10, wWg], layer = wgLayer))
+        rwg = R.add_ref(pg.compass(size=[radius, wWg], layer = wgLayer))
         rwg.move([period*i, 0])
         rwg.ymax = r.ymin-g
-        rarc = R.add_ref(pg.arc(radius = 10, width = wWg, theta = 180, start_angle = 90, angle_resolution = 2.5, layer = wgLayer))
-        rarc.xmax = rwg.xmin
-        rarc.ymax = rwg.ymax
-        rtap = R.add_ref(pg.taper(length = 10, width1 = wWg, width2 = 0.1, port = None, layer = wgLayer))
+        
+        rtap = R.add_ref(pg.taper(length = lBeamDump, width1 = wWg, width2 = 0.1, port = None, layer = wgLayer))
         rtap.xmin = rwg.xmax
         rtap.ymax = rwg.ymax
         
-        rwg2 = R.add_ref(pg.compass(size=[10, wWg],layer = wgLayer))
-        rwg2.xmin = rarc.xmax
-        rwg2.ymin = rarc.ymin
-        
         g3 = R.add_ref(GratingDevice)
-        g3.xmin = rwg2.xmax
-        g3.connect(port = 1, destination = rwg2.ports['E'])
+        g3.reflect(g3.ports[1].midpoint, g3.ports[1].midpoint + [0, g3.ports[1].width])
+        bendRadius = np.maximum(rMin, (GratingDevice.ymax-GratingDevice.ymin)/4+1)
+        g3.y = rwg.y - 2*bendRadius
+        g3.xmin = rwg.xmax
+        R.add_ref(aR.routeManhattan(port1 = g3.ports[1], port2 = rwg.ports['W'],radius = bendRadius, layer = wgLayer))
           
     R.x = D.x
     D.add_ref(R)
