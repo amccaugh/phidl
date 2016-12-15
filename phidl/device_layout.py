@@ -1,17 +1,22 @@
 #==============================================================================
-# Potential improvements
-#==============================================================================
-
-# Add __or__, __and__, etc functionality to allow boolean operations
-# Create DeviceSet
-# Replace origin/destination with source/destination
-# 
-
-#==============================================================================
 # Major TODO
 #==============================================================================
 
- # TODO Add flatten()
+# TODO Set __all__ to avoid pg.gdspy and pg.integrate from showing up
+# TODO Make it so add_ref can take a list, and will return either a list or tuple
+# TODO Reintroduce bbox caching
+# TODO Add numbers to ports
+# TODO Add ability to make "alias" for DeviceReferences D['mybox']
+
+
+#==============================================================================
+# Minor TODO
+#==============================================================================
+# PHIDL Make inductor function
+# TODO Add flatten()
+# TODO add ability to use port.x and port.y
+# TODO make reflect allow a port input for p1 
+# TODO make __str__ for devicereference and include ports
 
 #==============================================================================
 # Imports
@@ -30,8 +35,6 @@ from numpy.linalg import norm
 import webcolors
 
 from matplotlib import pyplot as plt
-#from matplotlib.patches import Polygon as PolygonPatch
-#from matplotlib.collections import PatchCollection
 
 __version__ = '0.6.0'
 
