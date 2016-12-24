@@ -13,7 +13,6 @@
 #==============================================================================
 # PHIDL Make inductor function
 # TODO Add flatten()
-# TODO add ability to use port.x and port.y
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
 
@@ -247,7 +246,14 @@ class Port(object):
         dx = np.cos((self.orientation)*pi/180)
         dy = np.sin((self.orientation)*pi/180)
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
-        
+
+    @property
+    def x(self):
+        return self.midpoint[0]
+
+    @property
+    def y(self):
+        return self.midpoint[1]
         
 
 
