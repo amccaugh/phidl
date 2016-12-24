@@ -2,7 +2,6 @@
 # Major TODO
 #==============================================================================
 
-# TODO Set __all__ to avoid pg.gdspy and pg.integrate from showing up
 # TODO Make it so add_ref can take a list, and will return either a list or tuple
 # TODO Reintroduce bbox caching
 # TODO Add numbers to ports
@@ -235,13 +234,12 @@ class Port(object):
         right_point = self.midpoint + np.array([dx,dy])
         return np.array([left_point, right_point])
     
-    # FIXME currently broken
     @endpoints.setter
     def endpoints(self, points):
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
-        self.orientation = np.arctan2(-dy,dx)*180/pi
+        self.orientation = np.arctan2(dx,dy)*180/pi
         self.width = sqrt(dx**2 + dy**2)
         
     @property
