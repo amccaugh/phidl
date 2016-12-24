@@ -40,7 +40,7 @@ __version__ = '0.6.0'
 # Useful transformation functions
 #==============================================================================
 
-def rotate_points(points, angle = 45, center = (0,0)):
+def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -54,7 +54,7 @@ def rotate_points(points, angle = 45, center = (0,0)):
     if np.asarray(points).ndim == 1: 
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
-def reflect_points(points, p1 = (0,0), p2 = (1,0)):
+def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -295,7 +295,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        self.points = reflect_points(self.points, p1, p2)
+        self.points = _reflect_points(self.points, p1, p2)
         return self
 
     
@@ -483,7 +483,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             elif isinstance(e, DeviceReference):
                 e.rotate(angle, center)
         for p in self.ports.values():
-            p.midpoint = rotate_points(p.midpoint, angle, center)
+            p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
         return self
             
@@ -530,14 +530,14 @@ class Device(gdspy.Cell, _GeometryHelper):
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         for e in self.elements:
             if isinstance(e, gdspy.Polygon):
-                e.points = reflect_points(e.points, p1, p2)
+                e.points = _reflect_points(e.points, p1, p2)
             elif isinstance(e, gdspy.PolygonSet):
                 for poly in e.polygons:
-                    poly.points = reflect_points(poly.points, p1, p2)
+                    poly.points = _reflect_points(poly.points, p1, p2)
             elif isinstance(e, DeviceReference):
                 e.reflect(p1, p2)
         for p in self.ports.values():
-            p.midpoint = reflect_points(p.midpoint, p1, p2)
+            p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
             p.orientation = 2*phi - p.orientation
                 
@@ -581,7 +581,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             new_point[1] = -new_point[1]
             new_orientation = -orientation
         if rotation is not None:
-            new_point = rotate_points(new_point, angle = rotation, center = [0, 0])
+            new_point = _rotate_points(new_point, angle = rotation, center = [0, 0])
             new_orientation += rotation
         if origin is not None:
             new_point = new_point + np.array(origin)
@@ -623,7 +623,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def rotate(self, angle = 45, center = (0,0)):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
-        self.origin = rotate_points(self.origin, angle, center)
+        self.origin = _rotate_points(self.origin, angle, center)
         return self
         
         
@@ -636,7 +636,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         
         # Rotate so reflection axis aligns with x-axis
         angle = np.arctan((p2[1]-p1[1])/(p2[0]-p1[0]))*180/pi
-        self.origin = rotate_points(self.origin, angle = -angle, center = [0,0])
+        self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
         self.rotation -= angle
         
         # Reflect across x-axis
@@ -645,7 +645,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation = -self.rotation
         
         # Un-rotate and un-translate
-        self.origin = rotate_points(self.origin, angle = angle, center = [0,0])
+        self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
         self.rotation += angle
         self.origin = self.origin + p1
         return self
