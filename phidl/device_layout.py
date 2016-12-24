@@ -2,10 +2,8 @@
 # Major TODO
 #==============================================================================
 
-# TODO Make it so add_ref can take a list, and will return either a list or tuple
 # TODO Reintroduce bbox caching
 # TODO Add numbers to ports
-# TODO Add ability to make "alias" for DeviceReferences D['mybox']
 
 
 #==============================================================================
@@ -340,16 +338,26 @@ class Device(gdspy.Cell, _GeometryHelper):
         if (len(args) > 0) and callable(args[0]):
             D = _makedevice(*args, **kwargs)
             self.__dict__ = D.__dict__.copy() 
+
         # Otherwise, make a new blank device
         else:
             Device.uid += 1
             self.ports = {}
             self.parameters = {}
             self.meta = {}
+            self.aliases = {}
             self.references = []
             gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
             super(Device, self).__init__(name = gds_name, exclude_from_global=True)
 
+
+    def __getitem__(self, val):
+        """ If you have a Device D, allows access to aliases you made like D['arc2'] """
+        try:
+            return self.aliases[val]
+        except:
+            raise ValueError('PHIDL: Tried to access alias %s, which does not exist \
+                in this device' % val)
 
     @property
     def layers(self):
@@ -362,7 +370,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return np.array(self.get_bounding_box())
         
         
-    def add_ref(self, D):
+    def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
         if not isinstance(D, Device):
@@ -371,6 +379,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         d = DeviceReference(D)   # Create a DeviceReference (CellReference)
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
         self.references.append(d) # Add to the list of references (for convenience)
+
+        if alias is not None:
+            if alias in self.aliases:
+                raise ValueError("""[PHIDL] add_ref(): Alias already exists """)
+            self.aliases[alias] = d
         return d                # Return the DeviceReference (CellReference)
 
 
