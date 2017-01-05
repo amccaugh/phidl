@@ -97,8 +97,8 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'hairpin')
-    D.add_polygon([xpts,ypts])
-    D.add_polygon([xpts,-ypts])
+    D.add_polygon([xpts,ypts], layer = layer)
+    D.add_polygon([xpts,-ypts], layer = layer)
     
     xports = min(xpts)
     yports = -a + width/2
@@ -111,7 +111,8 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
 
     
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
-def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3, anticrowding_factor = 1.2):
+def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
+                 anticrowding_factor = 1.2, layer = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -182,7 +183,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'step')
-    D.add_polygon([xpts,ypts])
+    D.add_polygon([xpts,ypts], layer = layer)
     
     D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
     D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
@@ -444,7 +445,7 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     if terminals_same_side: num_meanders += np.mod(num_meanders,2) # Make number of meanders even
     
     D = Device(name = 'snspd')
-    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20)
+    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20, layer = layer)
     
     hp2 = D.add_ref(hairpin)
     top_port = hp2.ports[1]
@@ -467,8 +468,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
         bottom_port = hp1.ports[1]
     
     
-    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width]))
-    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width]))
+    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width]), layer = layer)
+    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width]), layer = layer)
     c_nw.connect('E', top_port)
     c_se.connect('E', bottom_port)
     
@@ -486,7 +487,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
     D = Device('snspd_expanded')
     s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
                      terminals_same_side = terminals_same_side, layer = layer))
-    step_device = optimal_step(start_width = wire_width, end_width = connector_width, num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3)
+    step_device = optimal_step(start_width = wire_width, end_width = connector_width,
+                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3, layer = layer)
     step1 = D.add_ref(step_device)
     step2 = D.add_ref(step_device)
     step1.connect(port = 1, destination = s.ports[1])
@@ -498,11 +500,6 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
     
     return D
     
-    
-
-def snspd_squares(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), num_pts = 20,
-                  terminals_same_side = False, layer = 0):
-    pass
     
 #==============================================================================
 # Example code
@@ -1250,9 +1247,9 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
 
 
     
-def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, margin = 100,
-                   fill_layers = (0,1,3), fill_densities = (0.5, 0.25, 0.7),
-                   fill_inverted = None, bbox = None):
+def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, include_layers = None,
+                    margin = 100, fill_layers = (0,1,3), 
+                   fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None):
     
     # Create the fill cell.  If fill_inverted is not specified, assume all False
     if fill_inverted is None: fill_inverted = [False]*len(fill_layers)
@@ -1261,24 +1258,27 @@ def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, margin = 100,
     F = Device(name = 'fill_pattern')
     
     if exclude_layers is None:
-        poly = D.get_polygons(by_spec=False, depth=None)
+        exclude_polys = D.get_polygons(by_spec=False, depth=None)
     else:
         exclude_layers = [_parse_layer(l) for l in exclude_layers]
-        poly = D.get_polygons(by_spec=True, depth=None)
-        poly = {key:poly[key] for key in poly if key in exclude_layers}
-        poly = itertools.chain.from_iterable(poly.values())
-#    elif np.array(exclude_layers).ndim == 1: # Then exclude_layers is a list of just layers e.g. [0,2,3]
-#        poly = D.get_polygons(by_spec=True, depth=None)
-#        poly = {key:poly[key] for key in poly if key[0] in exclude_layers} # Filter the dict
-#        poly = itertools.chain.from_iterable(poly.values()) # Concatenate dict values to long list
-#    elif np.array(exclude_layers).ndim == 2: # Then exclude_layers is a list of layers + datatypes e.g. [(0,1),(0,2),(1,0)]
-#        poly = D.get_polygons(by_spec=True, depth=None)
-#        poly = {key:poly[key] for key in poly if key in exclude_layers}
-#        poly = itertools.chain.from_iterable(poly.values())
+        exclude_polys = D.get_polygons(by_spec=True, depth=None)
+        exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in exclude_layers}
+        exclude_polys = itertools.chain.from_iterable(exclude_polys.values())
+        
+    if include_layers is None:
+        include_polys = []
+    else:
+        include_layers = [_parse_layer(l) for l in include_layers]
+        include_polys = D.get_polygons(by_spec=True, depth=None)
+        include_polys = {key:include_polys[key] for key in include_polys if key in include_layers}
+        include_polys = itertools.chain.from_iterable(include_polys.values())
+        
+        
         
     if bbox is None:  bbox = D.bbox
 
-    raster = _rasterize_polygons(polygons = poly, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
+    raster = _rasterize_polygons(polygons = exclude_polys, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
+    raster = raster & ~_rasterize_polygons(polygons = include_polys, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
     raster = _expand_raster(raster, distance = margin/np.array(fill_size))
     
     for i in range(np.size(raster,0)):

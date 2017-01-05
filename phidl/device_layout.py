@@ -2,7 +2,6 @@
 # Major TODO
 #==============================================================================
 
-# TODO Reintroduce bbox caching
 # TODO Add numbers to ports
 
 
@@ -182,6 +181,11 @@ class _GeometryHelper(object):
     def ymin(self, destination):
         self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
         
+    @property
+    def size(self):
+        bbox = self.bbox
+        return bbox[1] - bbox[0]
+
     @property
     def xsize(self):
         bbox = self.bbox
