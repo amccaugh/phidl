@@ -332,4 +332,33 @@ quickplot(D)
 
 
 
+#==============================================================================
+# Keeping track of geometry using the "alias" functionality
+#==============================================================================
+# It can be useful to keep track of our DeviceReferences without
+# needing to assign the refernce to a variable.  We can do this by specifying
+# an 'alias' for the added DeviceReference.
 
+# For instance, if we wanted to keep track of a circle references twice in D,
+# we might normally assign each reference to a separate variable:
+D = Device()
+C = pg.circle()
+c1 = D.add_ref(C)   # Add first reference
+c2 = D.add_ref(C)   # Add second reference
+c2.x += 10          # Move the second circle over by 10
+quickplot(c2)
+quickplot(D)
+
+
+# But rather than cluttering up the list of variables with these refernces,
+# we can instead create 'aliases' to each reference, and call them directly
+# out of D like you would with a Python dictionary.  For example:
+D = Device()
+C = pg.circle()
+D.add_ref(C, alias = 'circle1') # Add first reference 
+D.add_ref(C, alias = 'circle2') # Add second reference
+D['circle1'].x += 10            # Moving the second circle over by 10
+# Note that at this point, D['circle2'] is equivalent to the variable c2
+# we made above
+quickplot(D['circle2'])
+quickplot(D)

@@ -2,11 +2,7 @@
 # Major TODO
 #==============================================================================
 
-# TODO Set __all__ to avoid pg.gdspy and pg.integrate from showing up
-# TODO Make it so add_ref can take a list, and will return either a list or tuple
-# TODO Reintroduce bbox caching
 # TODO Add numbers to ports
-# TODO Add ability to make "alias" for DeviceReferences D['mybox']
 
 
 #==============================================================================
@@ -14,7 +10,6 @@
 #==============================================================================
 # PHIDL Make inductor function
 # TODO Add flatten()
-# TODO add ability to use port.x and port.y
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
 
@@ -44,7 +39,7 @@ __version__ = '0.6.1'
 # Useful transformation functions
 #==============================================================================
 
-def rotate_points(points, angle = 45, center = (0,0)):
+def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -58,7 +53,7 @@ def rotate_points(points, angle = 45, center = (0,0)):
     if np.asarray(points).ndim == 1: 
         return (points - c0) * ca + (points - c0)[::-1] * sa + c0
     
-def reflect_points(points, p1 = (0,0), p2 = (1,0)):
+def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
@@ -187,6 +182,11 @@ class _GeometryHelper(object):
         self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
         
     @property
+    def size(self):
+        bbox = self.bbox
+        return bbox[1] - bbox[0]
+
+    @property
     def xsize(self):
         bbox = self.bbox
         return bbox[1][0] - bbox[0][0]
@@ -235,13 +235,12 @@ class Port(object):
         right_point = self.midpoint + np.array([dx,dy])
         return np.array([left_point, right_point])
     
-    # FIXME currently broken
     @endpoints.setter
     def endpoints(self, points):
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
-        self.orientation = np.arctan2(-dy,dx)*180/pi
+        self.orientation = np.arctan2(dx,dy)*180/pi
         self.width = sqrt(dx**2 + dy**2)
         
     @property
@@ -249,7 +248,14 @@ class Port(object):
         dx = np.cos((self.orientation)*pi/180)
         dy = np.sin((self.orientation)*pi/180)
         return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
-        
+
+    @property
+    def x(self):
+        return self.midpoint[0]
+
+    @property
+    def y(self):
+        return self.midpoint[1]
         
 
 
@@ -293,7 +299,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        self.points = reflect_points(self.points, p1, p2)
+        self.points = _reflect_points(self.points, p1, p2)
         return self
 
     
@@ -336,16 +342,26 @@ class Device(gdspy.Cell, _GeometryHelper):
         if (len(args) > 0) and callable(args[0]):
             D = _makedevice(*args, **kwargs)
             self.__dict__ = D.__dict__.copy() 
+
         # Otherwise, make a new blank device
         else:
             Device.uid += 1
             self.ports = {}
             self.parameters = {}
             self.meta = {}
+            self.aliases = {}
             self.references = []
             gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
             super(Device, self).__init__(name = gds_name, exclude_from_global=True)
 
+
+    def __getitem__(self, val):
+        """ If you have a Device D, allows access to aliases you made like D['arc2'] """
+        try:
+            return self.aliases[val]
+        except:
+            raise ValueError('PHIDL: Tried to access alias %s, which does not exist \
+                in this device' % val)
 
     @property
     def layers(self):
@@ -358,7 +374,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return np.array(self.get_bounding_box())
         
         
-    def add_ref(self, D):
+    def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
         if not isinstance(D, Device):
@@ -367,6 +383,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         d = DeviceReference(D)   # Create a DeviceReference (CellReference)
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
         self.references.append(d) # Add to the list of references (for convenience)
+
+        if alias is not None:
+            if alias in self.aliases:
+                raise ValueError("""[PHIDL] add_ref(): Alias already exists """)
+            self.aliases[alias] = d
         return d                # Return the DeviceReference (CellReference)
 
 
@@ -466,7 +487,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             elif isinstance(e, DeviceReference):
                 e.rotate(angle, center)
         for p in self.ports.values():
-            p.midpoint = rotate_points(p.midpoint, angle, center)
+            p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
         return self
             
@@ -513,14 +534,14 @@ class Device(gdspy.Cell, _GeometryHelper):
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         for e in self.elements:
             if isinstance(e, gdspy.Polygon):
-                e.points = reflect_points(e.points, p1, p2)
+                e.points = _reflect_points(e.points, p1, p2)
             elif isinstance(e, gdspy.PolygonSet):
                 for poly in e.polygons:
-                    poly.points = reflect_points(poly.points, p1, p2)
+                    poly.points = _reflect_points(poly.points, p1, p2)
             elif isinstance(e, DeviceReference):
                 e.reflect(p1, p2)
         for p in self.ports.values():
-            p.midpoint = reflect_points(p.midpoint, p1, p2)
+            p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
             p.orientation = 2*phi - p.orientation
                 
@@ -564,7 +585,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             new_point[1] = -new_point[1]
             new_orientation = -orientation
         if rotation is not None:
-            new_point = rotate_points(new_point, angle = rotation, center = [0, 0])
+            new_point = _rotate_points(new_point, angle = rotation, center = [0, 0])
             new_orientation += rotation
         if origin is not None:
             new_point = new_point + np.array(origin)
@@ -606,7 +627,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def rotate(self, angle = 45, center = (0,0)):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
-        self.origin = rotate_points(self.origin, angle, center)
+        self.origin = _rotate_points(self.origin, angle, center)
         return self
         
         
@@ -619,7 +640,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         
         # Rotate so reflection axis aligns with x-axis
         angle = np.arctan((p2[1]-p1[1])/(p2[0]-p1[0]))*180/pi
-        self.origin = rotate_points(self.origin, angle = -angle, center = [0,0])
+        self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
         self.rotation -= angle
         
         # Reflect across x-axis
@@ -628,7 +649,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation = -self.rotation
         
         # Un-rotate and un-translate
-        self.origin = rotate_points(self.origin, angle = angle, center = [0,0])
+        self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
         self.rotation += angle
         self.origin = self.origin + p1
         return self
