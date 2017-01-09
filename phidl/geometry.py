@@ -373,6 +373,37 @@ def rectangle(size = (4,2), layer = 0):
     return D
 
 
+def cross(length = 10, width = 3, layer = 0):
+    D = Device(name = 'cross')
+    R = rectangle(size = (width, length))
+    r1 = D.add_ref(R).rotate(90)
+    r2 = D.add_ref(R)
+    r1.center = (0,0)
+    r2.center = (0,0)
+    return D
+
+
+def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
+    D = Device(name = 'ellipse')
+    a = radii[0]
+    b = radii[1]
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    r = a*b/(sqrt((b*cos(t))**2 + (a*sin(t))**2))
+    xpts = r*cos(t)
+    ypts = r*sin(t)
+    D.add_polygon(points = (xpts,ypts), layer = layer)
+    return D
+
+
+def circle(radius = 10, angle_resolution = 2.5, layer = 0):
+    D = Device(name = 'circle')
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    xpts = (radius*cos(t)).tolist()
+    ypts = (radius*sin(t)).tolist()
+    D.add_polygon(points = (xpts,ypts), layer = layer)
+    return D
+
+
 def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ring')
     inner_radius = radius - width/2

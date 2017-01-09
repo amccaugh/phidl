@@ -2,6 +2,24 @@
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
 # Changelog
+
+## 0.6.1
+
+### New features
+ - Added ability to make "alias" for DeviceReference.  See the tutorial
+ - Can now use Port.x and Port.y instead of calling Port.midpoint[0] and Port.midpoint[1]
+ - Added Device.size property.  Returns the equivalent of [Device.xsize, Device.ysize]
+ - Added include_layers to pg.fill_rectangle, allowing you to override exclude_layers
+ - Added pg.circle(), pg.cross(), and pg.ellipse()
+
+### Changes
+ - None
+
+### Bugfixes
+ - Fixed route_manhattan, had issue with using Device.add() instead of Device.add_ref()
+ - Fixed pg.snspd layer = 0 by default
+ - Fixed Port.endpoints
+
 ## 0.6.0
 
 ### Changes
