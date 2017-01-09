@@ -357,7 +357,7 @@ D = Device()
 C = pg.circle()
 D.add_ref(C, alias = 'circle1') # Add first reference 
 D.add_ref(C, alias = 'circle2') # Add second reference
-D['circle1'].x += 10            # Moving the second circle over by 10
+D['circle2'].x += 10            # Moving the second circle over by 10
 # Note that at this point, D['circle2'] is equivalent to the variable c2
 # we made above
 quickplot(D['circle2'])
