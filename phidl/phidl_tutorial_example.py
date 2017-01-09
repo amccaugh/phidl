@@ -362,3 +362,8 @@ D['circle2'].x += 10            # Moving the second circle over by 10
 # we made above
 quickplot(D['circle2'])
 quickplot(D)
+
+# You can also access the list of aliases for your Device whenever you want 
+# to by accessing Device.aliases, which is a Python dictionary.  For example:
+print(D.aliases)
+print(D.aliases.keys())
