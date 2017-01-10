@@ -468,7 +468,7 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 
 
 
-def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
+def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
           num_squares = None, terminals_same_side = False, layer = 0):
     if [size[0], size[1], num_squares].count(None) != 1:
         raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
@@ -524,15 +524,17 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     return D
 
     
-def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), 
+def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
            num_squares = None, connector_width = 1,
            terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
-    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
-                     terminals_same_side = terminals_same_side, layer = layer))
+    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch,
+                        size = size, num_squares = num_squares,
+                        terminals_same_side = terminals_same_side, layer = layer))
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
-                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3, layer = layer)
+                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
+                            layer = layer)
     step1 = D.add_ref(step_device)
     step2 = D.add_ref(step_device)
     step1.connect(port = 1, destination = s.ports[1])
