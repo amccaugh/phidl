@@ -4,6 +4,7 @@ import numpy as np
 
 from phidl import Device, Layer, quickplot
 import phidl.geometry as pg
+import phidl.routing as pr
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
 # and makes us a simple waveguide rectangle
@@ -180,7 +181,7 @@ quickplot(D2)
 #==============================================================================
 # Routing allows us to connect two ports which face each other with a smooth
 # polygon.  Since we connected our two 
-D2.add_ref( pg.route(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight') )
+D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight') )
 quickplot(D2)
 
 
