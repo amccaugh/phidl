@@ -469,9 +469,22 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 
 
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
-          terminals_same_side = False, layer = 0):
-    xsize = size[0]
-    ysize = size[1]
+          num_squares = None, terminals_same_side = False, layer = 0):
+    if [size[0], size[1], num_squares].count(None) != 1:
+        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
+                         ' the arguments ``num_squares`` and ``size`` be None'+
+                         ' to prevent overconstraining, for example:\n' +
+                         '>>> snspd(size = (3, None), num_squares = 2000)')
+    if size[0] is None:
+        ysize = size[1]
+        xsize = num_squares*wire_pitch*wire_width/ysize/2
+    elif size[1] is None:
+        xsize = size[0]
+        ysize = num_squares*wire_pitch*wire_width/xsize/2
+    else:
+        xsize = size[0]
+        ysize = size[1]
+        
     num_meanders = int(ysize/wire_pitch)
     if terminals_same_side: num_meanders += np.mod(num_meanders,2) # Make number of meanders even
     
@@ -480,15 +493,13 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     
     hp2 = D.add_ref(hairpin)
     top_port = hp2.ports[1]
-    while num_meanders > 1:
+    for n in range(1, num_meanders, 2):
         # Repeatedly add two new device references
         hp1 = D.add_ref(hairpin)
         hp1.rotate(180)
         hp1.connect(2, hp2.ports[2])
         hp2 = D.add_ref(hairpin)
         hp2.connect(1, hp1.ports[1])
-        
-        num_meanders -= 2
         
     bottom_port = hp2.ports[2]
     
@@ -498,22 +509,24 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
         hp1.connect(2, hp2.ports[2])
         bottom_port = hp1.ports[1]
     
-    
-    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width]), layer = layer)
-    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width]), layer = layer)
+    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
     c_nw.connect('E', top_port)
     c_se.connect('E', bottom_port)
     
     D.add_port(port = c_nw.ports['W'], name = 1)
     D.add_port(port = c_se.ports['W'], name = 2)
     
-    D.meta['num_squares'] = (int(ysize/wire_pitch)*xsize/2)/wire_width
+    D.meta['num_squares'] = 2*num_meanders*(xsize/wire_width)
+    D.meta['area'] = xsize*ysize
+    D.meta['size'] = (xsize, ysize)
     
     return D
 
     
-def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_width = 1,
-           num_pts = 20, terminals_same_side = False, layer = 0):
+def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), 
+           num_squares = None, connector_width = 1,
+           terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
     s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
@@ -536,11 +549,14 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
 # Example code
 #==============================================================================
     
-#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], num_pts = 20, terminals_same_side = True)
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], terminals_same_side = True)
 #quickplot(s)
 
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10, None],
+#          num_squares = 1000, terminals_same_side = True)
+#quickplot(s)
 
-#step = optimal_step(start_width = 10, end_width = 1, num_pts = 50, width_tol = 1e-3)
+#step = optimal_step(start_width = 10, end_width = 1, width_tol = 1e-3)
 #quickplot(step)
 
 
