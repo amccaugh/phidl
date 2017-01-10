@@ -1296,7 +1296,7 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
 
 
     
-def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, include_layers = None,
+def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'All', include_layers = None,
                     margin = 100, fill_layers = (0,1,3), 
                    fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None):
     
@@ -1306,12 +1306,12 @@ def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, include_layers
                                      densities = fill_densities, inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
     
-    if exclude_layers is None:
+    if avoid_layers.lower() == 'all':
         exclude_polys = D.get_polygons(by_spec=False, depth=None)
     else:
-        exclude_layers = [_parse_layer(l) for l in exclude_layers]
+        avoid_layers = [_parse_layer(l) for l in avoid_layers]
         exclude_polys = D.get_polygons(by_spec=True, depth=None)
-        exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in exclude_layers}
+        exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in avoid_layers}
         exclude_polys = itertools.chain.from_iterable(exclude_polys.values())
         
     if include_layers is None:
