@@ -375,7 +375,7 @@ def rectangle(size = (4,2), layer = 0):
 
 def cross(length = 10, width = 3, layer = 0):
     D = Device(name = 'cross')
-    R = rectangle(size = (width, length))
+    R = rectangle(size = (width, length), layer = layer)
     r1 = D.add_ref(R).rotate(90)
     r2 = D.add_ref(R)
     r1.center = (0,0)
@@ -1165,21 +1165,22 @@ def _racetrack_gradual_parametric(t, R, N):
 #==============================================================================
 
 
-def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (500,300),  source_length = 500,
-                  arm_widths = (200, 200), theta_resolution = 10, layer = 0):
+def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
+                arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                layer = 0):
     
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
-    theta = theta_intersection*pi/180
+    theta = theta*pi/180
     theta_resolution = theta_resolution*pi/180
     thetalist = np.linspace(-(pi-theta),-theta, int((pi-2*theta)/theta_resolution) + 2)
-    semicircle_x = rho_intersection*cos(thetalist)
-    semicircle_y = rho_intersection*sin(thetalist)+rho_intersection
+    semicircle_x = rho*cos(thetalist)
+    semicircle_y = rho*sin(thetalist)+rho
 
     # Rest of yTron
-    xc = rho_intersection*cos(theta) 
-    yc = rho_intersection*sin(theta) 
+    xc = rho*cos(theta) 
+    yc = rho*sin(theta) 
     arm_x_left  = arm_lengths[0]*sin(theta) 
     arm_y_left  = arm_lengths[0]*cos(theta) 
     arm_x_right = arm_lengths[1]*sin(theta) 
@@ -1203,7 +1204,7 @@ def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (5
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
-    D.meta['rho'] = rho_intersection
+    D.meta['rho'] = rho
     D.meta['left_width'] =   arm_widths[0]
     D.meta['right_width'] =  arm_widths[1]
     D.meta['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
@@ -1215,8 +1216,9 @@ def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (5
 # Example code
 #==============================================================================
 
-#y = ytron_round(rho_intersection = 5, theta_intersection = 5, theta_resolution = 10, arm_length = 500, \
-#                source_length = 500, width_right = 200, width_left = 200, layer = 0)
+#y = ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
+                # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                # layer = 0)
 #quickplot(y)
 
 
