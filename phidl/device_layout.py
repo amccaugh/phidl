@@ -31,7 +31,7 @@ import webcolors
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 
 
@@ -700,8 +700,8 @@ def _load_gds(filename, cell_name, load_ports = True):
 #==============================================================================
 
 
-def quickplot(items, overlay_ports = True, overlay_subports = True,
-              label_ports = True, new_window = True):
+def quickplot(items, show_ports = True, show_subports = True,
+              label_ports = True, label_aliases = False, new_window = True):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if new_window: fig, ax = plt.subplots(1)
@@ -727,11 +727,15 @@ def quickplot(items, overlay_ports = True, overlay_subports = True,
                 for name, port in item.ports.items():
                     _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
                     plt.text(port.midpoint[0], port.midpoint[1], name)
-            if isinstance(item, Device) and overlay_subports is True:
+            if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
                     for name, port in sd.ports.items():
                         _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
                         plt.text(port.midpoint[0], port.midpoint[1], name)
+            if isinstance(item, Device) and label_aliases is True:
+                for name, ref in item.aliases.items():
+                    plt.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
+                             weight = 'bold', size = 'large')
         elif isinstance(item, gdspy.Polygon):
             polygons = [item.points]
             layerprop = _get_layerprop(item.layer, item.datatype)
@@ -743,7 +747,6 @@ def quickplot(items, overlay_ports = True, overlay_subports = True,
             _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
-
     
 
 
@@ -781,6 +784,7 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     dx, dy = n[0], n[1]
     xbound, ybound = np.column_stack(port.endpoints)
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
-    plt.plot(xbound, ybound, 'r', linewidth = 3) # Draw port edge
-    plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale, head_width=0.3*arrow_scale, **kwargs)
+    plt.plot(xbound, ybound, 'r', alpha = 0.5, linewidth = 3) # Draw port edge
+    plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
+              head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
 
