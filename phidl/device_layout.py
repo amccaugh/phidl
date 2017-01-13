@@ -405,8 +405,13 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def add_polygon(self, points, layer = 0):
-#        if np.asarray(points).ndim == 3: # Then must be a list of polygons
-#            return [self.add_polygon(p) for p in points]
+        # Check if input a list of polygons by seeing if it's 3 levels deep
+        try:    
+            points[0][0][0] # Try to access first x point
+            return [self.add_polygon(p, layer) for p in points]
+        except: pass # Verified points is not a list of polygons, continue on
+        
+        
         if isinstance(points, gdspy.Polygon):
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
