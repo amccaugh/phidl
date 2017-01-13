@@ -755,7 +755,7 @@ def quickplot(items, show_ports = True, show_subports = True,
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
                     plt.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
-                             weight = 'bold', size = 'large')
+                             weight = 'bold', size = 'large', ha = 'center')
         elif isinstance(item, gdspy.Polygon):
             polygons = [item.points]
             layerprop = _get_layerprop(item.layer, item.datatype)
