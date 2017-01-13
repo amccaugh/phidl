@@ -337,7 +337,7 @@ quickplot(D)
 # Keeping track of geometry using the "alias" functionality
 #==============================================================================
 # It can be useful to keep track of our DeviceReferences without
-# needing to assign the refernce to a variable.  We can do this by specifying
+# needing to assign the reference to a variable.  We can do this by specifying
 # an 'alias' for the added DeviceReference.
 
 # For instance, if we wanted to keep track of a circle references twice in D,
@@ -346,7 +346,7 @@ D = Device()
 C = pg.circle()
 c1 = D.add_ref(C)   # Add first reference
 c2 = D.add_ref(C)   # Add second reference
-c2.x += 10          # Move the second circle over by 10
+c2.x += 15          # Move the second circle over by 10
 quickplot(c2)
 quickplot(D)
 
@@ -358,13 +358,34 @@ D = Device()
 C = pg.circle()
 D.add_ref(C, alias = 'circle1') # Add first reference 
 D.add_ref(C, alias = 'circle2') # Add second reference
-D['circle2'].x += 10            # Moving the second circle over by 10
+D['circle2'].x += 15            # Moving the second circle over by 10
 # Note that at this point, D['circle2'] is equivalent to the variable c2
 # we made above
-quickplot(D['circle2'])
-quickplot(D)
+quickplot(D['circle2'], label_aliases = True)
+quickplot(D, label_aliases = True)
 
 # You can also access the list of aliases for your Device whenever you want 
 # to by accessing Device.aliases, which is a Python dictionary.  For example:
 print(D.aliases)
 print(D.aliases.keys())
+
+
+#==============================================================================
+# Extracting shapes
+#==============================================================================
+# Say you want to copy a complicated shape from one layer to another.  You 
+# can do this using the D.extract() function, which will strip out the raw
+# polygon points from D and allow you to add them to another layer
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.ellipse(layer = 2)
+E3 = pg.ellipse(layer = 1)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+D.add_ref(E3).movex(30)
+quickplot(D)
+
+D2 = Device()
+ellipse_polygons = D.extract(layers = 1)
+D2.add_polygon(ellipse_polygons, layer = 3)
+quickplot(D2)

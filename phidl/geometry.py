@@ -375,7 +375,7 @@ def rectangle(size = (4,2), layer = 0):
 
 def cross(length = 10, width = 3, layer = 0):
     D = Device(name = 'cross')
-    R = rectangle(size = (width, length))
+    R = rectangle(size = (width, length), layer = layer)
     r1 = D.add_ref(R).rotate(90)
     r2 = D.add_ref(R)
     r1.center = (0,0)
@@ -468,10 +468,23 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 
 
 
-def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
-          terminals_same_side = False, layer = 0):
-    xsize = size[0]
-    ysize = size[1]
+def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
+          num_squares = None, terminals_same_side = False, layer = 0):
+    if [size[0], size[1], num_squares].count(None) != 1:
+        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
+                         ' the arguments ``num_squares`` and ``size`` be None'+
+                         ' to prevent overconstraining, for example:\n' +
+                         '>>> snspd(size = (3, None), num_squares = 2000)')
+    if size[0] is None:
+        ysize = size[1]
+        xsize = num_squares*wire_pitch*wire_width/ysize/2
+    elif size[1] is None:
+        xsize = size[0]
+        ysize = num_squares*wire_pitch*wire_width/xsize/2
+    else:
+        xsize = size[0]
+        ysize = size[1]
+        
     num_meanders = int(ysize/wire_pitch)
     if terminals_same_side: num_meanders += np.mod(num_meanders,2) # Make number of meanders even
     
@@ -480,15 +493,13 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
     
     hp2 = D.add_ref(hairpin)
     top_port = hp2.ports[1]
-    while num_meanders > 1:
+    for n in range(1, num_meanders, 2):
         # Repeatedly add two new device references
         hp1 = D.add_ref(hairpin)
         hp1.rotate(180)
         hp1.connect(2, hp2.ports[2])
         hp2 = D.add_ref(hairpin)
         hp2.connect(1, hp1.ports[1])
-        
-        num_meanders -= 2
         
     bottom_port = hp2.ports[2]
     
@@ -498,28 +509,32 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (3,3),
         hp1.connect(2, hp2.ports[2])
         bottom_port = hp1.ports[1]
     
-    
-    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width]), layer = layer)
-    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width]), layer = layer)
+    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
     c_nw.connect('E', top_port)
     c_se.connect('E', bottom_port)
     
     D.add_port(port = c_nw.ports['W'], name = 1)
     D.add_port(port = c_se.ports['W'], name = 2)
     
-    D.meta['num_squares'] = (int(ysize/wire_pitch)*xsize/2)/wire_width
+    D.meta['num_squares'] = 2*num_meanders*(xsize/wire_width)
+    D.meta['area'] = xsize*ysize
+    D.meta['size'] = (xsize, ysize)
     
     return D
 
     
-def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_width = 1,
-           num_pts = 20, terminals_same_side = False, layer = 0):
+def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
+           num_squares = None, connector_width = 1,
+           terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
-    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
-                     terminals_same_side = terminals_same_side, layer = layer))
+    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch,
+                        size = size, num_squares = num_squares,
+                        terminals_same_side = terminals_same_side, layer = layer))
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
-                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3, layer = layer)
+                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
+                            layer = layer)
     step1 = D.add_ref(step_device)
     step2 = D.add_ref(step_device)
     step1.connect(port = 1, destination = s.ports[1])
@@ -536,11 +551,14 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (3,3), connector_w
 # Example code
 #==============================================================================
     
-#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], num_pts = 20, terminals_same_side = True)
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], terminals_same_side = True)
 #quickplot(s)
 
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10, None],
+#          num_squares = 1000, terminals_same_side = True)
+#quickplot(s)
 
-#step = optimal_step(start_width = 10, end_width = 1, num_pts = 50, width_tol = 1e-3)
+#step = optimal_step(start_width = 10, end_width = 1, width_tol = 1e-3)
 #quickplot(step)
 
 
@@ -1147,21 +1165,22 @@ def _racetrack_gradual_parametric(t, R, N):
 #==============================================================================
 
 
-def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (500,300),  source_length = 500,
-                  arm_widths = (200, 200), theta_resolution = 10, layer = 0):
+def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
+                arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                layer = 0):
     
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
-    theta = theta_intersection*pi/180
+    theta = theta*pi/180
     theta_resolution = theta_resolution*pi/180
     thetalist = np.linspace(-(pi-theta),-theta, int((pi-2*theta)/theta_resolution) + 2)
-    semicircle_x = rho_intersection*cos(thetalist)
-    semicircle_y = rho_intersection*sin(thetalist)+rho_intersection
+    semicircle_x = rho*cos(thetalist)
+    semicircle_y = rho*sin(thetalist)+rho
 
     # Rest of yTron
-    xc = rho_intersection*cos(theta) 
-    yc = rho_intersection*sin(theta) 
+    xc = rho*cos(theta) 
+    yc = rho*sin(theta) 
     arm_x_left  = arm_lengths[0]*sin(theta) 
     arm_y_left  = arm_lengths[0]*cos(theta) 
     arm_x_right = arm_lengths[1]*sin(theta) 
@@ -1185,7 +1204,7 @@ def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (5
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
-    D.meta['rho'] = rho_intersection
+    D.meta['rho'] = rho
     D.meta['left_width'] =   arm_widths[0]
     D.meta['right_width'] =  arm_widths[1]
     D.meta['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
@@ -1197,8 +1216,9 @@ def ytron_round(rho_intersection = 1, theta_intersection = 2.5, arm_lengths = (5
 # Example code
 #==============================================================================
 
-#y = ytron_round(rho_intersection = 5, theta_intersection = 5, theta_resolution = 10, arm_length = 500, \
-#                source_length = 500, width_right = 200, width_left = 200, layer = 0)
+#y = ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
+                # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                # layer = 0)
 #quickplot(y)
 
 
@@ -1278,7 +1298,7 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
 
 
     
-def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, include_layers = None,
+def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'All', include_layers = None,
                     margin = 100, fill_layers = (0,1,3), 
                    fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None):
     
@@ -1288,12 +1308,12 @@ def fill_rectangle(D, fill_size = (40,10), exclude_layers = None, include_layers
                                      densities = fill_densities, inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
     
-    if exclude_layers is None:
+    if avoid_layers.lower() == 'all':
         exclude_polys = D.get_polygons(by_spec=False, depth=None)
     else:
-        exclude_layers = [_parse_layer(l) for l in exclude_layers]
+        avoid_layers = [_parse_layer(l) for l in avoid_layers]
         exclude_polys = D.get_polygons(by_spec=True, depth=None)
-        exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in exclude_layers}
+        exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in avoid_layers}
         exclude_polys = itertools.chain.from_iterable(exclude_polys.values())
         
     if include_layers is None:
