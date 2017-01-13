@@ -22,7 +22,7 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-import yaml
+import itertools
 from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
@@ -73,7 +73,7 @@ def reset():
 
 class Layer(object):
     layer_dict = {}
-    
+
     def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
                  description = 'Gold pads liftoff', inverted = False,
                  color = None, alpha = 0.6):
@@ -374,6 +374,19 @@ class Device(gdspy.Cell, _GeometryHelper):
         return np.array(self.get_bounding_box())
         
         
+    def extract(self, layers = 'all'):
+        if layers == 'all':
+             polys = self.get_polygons(by_spec = False)
+        else:
+             if type(layers) not in (list, tuple):
+                 layers = [layers]
+             poly_dict = self.get_polygons(by_spec = True)
+             keys = [_parse_layer(layer) for layer in layers]
+             polys = [poly_dict[k] for k in keys if k in poly_dict]
+             polys = list(itertools.chain.from_iterable(polys))
+        return polys
+        
+        
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
@@ -392,6 +405,8 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def add_polygon(self, points, layer = 0):
+#        if np.asarray(points).ndim == 3: # Then must be a list of polygons
+#            return [self.add_polygon(p) for p in points]
         if isinstance(points, gdspy.Polygon):
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
