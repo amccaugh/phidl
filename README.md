@@ -3,6 +3,22 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.6.2
+
+### New features
+ - Added label_aliases=False default option to quickplot.  Do quickplot(D, label_aliases = True) to draw text with aliases on it
+ -  Added Device.extract().  See the tutorial for details
+ -  Device.add_polygon() can now receive lists of polygons, and will return lists in kind
+
+### Changes
+ - pg.snspd() and pg.snspd_expanded() can now be defined using any 2 constrains of: xsize, ysize, or num_squares.
+ -  Nomenclature change on pg.fill_rectangle(), from exclude_layers to avoid_layers
+ -  Changed pg.ytron_round() variable names, fixed layer error on cross
+
+### Bugfixes
+ -  Fixed SNSPD squares calculation and added num_squares constraints
+ -  
+
 ## 0.6.1
 
 ### New features
