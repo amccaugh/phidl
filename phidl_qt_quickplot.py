@@ -6,9 +6,13 @@ Created on Sun Jan 15 14:56:44 2017
 """
 import numpy as np
 
-polygon1 = np.array([[1,2],[3,6],[1,5]])
-polygon2 = np.array([[1,1],[3,8],[3,5]]) + 8
+polygon1 = np.array([[1,2],[3,6],[1,5]])*20
+polygon2 = np.array([[1,1],[3,8],[3,5]])*20 + 80
+polygon3 = np.array([[2,1],[3,9],[7,5]])*15 + 80
 my_polygons = [polygon1, polygon2]
+my_polygons2 = [polygon1, polygon2, polygon3]
+
+
 
 import sys, math
 from qtpy import QtCore, QtGui, QtWidgets
@@ -52,11 +56,64 @@ class MyWidget(QtWidgets.QWidget):
         
     def update_polygons(self, polygons):
         self.polygons = [self.create_polygon(poly) for poly in polygons]
+                         
+                         
             
-        
-app = QtWidgets.QApplication(sys.argv) 
+if QtCore.QCoreApplication.instance() is None:
+    app = QtWidgets.QApplication(sys.argv) 
 
 widget = MyWidget()
 widget.show()
 
-sys.exit(app.exec_())
+#sys.exit(app.exec_())
+
+
+def add_polygon_to_scene(points, scene):
+    qpoly = QtGui.QPolygonF()
+    for p in points:
+        qpoly.append(QtCore.QPointF(p[0], p[1]))
+    QtWidgets.QGraphicsPolygonItem(qpoly, scene)
+    
+    
+    
+scene = QtWidgets.QGraphicsScene()
+scene.addText("Hello, world!")
+add_polygon_to_scene(points = polygon1, scene)
+view = QtGQtWidgetsui.QGraphicsView(scene)
+view.show()
+
+
+
+
+#==============================================================================
+# MyViewer
+#==============================================================================
+
+
+class MyViewer(QtGui.QGraphicsView):
+    def __init__(self, parent):
+        super(MyViewer, self).__init__(parent)
+
+#    def wheelEvent(self, event):
+#        """
+#        Zoom in or out of the view.
+#        """
+#        zoomInFactor = 1.25
+#        zoomOutFactor = 1 / zoomInFactor
+#    
+#        # Save the scene pos
+#        oldPos = self.mapToScene(event.pos())
+#    
+#        # Zoom
+#        if event.angleDelta().y() > 0:
+#            zoomFactor = zoomInFactor
+#        else:
+#            zoomFactor = zoomOutFactor
+#        self.scale(zoomFactor, zoomFactor)
+#    
+#        # Get the new position
+#        newPos = self.mapToScene(event.pos())
+#    
+#        # Move scene to old position
+#        delta = newPos - oldPos
+#        self.translate(delta.x(), delta.y())
