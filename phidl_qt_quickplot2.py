@@ -26,7 +26,7 @@ except:
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
 
-class MyView(QGraphicsView):
+class Viewer(QGraphicsView):
     def __init__(self):
         QGraphicsView.__init__(self)
 
@@ -46,8 +46,11 @@ class MyView(QGraphicsView):
          # Use OpenGL http://ralsina.me/stories/BBS53.html
 #        self.setViewport(QtOpenGL.QGLWidget())
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
-        self.pen = QPen(QtCore.Qt.black)
-        self.pen.setCosmetic(True)
+        self.pen = QPen(QtCore.Qt.black, 0)
+
+        # Various status variables
+        self._isPanning = False
+        self._mousePressed = None
 
         for i in range(5):
             self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
@@ -84,7 +87,7 @@ class MyView(QGraphicsView):
 #==============================================================================
     def wheelEvent(self, event):
         # Zoom Factor
-        zoomInFactor = 1.25
+        zoomInFactor = 1.4
         zoomOutFactor = 1 / zoomInFactor
     
         # Set Anchors
@@ -116,20 +119,48 @@ class MyView(QGraphicsView):
     def mousePressEvent(self, event):
         # Create the rubberband object (for zoom to rectangle)
         self._rb_origin = QPoint()
+#        self._mousePressedPos = event.pos()
+#        self._mousePressed = event.button()
         
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MidButton:
+            self._mousePressed = Qt.MidButton
             self._rb_origin = QPoint(event.pos())
             self.rubberBand.setGeometry(QRect(self._rb_origin, QSize()))
 #            self.rubberBand.show()
-            
+         #==============================================================================
+        # Mouse panning, taken from
+        # http://stackoverflow.com/a/15043279
+        #==============================================================================
+        elif event.button() == Qt.RightButton:
+            self._mousePressed = Qt.RightButton
+            self._mousePressedPos = event.pos()
+            self.setCursor(QtCore.Qt.ClosedHandCursor)
+            self._dragPos = event.pos()
+#            else:
+#                super(Viewer, self).mousePressEvent(event)
+
     def mouseMoveEvent(self, event):
-        if not self._rb_origin.isNull():
+        if not self._rb_origin.isNull() and self._mousePressed == Qt.MidButton:
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
             if abs(self.rubberBand.width()) > 3 or abs(self.rubberBand.height()) > 3:
                 self.rubberBand.show()
+                
+        if self._mousePressed == Qt.RightButton:
+            newPos = event.pos()
+            diff = newPos - self._dragPos
+            self._dragPos = newPos
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - diff.x())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
+            event.accept()
+#        else:
+#            x = self.mapToScene(event.pos()).x()
+#            y = self.mapToScene(event.pos()).y()
+#            self._position.setTextLabelPosition(event.x(),
+#                    event.y(),x,y)
+#            super(Viewer, self).mouseMoveEvent(event)
             
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MidButton:
             self.rubberBand.hide()
             rb_rect = QRect(self._rb_origin, event.pos())
 #            rb_corner1 = self._rb_origin # Each of these is a QPoint
@@ -163,19 +194,66 @@ class MyView(QGraphicsView):
 #                print('Viewport center mapped   = %s' % old_center)
 #                print('Rubberband center mapped = %s' % new_center)
     #            print('Total translation = %s' % delta)
-            
+    
+        if event.button() == Qt.RightButton:
+#            if event.modifiers() & Qt.ControlModifier:
+#                self.setCursor(Qt.OpenHandCursor)
+#            else:
+#            self._isPanning = False
+            self.setCursor(Qt.ArrowCursor)
+            self._mousePressed = None
+#        super(MyGraphicsView, self).mouseReleaseEvent(event)
             
 #            print('curen)
 #        zoom_factor = 
 #        newPos = self.mapToScene(rb_center)
 #        self.scale(zoomFactor, zoomFactor)
             
-            
-            
+
+current_viewer = None
+
+def quickplot2(D):
+    if QCoreApplication.instance() is None:
+        app = QApplication(sys.argv) 
+    view = Viewer()
+    view.show()
+    
+    if type(items) is not list:  items = [items]
+    
+#    for item in items:
+#        if isinstance(item, (Device, DeviceReference)):
+#            polygons_spec = item.get_polygons(by_spec=True, depth=None)
+#            for key in sorted(polygons_spec):
+#                polygons = polygons_spec[key]
+#                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+#                _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+#                               edgecolor = 'k', alpha = layerprop['alpha'])
+#                for name, port in item.ports.items():
+#                    _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+#                    plt.text(port.midpoint[0], port.midpoint[1], name)
+#            if isinstance(item, Device) and show_subports is True:
+#                for sd in item.references:
+#                    for name, port in sd.ports.items():
+#                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+#                        plt.text(port.midpoint[0], port.midpoint[1], name)
+#            if isinstance(item, Device) and label_aliases is True:
+#                for name, ref in item.aliases.items():
+#                    plt.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
+#                             weight = 'bold', size = 'large', ha = 'center')
+#        elif isinstance(item, gdspy.Polygon):
+#            polygons = [item.points]
+#            layerprop = _get_layerprop(item.layer, item.datatype)
+#            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+#                           edgecolor = 'k', alpha = layerprop['alpha'])
+#        elif isinstance(item, gdspy.PolygonSet):
+#            polygons = item.polygons
+#            layerprop = _get_layerprop(item.layer, item.datatype)
+#            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+#                           edgecolor = 'k', alpha = layerprop['alpha'])
 
 if QCoreApplication.instance() is None:
     app = QApplication(sys.argv) 
-view = MyView()
+view = Viewer()
 view.show()
 #p = view.add_polygons([polygon3], color = 'red')
 view.add_polygons(device_polygons, alpha = 0.5)
