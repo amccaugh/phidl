@@ -15,39 +15,47 @@ my_polygons2 = [polygon1, polygon2, polygon3]
 
 
 import sys
-#from qtpy import QtWidgets, QtCore, QtGui
-from PyQt4 import QtCore, QtGui, QtOpenGL
-from PyQt4.QtCore import QPoint, QRect, QSize, Qt
+try:
+    #from qtpy import QtWidgets, QtCore, QtGui
+    from PyQt4 import QtCore, QtGui, QtOpenGL, QGraphicsView
+    from PyQt4.QtCore import QPoint, QRect, QSize, Qt
+except:
+    from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
+    from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, Qt, QCoreApplication
+    from PyQt5.QtGui import QColor, QPolygonF
 
-class MyView(QtGui.QGraphicsView):
+
+class MyView(QGraphicsView):
     def __init__(self):
-        QtGui.QGraphicsView.__init__(self)
+        QGraphicsView.__init__(self)
 
-        self.setGeometry(QtCore.QRect(100, 100, 600, 250))
+        self.setGeometry(QRect(100, 100, 600, 250))
         self.setWindowTitle("PIHDL Graphics Window");
         
         # Create a QGraphicsScene which this view looks at
-        self.scene = QtGui.QGraphicsScene(self)
-        self.scene.setSceneRect(QtCore.QRectF())
+        self.scene = QGraphicsScene(self)
+        self.scene.setSceneRect(QRectF())
         self.setScene(self.scene)
         self.setInteractive(False)
+        self.scale(1,-1) # Flips around the Y axis
          # Use OpenGL http://ralsina.me/stories/BBS53.html
 #        self.setViewport(QtOpenGL.QGLWidget())
 
         for i in range(5):
-            self.item = QtGui.QGraphicsEllipseItem(i*75, 10, 60, 40)
+            self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
             self.scene.addItem(self.item)
             
             
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
-        qcolor = QtGui.QColor()
+        qcolor = QColor()
         qcolor.setNamedColor(color)
         qcolor.setAlphaF(alpha)
         for points in polygons:
-            qpoly = QtGui.QPolygonF()
+            qpoly = QPolygonF()
             for p in points:
-                qpoly.append(QtCore.QPointF(p[0], p[1]))
+                qpoly.append(QPointF(p[0], p[1]))
             scene_poly = self.scene.addPolygon(qpoly)
             scene_poly.setBrush(qcolor)
         
@@ -66,14 +74,14 @@ class MyView(QtGui.QGraphicsView):
         zoomOutFactor = 1 / zoomInFactor
     
         # Set Anchors
-        self.setTransformationAnchor(QtGui.QGraphicsView.NoAnchor)
-        self.setResizeAnchor(QtGui.QGraphicsView.NoAnchor)
+        self.setTransformationAnchor(QGraphicsView.NoAnchor)
+        self.setResizeAnchor(QGraphicsView.NoAnchor)
     
         # Save the scene pos
         oldPos = self.mapToScene(event.pos())
     
         # Zoom
-        if event.delta() > 0:
+        if event.angleDelta().y() > 0:
             zoomFactor = zoomInFactor
         else:
             zoomFactor = zoomOutFactor
@@ -93,7 +101,7 @@ class MyView(QtGui.QGraphicsView):
 #==============================================================================
     def mousePressEvent(self, event):
         # Create the rubberband object (for zoom to rectangle)
-        self.rubberBand = QtGui.QRubberBand(QtGui.QRubberBand.Rectangle, self)
+        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self._rb_origin = QPoint()
         
         if event.button() == Qt.LeftButton:
@@ -108,11 +116,37 @@ class MyView(QtGui.QGraphicsView):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.rubberBand.hide()
+            rb_rect = QRect(self._rb_origin, event.pos())
+            rb_corner1 = self._rb_origin # Each of these is a QPoint
+            rb_corner2 = event.pos()
+            rb_center = (rb_corner1 + rb_corner2)/2
+            rb_size = rb_rect.size()
+            
+            viewport_size = self.viewport().geometry().size()
+            
+            zoom_factor_x = abs(viewport_size.width() / rb_size.width())
+            zoom_factor_y = abs(viewport_size.height() / rb_size.height())
+            
+            viewport_center = self.viewport().geometry().center()
+            new_center = self.mapToScene(viewport_center)
+            old_center = self.mapToScene(rb_center)
+            
+            zoom_factor = min(zoom_factor_x, zoom_factor_y)
+            self.scale(zoom_factor, zoom_factor)
+            
+            delta = new_center - old_center
+            self.translate(delta.x(), delta.y())
+            
+#            print('curen)
+#        zoom_factor = 
+#        newPos = self.mapToScene(rb_center)
+#        self.scale(zoomFactor, zoomFactor)
+            
             
             
 
-if QtCore.QCoreApplication.instance() is None:
-    app = QtGui.QApplication(sys.argv) 
+if QCoreApplication.instance() is None:
+    app = QApplication(sys.argv) 
 view = MyView()
 view.show()
 #p = view.add_polygons([polygon3], color = 'red')
