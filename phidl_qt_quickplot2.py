@@ -49,8 +49,8 @@ class Viewer(QGraphicsView):
         self.pen = QPen(QtCore.Qt.black, 0)
 
         # Various status variables
-        self._isPanning = False
         self._mousePressed = None
+        self._rb_origin = QPoint()
 
         for i in range(5):
             self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
@@ -76,6 +76,8 @@ class Viewer(QGraphicsView):
         height = sr.height()
         self.scene.setSceneRect(QRectF(xmin-width, ymax-height, width*5, height*5))
         
+    def add_port(self, port):
+        pass
     
             
     def clear(self):
@@ -112,144 +114,94 @@ class Viewer(QGraphicsView):
         self.translate(delta.x(), delta.y())
         
         
-#==============================================================================
-#  Zoom to rectangle, from
-#  https://wiki.python.org/moin/PyQt/Selecting%20a%20region%20of%20a%20widget
-#==============================================================================
     def mousePressEvent(self, event):
-        # Create the rubberband object (for zoom to rectangle)
-        self._rb_origin = QPoint()
-#        self._mousePressedPos = event.pos()
-#        self._mousePressed = event.button()
-        
-        if event.button() == Qt.MidButton:
-            self._mousePressed = Qt.MidButton
+        #==============================================================================
+        #  Zoom to rectangle, from
+        #  https://wiki.python.org/moin/PyQt/Selecting%20a%20region%20of%20a%20widget
+        #==============================================================================
+        if event.button() == Qt.RightButton:
+            self._mousePressed = Qt.RightButton
             self._rb_origin = QPoint(event.pos())
             self.rubberBand.setGeometry(QRect(self._rb_origin, QSize()))
-#            self.rubberBand.show()
+            self.rubberBand.show()
          #==============================================================================
         # Mouse panning, taken from
         # http://stackoverflow.com/a/15043279
         #==============================================================================
-        elif event.button() == Qt.RightButton:
-            self._mousePressed = Qt.RightButton
+        elif event.button() == Qt.MidButton:
+            self._mousePressed = Qt.MidButton
             self._mousePressedPos = event.pos()
             self.setCursor(QtCore.Qt.ClosedHandCursor)
             self._dragPos = event.pos()
-#            else:
-#                super(Viewer, self).mousePressEvent(event)
+            
 
     def mouseMoveEvent(self, event):
-        if not self._rb_origin.isNull() and self._mousePressed == Qt.MidButton:
+        if not self._rb_origin.isNull() and self._mousePressed == Qt.RightButton:
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
-            if abs(self.rubberBand.width()) > 3 or abs(self.rubberBand.height()) > 3:
-                self.rubberBand.show()
                 
-        if self._mousePressed == Qt.RightButton:
+        if self._mousePressed == Qt.MidButton:
             newPos = event.pos()
             diff = newPos - self._dragPos
             self._dragPos = newPos
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - diff.x())
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
-            event.accept()
-#        else:
-#            x = self.mapToScene(event.pos()).x()
-#            y = self.mapToScene(event.pos()).y()
-#            self._position.setTextLabelPosition(event.x(),
-#                    event.y(),x,y)
-#            super(Viewer, self).mouseMoveEvent(event)
+#            event.accept()
             
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MidButton:
+        if event.button() == Qt.RightButton:
             self.rubberBand.hide()
             rb_rect = QRect(self._rb_origin, event.pos())
-#            rb_corner1 = self._rb_origin # Each of these is a QPoint
-#            rb_corner2 = event.pos()
-#            rb_center = (rb_corner1 + rb_corner2)/2
             rb_center = rb_rect.center()
             rb_size = rb_rect.size()
             
-            if abs(rb_size.width()) > 2 and abs(rb_size.height()) > 2:
+            if abs(rb_size.width()) > 3 and abs(rb_size.height()) > 3:
                 viewport_size = self.viewport().geometry().size()
                 
                 zoom_factor_x = abs(viewport_size.width() / rb_size.width())
                 zoom_factor_y = abs(viewport_size.height() / rb_size.height())
                 
-    #            viewport_center = self.viewport().geometry().center()
-                
-    #            old_center = self.mapToScene(viewport_center)
                 new_center = self.mapToScene(rb_center)
-    #            delta =  old_center - new_center
-    #            self.translate(delta.x(), delta.y())
                 
                 zoom_factor = min(zoom_factor_x, zoom_factor_y)
                 self.scale(zoom_factor, zoom_factor)
                 self.centerOn(new_center)
-                
-#                print('\n###\n')
-#                print('Rubberband corner1 = %s' % rb_corner1)
-#                print('Rubberband corner2 = %s' % rb_corner2)
-#                print('Rubberband center  = %s' % rb_center)
-##                print('Viewport center    = %s' % viewport_center)
-#                print('Viewport center mapped   = %s' % old_center)
-#                print('Rubberband center mapped = %s' % new_center)
-    #            print('Total translation = %s' % delta)
     
-        if event.button() == Qt.RightButton:
-#            if event.modifiers() & Qt.ControlModifier:
-#                self.setCursor(Qt.OpenHandCursor)
-#            else:
-#            self._isPanning = False
+        if event.button() == Qt.MidButton:
             self.setCursor(Qt.ArrowCursor)
             self._mousePressed = None
-#        super(MyGraphicsView, self).mouseReleaseEvent(event)
-            
-#            print('curen)
-#        zoom_factor = 
-#        newPos = self.mapToScene(rb_center)
-#        self.scale(zoomFactor, zoomFactor)
             
 
-current_viewer = None
+if QCoreApplication.instance() is None:
+    app = QApplication(sys.argv) 
+viewer = Viewer()
+viewer.show()
 
-def quickplot2(D):
-    if QCoreApplication.instance() is None:
-        app = QApplication(sys.argv) 
-    view = Viewer()
-    view.show()
-    
-    if type(items) is not list:  items = [items]
-    
-#    for item in items:
-#        if isinstance(item, (Device, DeviceReference)):
-#            polygons_spec = item.get_polygons(by_spec=True, depth=None)
-#            for key in sorted(polygons_spec):
-#                polygons = polygons_spec[key]
-#                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
-#                _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-#                               edgecolor = 'k', alpha = layerprop['alpha'])
-#                for name, port in item.ports.items():
-#                    _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-#                    plt.text(port.midpoint[0], port.midpoint[1], name)
-#            if isinstance(item, Device) and show_subports is True:
-#                for sd in item.references:
-#                    for name, port in sd.ports.items():
-#                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-#                        plt.text(port.midpoint[0], port.midpoint[1], name)
-#            if isinstance(item, Device) and label_aliases is True:
-#                for name, ref in item.aliases.items():
-#                    plt.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
-#                             weight = 'bold', size = 'large', ha = 'center')
-#        elif isinstance(item, gdspy.Polygon):
-#            polygons = [item.points]
-#            layerprop = _get_layerprop(item.layer, item.datatype)
-#            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-#                           edgecolor = 'k', alpha = layerprop['alpha'])
-#        elif isinstance(item, gdspy.PolygonSet):
-#            polygons = item.polygons
-#            layerprop = _get_layerprop(item.layer, item.datatype)
-#            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-#                           edgecolor = 'k', alpha = layerprop['alpha'])
+def quickplot2(item):
+    viewer.clear()
+    if isinstance(item, (phidl.device_layout.Device, phidl.device_layout.DeviceReference)):
+        polygons_spec = item.get_polygons(by_spec=True, depth=None)
+        for key in sorted(polygons_spec):
+            polygons = polygons_spec[key]
+            layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+            viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
+
+
+
+def _get_layerprop(layer, datatype):
+    # Colors generated from here: http://phrogz.net/css/distinct-colors.html
+    layer_colors = ['#3dcc5c', '#2b0fff', '#cc3d3d', '#e5dd45', '#7b3dcc',
+    '#cc860c', '#73ff0f', '#2dccb4', '#ff0fa3', '#0ec2e6', '#3d87cc', '#e5520e']
+                     
+    l = Layer.layer_dict.get((layer, datatype))
+    if l is not None:
+        color = l.color
+        alpha = l.alpha
+    else:
+        color = layer_colors[np.mod(layer, len(layer_colors))]
+        alpha = 0.8
+    return {'color':color, 'alpha':alpha}
+
+
 
 if QCoreApplication.instance() is None:
     app = QApplication(sys.argv) 
@@ -257,33 +209,3 @@ view = Viewer()
 view.show()
 #p = view.add_polygons([polygon3], color = 'red')
 view.add_polygons(device_polygons, alpha = 0.5)
-
-
-
-#view.setDragMode(view.ScrollHandDrag)
-#view.setInteractive(False)
-
-#sys.exit(app.exec_())
-
-
-
-#void Widget::mousePressEvent(QMouseEvent *event)
-#{
-#    origin = event->pos();
-#    if (!rubberBand)
-#        rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
-#    rubberBand->setGeometry(QRect(origin, QSize()));
-#    rubberBand->show();
-#}
-#
-#void Widget::mouseMoveEvent(QMouseEvent *event)
-#{
-#    rubberBand->setGeometry(QRect(origin, event->pos()).normalized());
-#}
-#
-#void Widget::mouseReleaseEvent(QMouseEvent *event)
-#{
-#    rubberBand->hide();
-#    // determine selection, for example using QRect::intersects()
-#    // and QRect::contains().
-#}
