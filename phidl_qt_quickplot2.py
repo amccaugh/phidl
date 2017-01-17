@@ -17,6 +17,7 @@ my_polygons2 = [polygon1, polygon2, polygon3]
 import sys
 #from qtpy import QtWidgets, QtCore, QtGui
 from PyQt4 import QtCore, QtGui, QtOpenGL
+from PyQt4.QtCore import QPoint, QRect, QSize, Qt
 
 class MyView(QtGui.QGraphicsView):
     def __init__(self):
@@ -37,18 +38,7 @@ class MyView(QtGui.QGraphicsView):
             self.item = QtGui.QGraphicsEllipseItem(i*75, 10, 60, 40)
             self.scene.addItem(self.item)
             
-#    def add_polygon(self, points, color = '#A8F22A', alpha = 1):
-#        qpoly = QtGui.QPolygonF()
-#        for p in points:
-#            qpoly.append(QtCore.QPointF(p[0], p[1]))
-#        poly = self.scene.addPolygon(qpoly)
-#        
-#        if color is not None:
-#            qcolor = QtGui.QColor()
-#            qcolor.setNamedColor(color)
-#            qcolor.setAlphaF(alpha)
-#            poly.setBrush(qcolor)
-##        return poly
+            
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         qcolor = QtGui.QColor()
@@ -67,7 +57,9 @@ class MyView(QtGui.QGraphicsView):
         self.scene.clear()
         
             
-    # Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
+#==============================================================================
+#  Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
+#==============================================================================
     def wheelEvent(self, event):
         # Zoom Factor
         zoomInFactor = 1.25
@@ -95,6 +87,29 @@ class MyView(QtGui.QGraphicsView):
         self.translate(delta.x(), delta.y())
         
         
+#==============================================================================
+#  Zoom to rectangle, from
+#  https://wiki.python.org/moin/PyQt/Selecting%20a%20region%20of%20a%20widget
+#==============================================================================
+    def mousePressEvent(self, event):
+        # Create the rubberband object (for zoom to rectangle)
+        self.rubberBand = QtGui.QRubberBand(QtGui.QRubberBand.Rectangle, self)
+        self._rb_origin = QPoint()
+        
+        if event.button() == Qt.LeftButton:
+            self._rb_origin = QPoint(event.pos())
+            self.rubberBand.setGeometry(QRect(self._rb_origin, QSize()))
+            self.rubberBand.show()
+            
+    def mouseMoveEvent(self, event):
+        if not self._rb_origin.isNull():
+            self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
+            
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.rubberBand.hide()
+            
+            
 
 if QtCore.QCoreApplication.instance() is None:
     app = QtGui.QApplication(sys.argv) 
@@ -102,8 +117,33 @@ view = MyView()
 view.show()
 #p = view.add_polygons([polygon3], color = 'red')
 view.add_polygons(device_polygons, alpha = 0.5)
-view.setDragMode(view.ScrollHandDrag)
-view.setInteractive(False)
+
+
+
+#view.setDragMode(view.ScrollHandDrag)
+#view.setInteractive(False)
 
 #sys.exit(app.exec_())
 
+
+
+#void Widget::mousePressEvent(QMouseEvent *event)
+#{
+#    origin = event->pos();
+#    if (!rubberBand)
+#        rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
+#    rubberBand->setGeometry(QRect(origin, QSize()));
+#    rubberBand->show();
+#}
+#
+#void Widget::mouseMoveEvent(QMouseEvent *event)
+#{
+#    rubberBand->setGeometry(QRect(origin, event->pos()).normalized());
+#}
+#
+#void Widget::mouseReleaseEvent(QMouseEvent *event)
+#{
+#    rubberBand->hide();
+#    // determine selection, for example using QRect::intersects()
+#    // and QRect::contains().
+#}
