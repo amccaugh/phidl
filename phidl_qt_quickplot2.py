@@ -15,22 +15,25 @@ my_polygons2 = [polygon1, polygon2, polygon3]
 
 
 import sys
-from qtpy import QtWidgets, QtCore, QtGui
+#from qtpy import QtWidgets, QtCore, QtGui
+from PyQt4 import QtCore, QtGui, QtOpenGL
 
-class MyView(QtWidgets.QGraphicsView):
+class MyView(QtGui.QGraphicsView):
     def __init__(self):
-        QtWidgets.QGraphicsView.__init__(self)
+        QtGui.QGraphicsView.__init__(self)
 
         self.setGeometry(QtCore.QRect(100, 100, 600, 250))
         self.setWindowTitle("PIHDL Graphics Window");
         
         # Create a QGraphicsScene which this view looks at
-        self.scene = QtWidgets.QGraphicsScene(self)
+        self.scene = QtGui.QGraphicsScene(self)
         self.scene.setSceneRect(QtCore.QRectF())
         self.setScene(self.scene)
+         # Use OpenGL http://ralsina.me/stories/BBS53.html
+        self.setViewport(QtOpenGL.QGLWidget())
 
         for i in range(5):
-            self.item = QtWidgets.QGraphicsEllipseItem(i*75, 10, 60, 40)
+            self.item = QtGui.QGraphicsEllipseItem(i*75, 10, 60, 40)
             self.scene.addItem(self.item)
             
     def add_polygon(self, points, color = '#A8F22A', alpha = 1):
@@ -44,13 +47,16 @@ class MyView(QtWidgets.QGraphicsView):
             qcolor.setNamedColor(color)
             qcolor.setAlphaF(alpha)
             poly.setBrush(qcolor)
-        return poly
-        
+#        return poly
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         for p in polygons:
             self.add_polygon(p, color = '#A8F22A', alpha = 1)
+    
             
+    def clear(self):
+        self.scene.clear()
+        
             
     # Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
     def wheelEvent(self, event):
@@ -59,8 +65,8 @@ class MyView(QtWidgets.QGraphicsView):
         zoomOutFactor = 1 / zoomInFactor
     
         # Set Anchors
-        self.setTransformationAnchor(QtWidgets.QGraphicsView.NoAnchor)
-        self.setResizeAnchor(QtWidgets.QGraphicsView.NoAnchor)
+        self.setTransformationAnchor(QtGui.QGraphicsView.NoAnchor)
+        self.setResizeAnchor(QtGui.QGraphicsView.NoAnchor)
     
         # Save the scene pos
         oldPos = self.mapToScene(event.pos())
@@ -82,9 +88,12 @@ class MyView(QtWidgets.QGraphicsView):
         
 
 if QtCore.QCoreApplication.instance() is None:
-    app = QtWidgets.QApplication(sys.argv) 
+    app = QtGui.QApplication(sys.argv) 
 view = MyView()
 view.show()
 p = view.add_polygon(polygon3, color = 'red')
 view.add_polygons(device_polygons)
 sys.exit(app.exec_())
+
+
+view.setViewport(QtOpenGL.QGLWidget)
