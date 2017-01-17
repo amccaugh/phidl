@@ -122,20 +122,32 @@ class MyView(QGraphicsView):
             rb_center = (rb_corner1 + rb_corner2)/2
             rb_size = rb_rect.size()
             
-            viewport_size = self.viewport().geometry().size()
+            if rb_size.width() > 2 and rb_size.height() > 2:
+                viewport_size = self.viewport().geometry().size()
+                
+                zoom_factor_x = abs(viewport_size.width() / rb_size.width())
+                zoom_factor_y = abs(viewport_size.height() / rb_size.height())
+                
+    #            viewport_center = self.viewport().geometry().center()
+                
+    #            old_center = self.mapToScene(viewport_center)
+                new_center = self.mapToScene(rb_center)
+    #            delta =  old_center - new_center
+    #            self.translate(delta.x(), delta.y())
+                
+                zoom_factor = min(zoom_factor_x, zoom_factor_y)
+                self.scale(zoom_factor, zoom_factor)
+                self.centerOn(new_center)
+                
+#                print('\n###\n')
+#                print('Rubberband corner1 = %s' % rb_corner1)
+#                print('Rubberband corner2 = %s' % rb_corner2)
+#                print('Rubberband center  = %s' % rb_center)
+##                print('Viewport center    = %s' % viewport_center)
+#                print('Viewport center mapped   = %s' % old_center)
+#                print('Rubberband center mapped = %s' % new_center)
+    #            print('Total translation = %s' % delta)
             
-            zoom_factor_x = abs(viewport_size.width() / rb_size.width())
-            zoom_factor_y = abs(viewport_size.height() / rb_size.height())
-            
-            viewport_center = self.viewport().geometry().center()
-            new_center = self.mapToScene(viewport_center)
-            old_center = self.mapToScene(rb_center)
-            
-            zoom_factor = min(zoom_factor_x, zoom_factor_y)
-            self.scale(zoom_factor, zoom_factor)
-            
-            delta = new_center - old_center
-            self.translate(delta.x(), delta.y())
             
 #            print('curen)
 #        zoom_factor = 
