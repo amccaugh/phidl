@@ -29,29 +29,38 @@ class MyView(QtGui.QGraphicsView):
         self.scene = QtGui.QGraphicsScene(self)
         self.scene.setSceneRect(QtCore.QRectF())
         self.setScene(self.scene)
+        self.setInteractive(False)
          # Use OpenGL http://ralsina.me/stories/BBS53.html
-        self.setViewport(QtOpenGL.QGLWidget())
+#        self.setViewport(QtOpenGL.QGLWidget())
 
         for i in range(5):
             self.item = QtGui.QGraphicsEllipseItem(i*75, 10, 60, 40)
             self.scene.addItem(self.item)
             
-    def add_polygon(self, points, color = '#A8F22A', alpha = 1):
-        qpoly = QtGui.QPolygonF()
-        for p in points:
-            qpoly.append(QtCore.QPointF(p[0], p[1]))
-        poly = self.scene.addPolygon(qpoly)
-        
-        if color is not None:
-            qcolor = QtGui.QColor()
-            qcolor.setNamedColor(color)
-            qcolor.setAlphaF(alpha)
-            poly.setBrush(qcolor)
-#        return poly
+#    def add_polygon(self, points, color = '#A8F22A', alpha = 1):
+#        qpoly = QtGui.QPolygonF()
+#        for p in points:
+#            qpoly.append(QtCore.QPointF(p[0], p[1]))
+#        poly = self.scene.addPolygon(qpoly)
+#        
+#        if color is not None:
+#            qcolor = QtGui.QColor()
+#            qcolor.setNamedColor(color)
+#            qcolor.setAlphaF(alpha)
+#            poly.setBrush(qcolor)
+##        return poly
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
-        for p in polygons:
-            self.add_polygon(p, color = '#A8F22A', alpha = 1)
+        qcolor = QtGui.QColor()
+        qcolor.setNamedColor(color)
+        qcolor.setAlphaF(alpha)
+        for points in polygons:
+            qpoly = QtGui.QPolygonF()
+            for p in points:
+                qpoly.append(QtCore.QPointF(p[0], p[1]))
+            scene_poly = self.scene.addPolygon(qpoly)
+            scene_poly.setBrush(qcolor)
+        
     
             
     def clear(self):
@@ -91,9 +100,10 @@ if QtCore.QCoreApplication.instance() is None:
     app = QtGui.QApplication(sys.argv) 
 view = MyView()
 view.show()
-p = view.add_polygon(polygon3, color = 'red')
-view.add_polygons(device_polygons)
-sys.exit(app.exec_())
+#p = view.add_polygons([polygon3], color = 'red')
+view.add_polygons(device_polygons, alpha = 0.5)
+view.setDragMode(view.ScrollHandDrag)
+view.setInteractive(False)
 
+#sys.exit(app.exec_())
 
-view.setViewport(QtOpenGL.QGLWidget)
