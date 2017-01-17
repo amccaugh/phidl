@@ -22,27 +22,38 @@ class MyView(QtWidgets.QGraphicsView):
         QtWidgets.QGraphicsView.__init__(self)
 
         self.setGeometry(QtCore.QRect(100, 100, 600, 250))
-
+        
+        # Create a QGraphicsScene which this view looks at
         self.scene = QtWidgets.QGraphicsScene(self)
         self.scene.setSceneRect(QtCore.QRectF())
-
         self.setScene(self.scene)
 
         for i in range(5):
             self.item = QtWidgets.QGraphicsEllipseItem(i*75, 10, 60, 40)
             self.scene.addItem(self.item)
             
-    def add_polygon(self, points):
+    def add_polygon(self, points, color = '#A8F22A', alpha = 1):
         qpoly = QtGui.QPolygonF()
         for p in points:
             qpoly.append(QtCore.QPointF(p[0], p[1]))
-        self.scene.addPolygon(qpoly)
+        poly = self.scene.addPolygon(qpoly)
         
+        if color is not None:
+            qcolor = QtGui.QColor()
+            qcolor.setNamedColor(color)
+            qcolor.setAlphaF(alpha)
+            poly.setBrush(qcolor)
+        return poly
+    
+    def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
+        for p in polygons:
+            self.add_polygon(p, color = '#A8F22A', alpha = 1)
 
 
 if QtCore.QCoreApplication.instance() is None:
     app = QtWidgets.QApplication(sys.argv) 
 view = MyView()
 view.show()
-view.add_polygon(polygon1)
+p = view.add_polygon(polygon3, color = 'red')
+view.add_polygons(device_polygons)
 sys.exit(app.exec_())
