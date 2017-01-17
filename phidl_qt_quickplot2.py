@@ -22,6 +22,7 @@ class MyView(QtWidgets.QGraphicsView):
         QtWidgets.QGraphicsView.__init__(self)
 
         self.setGeometry(QtCore.QRect(100, 100, 600, 250))
+        self.setWindowTitle("PIHDL Graphics Window");
         
         # Create a QGraphicsScene which this view looks at
         self.scene = QtWidgets.QGraphicsScene(self)
@@ -44,11 +45,41 @@ class MyView(QtWidgets.QGraphicsView):
             qcolor.setAlphaF(alpha)
             poly.setBrush(qcolor)
         return poly
+        
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         for p in polygons:
             self.add_polygon(p, color = '#A8F22A', alpha = 1)
-
+            
+            
+    # Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
+    def wheelEvent(self, event):
+        # Zoom Factor
+        zoomInFactor = 1.25
+        zoomOutFactor = 1 / zoomInFactor
+    
+        # Set Anchors
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.NoAnchor)
+        self.setResizeAnchor(QtWidgets.QGraphicsView.NoAnchor)
+    
+        # Save the scene pos
+        oldPos = self.mapToScene(event.pos())
+    
+        # Zoom
+        if event.delta() > 0:
+            zoomFactor = zoomInFactor
+        else:
+            zoomFactor = zoomOutFactor
+        self.scale(zoomFactor, zoomFactor)
+    
+        # Get the new position
+        newPos = self.mapToScene(event.pos())
+    
+        # Move scene to old position
+        delta = newPos - oldPos
+        self.translate(delta.x(), delta.y())
+        
+        
 
 if QtCore.QCoreApplication.instance() is None:
     app = QtWidgets.QApplication(sys.argv) 
