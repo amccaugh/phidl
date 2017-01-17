@@ -41,6 +41,7 @@ class MyView(QGraphicsView):
         self.scale(1,-1) # Flips around the Y axis
          # Use OpenGL http://ralsina.me/stories/BBS53.html
 #        self.setViewport(QtOpenGL.QGLWidget())
+        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
         for i in range(5):
             self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
@@ -101,17 +102,18 @@ class MyView(QGraphicsView):
 #==============================================================================
     def mousePressEvent(self, event):
         # Create the rubberband object (for zoom to rectangle)
-        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self._rb_origin = QPoint()
         
         if event.button() == Qt.LeftButton:
             self._rb_origin = QPoint(event.pos())
             self.rubberBand.setGeometry(QRect(self._rb_origin, QSize()))
-            self.rubberBand.show()
+#            self.rubberBand.show()
             
     def mouseMoveEvent(self, event):
         if not self._rb_origin.isNull():
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
+            if self.rubberBand.width() > 3 or self.rubberBand.height() > 3:
+                self.rubberBand.show()
             
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -122,7 +124,7 @@ class MyView(QGraphicsView):
             rb_center = (rb_corner1 + rb_corner2)/2
             rb_size = rb_rect.size()
             
-            if rb_size.width() > 2 and rb_size.height() > 2:
+            if rb_size.width() > 3 and rb_size.height() > 3:
                 viewport_size = self.viewport().geometry().size()
                 
                 zoom_factor_x = abs(viewport_size.width() / rb_size.width())
