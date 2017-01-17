@@ -23,7 +23,7 @@ except:
     from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
     from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
     from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, Qt, QCoreApplication
-    from PyQt5.QtGui import QColor, QPolygonF
+    from PyQt5.QtGui import QColor, QPolygonF, QPen
 
 
 class MyView(QGraphicsView):
@@ -37,11 +37,17 @@ class MyView(QGraphicsView):
         self.scene = QGraphicsScene(self)
         self.scene.setSceneRect(QRectF())
         self.setScene(self.scene)
+        
+        # Customize QGraphicsView
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setInteractive(False)
         self.scale(1,-1) # Flips around the Y axis
          # Use OpenGL http://ralsina.me/stories/BBS53.html
 #        self.setViewport(QtOpenGL.QGLWidget())
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+        self.pen = QPen(QtCore.Qt.black)
+        self.pen.setCosmetic(True)
 
         for i in range(5):
             self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
@@ -59,6 +65,13 @@ class MyView(QGraphicsView):
                 qpoly.append(QPointF(p[0], p[1]))
             scene_poly = self.scene.addPolygon(qpoly)
             scene_poly.setBrush(qcolor)
+            scene_poly.setPen(self.pen)
+        sr = self.scene.itemsBoundingRect()
+        ymax = sr.top()
+        xmin = sr.left()
+        width = sr.width()
+        height = sr.height()
+        self.scene.setSceneRect(QRectF(xmin-width, ymax-height, width*5, height*5))
         
     
             
@@ -112,19 +125,20 @@ class MyView(QGraphicsView):
     def mouseMoveEvent(self, event):
         if not self._rb_origin.isNull():
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
-            if self.rubberBand.width() > 3 or self.rubberBand.height() > 3:
+            if abs(self.rubberBand.width()) > 3 or abs(self.rubberBand.height()) > 3:
                 self.rubberBand.show()
             
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.rubberBand.hide()
             rb_rect = QRect(self._rb_origin, event.pos())
-            rb_corner1 = self._rb_origin # Each of these is a QPoint
-            rb_corner2 = event.pos()
-            rb_center = (rb_corner1 + rb_corner2)/2
+#            rb_corner1 = self._rb_origin # Each of these is a QPoint
+#            rb_corner2 = event.pos()
+#            rb_center = (rb_corner1 + rb_corner2)/2
+            rb_center = rb_rect.center()
             rb_size = rb_rect.size()
             
-            if rb_size.width() > 3 and rb_size.height() > 3:
+            if abs(rb_size.width()) > 2 and abs(rb_size.height()) > 2:
                 viewport_size = self.viewport().geometry().size()
                 
                 zoom_factor_x = abs(viewport_size.width() / rb_size.width())
