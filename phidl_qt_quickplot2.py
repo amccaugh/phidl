@@ -22,7 +22,7 @@ try:
 except:
     from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
     from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
-    from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, Qt, QCoreApplication
+    from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, Qt, QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
 
@@ -47,6 +47,8 @@ class Viewer(QGraphicsView):
 #        self.setViewport(QtOpenGL.QGLWidget())
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self.pen = QPen(QtCore.Qt.black, 0)
+        self.portpen = QPen(QtCore.Qt.red, 2)
+#        self.portpen.setCosmetic(True) # Makes constant width
 
         # Various status variables
         self._mousePressed = None
@@ -77,7 +79,10 @@ class Viewer(QGraphicsView):
         self.scene.setSceneRect(QRectF(xmin-width, ymax-height, width*5, height*5))
         
     def add_port(self, port):
-        pass
+        point1, point2 = port.endpoints
+        point1 = QPointF(point1[0], point1[1])
+        point2 = QPointF(point2[0], point2[1])
+        self.scene.addLine(QLineF(point1, point2), self.portpen)
     
             
     def clear(self):
@@ -171,10 +176,9 @@ class Viewer(QGraphicsView):
             self._mousePressed = None
             
 
-if QCoreApplication.instance() is None:
-    app = QApplication(sys.argv) 
-viewer = Viewer()
-viewer.show()
+#if QCoreApplication.instance() is None:
+#    app = QApplication(sys.argv) 
+#viewer = Viewer()
 
 def quickplot2(item):
     viewer.clear()
@@ -209,3 +213,4 @@ view = Viewer()
 view.show()
 #p = view.add_polygons([polygon3], color = 'red')
 view.add_polygons(device_polygons, alpha = 0.5)
+view.add_port(Port(width = 100))
