@@ -73,7 +73,10 @@ class Viewer(QGraphicsView):
         xmin = sr.left()
         width = sr.width()
         height = sr.height()
-        self.scene.setSceneRect(QRectF(xmin-width, ymax-height, width*5, height*5))
+        self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
+        
+    def reset_view(self):
+        self.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         
     def add_port(self, port):
         point1, point2 = port.endpoints
@@ -122,12 +125,11 @@ class Viewer(QGraphicsView):
         min_width = 10
         min_height = 10
         if ((actual_width > max_width) or (actual_height > max_height)) and (zoomFactor < 1):
-            print('Not zooming out')
+            pass
         elif ((actual_width < min_width) or (actual_height < min_height)) and (zoomFactor > 1):
-            print('Not zooming in')
+            pass
         else:
-#            self.scale(zoomFactor, zoomFactor)
-            self.zoom_view(zoomFactor)
+            self.zoom_view(np.clip(zoomFactor, 0.5, 2.0))
 #            zoom_factor = min(max_width/actual_width, max_height/actual_height)
 #            print(zoom_factor)
 #            view.scale(zoom_factor, zoom_factor)
@@ -145,10 +147,7 @@ class Viewer(QGraphicsView):
         
         
     def zoom_view(self, zoom_factor):
-        zoom_factor = max(0.5,zoom_factor)
-        zoom_factor = min(2,zoom_factor)
         self.scale(zoom_factor, zoom_factor)
-        print(zoom_factor)
         self.zoom_factor_total *= zoom_factor
         
         
@@ -203,7 +202,7 @@ class Viewer(QGraphicsView):
                 new_center = self.mapToScene(rb_center)
                 
                 zoom_factor = min(zoom_factor_x, zoom_factor_y)
-                self.scale(zoom_factor, zoom_factor)
+                self.zoom_view(zoom_factor)
                 self.centerOn(new_center)
     
         if event.button() == Qt.MidButton:
@@ -254,8 +253,9 @@ if QCoreApplication.instance() is None:
 view = Viewer()
 view.show()
 view.add_polygons(my_polygons2)
-#p = view.add_polygons([polygon3], color = 'red')
+view.reset_view()
 #view.add_polygons(device_polygons, alpha = 0.5)
+#p = view.add_polygons([polygon3], color = 'red')
 #view.add_port(Port(width = 100))
 
 
