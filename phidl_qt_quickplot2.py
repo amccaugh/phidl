@@ -5,25 +5,18 @@ Created on Mon Jan 16 16:18:40 2017
 @author: amcc
 """
 
+from __future__ import division, print_function, absolute_import
 import numpy as np
-
-polygon1 = np.array([[1,2],[3,6],[1,5]])*20
-polygon2 = np.array([[1,1],[3,8],[3,5]])*20 + 80
-polygon3 = np.array([[2,1],[3,9],[7,5]])*15 + 80
-my_polygons = [polygon1, polygon2]
-my_polygons2 = [polygon1, polygon2, polygon3]
-
-
 import sys
-try:
-    #from qtpy import QtWidgets, QtCore, QtGui
-    from PyQt4 import QtCore, QtGui, QtOpenGL, QGraphicsView
-    from PyQt4.QtCore import QPoint, QRect, QSize, Qt
-except:
-    from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
-    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
-    from PyQt5.QtCore import QPoint, QPointF, QRectF, QSize, Qt, QCoreApplication, QLineF
-    from PyQt5.QtGui import QColor, QPolygonF, QPen
+#try:
+from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
+from PyQt5.QtCore import QPoint, QPointF, QRectF, QRect, QSize, Qt, QCoreApplication, QLineF
+from PyQt5.QtGui import QColor, QPolygonF, QPen
+#except:
+#    #from qtpy import QtWidgets, QtCore, QtGui
+#    from PyQt4 import QtCore, QtGui, QtOpenGL, QGraphicsView
+#    from PyQt4.QtCore import QPoint, QRect, QSize, Qt
 
 
 class Viewer(QGraphicsView):
@@ -31,7 +24,7 @@ class Viewer(QGraphicsView):
         QGraphicsView.__init__(self)
 
         self.setGeometry(QRect(100, 100, 600, 250))
-        self.setWindowTitle("PIHDL Graphics Window");
+        self.setWindowTitle("PIHDL Graphics Windfiow");
         
         # Create a QGraphicsScene which this view looks at
         self.scene = QGraphicsScene(self)
@@ -53,6 +46,10 @@ class Viewer(QGraphicsView):
         # Various status variables
         self._mousePressed = None
         self._rb_origin = QPoint()
+        
+        self.zoom_factor_total = 1
+        
+        
 
         for i in range(5):
             self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
@@ -96,6 +93,7 @@ class Viewer(QGraphicsView):
         # Zoom Factor
         zoomInFactor = 1.4
         zoomOutFactor = 1 / zoomInFactor
+        zoom_percentage = 1.4
     
         # Set Anchors
         self.setTransformationAnchor(QGraphicsView.NoAnchor)
@@ -105,11 +103,35 @@ class Viewer(QGraphicsView):
         oldPos = self.mapToScene(event.pos())
     
         # Zoom
-        if event.angleDelta().y() > 0:
-            zoomFactor = zoomInFactor
+        mousewheel_rotation = event.angleDelta().y() # Typically = 15 on most mousewheels
+        zoomFactor = zoom_percentage **(mousewheel_rotation/15)
+#        print([mousewheel_rotation, zoomFactor])
+#        if event.angleDelta().y() > 0:
+#            zoomFactor = zoomInFactor
+#        else:
+#            zoomFactor = zoomOutFactor
+
+        
+        # Check to make sure we're not overzoomed
+        actual_rect = self.mapToScene(self.rect())
+        bbox_size = actual_rect[0] - actual_rect[2]
+        actual_width = abs(bbox_size.x())
+        actual_height = abs(bbox_size.y())
+        max_width = abs(self.scene.sceneRect().x()*3)
+        max_height = abs(self.scene.sceneRect().y()*3)
+        min_width = 10
+        min_height = 10
+        if ((actual_width > max_width) or (actual_height > max_height)) and (zoomFactor < 1):
+            print('Not zooming out')
+        elif ((actual_width < min_width) or (actual_height < min_height)) and (zoomFactor > 1):
+            print('Not zooming in')
         else:
-            zoomFactor = zoomOutFactor
-        self.scale(zoomFactor, zoomFactor)
+#            self.scale(zoomFactor, zoomFactor)
+            self.zoom_view(zoomFactor)
+#            zoom_factor = min(max_width/actual_width, max_height/actual_height)
+#            print(zoom_factor)
+#            view.scale(zoom_factor, zoom_factor)
+        
     
         # Get the new position
         newPos = self.mapToScene(event.pos())
@@ -117,6 +139,19 @@ class Viewer(QGraphicsView):
         # Move scene to old position
         delta = newPos - oldPos
         self.translate(delta.x(), delta.y())
+        
+        # Make sure Z isn't too much or too little
+        
+        
+        
+    def zoom_view(self, zoom_factor):
+        zoom_factor = max(0.5,zoom_factor)
+        zoom_factor = min(2,zoom_factor)
+        self.scale(zoom_factor, zoom_factor)
+        print(zoom_factor)
+        self.zoom_factor_total *= zoom_factor
+        
+        
         
         
     def mousePressEvent(self, event):
@@ -206,11 +241,22 @@ def _get_layerprop(layer, datatype):
     return {'color':color, 'alpha':alpha}
 
 
+    
+    
+polygon1 = np.array([[1,2],[3,6],[1,5]])*20
+polygon2 = np.array([[1,1],[3,8],[3,5]])*20 + 80
+polygon3 = np.array([[2,1],[3,9],[7,5]])*15 + 80
+my_polygons = [polygon1, polygon2]
+my_polygons2 = [polygon1, polygon2, polygon3]
 
 if QCoreApplication.instance() is None:
     app = QApplication(sys.argv) 
 view = Viewer()
 view.show()
+view.add_polygons(my_polygons2)
 #p = view.add_polygons([polygon3], color = 'red')
-view.add_polygons(device_polygons, alpha = 0.5)
-view.add_port(Port(width = 100))
+#view.add_polygons(device_polygons, alpha = 0.5)
+#view.add_port(Port(width = 100))
+
+
+#QRectF scenerect = QRectF(mapToScene(0,0), mapToScene(width(), height()));
