@@ -613,6 +613,17 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             
         return new_point, new_orientation
 
+    def extract(self, layers = 'all'):
+        if layers == 'all':
+             polys = self.get_polygons(by_spec = False)
+        else:
+             if type(layers) not in (list, tuple):
+                 layers = [layers]
+             poly_dict = self.get_polygons(by_spec = True)
+             keys = [_parse_layer(layer) for layer in layers]
+             polys = [poly_dict[k] for k in keys if k in poly_dict]
+             polys = list(itertools.chain.from_iterable(polys))
+        return polys
         
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves the DeviceReference from the origin point to the destination.  Both
