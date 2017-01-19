@@ -94,8 +94,6 @@ class Viewer(QGraphicsView):
 #==============================================================================
     def wheelEvent(self, event):
         # Zoom Factor
-        zoomInFactor = 1.4
-        zoomOutFactor = 1 / zoomInFactor
         zoom_percentage = 1.4
     
         # Set Anchors
@@ -106,13 +104,9 @@ class Viewer(QGraphicsView):
         oldPos = self.mapToScene(event.pos())
     
         # Zoom
-        mousewheel_rotation = event.angleDelta().y() # Typically = 15 on most mousewheels
-        zoomFactor = zoom_percentage **(mousewheel_rotation/15)
-#        print([mousewheel_rotation, zoomFactor])
-#        if event.angleDelta().y() > 0:
-#            zoomFactor = zoomInFactor
-#        else:
-#            zoomFactor = zoomOutFactor
+        mousewheel_rotation = event.angleDelta().y() # Typically = 120 on most mousewheels
+        zoomFactor = zoom_percentage**(mousewheel_rotation/120)
+        zoomFactor = np.clip(zoomFactor, 0.5, 2.0)
 
         
         # Check to make sure we're not overzoomed
@@ -129,7 +123,7 @@ class Viewer(QGraphicsView):
         elif ((actual_width < min_width) or (actual_height < min_height)) and (zoomFactor > 1):
             pass
         else:
-            self.zoom_view(np.clip(zoomFactor, 0.5, 2.0))
+            self.zoom_view(zoomFactor)
 #            zoom_factor = min(max_width/actual_width, max_height/actual_height)
 #            print(zoom_factor)
 #            view.scale(zoom_factor, zoom_factor)
