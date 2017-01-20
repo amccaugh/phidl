@@ -8,10 +8,15 @@ Created on Mon Jan 16 16:18:40 2017
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import sys
+
+
+from phidl import Device, Layer, quickplot
+import phidl.geometry as pg
+import phidl.routing as pr
 #try:
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
-from PyQt5.QtCore import QPoint, QPointF, QRectF, QRect, QSize, Qt, QCoreApplication, QLineF
+from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
 from PyQt5.QtGui import QColor, QPolygonF, QPen
 #except:
 #    #from qtpy import QtWidgets, QtCore, QtGui
@@ -105,8 +110,8 @@ class Viewer(QGraphicsView):
     
         # Zoom
         mousewheel_rotation = event.angleDelta().y() # Typically = 120 on most mousewheels
-        zoomFactor = zoom_percentage**(mousewheel_rotation/120)
-        zoomFactor = np.clip(zoomFactor, 0.5, 2.0)
+        zoom_factor = zoom_percentage**(mousewheel_rotation/120)
+        zoom_factor = np.clip(zoom_factor, 0.5, 2.0)
 
         
         # Check to make sure we're not overzoomed
@@ -116,35 +121,24 @@ class Viewer(QGraphicsView):
         actual_height = abs(bbox_size.y())
         max_width = abs(self.scene.sceneRect().x()*3)
         max_height = abs(self.scene.sceneRect().y()*3)
-        min_width = 10
-        min_height = 10
-        if ((actual_width > max_width) or (actual_height > max_height)) and (zoomFactor < 1):
+        min_width = 1
+        min_height = 1
+        if ((actual_width > max_width) or (actual_height > max_height)) and (zoom_factor < 1):
             pass
-        elif ((actual_width < min_width) or (actual_height < min_height)) and (zoomFactor > 1):
+        elif ((actual_width < min_width) or (actual_height < min_height)) and (zoom_factor > 1):
             pass
         else:
-            self.zoom_view(zoomFactor)
-#            zoom_factor = min(max_width/actual_width, max_height/actual_height)
-#            print(zoom_factor)
-#            view.scale(zoom_factor, zoom_factor)
-        
+            self.zoom_view(zoom_factor)
     
-        # Get the new position
+        # Get the new position and move scene to old position
         newPos = self.mapToScene(event.pos())
-    
-        # Move scene to old position
         delta = newPos - oldPos
         self.translate(delta.x(), delta.y())
-        
-        # Make sure Z isn't too much or too little
-        
         
         
     def zoom_view(self, zoom_factor):
         self.scale(zoom_factor, zoom_factor)
         self.zoom_factor_total *= zoom_factor
-        
-        
         
         
     def mousePressEvent(self, event):
@@ -166,7 +160,7 @@ class Viewer(QGraphicsView):
             self._mousePressedPos = event.pos()
             self.setCursor(QtCore.Qt.ClosedHandCursor)
             self._dragPos = event.pos()
-            
+
 
     def mouseMoveEvent(self, event):
         if not self._rb_origin.isNull() and self._mousePressed == Qt.RightButton:
@@ -180,6 +174,7 @@ class Viewer(QGraphicsView):
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
 #            event.accept()
             
+
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.RightButton:
             self.rubberBand.hide()
@@ -203,6 +198,10 @@ class Viewer(QGraphicsView):
             self.setCursor(Qt.ArrowCursor)
             self._mousePressed = None
             
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.reset_view()
+                
 
 #if QCoreApplication.instance() is None:
 #    app = QApplication(sys.argv) 
@@ -216,7 +215,10 @@ def quickplot2(item):
             polygons = polygons_spec[key]
             layerprop = _get_layerprop(layer = key[0], datatype = key[1])
             viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
-
+        for name, port in item.ports.items():
+            viewer.add_port(port)
+    viewer.reset_view()
+    viewer.setVisible(True)
 
 
 def _get_layerprop(layer, datatype):
@@ -244,13 +246,10 @@ my_polygons2 = [polygon1, polygon2, polygon3]
 
 if QCoreApplication.instance() is None:
     app = QApplication(sys.argv) 
-view = Viewer()
-view.show()
-view.add_polygons(my_polygons2)
-view.reset_view()
-#view.add_polygons(device_polygons, alpha = 0.5)
-#p = view.add_polygons([polygon3], color = 'red')
-#view.add_port(Port(width = 100))
-
-
-#QRectF scenerect = QRectF(mapToScene(0,0), mapToScene(width(), height()));
+viewer = Viewer()
+viewer.show()
+viewer.add_polygons(my_polygons2)
+viewer.reset_view()
+#viewer.add_polygons(device_polygons, alpha = 0.5)
+#p = viewer.add_polygons([polygon3], color = 'red')
+#viewer.add_port(Port(width = 100))
