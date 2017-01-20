@@ -15,7 +15,7 @@ import phidl.geometry as pg
 import phidl.routing as pr
 #try:
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand, QGraphicsLineItem
 from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
 from PyQt5.QtGui import QColor, QPolygonF, QPen
 #except:
@@ -46,7 +46,7 @@ class Viewer(QGraphicsView):
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self.pen = QPen(QtCore.Qt.black, 0)
         self.portpen = QPen(QtCore.Qt.red, 2)
-#        self.portpen.setCosmetic(True) # Makes constant width
+        self.portpen.setCosmetic(True) # Makes constant width
 
         # Various status variables
         self._mousePressed = None
@@ -67,9 +67,7 @@ class Viewer(QGraphicsView):
         qcolor.setNamedColor(color)
         qcolor.setAlphaF(alpha)
         for points in polygons:
-            qpoly = QPolygonF()
-            for p in points:
-                qpoly.append(QPointF(p[0], p[1]))
+            qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in points] )
             scene_poly = self.scene.addPolygon(qpoly)
             scene_poly.setBrush(qcolor)
             scene_poly.setPen(self.pen)
@@ -88,11 +86,17 @@ class Viewer(QGraphicsView):
         point1 = QPointF(point1[0], point1[1])
         point2 = QPointF(point2[0], point2[1])
         self.scene.addLine(QLineF(point1, point2), self.portpen)
-    
+        arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(400*port.width)
+        arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
+        arrow_scene_poly = self.scene.addPolygon(arrow_qpoly)
+        arrow_scene_poly.setPen(self.pen)
+        arrow_scene_poly.setRotation(port.orientation)
+        arrow_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
             
     def clear(self):
         self.scene.clear()
         
+            
             
 #==============================================================================
 #  Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
@@ -250,6 +254,7 @@ viewer = Viewer()
 viewer.show()
 viewer.add_polygons(my_polygons2)
 viewer.reset_view()
+#device_polygons = D.extract()
 #viewer.add_polygons(device_polygons, alpha = 0.5)
 #p = viewer.add_polygons([polygon3], color = 'red')
 #viewer.add_port(Port(width = 100))
