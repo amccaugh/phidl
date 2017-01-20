@@ -9,13 +9,13 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import sys
 
-
+import phidl
 from phidl import Device, Layer, quickplot
 import phidl.geometry as pg
 import phidl.routing as pr
 #try:
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QRubberBand, QGraphicsLineItem
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem
 from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
 from PyQt5.QtGui import QColor, QPolygonF, QPen
 #except:
@@ -47,11 +47,12 @@ class Viewer(QGraphicsView):
         self.pen = QPen(QtCore.Qt.black, 0)
         self.portpen = QPen(QtCore.Qt.red, 2)
         self.portpen.setCosmetic(True) # Makes constant width
+        self.portfont = QtGui.QFont('Arial', pointSize = 14)
+        self.portfontcolor = QtCore.Qt.red
 
         # Various status variables
         self._mousePressed = None
         self._rb_origin = QPoint()
-        
         self.zoom_factor_total = 1
         
         
@@ -86,12 +87,18 @@ class Viewer(QGraphicsView):
         point1 = QPointF(point1[0], point1[1])
         point2 = QPointF(point2[0], point2[1])
         self.scene.addLine(QLineF(point1, point2), self.portpen)
-        arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(400*port.width)
+        arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
         arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
         arrow_scene_poly = self.scene.addPolygon(arrow_qpoly)
-        arrow_scene_poly.setPen(self.pen)
+        arrow_scene_poly.setPen(self.portpen)
         arrow_scene_poly.setRotation(port.orientation)
         arrow_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
+        qtext = self.scene.addText(str(port.name), self.portfont)
+        rad = port.orientation*np.pi/180
+        x,y = port.endpoints[0]*1/4 +  port.endpoints[1]*3/4 + np.array([np.cos(rad), np.sin(rad)])*port.width/4
+        qtext.setPos(QPointF(x,y))
+        qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        qtext.setDefaultTextColor(self.portfontcolor)
             
     def clear(self):
         self.scene.clear()
