@@ -95,7 +95,9 @@ class Viewer(QGraphicsView):
         arrow_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
         qtext = self.scene.addText(str(port.name), self.portfont)
         rad = port.orientation*np.pi/180
-        x,y = port.endpoints[0]*1/4 +  port.endpoints[1]*3/4 + np.array([np.cos(rad), np.sin(rad)])*port.width/4
+        x,y = port.endpoints[0]*1/4 +  port.endpoints[1]*3/4 + np.array([np.cos(rad), np.sin(rad)])*port.width/8
+#        x,y = port.midpoint[0], port.midpoint[1]
+#        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
         qtext.setPos(QPointF(x,y))
         qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         qtext.setDefaultTextColor(self.portfontcolor)
