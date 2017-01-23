@@ -3,7 +3,7 @@
 from setuptools import setup
 
 install_requires=[
-   'gdspy=1.0',
+   'gdspy==1.0',
    'numpy',
    'matplotlib',
    'pyyaml',
