@@ -3,6 +3,11 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.6.3
+
+### Bugfixes
+ -  Under the hood
+ 
 ## 0.6.2
 
 ### New features
