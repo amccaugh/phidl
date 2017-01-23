@@ -271,18 +271,18 @@ class Viewer(QGraphicsView):
                 
         if event.key() == Qt.Key_F1:
             self.set_alias_visibility(not self.aliases_visible)
-            print('toggling f1')
-            print(self.aliases_visible)
+#            print('toggling f1')
+#            print(self.aliases_visible)
                 
         if event.key() == Qt.Key_F2:
             self.set_port_visibility(not self.ports_visible)
-            print('toggling f2')
-            print(self.ports_visible)
+#            print('toggling f2')
+#            print(self.ports_visible)
                 
         if event.key() == Qt.Key_F3:
             self.set_subport_visibility(not self.subports_visible)
-            print('toggling f3')
-            print(self.subports_visible)
+#            print('toggling f3')
+#            print(self.subports_visible)
 
 #if QCoreApplication.instance() is None:
 #    app = QApplication(sys.argv) 
