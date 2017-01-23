@@ -111,12 +111,12 @@ class Viewer(QGraphicsView):
             arrow_scene_poly.setPen(self.portpen)
             qline.setPen(self.portpen)
             qtext.setDefaultTextColor(self.portfontcolor)
-            self.portitems.append( (arrow_scene_poly, qline, qtext) )
+            self.portitems += [arrow_scene_poly, qline, qtext]
         else:
             arrow_scene_poly.setPen(self.subportpen)
             qline.setPen(self.subportpen)
             qtext.setDefaultTextColor(self.subportfontcolor)
-            self.subportitems.append( (arrow_scene_poly, qline, qtext) )
+            self.subportitems += [arrow_scene_poly, qline, qtext]
 #        self.portlabels.append(qtext)
         
     def add_aliases(self, aliases):
@@ -125,25 +125,25 @@ class Viewer(QGraphicsView):
             x,y = ref.center
             qtext.setPos(QPointF(x,y))
             qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-            self.aliasitems.append( [qtext] )
+            self.aliasitems += [qtext]
             
 #        x,y = port.midpoint[0], port.midpoint[1]
 #        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
 
     def set_port_visibility(self, visible = True):
         for item in self.portitems:
-            [p.setVisible(visible) for p in item]
+            item.setVisible(visible)
         self.ports_visible = visible
 
              
     def set_subport_visibility(self, visible = True):
         for item in self.subportitems:
-            [p.setVisible(visible) for p in item]
+            item.setVisible(visible)
         self.subports_visible = visible
                 
     def set_alias_visibility(self, visible = True):
         for item in self.aliasitems:
-            [p.setVisible(visible) for p in item]
+            item.setVisible(visible)
         self.aliases_visible = visible
                 
                 
