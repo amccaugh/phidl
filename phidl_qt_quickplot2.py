@@ -45,10 +45,17 @@ class Viewer(QGraphicsView):
 #        self.setViewport(QtOpenGL.QGLWidget())
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self.pen = QPen(QtCore.Qt.black, 0)
-        self.portpen = QPen(QtCore.Qt.red, 2)
+        self.portpen = QPen(QtCore.Qt.red, 3)
         self.portpen.setCosmetic(True) # Makes constant width
         self.portfont = QtGui.QFont('Arial', pointSize = 14)
         self.portfontcolor = QtCore.Qt.red
+        self.subportpen = QPen(QtCore.Qt.green, 3)
+        self.subportpen.setCosmetic(True) # Makes constant width
+        self.subportfont = QtGui.QFont('Arial', pointSize = 14)
+        self.subportfontcolor = QtCore.Qt.green
+        
+        # Tracking ports
+        self.initialize()
 
         # Various status variables
         self._mousePressed = None
@@ -82,15 +89,14 @@ class Viewer(QGraphicsView):
     def reset_view(self):
         self.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         
-    def add_port(self, port):
+    def add_port(self, port, is_subport = False):
         point1, point2 = port.endpoints
         point1 = QPointF(point1[0], point1[1])
         point2 = QPointF(point2[0], point2[1])
-        self.scene.addLine(QLineF(point1, point2), self.portpen)
+        qline = self.scene.addLine(QLineF(point1, point2))
         arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
         arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
         arrow_scene_poly = self.scene.addPolygon(arrow_qpoly)
-        arrow_scene_poly.setPen(self.portpen)
         arrow_scene_poly.setRotation(port.orientation)
         arrow_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
         qtext = self.scene.addText(str(port.name), self.portfont)
@@ -100,10 +106,58 @@ class Viewer(QGraphicsView):
 #        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
         qtext.setPos(QPointF(x,y))
         qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        qtext.setDefaultTextColor(self.portfontcolor)
+        
+        if not is_subport:
+            arrow_scene_poly.setPen(self.portpen)
+            qline.setPen(self.portpen)
+            qtext.setDefaultTextColor(self.portfontcolor)
+            self.portitems.append( (arrow_scene_poly, qline, qtext) )
+        else:
+            arrow_scene_poly.setPen(self.subportpen)
+            qline.setPen(self.subportpen)
+            qtext.setDefaultTextColor(self.subportfontcolor)
+            self.subportitems.append( (arrow_scene_poly, qline, qtext) )
+#        self.portlabels.append(qtext)
+        
+    def add_aliases(self, aliases):
+        for name, ref in aliases.items():
+            qtext = self.scene.addText(str(name), self.portfont)
+            x,y = ref.center
+            qtext.setPos(QPointF(x,y))
+            qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+            self.aliasitems.append( [qtext] )
             
-    def clear(self):
+#        x,y = port.midpoint[0], port.midpoint[1]
+#        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
+
+    def set_port_visibility(self, visible = True):
+        for item in self.portitems:
+            [p.setVisible(visible) for p in item]
+        self.ports_visible = visible
+
+             
+    def set_subport_visibility(self, visible = True):
+        for item in self.subportitems:
+            [p.setVisible(visible) for p in item]
+        self.subports_visible = visible
+                
+    def set_alias_visibility(self, visible = True):
+        for item in self.aliasitems:
+            [p.setVisible(visible) for p in item]
+        self.aliases_visible = visible
+                
+                
+            
+    def initialize(self):
         self.scene.clear()
+        self.polygons = {}
+        self.portitems = []
+        self.subportitems = []
+        self.aliasitems = []
+        self.aliases_visible = True
+        self.ports_visible = True
+        self.subports_visible = True
+        
         
             
             
@@ -215,13 +269,27 @@ class Viewer(QGraphicsView):
         if event.key() == Qt.Key_Escape:
             self.reset_view()
                 
+        if event.key() == Qt.Key_F1:
+            self.set_alias_visibility(not self.aliases_visible)
+            print('toggling f1')
+            print(self.aliases_visible)
+                
+        if event.key() == Qt.Key_F2:
+            self.set_port_visibility(not self.ports_visible)
+            print('toggling f2')
+            print(self.ports_visible)
+                
+        if event.key() == Qt.Key_F3:
+            self.set_subport_visibility(not self.subports_visible)
+            print('toggling f3')
+            print(self.subports_visible)
 
 #if QCoreApplication.instance() is None:
 #    app = QApplication(sys.argv) 
 #viewer = Viewer()
 
 def quickplot2(item):
-    viewer.clear()
+    viewer.initialize()
     if isinstance(item, (phidl.device_layout.Device, phidl.device_layout.DeviceReference)):
         polygons_spec = item.get_polygons(by_spec=True, depth=None)
         for key in sorted(polygons_spec):
@@ -230,6 +298,10 @@ def quickplot2(item):
             viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
         for name, port in item.ports.items():
             viewer.add_port(port)
+        for ref in item.references:
+            for name, port in ref.ports.items():
+                viewer.add_port(port, is_subport = True)
+        viewer.add_aliases(item.aliases)
     viewer.reset_view()
     viewer.setVisible(True)
 
@@ -267,3 +339,4 @@ viewer.reset_view()
 #viewer.add_polygons(device_polygons, alpha = 0.5)
 #p = viewer.add_polygons([polygon3], color = 'red')
 #viewer.add_port(Port(width = 100))
+quickplot2(pg.snspd())
