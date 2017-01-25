@@ -477,47 +477,46 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
                          '>>> snspd(size = (3, None), num_squares = 2000)')
     if size[0] is None:
         ysize = size[1]
-        xsize = num_squares*wire_pitch*wire_width/ysize/2
+        xsize = num_squares*wire_pitch*wire_width/ysize
     elif size[1] is None:
         xsize = size[0]
-        ysize = num_squares*wire_pitch*wire_width/xsize/2
+        ysize = num_squares*wire_pitch*wire_width/xsize
     else:
         xsize = size[0]
         ysize = size[1]
         
-    num_meanders = int(ysize/wire_pitch)
-    if terminals_same_side: num_meanders += np.mod(num_meanders,2) # Make number of meanders even
+    num_meanders = int(np.ceil(ysize/wire_pitch))
     
     D = Device(name = 'snspd')
     hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20, layer = layer)
     
-    hp2 = D.add_ref(hairpin)
-    top_port = hp2.ports[1]
-    for n in range(1, num_meanders, 2):
-        # Repeatedly add two new device references
-        hp1 = D.add_ref(hairpin)
-        hp1.rotate(180)
-        hp1.connect(2, hp2.ports[2])
-        hp2 = D.add_ref(hairpin)
-        hp2.connect(1, hp1.ports[1])
+    
+    if (terminals_same_side is False) and (num_meanders % 2) == 0:
+        num_meanders += 1
+    
+    start_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    
+    hp_prev = D.add_ref(hairpin)
+    hp_prev.connect(1, start_nw.ports['E'])
+    alternate = True
+    for n in range(2,num_meanders):
+        hp = D.add_ref(hairpin)
+        if alternate:
+            hp.connect(2, hp_prev.ports[2])
+            last_port = hp.ports[1]
+        else:
+            hp.connect(1, hp_prev.ports[1])
+            last_port = hp.ports[2]
+        hp_prev = hp
+        alternate = not alternate
         
-    bottom_port = hp2.ports[2]
+    finish_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    finish_se.connect('E', last_port)
     
-    if terminals_same_side is False:
-        hp1 = D.add_ref(hairpin)
-        hp1.rotate(180)
-        hp1.connect(2, hp2.ports[2])
-        bottom_port = hp1.ports[1]
+    D.add_port(port = start_nw.ports['W'], name = 1)
+    D.add_port(port = finish_se.ports['W'], name = 2)
     
-    c_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
-    c_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
-    c_nw.connect('E', top_port)
-    c_se.connect('E', bottom_port)
-    
-    D.add_port(port = c_nw.ports['W'], name = 1)
-    D.add_port(port = c_se.ports['W'], name = 2)
-    
-    D.meta['num_squares'] = 2*num_meanders*(xsize/wire_width)
+    D.meta['num_squares'] = num_meanders*(xsize/wire_width)
     D.meta['area'] = xsize*ysize
     D.meta['size'] = (xsize, ysize)
     
