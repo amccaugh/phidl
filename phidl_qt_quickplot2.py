@@ -13,23 +13,19 @@ import phidl
 from phidl import Device, Layer, quickplot
 import phidl.geometry as pg
 import phidl.routing as pr
-#try:
+
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem
 from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
 from PyQt5.QtGui import QColor, QPolygonF, QPen
-#except:
-#    #from qtpy import QtWidgets, QtCore, QtGui
-#    from PyQt4 import QtCore, QtGui, QtOpenGL, QGraphicsView
-#    from PyQt4.QtCore import QPoint, QRect, QSize, Qt
 
 
 class Viewer(QGraphicsView):
     def __init__(self):
         QGraphicsView.__init__(self)
 
-        self.setGeometry(QRect(100, 100, 600, 250))
-        self.setWindowTitle("PIHDL Graphics Windfiow");
+        self.setGeometry(QRect(100, 100, 800, 600))
+        self.setWindowTitle("PIHDL Graphics Window");
         
         # Create a QGraphicsScene which this view looks at
         self.scene = QGraphicsScene(self)
@@ -62,6 +58,12 @@ class Viewer(QGraphicsView):
         self._rb_origin = QPoint()
         self.zoom_factor_total = 1
         
+        # Grid variables
+        self.gridpen = QPen(QtCore.Qt.black, 0)
+#        self.gridpen = QPen(QtCore.Qt.black, 1)
+#        self.gridpen.setCosmetic(True) # Makes constant width
+#        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+#        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
         
 
         for i in range(5):
@@ -79,6 +81,7 @@ class Viewer(QGraphicsView):
             scene_poly = self.scene.addPolygon(qpoly)
             scene_poly.setBrush(qcolor)
             scene_poly.setPen(self.pen)
+        
         sr = self.scene.itemsBoundingRect()
         ymax = sr.top()
         xmin = sr.left()
@@ -158,8 +161,56 @@ class Viewer(QGraphicsView):
         self.ports_visible = True
         self.subports_visible = True
         
+        # Create gridlines
+        self.gridpen = QPen(QtCore.Qt.black, 0)
+        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
         
-            
+        self.update_grid()
+#        self.gridlinesx = [QLineF(-10,-10,10,10) for n in range(100)]
+#        self.gridlinesy = [QLineF(-10,-10,10,10) for n in range(100)]
+#        self.gridlinesx2 = [self.scene.addLine(gl, self.gridpen) for gl in self.gridlinesx]
+#        self.gridlinesy2 = [self.scene.addLine(gl, self.gridpen) for gl in self.gridlinesy]
+        
+        
+    def update_grid(self):
+        if self.gridlinesx == []:
+            self.gridpen = QPen(QtCore.Qt.black, 0)
+            self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+            self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        
+        grid_pixels = 50
+        grid_snaps = [1,2,4]
+        
+         # Number of pixels in the viewer 
+        view_width, view_height = self.rect().width(), self.rect().height()
+         # Rectangle of viewport in terms of scene coordinates
+        r = self.mapToScene(self.rect()).boundingRect()
+        width, height = r.width(), r.height()
+        xmin, ymax, xmax, ymin = r.x(), r.y(), r.x() + width, r.y() - height
+                                    
+        grid_size = grid_pixels*(width / view_width)
+        exponent = np.floor( np.log10(grid_size) )
+        digits  = round(grid_size / 10**(exponent), 2)
+        digits_snapped = min(grid_snaps, key=lambda x:abs(x-digits))
+        grid_size_snapped = digits_snapped * 10**(exponent)
+        
+        # Starting coordinates for gridlines
+        x = round((xmin - width )/grid_size_snapped) * grid_size_snapped
+        y = round((ymin - height)/grid_size_snapped) * grid_size_snapped
+#        for x in range(100):
+#            self.scene.addLine(gl, self.gridpen)
+        for gl in self.gridlinesx:
+            gl.setLine(x, -100, x, 100)
+            x += grid_size_snapped
+        for gl in self.gridlinesy:
+            gl.setLine(-100, y, 100, y)
+            y += grid_size_snapped
+#            
+#    def remove_grid(self):
+#        for gl in self.gridlinesx + self.gridlinesy:
+#            self.scene.removeItem(gl)
+        
             
 #==============================================================================
 #  Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
@@ -206,6 +257,7 @@ class Viewer(QGraphicsView):
     def zoom_view(self, zoom_factor):
         self.scale(zoom_factor, zoom_factor)
         self.zoom_factor_total *= zoom_factor
+        self.update_grid()
         
         
     def mousePressEvent(self, event):
@@ -304,6 +356,8 @@ def quickplot2(item):
         viewer.add_aliases(item.aliases)
     viewer.reset_view()
     viewer.setVisible(True)
+    viewer.show()
+    viewer.raise_()
 
 
 def _get_layerprop(layer, datatype):
