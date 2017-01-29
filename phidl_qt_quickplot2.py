@@ -70,7 +70,11 @@ class Viewer(QGraphicsView):
             self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
             self.scene.addItem(self.item)
             
-            
+    def itemsBoundingRect_nogrid(self):
+        self.remove_grid()
+        r = self.scene.itemsBoundingRect()
+        self.create_grid()
+        return r
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         qcolor = QColor()
@@ -82,7 +86,7 @@ class Viewer(QGraphicsView):
             scene_poly.setBrush(qcolor)
             scene_poly.setPen(self.pen)
         
-        sr = self.scene.itemsBoundingRect()
+        sr = self.itemsBoundingRect_nogrid()
         ymax = sr.top()
         xmin = sr.left()
         width = sr.width()
@@ -90,7 +94,8 @@ class Viewer(QGraphicsView):
         self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
         
     def reset_view(self):
-        self.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+        self.fitInView(self.itemsBoundingRect_nogrid(), Qt.KeepAspectRatio)
+        self.update_grid()
         
     def add_port(self, port, is_subport = False):
         point1, point2 = port.endpoints
@@ -174,11 +179,6 @@ class Viewer(QGraphicsView):
         
         
     def update_grid(self):
-        if self.gridlinesx == []:
-            self.gridpen = QPen(QtCore.Qt.black, 0)
-            self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-            self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-        
         grid_pixels = 50
         grid_snaps = [1,2,4]
         
@@ -187,7 +187,7 @@ class Viewer(QGraphicsView):
          # Rectangle of viewport in terms of scene coordinates
         r = self.mapToScene(self.rect()).boundingRect()
         width, height = r.width(), r.height()
-        xmin, ymax, xmax, ymin = r.x(), r.y(), r.x() + width, r.y() - height
+        xmin, ymin, xmax, ymax = r.x(), r.y(), r.x() + width, r.y() + height
                                     
         grid_size = grid_pixels*(width / view_width)
         exponent = np.floor( np.log10(grid_size) )
@@ -198,18 +198,28 @@ class Viewer(QGraphicsView):
         # Starting coordinates for gridlines
         x = round((xmin - width )/grid_size_snapped) * grid_size_snapped
         y = round((ymin - height)/grid_size_snapped) * grid_size_snapped
-#        for x in range(100):
-#            self.scene.addLine(gl, self.gridpen)
+        print('\n xmin = %s, xmax = %s, ymin = %s, ymax = %s' % (xmin, xmax, ymin, ymax))
+        print('Starting at x = %s' % x)
+        print('Starting at y = %s' % y)
         for gl in self.gridlinesx:
             gl.setLine(x, -100, x, 100)
             x += grid_size_snapped
         for gl in self.gridlinesy:
             gl.setLine(-100, y, 100, y)
             y += grid_size_snapped
-#            
-#    def remove_grid(self):
-#        for gl in self.gridlinesx + self.gridlinesy:
-#            self.scene.removeItem(gl)
+            
+    def create_grid(self):
+        self.gridpen = QPen(QtCore.Qt.black, 0)
+        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        self.update_grid()
+        
+            
+    def remove_grid(self):
+        for gl in self.gridlinesx + self.gridlinesy:
+            self.scene.removeItem(gl)
+        self.gridlinesx == []
+        self.gridlinesy == []
         
             
 #==============================================================================
@@ -254,10 +264,12 @@ class Viewer(QGraphicsView):
         self.translate(delta.x(), delta.y())
         
         
+        self.update_grid()
+        
+        
     def zoom_view(self, zoom_factor):
         self.scale(zoom_factor, zoom_factor)
         self.zoom_factor_total *= zoom_factor
-        self.update_grid()
         
         
     def mousePressEvent(self, event):
@@ -312,10 +324,13 @@ class Viewer(QGraphicsView):
                 zoom_factor = min(zoom_factor_x, zoom_factor_y)
                 self.zoom_view(zoom_factor)
                 self.centerOn(new_center)
+                
+            self.update_grid()
     
         if event.button() == Qt.MidButton:
             self.setCursor(Qt.ArrowCursor)
             self._mousePressed = None
+            self.update_grid()
             
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
