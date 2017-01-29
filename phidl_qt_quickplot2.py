@@ -51,7 +51,6 @@ class Viewer(QGraphicsView):
         self.subportfontcolor = QtCore.Qt.green
         
         # Tracking ports
-        self.initialize()
 
         # Various status variables
         self._mousePressed = None
@@ -60,15 +59,16 @@ class Viewer(QGraphicsView):
         
         # Grid variables
         self.gridpen = QPen(QtCore.Qt.black, 0)
+        self.gridpen.setStyle(QtCore.Qt.DotLine)
+        self.gridpen.setDashPattern([1,4])
+        self.gridpen.setColor(QtGui.QColor(0, 0, 0, 125))
 #        self.gridpen = QPen(QtCore.Qt.black, 1)
 #        self.gridpen.setCosmetic(True) # Makes constant width
 #        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
 #        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
         
 
-        for i in range(5):
-            self.item = QGraphicsEllipseItem(i*75, 10, 60, 40)
-            self.scene.addItem(self.item)
+        self.initialize()
             
     def itemsBoundingRect_nogrid(self):
         self.remove_grid()
@@ -167,10 +167,11 @@ class Viewer(QGraphicsView):
         self.subports_visible = True
         
         # Create gridlines
-        self.gridpen = QPen(QtCore.Qt.black, 0)
-        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-        
+#        self.gridpen = QPen(QtCore.Qt.black, 0)
+#        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+#        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+#        
+        self.create_grid()        
         self.update_grid()
 #        self.gridlinesx = [QLineF(-10,-10,10,10) for n in range(100)]
 #        self.gridlinesy = [QLineF(-10,-10,10,10) for n in range(100)]
@@ -202,14 +203,13 @@ class Viewer(QGraphicsView):
         print('Starting at x = %s' % x)
         print('Starting at y = %s' % y)
         for gl in self.gridlinesx:
-            gl.setLine(x, -100, x, 100)
+            gl.setLine(x, -1e10, x, 1e10)
             x += grid_size_snapped
         for gl in self.gridlinesy:
-            gl.setLine(-100, y, 100, y)
+            gl.setLine(-1e10, y, 1e10, y)
             y += grid_size_snapped
             
     def create_grid(self):
-        self.gridpen = QPen(QtCore.Qt.black, 0)
         self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
         self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
         self.update_grid()
