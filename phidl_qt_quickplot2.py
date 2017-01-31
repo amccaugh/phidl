@@ -178,7 +178,9 @@ class Viewer(QGraphicsView):
 #        self.gridlinesx2 = [self.scene.addLine(gl, self.gridpen) for gl in self.gridlinesx]
 #        self.gridlinesy2 = [self.scene.addLine(gl, self.gridpen) for gl in self.gridlinesy]
         
-        
+#==============================================================================
+#   Grid creation
+#==============================================================================
     def update_grid(self):
         grid_pixels = 50
         grid_snaps = [1,2,4]
@@ -197,11 +199,11 @@ class Viewer(QGraphicsView):
         grid_size_snapped = digits_snapped * 10**(exponent)
         
         # Starting coordinates for gridlines
-        x = round((xmin - width )/grid_size_snapped) * grid_size_snapped
-        y = round((ymin - height)/grid_size_snapped) * grid_size_snapped
-        print('\n xmin = %s, xmax = %s, ymin = %s, ymax = %s' % (xmin, xmax, ymin, ymax))
-        print('Starting at x = %s' % x)
-        print('Starting at y = %s' % y)
+        x = round((xmin - 2*width )/grid_size_snapped) * grid_size_snapped
+        y = round((ymin - 2*height)/grid_size_snapped) * grid_size_snapped
+#        print('\n xmin = %s, xmax = %s, ymin = %s, ymax = %s' % (xmin, xmax, ymin, ymax))
+#        print('Starting at x = %s' % x)
+#        print('Starting at y = %s' % y)
         for gl in self.gridlinesx:
             gl.setLine(x, -1e10, x, 1e10)
             x += grid_size_snapped
@@ -210,8 +212,8 @@ class Viewer(QGraphicsView):
             y += grid_size_snapped
             
     def create_grid(self):
-        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
+        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
         self.update_grid()
         
             
