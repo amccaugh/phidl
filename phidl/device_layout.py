@@ -8,8 +8,6 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# PHIDL Make inductor function
-# TODO Add flatten()
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
 
