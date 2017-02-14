@@ -410,6 +410,16 @@ def _get_layerprop(layer, datatype):
 #
 #loadUi('quickplot2.ui')  # Loads .ui file which contains MyCustomWidget
 
+       
+       
+#       
+#remi_folder = os.path.realpath('./remi/')
+#sys.path.insert(0, remi_folder)
+#if True:
+#    import remi.gui as gui
+#    from remi import start, App
+#    import remi.server as server
+#       
     
 #if __name__ == '__main__':
 
