@@ -53,10 +53,10 @@ class Viewer(QGraphicsView):
         self.portpen.setCosmetic(True) # Makes constant width
         self.portfont = QtGui.QFont('Arial', pointSize = 14)
         self.portfontcolor = QtCore.Qt.red
-        self.subportpen = QPen(QtCore.Qt.green, 3)
+        self.subportpen = QPen(QtCore.Qt.darkGreen, 3)
         self.subportpen.setCosmetic(True) # Makes constant width
         self.subportfont = QtGui.QFont('Arial', pointSize = 14)
-        self.subportfontcolor = QtCore.Qt.green
+        self.subportfontcolor = QtCore.Qt.darkGreen
         
         # Tracking ports
 
@@ -174,17 +174,8 @@ class Viewer(QGraphicsView):
         self.ports_visible = True
         self.subports_visible = True
         
-        # Create gridlines
-#        self.gridpen = QPen(QtCore.Qt.black, 0)
-#        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-#        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-#        
         self.create_grid()        
         self.update_grid()
-#        self.gridlinesx = [QLineF(-10,-10,10,10) for n in range(100)]
-#        self.gridlinesy = [QLineF(-10,-10,10,10) for n in range(100)]
-#        self.gridlinesx2 = [self.scene.addLine(gl, self.gridpen) for gl in self.gridlinesx]
-#        self.gridlinesy2 = [self.scene.addLine(gl, self.gridpen) for gl in self.gridlinesy]
         
 #==============================================================================
 #   Grid creation
@@ -348,21 +339,22 @@ class Viewer(QGraphicsView):
                 
         if event.key() == Qt.Key_F1:
             self.set_alias_visibility(not self.aliases_visible)
-#            print('toggling f1')
-#            print(self.aliases_visible)
                 
         if event.key() == Qt.Key_F2:
             self.set_port_visibility(not self.ports_visible)
-#            print('toggling f2')
-#            print(self.ports_visible)
                 
         if event.key() == Qt.Key_F3:
             self.set_subport_visibility(not self.subports_visible)
-#            print('toggling f3')
-#            print(self.subports_visible)
 
 
 def quickplot2(item):
+    global app
+    if QCoreApplication.instance() is None:
+        app = QApplication(sys.argv)
+    if 'viewer_window' not in globals():
+        global viewer_window
+        viewer_window = ViewerWindow()
+    viewer = viewer_window.viewer
     viewer.initialize()
     if isinstance(item, (phidl.device_layout.Device, phidl.device_layout.DeviceReference)):
         polygons_spec = item.get_polygons(by_spec=True, depth=None)
@@ -377,9 +369,7 @@ def quickplot2(item):
                 viewer.add_port(port, is_subport = True)
         viewer.add_aliases(item.aliases)
     viewer.reset_view()
-    viewer.setVisible(True)
-#    viewer.show()
-#    viewer.raise_()
+    viewer_window.setVisible(True)
     viewer_window.show()
     viewer_window.raise_()
 
@@ -399,118 +389,7 @@ def _get_layerprop(layer, datatype):
     return {'color':color, 'alpha':alpha}
 
 
-# Trick to allow me to load custom widgets in Qt Designer by right-clicking them and saying 
-# "Promote to...", then setting "Header" to MyCustomClasses and widget to my class name
-# http://stackoverflow.com/questions/38783911/how-to-use-custom-widget-and-uic-loadui-without-importing-custom-widget-class-pa
-#class MyCustomClasses(object):
-#    class MyViewer(Viewer):
-#        pass
-#sys.modules['MyCustomClasses'] = MyCustomClasses
-#
-#
-#loadUi('quickplot2.ui')  # Loads .ui file which contains MyCustomWidget
 
-       
-       
-#       
-#remi_folder = os.path.realpath('./remi/')
-#sys.path.insert(0, remi_folder)
-#if True:
-#    import remi.gui as gui
-#    from remi import start, App
-#    import remi.server as server
-#       
-    
-#if __name__ == '__main__':
 
-    
-if QCoreApplication.instance() is None:
-    app = QApplication(sys.argv) 
-viewer_window = ViewerWindow()
-viewer = viewer_window.viewer
-    
-polygon1 = np.array([[1,2],[3,6],[1,5]])*20
-polygon2 = np.array([[1,1],[3,8],[3,5]])*20 + 80
-polygon3 = np.array([[2,1],[3,9],[7,5]])*15 + 80
-my_polygons = [polygon1, polygon2]
-my_polygons2 = [polygon1, polygon2, polygon3]
 
-if QCoreApplication.instance() is None:
-    app = QApplication(sys.argv) 
-#viewer = Viewer()
-#viewer.show()
-viewer.add_polygons(my_polygons2)
-viewer.reset_view()
-#device_polygons = D.extract()
-#viewer.add_polygons(device_polygons, alpha = 0.5)
-#p = viewer.add_polygons([polygon3], color = 'red')
-#viewer.add_port(Port(width = 100))
-quickplot2(pg.snspd())
-
-    
-    
-    
-    
-    #==============================================================================
-    # Making a window
-    #==============================================================================
-    
-    from PyQt5.uic import loadUi
-    
-    class testWindow(QMainWindow):
-        def __init__(self):
-            super(testWindow,self).__init__()
-            self._ui = loadUi('quickplot2.ui', self)
-#            self._ui = Ui_MainWindow()
-            
-    QM = QMainWindow()
-    QM.
-    QM.show()
-
-#
-#
-##==============================================================================
-## 
-##==============================================================================
-#
-#from PyQt5 import QtCore, QtGui, QtWidgets
-#
-#class Ui_MainWindow(object):
-#    def setupUi(self, MainWindow):
-#        MainWindow.setObjectName("MainWindow")
-#        MainWindow.resize(1101, 756)
-#        self.centralwidget = QtWidgets.QWidget(MainWindow)
-#        self.centralwidget.setObjectName("centralwidget")
-#        self.myGraphicsView = Viewer(self.centralwidget)
-#        self.myGraphicsView.setGeometry(QtCore.QRect(10, 10, 881, 671))
-#        self.myGraphicsView.setObjectName("myGraphicsView")
-#        self.checkbox_aliases = QtWidgets.QCheckBox(self.centralwidget)
-#        self.checkbox_aliases.setGeometry(QtCore.QRect(910, 30, 131, 17))
-#        self.checkbox_aliases.setObjectName("checkbox_aliases")
-#        self.checkbox_ports = QtWidgets.QCheckBox(self.centralwidget)
-#        self.checkbox_ports.setGeometry(QtCore.QRect(910, 50, 131, 17))
-#        self.checkbox_ports.setObjectName("checkbox_ports")
-#        self.checkbox_subports = QtWidgets.QCheckBox(self.centralwidget)
-#        self.checkbox_subports.setGeometry(QtCore.QRect(910, 70, 131, 17))
-#        self.checkbox_subports.setObjectName("checkbox_subports")
-#        MainWindow.setCentralWidget(self.centralwidget)
-#        self.menubar = QtWidgets.QMenuBar(MainWindow)
-#        self.menubar.setGeometry(QtCore.QRect(0, 0, 1101, 21))
-#        self.menubar.setObjectName("menubar")
-#        MainWindow.setMenuBar(self.menubar)
-#        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-#        self.statusbar.setObjectName("statusbar")
-#        MainWindow.setStatusBar(self.statusbar)
-#
-#        self.retranslateUi(MainWindow)
-#        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-#
-#    def retranslateUi(self, MainWindow):
-#        _translate = QtCore.QCoreApplication.translate
-#        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-#        self.checkbox_aliases.setText(_translate("MainWindow", "Display aliases (F1)"))
-#        self.checkbox_ports.setText(_translate("MainWindow", "Display ports (F2)"))
-#        self.checkbox_subports.setText(_translate("MainWindow", "Display subports (F3)"))
-#        
-#QM = Ui_MainWindow().setupUi()
-#QM.show()
+# quickplot2(pg.snspd())
