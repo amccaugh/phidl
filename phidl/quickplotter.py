@@ -10,9 +10,7 @@ import numpy as np
 import sys
 
 import phidl
-from phidl import Device, Layer, quickplot
-import phidl.geometry as pg
-import phidl.routing as pr
+from phidl import Device, Layer
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
