@@ -1,7 +1,16 @@
-# device-layout
+# PHIDL
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
 # Changelog
+
+## 0.6.3
+
+### New features
+ - Added "quickplot2", a more robust/easier to use viewer which instead of being based on matplotlib is based Qt.
+   - Zoom/scroll uses same buttons as KLayout
+   - Toggle labels for ports/aliases with F1, F2, F3
+   - Reset view with Escape key
+
 
 ## 0.6.2
 
