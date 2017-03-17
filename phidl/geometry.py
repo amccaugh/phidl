@@ -42,8 +42,8 @@ from skimage import draw, morphology
 def connector(midpoint = (0,0), width = 1, orientation = 0):
     """ Creates a Device which has back-to-back ports """
     D = Device(name = 'connector')
-    D.add_port(name = 1, midpoint = [midpoint[0]/2, midpoint[1]/2],  width = width, orientation = orientation)
-    D.add_port(name = 2, midpoint = [midpoint[0]/2, midpoint[1]/2], width = width, orientation = orientation-180)
+    D.add_port(name = 1, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation)
+    D.add_port(name = 2, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation-180)
     return D
 
 
@@ -703,6 +703,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.meta['v/c'] = v/3e8
     BetaLmin = np.sqrt(B**2 + 6.523)
     D.meta['f_cutoff'] = BetaLmin*D.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
+    D.meta['length'] = length
     
     return D
 
