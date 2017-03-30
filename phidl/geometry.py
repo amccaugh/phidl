@@ -153,31 +153,35 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
         start_width, end_width = end_width, start_width
     else:
         reverse = False
+    
+    if start_width == end_width: # Just return a square
+        ypts = [0, start_width, start_width,           0]
+        xpts = [0,           0, start_width, start_width]
+    else:
+        xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
+        xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
         
-    xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
-    xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
-    
-    xpts = np.linspace(xmin, xmax, num_pts).tolist()
-    ypts = []
-    for x in xpts:
-        x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
-        ypts.append(y)
-    
-    ypts[-1] = end_width
-    ypts[0] =  start_width
-    xpts.append(xpts[-1])
-    ypts.append(0)
-    xpts.append(xpts[0])
-    ypts.append(0)
-    
-    # anticrowding_factor stretches the wire out; a stretched wire is a gentler
-    # transition, so there's less chance of current crowding if the fabrication 
-    # isn't perfect but as a result, the wire isn't as short as it could be
-    xpts = (np.array(xpts)*anticrowding_factor).tolist()
+        xpts = np.linspace(xmin, xmax, num_pts).tolist()
+        ypts = []
+        for x in xpts:
+            x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
+            ypts.append(y)
+        
+        ypts[-1] = end_width
+        ypts[0] =  start_width
+        xpts.append(xpts[-1])
+        ypts.append(0)
+        xpts.append(xpts[0])
+        ypts.append(0)
+        
+        # anticrowding_factor stretches the wire out; a stretched wire is a gentler
+        # transition, so there's less chance of current crowding if the fabrication 
+        # isn't perfect but as a result, the wire isn't as short as it could be
+        xpts = (np.array(xpts)*anticrowding_factor).tolist()
 
-    if reverse is True:
-        xpts = (-np.array(xpts)).tolist()
-        start_width, end_width = end_width, start_width
+        if reverse is True:
+            xpts = (-np.array(xpts)).tolist()
+            start_width, end_width = end_width, start_width
 
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
