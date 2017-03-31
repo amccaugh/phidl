@@ -3,7 +3,8 @@
 #==============================================================================
 
 # TODO Add numbers to ports
-
+# TODO for D.connect() add an overlap parameter that scoots them to overlap
+# TODO Create a "remove" function which can delete geometry
 
 #==============================================================================
 # Minor TODO

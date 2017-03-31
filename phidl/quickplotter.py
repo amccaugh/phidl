@@ -8,6 +8,8 @@ Created on Mon Jan 16 16:18:40 2017
 # TODO:
 # PHIDL Allow toggling of layers with 1-9 keypresses
 # PHIDL alias font should be slightly transparent
+# PHIDL Show annotations
+# PHIDL add adjustable depth of aliases by doing shift-F3
 
 
 from __future__ import division, print_function, absolute_import
