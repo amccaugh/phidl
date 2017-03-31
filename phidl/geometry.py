@@ -349,7 +349,7 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0):
 
 
 #cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0)
-#inset_polygon = inset(cpm, distance = 2, layer = 1)
+#inset_polygon = offset(cpm, distance = -2, layer = 1)
 #cpm.add(inset_polygon)
 #quickplot(cpm)
 
@@ -1420,14 +1420,15 @@ def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = No
     return D
 
 
+
+
 #==============================================================================
 #
 # Boolean functions
 #
 #==============================================================================
 
-def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
-
+def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
     if type(elements) is not list: elements = [elements]
     new_elements = []
     for e in elements:
@@ -1435,22 +1436,29 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
         else: new_elements.append(e)
         
     gds_layer, gds_datatype = _parse_layer(layer)
-    # This pre-joining (by expanding by precision) is makes this take twice as
+    # This pre-joining (by expanding by precision) makes this take twice as
     # long but is necessary because of floating point errors which otherwise
     # separate polygons which are nominally joined
     joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
                           max_points=199, layer=gds_layer, datatype = gds_datatype)
-    p = gdspy.offset(joined, -distance, join='miter', tolerance=2,
+    p = gdspy.offset(joined, distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
                      max_points=199, layer=gds_layer, datatype = gds_datatype)
     D = Device()
     D.add_polygon(p, layer=layer)
     return D
 
+
+def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
+    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
+    return offset(elements = elements, distance = -distance, join_first = join_first,
+                 precision = precision, layer = layer)
+    
     
 def invert(elements, border = 10, precision = 0.001, layer = 0):
-    
+    """ Creates an inverted version of the input shapes with an additional
+    border around the edges """
     D = Device()
     if type(elements) is not list: elements = [elements]
     for e in elements:
@@ -1470,6 +1478,7 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     D = Device()
     D.add_polygon(p, layer=layer)
     return D
+
 
 def boolean(A, B, operation, precision = 0.001, layer = 0):
     """ 
@@ -1509,6 +1518,7 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
     if p is not None: D.add_polygon(p, layer = layer)
     return D
 
+
 def outline(elements, distance = 1, precision = 0.001, layer = 0):
     D = Device()
     if type(elements) is not list: elements = [elements]
@@ -1517,7 +1527,7 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
         else: D.elements.append(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
-    D_bloated = inset(D, distance = -distance, join_first = True, precision = 0.001, layer = layer)
+    D_bloated = offset(D, distance = distance, join_first = True, precision = 0.001, layer = layer)
     Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
     return Outline
 
