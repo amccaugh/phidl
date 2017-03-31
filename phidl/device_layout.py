@@ -470,7 +470,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         if filename[-4:] != '.gds':  filename += '.gds'
         tempname = self.name
         self.name = 'toplevel'
-        gdspy.write_gds(filename, cells=[self], name='library', unit=unit, precision=precision)
+        referenced_cells_set = list(self.get_dependencies(recursive=True))
+        all_cells = [self] + referenced_cells
+        gdspy.write_gds(filename, cells=all_cells, name='library', unit=unit, precision=precision)
         self.name = tempname
 
 
