@@ -1509,6 +1509,19 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
     if p is not None: D.add_polygon(p, layer = layer)
     return D
 
+def outline(elements, distance = 1, precision = 0.001, layer = 0):
+    D = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): D.add_ref(e)
+        else: D.elements.append(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    D_bloated = inset(D, distance = -distance, join_first = True, precision = 0.001, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
+    return Outline
+
+
 
 #==============================================================================
 #
