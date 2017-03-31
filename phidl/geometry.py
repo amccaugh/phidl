@@ -1471,7 +1471,43 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     D.add_polygon(p, layer=layer)
     return D
 
+def boolean(A, B, operation, precision = 0.001, layer = 0):
+    """ 
+    Performs boolean operations between 2 Device/DeviceReference objects,
+    or lists of Devices/DeviceReferences.
 
+    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note 
+    that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    'B-A' is equivalent to 'not' with the operands switched
+    """
+    A_polys = []
+    B_polys = []
+    if type(A) is not list: A = [A]
+    if type(B) is not list: B = [B]
+    for e in A:
+        if isinstance(e, Device): A_polys += e.get_polygons()
+        elif isinstance(e, DeviceReference): A_polys += e.get_polygons()
+    for e in B:
+        if isinstance(e, Device): B_polys += e.get_polygons()
+        elif isinstance(e, DeviceReference): B_polys += e.get_polygons()
+
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    operation = operation.lower().replace(' ','')
+    if operation == 'a-b':
+        operation = 'not'
+    elif operation == 'b-a':
+        operation = 'not'
+        A_polys, B_polys = B_polys, A_polys
+    if operation == 'a+b':
+        operation = 'or'
+
+    p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
+                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+
+    D = Device()
+    if p is not None: D.add_polygon(p, layer = layer)
+    return D
 
 
 #==============================================================================
