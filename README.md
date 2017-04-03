@@ -3,6 +3,22 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.6.5
+
+### New features
+ - Added pg.boolean() to perform AND/NOT/OR/XOR operations on shapes
+ - Added pg.outline() to create outlines of shapes, useful for positive-tone resist processes
+
+### Changes
+ - Switched development to Python 3.  Python 2 will still be supported going forward however
+ - The function to expand/contract polygons pg.inset() has been deprecated in favor of the more aptly-named pg.offset().  pg.offset(D, distance = -1) will contract the shapes in D, pg.offset(D, distance = 1) will expand them.
+
+### Bugfixes
+ - Fixes necessary to make compatible with Python 3
+ - Fixed pg.connector() midpoint argument
+ - Compatibility fixes to make compatible with gdspy>=1.1.2
+
+
 ## 0.6.4
 
 ### New features

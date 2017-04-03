@@ -42,8 +42,8 @@ from skimage import draw, morphology
 def connector(midpoint = (0,0), width = 1, orientation = 0):
     """ Creates a Device which has back-to-back ports """
     D = Device(name = 'connector')
-    D.add_port(name = 1, midpoint = [midpoint[0]/2, midpoint[1]/2],  width = width, orientation = orientation)
-    D.add_port(name = 2, midpoint = [midpoint[0]/2, midpoint[1]/2], width = width, orientation = orientation-180)
+    D.add_port(name = 1, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation)
+    D.add_port(name = 2, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation-180)
     return D
 
 
@@ -153,31 +153,35 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
         start_width, end_width = end_width, start_width
     else:
         reverse = False
+    
+    if start_width == end_width: # Just return a square
+        ypts = [0, start_width, start_width,           0]
+        xpts = [0,           0, start_width, start_width]
+    else:
+        xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
+        xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
         
-    xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
-    xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
-    
-    xpts = np.linspace(xmin, xmax, num_pts).tolist()
-    ypts = []
-    for x in xpts:
-        x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
-        ypts.append(y)
-    
-    ypts[-1] = end_width
-    ypts[0] =  start_width
-    xpts.append(xpts[-1])
-    ypts.append(0)
-    xpts.append(xpts[0])
-    ypts.append(0)
-    
-    # anticrowding_factor stretches the wire out; a stretched wire is a gentler
-    # transition, so there's less chance of current crowding if the fabrication 
-    # isn't perfect but as a result, the wire isn't as short as it could be
-    xpts = (np.array(xpts)*anticrowding_factor).tolist()
+        xpts = np.linspace(xmin, xmax, num_pts).tolist()
+        ypts = []
+        for x in xpts:
+            x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
+            ypts.append(y)
+        
+        ypts[-1] = end_width
+        ypts[0] =  start_width
+        xpts.append(xpts[-1])
+        ypts.append(0)
+        xpts.append(xpts[0])
+        ypts.append(0)
+        
+        # anticrowding_factor stretches the wire out; a stretched wire is a gentler
+        # transition, so there's less chance of current crowding if the fabrication 
+        # isn't perfect but as a result, the wire isn't as short as it could be
+        xpts = (np.array(xpts)*anticrowding_factor).tolist()
 
-    if reverse is True:
-        xpts = (-np.array(xpts)).tolist()
-        start_width, end_width = end_width, start_width
+        if reverse is True:
+            xpts = (-np.array(xpts)).tolist()
+            start_width, end_width = end_width, start_width
 
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
@@ -345,7 +349,7 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0):
 
 
 #cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0)
-#inset_polygon = inset(cpm, distance = 2, layer = 1)
+#inset_polygon = offset(cpm, distance = -2, layer = 1)
 #cpm.add(inset_polygon)
 #quickplot(cpm)
 
@@ -703,6 +707,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.meta['v/c'] = v/3e8
     BetaLmin = np.sqrt(B**2 + 6.523)
     D.meta['f_cutoff'] = BetaLmin*D.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
+    D.meta['length'] = length
     
     return D
 
@@ -1267,7 +1272,7 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, d
 def _expand_raster(raster, distance = (4,2)):
     if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
         
-    num_pixels = map(int, np.ceil(distance))
+    num_pixels = np.array(np.ceil(distance), dtype = int)
     neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
     rr, cc = draw.ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
     neighborhood[rr, cc] = 1
@@ -1415,14 +1420,15 @@ def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = No
     return D
 
 
+
+
 #==============================================================================
 #
 # Boolean functions
 #
 #==============================================================================
 
-def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
-
+def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
     if type(elements) is not list: elements = [elements]
     new_elements = []
     for e in elements:
@@ -1430,22 +1436,29 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
         else: new_elements.append(e)
         
     gds_layer, gds_datatype = _parse_layer(layer)
-    # This pre-joining (by expanding by precision) is makes this take twice as
+    # This pre-joining (by expanding by precision) makes this take twice as
     # long but is necessary because of floating point errors which otherwise
     # separate polygons which are nominally joined
     joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
                           max_points=199, layer=gds_layer, datatype = gds_datatype)
-    p = gdspy.offset(joined, -distance, join='miter', tolerance=2,
+    p = gdspy.offset(joined, distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
                      max_points=199, layer=gds_layer, datatype = gds_datatype)
     D = Device()
     D.add_polygon(p, layer=layer)
     return D
 
+
+def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
+    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
+    return offset(elements = elements, distance = -distance, join_first = join_first,
+                 precision = precision, layer = layer)
+    
     
 def invert(elements, border = 10, precision = 0.001, layer = 0):
-    
+    """ Creates an inverted version of the input shapes with an additional
+    border around the edges """
     D = Device()
     if type(elements) is not list: elements = [elements]
     for e in elements:
@@ -1466,6 +1479,57 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     D.add_polygon(p, layer=layer)
     return D
 
+
+def boolean(A, B, operation, precision = 0.001, layer = 0):
+    """ 
+    Performs boolean operations between 2 Device/DeviceReference objects,
+    or lists of Devices/DeviceReferences.
+
+    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note 
+    that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    'B-A' is equivalent to 'not' with the operands switched
+    """
+    A_polys = []
+    B_polys = []
+    if type(A) is not list: A = [A]
+    if type(B) is not list: B = [B]
+    for e in A:
+        if isinstance(e, Device): A_polys += e.get_polygons()
+        elif isinstance(e, DeviceReference): A_polys += e.get_polygons()
+    for e in B:
+        if isinstance(e, Device): B_polys += e.get_polygons()
+        elif isinstance(e, DeviceReference): B_polys += e.get_polygons()
+
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    operation = operation.lower().replace(' ','')
+    if operation == 'a-b':
+        operation = 'not'
+    elif operation == 'b-a':
+        operation = 'not'
+        A_polys, B_polys = B_polys, A_polys
+    if operation == 'a+b':
+        operation = 'or'
+
+    p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
+                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+
+    D = Device()
+    if p is not None: D.add_polygon(p, layer = layer)
+    return D
+
+
+def outline(elements, distance = 1, precision = 0.001, layer = 0):
+    D = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): D.add_ref(e)
+        else: D.elements.append(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    D_bloated = offset(D, distance = distance, join_first = True, precision = 0.001, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
+    return Outline
 
 
 
