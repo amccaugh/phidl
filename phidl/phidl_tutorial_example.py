@@ -389,3 +389,36 @@ D2 = Device()
 ellipse_polygons = D.extract(layers = 1)
 D2.add_polygon(ellipse_polygons, layer = 3)
 quickplot(D2)
+
+
+
+#==============================================================================
+# Making boolean shapes
+#==============================================================================
+# If you want to subtract one shape from another, merge two shapes, or 
+# perform an XOR on them, you can do that with the pg.boolean() function.
+# the ``operation`` argument should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.
+# Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+#  'B-A' is equivalent to 'not' with the operands switched
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().movex(15)
+E3 = pg.ellipse().movex(30)
+quickplot([E1, E2, E3])
+
+D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
+quickplot(D2)
+
+
+
+#==============================================================================
+# Creating outlines of shapes
+#==============================================================================
+# Sometimes, when writing in a positive-tone resist, it is useful to produce 
+# an outline of an existing shape. The pg.outline() function allows you to do
+# exactly that
+
+D = pg.ellipse(layer = 1)
+D2 = pg.outline(D, distance = 1, layer = 2)
+quickplot([D, D2])
