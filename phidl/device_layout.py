@@ -346,7 +346,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         else:
             Device.uid += 1
             self.ports = {}
-            self.parameters = {}
             self.meta = {}
             self.aliases = {}
             self.references = []

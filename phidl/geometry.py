@@ -30,6 +30,7 @@ from skimage import draw, morphology
 # Routing
 # Boolean functions
 # Photonics
+# Loading GDS files
 
 
 
@@ -2025,3 +2026,30 @@ def hexapod():
 
 
 
+
+#==============================================================================
+#
+# Loading GDS files
+#
+#==============================================================================
+
+
+def load_gds(filename, cellname = 'toplevel', layer_mapping = {0: 2, (3,0): (4,1), 3: (5,0)},
+             flatten_cell = True):
+
+    if flatten_cell == True:
+        gdsii_lib = gdspy.GdsLibrary()
+        gdsii_lib.read_gds(filename)
+        polygons = gdsii_lib.cell_dict[cellname].get_polygons(by_spec = True)
+
+        layers_to_import = {_parse_layer(k) for k in layer_mapping.keys()}
+
+        D = Device()
+        for layer, polys in polygons.items():
+            if _parse_layer(layer) in layers_to_import:
+                D.add_polygon(polys, layer = layer)
+
+    elif flatten_cell == False:
+        raise ValueError('[PHIDL] load_gds() Non-flattened imports for GDS cells not available yet')
+
+    return D
