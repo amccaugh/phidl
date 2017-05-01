@@ -2034,22 +2034,22 @@ def hexapod():
 #==============================================================================
 
 
-def load_gds(filename, cellname = 'toplevel', layer_mapping = {0: 2, (3,0): (4,1), 3: (5,0)},
-             flatten_cell = True):
+def import_gds(filename, cellname = 'toplevel', layer_mapping = {0: 2, (3,0): (4,1), 3: (5,0)},
+             flatten = True):
 
-    if flatten_cell == True:
+    if flatten == True:
         gdsii_lib = gdspy.GdsLibrary()
         gdsii_lib.read_gds(filename)
         polygons = gdsii_lib.cell_dict[cellname].get_polygons(by_spec = True)
 
-        layers_to_import = {_parse_layer(k) for k in layer_mapping.keys()}
+        remapped_layers = {_parse_layer(k):v for k,v in layer_mapping.items()}
 
         D = Device()
-        for layer, polys in polygons.items():
-            if _parse_layer(layer) in layers_to_import:
-                D.add_polygon(polys, layer = layer)
+        for layer_in_gds, polys in polygons.items():
+            if _parse_layer(layer_in_gds) in remapped_layers.keys():
+                D.add_polygon(polys, layer = remapped_layers[layer_in_gds])
 
-    elif flatten_cell == False:
+    elif flatten == False:
         raise ValueError('[PHIDL] load_gds() Non-flattened imports for GDS cells not available yet')
 
     return D
