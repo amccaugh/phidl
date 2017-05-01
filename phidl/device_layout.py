@@ -701,24 +701,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
 
-# #==============================================================================
-# # Handy geometry functions
-# #==============================================================================
-
-
-# def _load_gds(filename, cell_name):
-#     # Format "Port(name = hello, width = 20, orientation = 180)"
-#     gdspy.current_library.cell_dict.clear()
-#     gdspy.current_library.read_gds(filename)
-#     gdspy.current_library.extract(cell_name)
-#     D = Device(cell_name)
-#     D.elements = gdspy.Cell.cell_dict[cell_name].elements
-#     for label in gdspy.Cell.cell_dict[cell_name].labels:
-#         t = label.text
-#         D.labels.append(label)
-#     return D
-
-
 #==============================================================================
 # Plotting functions
 #==============================================================================
