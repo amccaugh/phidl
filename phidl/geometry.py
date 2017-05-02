@@ -1028,7 +1028,7 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
     justify = justify.lower()
     for l in t.references:
         if justify == 'left':   pass
-        if justify == 'right':  l.xmax = position[0]# l.move(origin = l.bounds('NE'), destination = position, axis = 'x')
+        if justify == 'right':  l.xmax = position[0]
         if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
     return t
     

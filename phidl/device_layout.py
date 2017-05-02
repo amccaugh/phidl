@@ -2,7 +2,6 @@
 # Major TODO
 #==============================================================================
 
-# TODO Add numbers to ports
 # TODO for D.connect() add an overlap parameter that scoots them to overlap
 # TODO Create a "remove" function which can delete geometry
 
@@ -30,7 +29,7 @@ import webcolors
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.6.5'
+__version__ = '0.7.0'
 
 
 
