@@ -669,7 +669,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.origin = self.origin - p1
         
         # Rotate so reflection axis aligns with x-axis
-        angle = np.arctan((p2[1]-p1[1])/(p2[0]-p1[0]))*180/pi
+        angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
         self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
         self.rotation -= angle
         
@@ -685,7 +685,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
         
         
-    def connect(self, port, destination):
+    def connect(self, port, destination, overlap = 0):
         # ``port`` can either be a string with the name or an actual Port
         if port in self.ports: # Then ``port`` is a key for the ports dict
             p = self.ports[port]
@@ -694,9 +694,10 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         else:
             raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
                 ' - received (%s), ports available are (%s)' % (port, self.ports.keys()))
-
         self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         self.move(origin = p, destination = destination)
+        self.move(-overlap*np.array([cos(destination.orientation*pi/180),
+                                     sin(destination.orientation*pi/180)]))
         return self
 
 
