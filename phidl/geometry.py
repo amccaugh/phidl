@@ -1005,7 +1005,7 @@ width[126] = 800;  indent[126] = 100  # ~
 width[230] = 700;  indent[230] = 100  # Greek mu
 
 def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0):
-    scaling = size/800
+    scaling = size/1000
     xoffset = position[0]
     yoffset = position[1]
     t = Device()
@@ -1079,6 +1079,15 @@ def basic_die(
         D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer)
     
     if type(text_location) is str:
+        if text_location.upper() == 'NW':
+            justify = 'left'
+            text_position = (-size[0]/2 + street_width*2, size[1]/2 - street_width*2 - text_size)
+        elif text_location.upper() == 'N':
+            justify = 'center'
+            text_position = (0, size[1]/2 - street_width*2 - text_size)
+        elif text_location.upper() == 'NE':
+            justify = 'right'
+            text_position = (size[0]/2 - street_width*2, size[1]/2 - street_width*2 - text_size)
         if text_location.upper() == 'SW':
             justify = 'left'
             text_position = (-size[0]/2 + street_width*2, -size[1]/2 + street_width*2)
