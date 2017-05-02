@@ -94,7 +94,9 @@ wg1.center = [4,4] # Shift wg1 such that the center coordinate of its bounding b
 wg2.xmax # Gives you the rightmost (+x) edge of the wg2 bounding box
 wg2.xmax = 25 # Moves wg2 such that it's rightmost edge is at x = 25
 
-wg3.ymin # Gives you the bottommost (+y) edge of the wg3 bounding box
+wg2.y = 5 # Sets the y-coordingate of the center of the shape's bounding box
+
+wg3.ymin # Gives you the bottommost (-y) edge of the wg3 bounding box
 wg3.ymin = -14 # Moves wg3 such that it's bottommost edge is at y = -14
 
 
@@ -125,7 +127,7 @@ quickplot(D)
 # Manipulating geometry 4 - Chaining commands
 #==============================================================================
 # Many of the functions in Device return the object they manipulate.  We can use
-# this to chain commands in a single line. For instance this:
+# this to chain commands in a single line. For instance this expression:
 wg1.rotate(angle = 15, center = [0,0])
 wg1.move([10,20])
 # ... is equivalent to this expression
@@ -136,8 +138,12 @@ wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 #==============================================================================
 # Connecting devices with connect()
 #==============================================================================
+# The connect command allows us to connect DeviceReference ports together like 
+# Lego blocks.  There is an optional parameter called ``overlap`` which is
+# useful if you have shapes you want to intersect with some overlap (or with a
+# negative number, separate the ports).
 wg1.connect(port = 'wgport1', destination = wg2.ports['wgport2'])
-wg3.connect(port = 'wgport2', destination = wg2.ports['wgport1'])
+wg3.connect(port = 'wgport2', destination = wg2.ports['wgport1'], overlap = -1)
 
 quickplot(D)
 
@@ -146,8 +152,9 @@ quickplot(D)
 #==============================================================================
 # Adding ports
 #==============================================================================
-# Although our waveguides have ports, ``D`` itself does not -- it only draws
-# the subports (ports of wg1, wg2, wg3) as a convience.  We need to add ports
+# Although our waveguides wg1/wg2/wg3 have ports, they're only references
+# of the device ``D`` we're working in, and D itself does not -- it only draws
+# the subports (ports of wg1, wg2, wg3) as a convenience.  We need to add ports
 # that we specifically want in our new device ``D``
 D.add_port(port = wg1.ports['wgport2'], name = 1)
 D.add_port(port = wg3.ports['wgport1'], name = 2)
@@ -172,6 +179,14 @@ quickplot(D2)
 # Like before, let's connect mwg1 and mwg2 together then offset them slightly
 mwg1.connect(port = 1, destination = mwg2.ports[2])
 mwg2.move(destination = [30,30])
+
+quickplot(D2)
+
+
+# Since the references mwg1 and mwg2 only point to the device ``D``, any
+# changes that we make to the original ``D`` will be reflected in ``D2``
+
+wg2.x += 7
 
 quickplot(D2)
 
