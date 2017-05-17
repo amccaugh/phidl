@@ -1,10 +1,12 @@
-from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
+from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
 from phidl import Device, Layer, quickplot
 import phidl.geometry as pg
 import phidl.routing as pr
+
+
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
 # and makes us a simple waveguide rectangle
@@ -21,19 +23,27 @@ def waveguide(width = 10, height = 1):
 #==============================================================================
 # Create a blank device
 #==============================================================================
-# Create a new device ``D`` which will act as a blank canvas,
-# and add a few waveguides to it to start out.  add_ref() returns
-# the referenced object you added, allowing you to manipulate it later
+# Let's create a new device ``D`` which will act as a blank canvas (D can be 
+# thought of as a blank GDS cell with some special features). Note that when we
+# make a Device, we usually assign it a variable name with a capital letter
 D = Device('MultiWaveguide')
 
-# We can instantiate the waveguide device by itself.  Note that when we make
-# a Device, we usually assign it a variable name with a capital letter
+# Now say we want to add a few waveguides to to our "Device" D.
+# First we create the waveguides.  As you can see from the waveguide() function
+# definition, the waveguide() function creates another Device ("WG").
+# This can be thought of as the waveguide() function creating another GDS cell,
+# only this one has some geometry inside it.
+#
+# Let's create two of these Devices by calling the waveguide() function
 WG1 = waveguide(width=10, height = 1)
 WG2 = waveguide(width=12, height = 2)
 
-# We can add references from the devices WG1 and WG2 to our blank device D.
+# Now we've made two waveguides Device WG1 and WG2, and we have a blank
+# device D. We can add references from the devices WG1 and WG2 to our blank
+# device byz using the add_ref() function.
 # After adding WG1, we see that the add_ref() function returns a handle to our
-# reference, which we will label with lowercase letters wg1 and wg2
+# reference, which we will label with lowercase letters wg1 and wg2.  This
+# handle will be useful later when we want to move wg1 and wg2 around in D.
 wg1 = D.add_ref(WG1)
 wg2 = D.add_ref(WG2)
 
@@ -84,14 +94,14 @@ wg1.reflect(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 
 # of these properties can actually be used to move the geometry by assigning them
 # new values
 
-wg1.bbox # Will return the bounding box of wg1 in terms of [(xmin, ymin), (xmax, ymax)]
-wg1.xsize # Will return the width of wg1 in the x dimension
-wg1.ysize # Will return the height of wg1 in the y dimension
+print(wg1.bbox) # Will print the bounding box of wg1 in terms of [(xmin, ymin), (xmax, ymax)]
+print(wg1.xsize) # Will print the width of wg1 in the x dimension
+print(wg1.ysize) # Will print the height of wg1 in the y dimension
 
-wg1.center # Gives you the center coordinate of its bounding box
+print(wg1.center) # Gives you the center coordinate of its bounding box
 wg1.center = [4,4] # Shift wg1 such that the center coordinate of its bounding box is at (4,4)
 
-wg2.xmax # Gives you the rightmost (+x) edge of the wg2 bounding box
+print(wg2.xmax) # Gives you the rightmost (+x) edge of the wg2 bounding box
 wg2.xmax = 25 # Moves wg2 such that it's rightmost edge is at x = 25
 
 wg2.y = 5 # Sets the y-coordingate of the center of the shape's bounding box
@@ -127,10 +137,11 @@ quickplot(D)
 # Manipulating geometry 4 - Chaining commands
 #==============================================================================
 # Many of the functions in Device return the object they manipulate.  We can use
-# this to chain commands in a single line. For instance this expression:
+# this to chain commands in a single line. For instance these two expressions:
 wg1.rotate(angle = 15, center = [0,0])
 wg1.move([10,20])
-# ... is equivalent to this expression
+
+# ...are equivalent to this single-line expression
 wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 
 
@@ -273,6 +284,8 @@ quickplot(DL)
 
 DL.write_gds('MultipleLayerText.gds')
 
+
+
 #==============================================================================
 # Annotation
 #==============================================================================
@@ -289,7 +302,6 @@ DL.annotate(text = 'The x size of this\nlayout is %s' % DL.xsize,
 
 # Again, note we have to write the GDS for it to be visible (view in KLayout)
 DL.write_gds('MultipleLayerText.gds')
-
 
 
 
@@ -383,6 +395,7 @@ quickplot(D, label_aliases = True)
 # to by accessing Device.aliases, which is a Python dictionary.  For example:
 print(D.aliases)
 print(D.aliases.keys())
+
 
 
 #==============================================================================
