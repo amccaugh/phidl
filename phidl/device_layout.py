@@ -29,7 +29,7 @@ import webcolors
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 
 
