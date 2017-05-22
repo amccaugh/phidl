@@ -674,7 +674,7 @@ def route_manhattan_auto(
 
 
 
-def point_path(points = [(0,0), (4,0), (4,8)], width = 1):
+def point_path(points = [(0,0), (4,0), (4,8)], width = 1, layer = 0):
     points = np.array([(0,0), (4,0), (4,8), (16,16)])
     dxdy = points[1:] - points[:-1]
     angles = (np.arctan2(dxdy[:,1], dxdy[:,0])).tolist()
@@ -688,7 +688,7 @@ def point_path(points = [(0,0), (4,0), (4,8)], width = 1):
     all_points = np.concatenate([left_points.T, right_points.T[::-1]])
 
     D = Device()
-    D.add_polygon(all_points)
+    D.add_polygon(all_points, layer = layer)
     D.add_port(name = 1, midpoint = points[0],  width = width, orientation = angles[0]*180/pi+180)
     D.add_port(name = 2, midpoint = points[-1], width = width, orientation = angles[-1]*180/pi)
     return D
