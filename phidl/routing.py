@@ -675,7 +675,7 @@ def route_manhattan_auto(
 
 
 def point_path(points = [(0,0), (4,0), (4,8)], width = 1, layer = 0):
-    points = np.array([(0,0), (4,0), (4,8), (16,16)])
+    points = np.asarray(points)
     dxdy = points[1:] - points[:-1]
     angles = (np.arctan2(dxdy[:,1], dxdy[:,0])).tolist()
     angles = np.array([angles[0]] + angles + [angles[-1]])
