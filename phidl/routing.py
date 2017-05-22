@@ -693,4 +693,4 @@ def point_path(points = [(0,0), (4,0), (4,8)], width = 1):
     D.add_port(name = 2, midpoint = points[-1], width = width, orientation = angles[-1]*180/pi)
     return D
 
-quickplot(point_path())
+# quickplot(point_path())
