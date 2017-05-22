@@ -671,3 +671,26 @@ def route_manhattan_auto(
 #     yoff=0
 
 # quickplot(D)
+
+
+
+def point_path(points = [(0,0), (4,0), (4,8)], width = 1):
+    points = np.array([(0,0), (4,0), (4,8), (16,16)])
+    dxdy = points[1:] - points[:-1]
+    angles = (np.arctan2(dxdy[:,1], dxdy[:,0])).tolist()
+    angles = np.array([angles[0]] + angles + [angles[-1]])
+    diff_angles = (angles[1:] - angles[:-1])
+    mean_angles = (angles[1:] + angles[:-1])/2
+    dx = width/2*np.cos((mean_angles - pi/2))/np.cos((diff_angles/2))
+    dy = width/2*np.sin((mean_angles - pi/2))/np.cos((diff_angles/2))
+    left_points =  points.T - np.array([dx,dy])
+    right_points = points.T + np.array([dx,dy])
+    all_points = np.concatenate([left_points.T, right_points.T[::-1]])
+
+    D = Device()
+    D.add_polygon(all_points)
+    D.add_port(name = 1, midpoint = points[0],  width = width, orientation = angles[0]*180/pi+180)
+    D.add_port(name = 2, midpoint = points[-1], width = width, orientation = angles[-1]*180/pi)
+    return D
+
+quickplot(point_path())
