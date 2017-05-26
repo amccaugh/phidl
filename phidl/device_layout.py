@@ -9,6 +9,7 @@
 #==============================================================================
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
+# TODO Create an "align / justify" function
 
 #==============================================================================
 # Imports
@@ -28,7 +29,7 @@ import webcolors
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.7.1'
+__version__ = '0.7.0'
 
 
 

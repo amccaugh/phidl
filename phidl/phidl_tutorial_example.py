@@ -20,6 +20,7 @@ def waveguide(width = 10, height = 1):
     return WG
    
 
+
 #==============================================================================
 # Create a blank device
 #==============================================================================
@@ -53,6 +54,7 @@ wg3 = D.add_ref(waveguide(width=14, height = 3))
 quickplot(D)
 
 
+
 #==============================================================================
 # Creating polygons
 #==============================================================================
@@ -65,6 +67,7 @@ poly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
 poly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] )
 
 quickplot(D)
+
 
 
 #==============================================================================
@@ -84,6 +87,7 @@ wg1.rotate(45) # Rotate the first waveguide by 45 degrees around (0,0)
 wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees around (1,1)
 
 wg1.reflect(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 and p2
+
 
 
 #==============================================================================
@@ -131,6 +135,7 @@ wg1.rotate(angle = -60, center = wg1.ports['wgport2'])
 wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
 
 quickplot(D)
+
 
 
 #==============================================================================
@@ -202,6 +207,7 @@ wg2.x += 7
 quickplot(D2)
 
 
+
 #==============================================================================
 # Routing
 #==============================================================================
@@ -209,6 +215,7 @@ quickplot(D2)
 # polygon.  Since we connected our two 
 D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight') )
 quickplot(D2)
+
 
 
 #==============================================================================
@@ -229,6 +236,7 @@ quickplot(D2)
 # or printed like the polygons created by the text()
 D2.annotate('First label', mwg1.center)
 D2.annotate('Second label', mwg2.center)
+
 
 
 #==============================================================================
@@ -287,6 +295,62 @@ DL.write_gds('MultipleLayerText.gds')
 
 
 #==============================================================================
+# Adding premade geometry with phidl.geometry
+#==============================================================================
+# Usually at the beginning of a phidl file we import the phidl.geometry module
+# as ``pg``, like this:
+import phidl.geometry as pg
+
+# The ``pg`` module contains dozens of premade shapes and structures, ranging
+# from simple ones like ellipses to complex photonic structures.  Let's create
+# a few simple structures and plot them
+D = Device()
+G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
+g1 = D.add_ref(G1)
+g2 = D.add_ref(G2)
+g1.xmin = g2.xmax + 5
+quickplot(D)
+
+# There are dozens of these types of structures.  See the /phidl/geometry.py
+# file for a full geometry list.  Note some of the more complex shapes are 
+# experimental and may change with time.
+
+
+# Let's save this file so we can practice importing it in the next step
+D.write_gds('MyNewGDS.gds')
+
+
+
+#==============================================================================
+# Importing GDS files
+#==============================================================================
+# The phidl.geometry module is responsible for generating premade Devices.  
+# This includes imported geometry from other GDS files too.  When you import
+# a geometry, you provide it a layer map dictionary (e.g. assigning GDS layer 1
+# to your Device layer 2), and it will import all the layers you specify as
+# a new Device which you can then manipulate like any other.
+
+# Let's import the Device we just saved in the previous step as a GDS.  We need
+# to tell it which GDS cell we want to import from the file.  In this case, it's
+# called 'toplevel'.  Let's first just only get GDS layer 1 which has an ellipse
+# and assign it to layer 3
+E = pg.import_gds(
+    filename = 'MyNewGDS.gds',
+    cellname = 'toplevel',
+    layer_mapping = {1: 3})
+quickplot(E)
+
+# Alternatively, we could get both GDS layers 1 and 2 and assign them to layer 4:
+E2 = pg.import_gds(
+    filename = 'MyNewGDS.gds',
+    cellname = 'toplevel',
+    layer_mapping = {1: 4,  2: 4})
+quickplot(E2)
+
+
+
+#==============================================================================
 # Annotation
 #==============================================================================
 # We can also annotate our devices, in order to record information directly
@@ -339,12 +403,10 @@ quickplot(C1)
 C2 = Device(complicated_waveguide, config = cwg_parameters)
 quickplot(C2)
 
-
 # We can also override any parameter we like in our dictionary of parameters
 # by adding keyword arguments -- the input dictionary is untouched afterwards
 C3 = Device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
 quickplot(C3)
-
 
 # The most useful implementation of this is to keep a standard set of 
 # parameters and then override certain parameters each iteration of the for 
@@ -356,7 +418,6 @@ for h in [0.1, 0.5, 1, 2, 4]:
     c4 = D.add_ref( C4 )
     c4.ymin = D.ymax + 10
 quickplot(D)
-
 
 
 
