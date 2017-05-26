@@ -2,8 +2,6 @@
 # Major TODO
 #==============================================================================
 
-# TODO Add numbers to ports
-# TODO for D.connect() add an overlap parameter that scoots them to overlap
 # TODO Create a "remove" function which can delete geometry
 
 #==============================================================================
@@ -11,6 +9,7 @@
 #==============================================================================
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
+# TODO Create an "align / justify" function
 
 #==============================================================================
 # Imports
@@ -30,7 +29,7 @@ import webcolors
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.6.5'
+__version__ = '0.7.0'
 
 
 
@@ -346,7 +345,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         else:
             Device.uid += 1
             self.ports = {}
-            self.parameters = {}
             self.meta = {}
             self.aliases = {}
             self.references = []
@@ -671,7 +669,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.origin = self.origin - p1
         
         # Rotate so reflection axis aligns with x-axis
-        angle = np.arctan((p2[1]-p1[1])/(p2[0]-p1[0]))*180/pi
+        angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
         self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
         self.rotation -= angle
         
@@ -687,7 +685,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
         
         
-    def connect(self, port, destination):
+    def connect(self, port, destination, overlap = 0):
         # ``port`` can either be a string with the name or an actual Port
         if port in self.ports: # Then ``port`` is a key for the ports dict
             p = self.ports[port]
@@ -696,28 +694,11 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         else:
             raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
                 ' - received (%s), ports available are (%s)' % (port, self.ports.keys()))
-
         self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         self.move(origin = p, destination = destination)
+        self.move(-overlap*np.array([cos(destination.orientation*pi/180),
+                                     sin(destination.orientation*pi/180)]))
         return self
-
-
-# #==============================================================================
-# # Handy geometry functions
-# #==============================================================================
-
-
-# def _load_gds(filename, cell_name):
-#     # Format "Port(name = hello, width = 20, orientation = 180)"
-#     gdspy.current_library.cell_dict.clear()
-#     gdspy.current_library.read_gds(filename)
-#     gdspy.current_library.extract(cell_name)
-#     D = Device(cell_name)
-#     D.elements = gdspy.Cell.cell_dict[cell_name].elements
-#     for label in gdspy.Cell.cell_dict[cell_name].labels:
-#         t = label.text
-#         D.labels.append(label)
-#     return D
 
 
 #==============================================================================

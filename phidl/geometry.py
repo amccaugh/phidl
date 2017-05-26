@@ -30,6 +30,7 @@ from skimage import draw, morphology
 # Routing
 # Boolean functions
 # Photonics
+# Loading GDS files
 
 
 
@@ -1004,7 +1005,7 @@ width[126] = 800;  indent[126] = 100  # ~
 width[230] = 700;  indent[230] = 100  # Greek mu
 
 def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0):
-    scaling = size/800
+    scaling = size/1000
     xoffset = position[0]
     yoffset = position[1]
     t = Device()
@@ -1027,7 +1028,7 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
     justify = justify.lower()
     for l in t.references:
         if justify == 'left':   pass
-        if justify == 'right':  l.xmax = position[0]# l.move(origin = l.bounds('NE'), destination = position, axis = 'x')
+        if justify == 'right':  l.xmax = position[0]
         if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
     return t
     
@@ -1078,6 +1079,15 @@ def basic_die(
         D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer)
     
     if type(text_location) is str:
+        if text_location.upper() == 'NW':
+            justify = 'left'
+            text_position = (-size[0]/2 + street_width*2, size[1]/2 - street_width*2 - text_size)
+        elif text_location.upper() == 'N':
+            justify = 'center'
+            text_position = (0, size[1]/2 - street_width*2 - text_size)
+        elif text_location.upper() == 'NE':
+            justify = 'right'
+            text_position = (size[0]/2 - street_width*2, size[1]/2 - street_width*2 - text_size)
         if text_location.upper() == 'SW':
             justify = 'left'
             text_position = (-size[0]/2 + street_width*2, -size[1]/2 + street_width*2)
@@ -1347,77 +1357,6 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
     
     return F
 
-
-#==============================================================================
-#
-# Routing
-#
-#==============================================================================
-        
-def route(port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0):
-    print('WARNING phidl.geometry.route() IS BEING DEPRECATED, PLEASE USE NEWER VERSION phidl.routing.route_basic()\n'*10)
-
-    # Assuming they're both Ports for now
-    point_a = np.array(port1.midpoint)
-    if width1 is None:  width1 = port1.width
-    point_b = np.array(port2.midpoint)
-    if width2 is None:  width2 = port2.width
-    if round(abs(mod(port1.orientation - port2.orientation,360)),3) != 180:
-        raise ValueError('[DEVICE] route() error: Ports do not face each other (orientations must be 180 apart)') 
-    orientation = port1.orientation
-    
-    separation = point_b - point_a  # Vector drawn from A to B
-    distance = norm(separation) # Magnitude of vector from A to B
-    rotation = np.arctan2(separation[1],separation[0])*180/pi # Rotation of vector from A to B
-    angle = rotation - orientation   # If looking out along the normal of ``a``, the angle you would have to look to see ``b``
-    forward_distance = distance*cos(angle*pi/180)
-    lateral_distance = distance*sin(angle*pi/180)
-    
-    # Create a path assuming starting at the origin and setting orientation = 0
-    # use the "connect" function later to move the path to the correct location
-    xf = forward_distance
-    yf = lateral_distance
-    if path_type == 'straight':
-        curve_fun = lambda t: [xf*t, yf*t]
-        curve_deriv_fun = lambda t: [xf + t*0, t*0]
-    if path_type == 'sine':
-        curve_fun = lambda t: [xf*t, yf*(1-cos(t*pi))/2]
-        curve_deriv_fun = lambda t: [xf  + t*0, yf*(sin(t*pi)*pi)/2]
-    #if path_type == 'semicircle':
-    #    def semicircle(t):
-    #        t = np.array(t)
-    #        x,y = np.zeros(t.shape), np.zeros(t.shape)
-    #        ii = (0 <= t) & (t <= 0.5)
-    #        jj = (0.5 < t) & (t <= 1)
-    #        x[ii] = (cos(-pi/2 + t[ii]*pi/2))*xf
-    #        y[ii] = (sin(-pi/2 + t[ii]*pi/2)+1)*yf*2
-    #        x[jj] = (cos(pi*3/2 - t[jj]*pi)+2)*xf/2
-    #        y[jj] = (sin(pi*3/2 - t[jj]*pi)+1)*yf/2
-    #        return x,y
-    #    curve_fun = semicircle
-    #    curve_deriv_fun = None
-    if width_type == 'straight':
-        width_fun = lambda t: (width2 - width1)*t + width1
-    if width_type == 'sine':
-        width_fun = lambda t: (width2 - width1)*(1-cos(t*pi))/2 + width1
-    
-    route_path = gdspy.Path(width = width1, initial_point = (0,0))
-    gds_layer, gds_datatype = _parse_layer(layer)
-    route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts,
-            max_points=199, final_width=width_fun, final_distance=None,
-            layer=gds_layer, datatype = gds_datatype)
-    
-    # Make the route path into a Device with ports, and use "connect" to move it
-    # into the proper location
-    D = Device()
-    D.add(route_path)
-    p1 = D.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
-    p2 = D.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
-    D.meta['length'] = route_path.length
-
-    D.rotate(angle =  180 + port1.orientation - p1.orientation, center = p1.midpoint)
-    D.move(origin = p1, destination = port1)
-    return D
 
 
 
@@ -2096,3 +2035,30 @@ def hexapod():
 
 
 
+
+#==============================================================================
+#
+# Loading GDS files
+#
+#==============================================================================
+
+
+def import_gds(filename, cellname = 'toplevel', layer_mapping = {0: 2, (3,0): (4,1), 3: (5,0)},
+             flatten = True):
+
+    if flatten == True:
+        gdsii_lib = gdspy.GdsLibrary()
+        gdsii_lib.read_gds(filename)
+        polygons = gdsii_lib.cell_dict[cellname].get_polygons(by_spec = True)
+
+        remapped_layers = {_parse_layer(k):v for k,v in layer_mapping.items()}
+
+        D = Device()
+        for layer_in_gds, polys in polygons.items():
+            if _parse_layer(layer_in_gds) in remapped_layers.keys():
+                D.add_polygon(polys, layer = remapped_layers[layer_in_gds])
+
+    elif flatten == False:
+        raise ValueError('[PHIDL] load_gds() Non-flattened imports for GDS cells not available yet')
+
+    return D

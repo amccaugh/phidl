@@ -3,6 +3,21 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+
+## 0.7.0
+
+### New features
+ - Updated tutorial text significantly
+ - Added import_gds() function!  You can now import existing GDS files and use them in your geometry.  Try adding premade organization logos and hand-drawn test structures without having to code them from scratch.  See tutorial for full explanation.
+ - Added ``overlap`` keyword argument to the connect() function.  Now when connecting two ports together, you can force them to overlap.  See tutorial for full explanation.
+ - Added point_path() function to phidl.routing. It takes a width value and list of points and and will create path of constant width which follows the list of points.
+
+### Changes
+ - Text scaling has been changed to be more sensible; now pg.text('abc', size = 100) will produce letters 100 units tall (previously would produce text 125 units tall).
+
+### Bugfixes
+ - Many small ones under the hood
+
 ## 0.6.5
 
 ### New features

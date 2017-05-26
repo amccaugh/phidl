@@ -1,10 +1,12 @@
-from __future__ import division # Makes it so 1/4 = 0.25 instead of zero
+from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
 from phidl import Device, Layer, quickplot
 import phidl.geometry as pg
 import phidl.routing as pr
+
+
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
 # and makes us a simple waveguide rectangle
@@ -18,22 +20,31 @@ def waveguide(width = 10, height = 1):
     return WG
    
 
+
 #==============================================================================
 # Create a blank device
 #==============================================================================
-# Create a new device ``D`` which will act as a blank canvas,
-# and add a few waveguides to it to start out.  add_ref() returns
-# the referenced object you added, allowing you to manipulate it later
+# Let's create a new device ``D`` which will act as a blank canvas (D can be 
+# thought of as a blank GDS cell with some special features). Note that when we
+# make a Device, we usually assign it a variable name with a capital letter
 D = Device('MultiWaveguide')
 
-# We can instantiate the waveguide device by itself.  Note that when we make
-# a Device, we usually assign it a variable name with a capital letter
+# Now say we want to add a few waveguides to to our "Device" D.
+# First we create the waveguides.  As you can see from the waveguide() function
+# definition, the waveguide() function creates another Device ("WG").
+# This can be thought of as the waveguide() function creating another GDS cell,
+# only this one has some geometry inside it.
+#
+# Let's create two of these Devices by calling the waveguide() function
 WG1 = waveguide(width=10, height = 1)
 WG2 = waveguide(width=12, height = 2)
 
-# We can add references from the devices WG1 and WG2 to our blank device D.
+# Now we've made two waveguides Device WG1 and WG2, and we have a blank
+# device D. We can add references from the devices WG1 and WG2 to our blank
+# device byz using the add_ref() function.
 # After adding WG1, we see that the add_ref() function returns a handle to our
-# reference, which we will label with lowercase letters wg1 and wg2
+# reference, which we will label with lowercase letters wg1 and wg2.  This
+# handle will be useful later when we want to move wg1 and wg2 around in D.
 wg1 = D.add_ref(WG1)
 wg2 = D.add_ref(WG2)
 
@@ -41,6 +52,7 @@ wg2 = D.add_ref(WG2)
 wg3 = D.add_ref(waveguide(width=14, height = 3))
 
 quickplot(D)
+
 
 
 #==============================================================================
@@ -55,6 +67,7 @@ poly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
 poly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] )
 
 quickplot(D)
+
 
 
 #==============================================================================
@@ -76,6 +89,7 @@ wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees aroun
 wg1.reflect(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 and p2
 
 
+
 #==============================================================================
 # Manipulating geometry 2 - Properties
 #==============================================================================
@@ -84,17 +98,19 @@ wg1.reflect(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 
 # of these properties can actually be used to move the geometry by assigning them
 # new values
 
-wg1.bbox # Will return the bounding box of wg1 in terms of [(xmin, ymin), (xmax, ymax)]
-wg1.xsize # Will return the width of wg1 in the x dimension
-wg1.ysize # Will return the height of wg1 in the y dimension
+print(wg1.bbox) # Will print the bounding box of wg1 in terms of [(xmin, ymin), (xmax, ymax)]
+print(wg1.xsize) # Will print the width of wg1 in the x dimension
+print(wg1.ysize) # Will print the height of wg1 in the y dimension
 
-wg1.center # Gives you the center coordinate of its bounding box
+print(wg1.center) # Gives you the center coordinate of its bounding box
 wg1.center = [4,4] # Shift wg1 such that the center coordinate of its bounding box is at (4,4)
 
-wg2.xmax # Gives you the rightmost (+x) edge of the wg2 bounding box
+print(wg2.xmax) # Gives you the rightmost (+x) edge of the wg2 bounding box
 wg2.xmax = 25 # Moves wg2 such that it's rightmost edge is at x = 25
 
-wg3.ymin # Gives you the bottommost (+y) edge of the wg3 bounding box
+wg2.y = 5 # Sets the y-coordingate of the center of the shape's bounding box
+
+wg3.ymin # Gives you the bottommost (-y) edge of the wg3 bounding box
 wg3.ymin = -14 # Moves wg3 such that it's bottommost edge is at y = -14
 
 
@@ -121,14 +137,16 @@ wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoi
 quickplot(D)
 
 
+
 #==============================================================================
 # Manipulating geometry 4 - Chaining commands
 #==============================================================================
 # Many of the functions in Device return the object they manipulate.  We can use
-# this to chain commands in a single line. For instance this:
+# this to chain commands in a single line. For instance these two expressions:
 wg1.rotate(angle = 15, center = [0,0])
 wg1.move([10,20])
-# ... is equivalent to this expression
+
+# ...are equivalent to this single-line expression
 wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 
 
@@ -136,8 +154,12 @@ wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 #==============================================================================
 # Connecting devices with connect()
 #==============================================================================
+# The connect command allows us to connect DeviceReference ports together like 
+# Lego blocks.  There is an optional parameter called ``overlap`` which is
+# useful if you have shapes you want to intersect with some overlap (or with a
+# negative number, separate the ports).
 wg1.connect(port = 'wgport1', destination = wg2.ports['wgport2'])
-wg3.connect(port = 'wgport2', destination = wg2.ports['wgport1'])
+wg3.connect(port = 'wgport2', destination = wg2.ports['wgport1'], overlap = -1)
 
 quickplot(D)
 
@@ -146,8 +168,9 @@ quickplot(D)
 #==============================================================================
 # Adding ports
 #==============================================================================
-# Although our waveguides have ports, ``D`` itself does not -- it only draws
-# the subports (ports of wg1, wg2, wg3) as a convience.  We need to add ports
+# Although our waveguides wg1/wg2/wg3 have ports, they're only references
+# of the device ``D`` we're working in, and D itself does not -- it only draws
+# the subports (ports of wg1, wg2, wg3) as a convenience.  We need to add ports
 # that we specifically want in our new device ``D``
 D.add_port(port = wg1.ports['wgport2'], name = 1)
 D.add_port(port = wg3.ports['wgport1'], name = 2)
@@ -176,6 +199,15 @@ mwg2.move(destination = [30,30])
 quickplot(D2)
 
 
+# Since the references mwg1 and mwg2 only point to the device ``D``, any
+# changes that we make to the original ``D`` will be reflected in ``D2``
+
+wg2.x += 7
+
+quickplot(D2)
+
+
+
 #==============================================================================
 # Routing
 #==============================================================================
@@ -183,6 +215,7 @@ quickplot(D2)
 # polygon.  Since we connected our two 
 D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight') )
 quickplot(D2)
+
 
 
 #==============================================================================
@@ -203,6 +236,7 @@ quickplot(D2)
 # or printed like the polygons created by the text()
 D2.annotate('First label', mwg1.center)
 D2.annotate('Second label', mwg2.center)
+
 
 
 #==============================================================================
@@ -258,6 +292,64 @@ quickplot(DL)
 
 DL.write_gds('MultipleLayerText.gds')
 
+
+
+#==============================================================================
+# Adding premade geometry with phidl.geometry
+#==============================================================================
+# Usually at the beginning of a phidl file we import the phidl.geometry module
+# as ``pg``, like this:
+import phidl.geometry as pg
+
+# The ``pg`` module contains dozens of premade shapes and structures, ranging
+# from simple ones like ellipses to complex photonic structures.  Let's create
+# a few simple structures and plot them
+D = Device()
+G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
+g1 = D.add_ref(G1)
+g2 = D.add_ref(G2)
+g1.xmin = g2.xmax + 5
+quickplot(D)
+
+# There are dozens of these types of structures.  See the /phidl/geometry.py
+# file for a full geometry list.  Note some of the more complex shapes are 
+# experimental and may change with time.
+
+
+# Let's save this file so we can practice importing it in the next step
+D.write_gds('MyNewGDS.gds')
+
+
+
+#==============================================================================
+# Importing GDS files
+#==============================================================================
+# The phidl.geometry module is responsible for generating premade Devices.  
+# This includes imported geometry from other GDS files too.  When you import
+# a geometry, you provide it a layer map dictionary (e.g. assigning GDS layer 1
+# to your Device layer 2), and it will import all the layers you specify as
+# a new Device which you can then manipulate like any other.
+
+# Let's import the Device we just saved in the previous step as a GDS.  We need
+# to tell it which GDS cell we want to import from the file.  In this case, it's
+# called 'toplevel'.  Let's first just only get GDS layer 1 which has an ellipse
+# and assign it to layer 3
+E = pg.import_gds(
+    filename = 'MyNewGDS.gds',
+    cellname = 'toplevel',
+    layer_mapping = {1: 3})
+quickplot(E)
+
+# Alternatively, we could get both GDS layers 1 and 2 and assign them to layer 4:
+E2 = pg.import_gds(
+    filename = 'MyNewGDS.gds',
+    cellname = 'toplevel',
+    layer_mapping = {1: 4,  2: 4})
+quickplot(E2)
+
+
+
 #==============================================================================
 # Annotation
 #==============================================================================
@@ -274,7 +366,6 @@ DL.annotate(text = 'The x size of this\nlayout is %s' % DL.xsize,
 
 # Again, note we have to write the GDS for it to be visible (view in KLayout)
 DL.write_gds('MultipleLayerText.gds')
-
 
 
 
@@ -312,12 +403,10 @@ quickplot(C1)
 C2 = Device(complicated_waveguide, config = cwg_parameters)
 quickplot(C2)
 
-
 # We can also override any parameter we like in our dictionary of parameters
 # by adding keyword arguments -- the input dictionary is untouched afterwards
 C3 = Device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
 quickplot(C3)
-
 
 # The most useful implementation of this is to keep a standard set of 
 # parameters and then override certain parameters each iteration of the for 
@@ -329,7 +418,6 @@ for h in [0.1, 0.5, 1, 2, 4]:
     c4 = D.add_ref( C4 )
     c4.ymin = D.ymax + 10
 quickplot(D)
-
 
 
 
@@ -370,6 +458,7 @@ print(D.aliases)
 print(D.aliases.keys())
 
 
+
 #==============================================================================
 # Extracting shapes
 #==============================================================================
@@ -389,3 +478,36 @@ D2 = Device()
 ellipse_polygons = D.extract(layers = 1)
 D2.add_polygon(ellipse_polygons, layer = 3)
 quickplot(D2)
+
+
+
+#==============================================================================
+# Making boolean shapes
+#==============================================================================
+# If you want to subtract one shape from another, merge two shapes, or 
+# perform an XOR on them, you can do that with the pg.boolean() function.
+# the ``operation`` argument should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.
+# Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+#  'B-A' is equivalent to 'not' with the operands switched
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().movex(15)
+E3 = pg.ellipse().movex(30)
+quickplot([E1, E2, E3])
+
+D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
+quickplot(D2)
+
+
+
+#==============================================================================
+# Creating outlines of shapes
+#==============================================================================
+# Sometimes, when writing in a positive-tone resist, it is useful to produce 
+# an outline of an existing shape. The pg.outline() function allows you to do
+# exactly that
+
+D = pg.ellipse(layer = 1)
+D2 = pg.outline(D, distance = 1, layer = 2)
+quickplot([D, D2])
