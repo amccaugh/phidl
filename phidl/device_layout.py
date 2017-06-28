@@ -3,6 +3,9 @@
 #==============================================================================
 
 # TODO Create a "remove" function which can delete geometry
+# TODO PHIDL Import_gds: Import all layers by default, otherwise can specify
+#       list of layers to import. Automatically grab toplevel cell if none specified
+# TODO PHIDL import annotations from GDS files as labels
 
 #==============================================================================
 # Minor TODO
@@ -29,7 +32,7 @@ import webcolors
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 
 
