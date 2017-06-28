@@ -307,9 +307,12 @@ import phidl.geometry as pg
 D = Device()
 G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
 G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
+G3 = pg.rectangle(size = (10,5), layer = 3)
 g1 = D.add_ref(G1)
 g2 = D.add_ref(G2)
+g3 = D.add_ref(G3)
 g1.xmin = g2.xmax + 5
+g3.xmin = g1.xmax + 5
 quickplot(D)
 
 # There are dozens of these types of structures.  See the /phidl/geometry.py
@@ -327,26 +330,32 @@ D.write_gds('MyNewGDS.gds')
 #==============================================================================
 # The phidl.geometry module is responsible for generating premade Devices.  
 # This includes imported geometry from other GDS files too.  When you import
-# a geometry, you provide it a layer map dictionary (e.g. assigning GDS layer 1
-# to your Device layer 2), and it will import all the layers you specify as
-# a new Device which you can then manipulate like any other.
+# a GDS, you specify which layers you want, and it will import those layers
+# as a new Device.  The new device can then be manipulated like any other.
 
-# Let's import the Device we just saved in the previous step as a GDS.  We need
-# to tell it which GDS cell we want to import from the file.  In this case, it's
-# called 'toplevel'.  Let's first just only get GDS layer 1 which has an ellipse
-# and assign it to layer 3
-E = pg.import_gds(
-    filename = 'MyNewGDS.gds',
-    cellname = 'toplevel',
-    layer_mapping = {1: 3})
+# Let's import the GDS we just saved in the previous step.  Although generally
+# you must specify which cell in the GDS file you want to import using the 
+# argument `cellname`, if the GDS file has only one top-level cell (like our
+# MyNewGDS.gds file does), the cellname argument can be left out and 
+# import_gds() will import that top-level cell.
+
+# Let's first just import the entire GDS as-is
+E = pg.import_gds(filename = 'MyNewGDS.gds')
 quickplot(E)
 
-# Alternatively, we could get both GDS layers 1 and 2 and assign them to layer 4:
-E2 = pg.import_gds(
-    filename = 'MyNewGDS.gds',
-    cellname = 'toplevel',
-    layer_mapping = {1: 4,  2: 4})
+# Now say we only wanted to get layers 2 and 3 from the file.  We can specify
+# a list of layers using the `layers` argument
+E2 = pg.import_gds(filename = 'MyNewGDS.gds',
+                   layers = [2, 3])
 quickplot(E2)
+
+# We can also use the `layers` argument to map layers arbitrarily. Say we
+# wanted to combine shapes on layer 1 with those on layer 3, but leave layer 2
+# on layer 2.  We can map layers 1->3, 3->3, 2->2  by passing a dict to the
+# `layers` argument
+E3 = pg.import_gds(filename = 'MyNewGDS.gds',
+                   layers = {1: 3,  3: 3,  2: 2})
+quickplot(E3)
 
 
 
