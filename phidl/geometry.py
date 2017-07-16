@@ -1330,7 +1330,7 @@ def _expand_raster(raster, distance = (4,2)):
         
     num_pixels = np.array(np.ceil(distance), dtype = int)
     neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
-    rr, cc = draw.ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
+    rr, cc = draw.ellipse(num_pixels[1], num_pixels[0], distance[1]+0.5, distance[0]+0.5)
     neighborhood[rr, cc] = 1
     
     return morphology.binary_dilation(image = raster, selem=neighborhood)
