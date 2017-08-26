@@ -17,6 +17,7 @@ from skimage import draw, morphology
 
 
 ##### Categories:
+# Loading GDS files
 # Polygons / shapes
 # Optimal (current-crowding) curves
 # Pads
@@ -30,9 +31,54 @@ from skimage import draw, morphology
 # Routing
 # Boolean functions
 # Photonics
+
+
+
+
+#==============================================================================
+#
 # Loading GDS files
+#
+#==============================================================================
 
 
+def import_gds(filename, cellname = None, layers = None, flatten = True):
+    D = Device()
+
+    gdsii_lib = gdspy.GdsLibrary()
+    gdsii_lib.read_gds(filename)
+    top_level_cells = gdsii_lib.top_level()
+    if cellname is not None:
+        if cellname not in gdsii_lib.cell_dict:
+            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) is not present in file %s' % (cellname,filename))
+        cell = gdsii_lib.cell_dict[cellname]
+    elif cellname is None and len(top_level_cells) == 1:
+        cell = top_level_cells[0]
+    elif cellname is None and len(top_level_cells) > 1:
+        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
+
+
+    if flatten == True:
+        polygons = cell.get_polygons(by_spec = True)
+
+        if layers is None:
+            for layer_in_gds, polys in polygons.items():
+                D.add_polygon(polys, layer = layer_in_gds)
+        elif type(layers) in (list, tuple):
+            for layer_in_gds, polys in polygons.items():
+                if _parse_layer(layer_in_gds) in [_parse_layer(l) for l in layers]:
+                    D.add_polygon(polys, layer = layer_in_gds)
+        elif type(layers) is dict:
+            remapped_layers = {_parse_layer(k):v for k,v in layers.items()}
+
+            for layer_in_gds, polys in polygons.items():
+                if _parse_layer(layer_in_gds) in remapped_layers.keys():
+                    D.add_polygon(polys, layer = remapped_layers[layer_in_gds])
+
+    elif flatten == False:
+        raise ValueError('[PHIDL] import_gds() Non-flattened imports for GDS cells not available yet')
+
+    return D
 
 #==============================================================================
 #
@@ -1284,7 +1330,7 @@ def _expand_raster(raster, distance = (4,2)):
         
     num_pixels = np.array(np.ceil(distance), dtype = int)
     neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
-    rr, cc = draw.ellipse(r = num_pixels[1], c = num_pixels[0], yradius = distance[1]+0.5, xradius = distance[0]+0.5)
+    rr, cc = draw.ellipse(num_pixels[1], num_pixels[0], distance[1]+0.5, distance[0]+0.5)
     neighborhood[rr, cc] = 1
     
     return morphology.binary_dilation(image = raster, selem=neighborhood)
@@ -2033,32 +2079,3 @@ def hydra():
 def hexapod():
     pass
 
-
-
-
-#==============================================================================
-#
-# Loading GDS files
-#
-#==============================================================================
-
-
-def import_gds(filename, cellname = 'toplevel', layer_mapping = {0: 2, (3,0): (4,1), 3: (5,0)},
-             flatten = True):
-
-    if flatten == True:
-        gdsii_lib = gdspy.GdsLibrary()
-        gdsii_lib.read_gds(filename)
-        polygons = gdsii_lib.cell_dict[cellname].get_polygons(by_spec = True)
-
-        remapped_layers = {_parse_layer(k):v for k,v in layer_mapping.items()}
-
-        D = Device()
-        for layer_in_gds, polys in polygons.items():
-            if _parse_layer(layer_in_gds) in remapped_layers.keys():
-                D.add_polygon(polys, layer = remapped_layers[layer_in_gds])
-
-    elif flatten == False:
-        raise ValueError('[PHIDL] load_gds() Non-flattened imports for GDS cells not available yet')
-
-    return D

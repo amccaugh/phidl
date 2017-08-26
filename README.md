@@ -1,6 +1,18 @@
 # PHIDL
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
+
+## 0.7.1
+
+### New features
+ - Updated tutorial text
+
+### Changes
+ - Large changes to pg.import_gds().  If your GDS file only has one toplevel cell, you do not need to specify a cellname, pg.import_gds() will automatically grab that cell.  Also, it imports all layers by default now, although you can still choose which layers and even create a layer mapping based on whether you pass the `layers` argument a list or dict.  See tutorial for more information.
+
+### Bugfixes
+ - Many small ones under the hood
+
 # Changelog
 
 
