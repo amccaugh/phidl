@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 import gdspy
 from phidl import Device, Port
-from phidl.device_layout import _parse_layer
+from phidl.device_layout import _parse_layer, DeviceReference
 import phidl.routing as pr
 
 from skimage import draw, morphology
@@ -1493,8 +1493,11 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
     elif operation == 'b-a':
         operation = 'not'
         A_polys, B_polys = B_polys, A_polys
-    if operation == 'a+b':
+    elif operation == 'a+b':
         operation = 'or'
+    elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
+        raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
+
 
     p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
                  max_points=199, layer=gds_layer, datatype=gds_datatype)
