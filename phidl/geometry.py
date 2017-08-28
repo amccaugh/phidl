@@ -43,7 +43,7 @@ from skimage import draw, morphology
 
 
 def import_gds(filename, cellname = None, layers = None, flatten = True):
-    D = Device()
+    D = Device('import')
 
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
@@ -733,7 +733,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     x = np.hstack([0,x_compensated])/max(x_compensated)*length
     
     # Create blank device and add taper polygon
-    D = Device()
+    D = Device('hecken')
     xpts = np.concatenate([x, x[::-1]])
     ypts = np.concatenate([widths/2, -widths[::-1]/2])
     D.add_polygon((xpts,ypts), layer = layer)
@@ -768,7 +768,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
         
         
     def taper_section(x_start, x_end, num_pts = 30, layer = 0):
-        D = Device()
+        D = Device('tapersec')
         length =  x_end - x_start
         x = np.linspace(0, length, num_pts)
         widths = np.linspace(taper_width(x_start), taper_width(x_end), num_pts)
@@ -780,7 +780,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
         return D
         
     def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0):
-        D = Device()
+        D = Device('arctaper')
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
         path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
         [D.add_polygon(p, layer = layer) for p in path1.polygons]
@@ -1054,9 +1054,9 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
     scaling = size/1000
     xoffset = position[0]
     yoffset = position[1]
-    t = Device()
+    t = Device('text')
     for line in text.split('\n'):
-        l = Device()
+        l = Device('letter')
         for c in line:
             ascii_val = ord(c)
             if c == ' ':
@@ -1177,7 +1177,7 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer)
-    D = Device()
+    D = Device('racetrack')
     D.add(route_path)
     return D
     
@@ -1339,7 +1339,7 @@ def _expand_raster(raster, distance = (4,2)):
             
 def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
                          densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
-    D = Device()
+    D = Device('fillcell')
     for layer, density, inv in zip(layers, densities, inverted):
         rectangle_size = np.array(size)*np.sqrt(density)
 #        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
@@ -1430,7 +1430,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer
     p = gdspy.offset(joined, distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
                      max_points=199, layer=gds_layer, datatype = gds_datatype)
-    D = Device()
+    D = Device('offset')
     D.add_polygon(p, layer=layer)
     return D
 
@@ -1460,7 +1460,7 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
                  max_points=199, layer=gds_layer, datatype=gds_datatype)
         
-    D = Device()
+    D = Device('invert')
     D.add_polygon(p, layer=layer)
     return D
 
@@ -1502,13 +1502,13 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
     p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
                  max_points=199, layer=gds_layer, datatype=gds_datatype)
 
-    D = Device()
+    D = Device('boolean')
     if p is not None: D.add_polygon(p, layer = layer)
     return D
 
 
 def outline(elements, distance = 1, precision = 0.001, layer = 0):
-    D = Device()
+    D = Device('outline')
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
@@ -1601,7 +1601,7 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
 
 
 def pad(width = 100, height = 300, po_offset = 20, pad_layer = 2, po_layer = 3):
-    D = Device()
+    D = Device('pad')
     pad = D.add_ref(compass(size = [width, height], layer = pad_layer))
     pad_opening = D.add_ref(compass(size = [width-2*po_offset, height-2*po_offset], layer = po_layer))
     D.add_port(port=pad.ports['S'], name = 1)
@@ -1617,7 +1617,7 @@ def pad(width = 100, height = 300, po_offset = 20, pad_layer = 2, po_layer = 3):
 
     
 def dblpad(gap = 10, pad_device = Device()):
-    D = Device()
+    D = Device('dblpad')
 #    Pad = pad()
     pad1 = D.add_ref(pad_device)
     pad2 = D.add_ref(pad_device)
@@ -1787,7 +1787,7 @@ def adiabatic_beamsplitter(interaction_length = 10, gap1 = 1, gap2 = 0.1,
 def beamtap(interaction_length = 10, height_sines = 5, min_radius = 10, gap = 0.5, width = 0.4, port_devices = (None,None,None,None)): 
                                    
     length_sines = np.sqrt(height_sines*np.pi**2*min_radius/2)    
-    D = Device()
+    D = Device('beamtap')
     
     WG = compass(size=[interaction_length, width])
     wg1 = D.add_ref(WG)
@@ -1881,7 +1881,7 @@ def mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = D
     height_sines = r*length_sines
     
     # build the device
-    D = Device()
+    D = Device('mzi')
     bs1 = D.add_ref(beamsplitter)
     bs2 = D.add_ref(beamsplitter)
     bs1.reflect(p1 = bs1.ports[3], p2 = bs1.ports[4])
@@ -1924,7 +1924,7 @@ def wg_snspd(meander_width = 0.4, meander_pitch = 0.8, num_squares = 1000,
     # the length and width of the meander are chosen so that it is approximately 
     # square
     
-    D = Device()
+    D = Device('wg_snspd')
     meanderLength = np.sqrt(num_squares)*meander_width*2
     num_squares_per_turn = (meanderLength/2-(meander_width+meander_pitch))/meander_width + 1
     

@@ -1,6 +1,18 @@
 # PHIDL
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
+# Changelog
+
+## 0.7.0
+
+### New features
+ - Added more informative error messages
+
+### Changes
+ - 
+
+### Bugfixes
+ - Gave several unnamed phidl.geometry objects proper names
 
 ## 0.7.1
 
@@ -12,8 +24,6 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 ### Bugfixes
  - Many small ones under the hood
-
-# Changelog
 
 
 ## 0.7.0
