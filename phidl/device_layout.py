@@ -410,8 +410,6 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def add_polygon(self, points, layer = 0):
         # Check if input a list of polygons by seeing if it's 3 levels deep
-        if not points: raise ValueError("""[PHIDL] add_polygon(): `points` argument empty """)
-
         try:    
             points[0][0][0] # Try to access first x point
             return [self.add_polygon(p, layer) for p in points]
