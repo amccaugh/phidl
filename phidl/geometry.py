@@ -1056,7 +1056,7 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
     yoffset = position[1]
     t = Device('text')
     for line in text.split('\n'):
-        l = Device('letter')
+        l = Device(name = 'textline')
         for c in line:
             ascii_val = ord(c)
             if c == ' ':
@@ -1364,6 +1364,11 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
     
     # Create the fill cell.  If fill_inverted is not specified, assume all False
     if fill_inverted is None: fill_inverted = [False]*len(fill_layers)
+    if len(fill_layers) != len(fill_densities):
+        raise ValueError("[PHIDL] phidl.geometry.fill_rectangle() `fill_layers` and `fill_densities` parameters must be lists of the same length")
+    if len(fill_layers) != len(fill_inverted):
+        raise ValueError("[PHIDL] phidl.geometry.fill_rectangle() `fill_layers` and `fill_inverted` parameters must be lists of the same length")
+
     fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers,
                                      densities = fill_densities, inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
