@@ -3,16 +3,13 @@
 #==============================================================================
 
 # TODO Create a "remove" function which can delete geometry
-# TODO PHIDL Import_gds: Import all layers by default, otherwise can specify
-#       list of layers to import. Automatically grab toplevel cell if none specified
-# TODO PHIDL import annotations from GDS files as labels
+# Add support for gdspy.CellArray
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
-# TODO Create an "align / justify" function
 
 #==============================================================================
 # Imports

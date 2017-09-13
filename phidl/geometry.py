@@ -43,8 +43,7 @@ from skimage import draw, morphology
 
 
 def import_gds(filename, cellname = None, layers = None, flatten = True):
-    D = Device('import')
-
+    
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
@@ -57,8 +56,12 @@ def import_gds(filename, cellname = None, layers = None, flatten = True):
     elif cellname is None and len(top_level_cells) > 1:
         raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
 
+    if flatten == False:
+        D = _translate_cell(cell)
+        return D
 
-    if flatten == True:
+    elif flatten == True:
+        D = Device('import')
         polygons = cell.get_polygons(by_spec = True)
 
         if layers is None:
@@ -74,10 +77,21 @@ def import_gds(filename, cellname = None, layers = None, flatten = True):
             for layer_in_gds, polys in polygons.items():
                 if _parse_layer(layer_in_gds) in remapped_layers.keys():
                     D.add_polygon(polys, layer = remapped_layers[layer_in_gds])
+        return D
 
-    elif flatten == False:
-        raise ValueError('[PHIDL] import_gds() Non-flattened imports for GDS cells not available yet')
 
+def _translate_cell(c):
+    D = Device(name = c.name)
+    for e in c.elements:
+        if isinstance(e, gdspy.Polygon):
+            D.add_polygon(points = e.points, layer = (e.layer, e.datatype))
+        elif isinstance(e, gdspy.CellReference):
+            dr = DeviceReference(device = _translate_cell(e.ref_cell),
+                            origin = e.origin,
+                            rotation = e.rotation, magnification = None,
+                            x_reflection = e.x_reflection)
+            D.elements.append(dr)
+    D.labels = c.labels
     return D
 
 #==============================================================================

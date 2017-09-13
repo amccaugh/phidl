@@ -3,9 +3,10 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
-## 0.7.0
+## 0.7.2
 
 ### New features
+ - pg.import_gds() can now import without flattening all the polygons to a single layer
  - Added more informative error messages
 
 ### Changes
