@@ -567,7 +567,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
             p.orientation = 2*phi - p.orientation
-                
+        return self
     
     
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
