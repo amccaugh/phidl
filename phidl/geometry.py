@@ -516,7 +516,7 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 
 def L(width = 1, size = (10,20) , layer = 0):
     D = Device(name = 'L')
-    w = width
+    w = width/2
     s1, s2 = size
     points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2), (-w,s2), (-w,-w)]
     D.add_polygon(points, layer = layer)
