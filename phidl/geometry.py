@@ -438,6 +438,14 @@ def rectangle(size = (4,2), layer = 0):
     return D
 
 
+def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
+    D = Device(name = 'bbox')
+    (a,b),(c,d)  = bbox
+    points = ((a,b), (c,b), (c,d), (a,d))
+    D.add_polygon(points, layer = layer)
+    return D
+
+
 def cross(length = 10, width = 3, layer = 0):
     D = Device(name = 'cross')
     R = rectangle(size = (width, length), layer = layer)
