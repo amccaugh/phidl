@@ -1157,7 +1157,7 @@ def basic_die(
     t = D.add_ref(text(text = die_name, size = text_size, layer=layer))
 
     d = street_width + 20
-    sx, sy = size[0], size[1]
+    sx, sy = size[0]/2, size[1]/2
     if type(text_location) is str:
         if text_location.upper() == 'NW':
             t.xmin, t.ymax = [-sx + d, sy - d]
