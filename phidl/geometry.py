@@ -1153,30 +1153,26 @@ def basic_die(
     if draw_bbox is True:
         s = np.array(size)/2
         D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer)
-    
+    D.center = (0,0)
+    t = D.add_ref(text(text = die_name, size = text_size, layer=layer))
+
+    d = street_width + 20
+    sx, sy = size[0], size[1]
     if type(text_location) is str:
         if text_location.upper() == 'NW':
-            justify = 'left'
-            text_position = (-size[0]/2 + street_width*2, size[1]/2 - street_width*2 - text_size)
+            t.xmin, t.ymax = [-sx + d, sy - d]
         elif text_location.upper() == 'N':
-            justify = 'center'
-            text_position = (0, size[1]/2 - street_width*2 - text_size)
+            t.x, t.ymax = [0, sy - d]
         elif text_location.upper() == 'NE':
-            justify = 'right'
-            text_position = (size[0]/2 - street_width*2, size[1]/2 - street_width*2 - text_size)
+            t.xmax, t.ymax = [sx - d, sy - d]
         if text_location.upper() == 'SW':
-            justify = 'left'
-            text_position = (-size[0]/2 + street_width*2, -size[1]/2 + street_width*2)
+            t.xmin, t.ymin = [-sx + d, -sy + d]
         elif text_location.upper() == 'S':
-            justify = 'center'
-            text_position = (0, -size[1]/2 + street_width*2)
+            t.x, t.ymin = [0, -sy + d]
         elif text_location.upper() == 'SE':
-            justify = 'right'
-            text_position = (size[0]/2 - street_width*2, -size[1]/2 + street_width*2)
+            t.xmax, t.ymin = [sx - d, -sy + d]
     else:
-        text_position = text_location
-        justify = 'center'
-    D.add_ref(text(text = die_name, size = text_size, position=text_position, justify = justify, layer=layer))
+        t.x, t.y = text_location
     
     return D
     
