@@ -4,12 +4,17 @@
 
 # TODO Create a "remove" function which can delete geometry
 # Add support for gdspy.CellArray
+# Change D.meta to D.info
+# Change D.annotate to D.label
+# Add POI class 
+# Add D.flatten()
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
 # TODO make reflect allow a port input for p1 
 # TODO make __str__ for devicereference and include ports
+# TODO Make ebeam cross marks 
 
 #==============================================================================
 # Imports
