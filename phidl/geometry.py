@@ -510,7 +510,7 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     D.add_polygon(points = (xpts,ypts), layer = layer)
     D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
     D.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
-    D.meta['length'] = (abs(theta)*pi/180)*radius
+    D.info['length'] = (abs(theta)*pi/180)*radius
     return D
 
 
@@ -597,9 +597,9 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     D.add_port(port = start_nw.ports['W'], name = 1)
     D.add_port(port = finish_se.ports['W'], name = 2)
     
-    D.meta['num_squares'] = num_meanders*(xsize/wire_width)
-    D.meta['area'] = xsize*ysize
-    D.meta['size'] = (xsize, ysize)
+    D.info['num_squares'] = num_meanders*(xsize/wire_width)
+    D.info['area'] = xsize*ysize
+    D.info['size'] = (xsize, ysize)
     
     return D
 
@@ -622,7 +622,7 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     D.add_port(name = 1, port = step1.ports[2])
     D.add_port(name = 2, port = step2.ports[2])
     
-    D.meta = s.meta
+    D.info = s.info
     
     return D
     
@@ -771,20 +771,20 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
     
     # Add meta information about the taper
-    D.meta['num_squares'] = np.sum(np.diff(x)/widths[:-1])
-    D.meta['width1'] = widths[0]
-    D.meta['width2'] = widths[-1]
-    D.meta['Z1'] = Z[0]
-    D.meta['Z2'] = Z[-1]
+    D.info['num_squares'] = np.sum(np.diff(x)/widths[:-1])
+    D.info['width1'] = widths[0]
+    D.info['width2'] = widths[-1]
+    D.info['Z1'] = Z[0]
+    D.info['Z2'] = Z[-1]
     # Note there are two values for v/c (and f_cutoff) because the speed of
     # light is different at the beginning and end of the taper
-    D.meta['w'] = widths
-    D.meta['x'] = x
-    D.meta['Z'] = Z
-    D.meta['v/c'] = v/3e8
+    D.info['w'] = widths
+    D.info['x'] = x
+    D.info['Z'] = Z
+    D.info['v/c'] = v/3e8
     BetaLmin = np.sqrt(B**2 + 6.523)
-    D.meta['f_cutoff'] = BetaLmin*D.meta['v/c'][0]*3e8/(2*pi*length*1e-6)
-    D.meta['length'] = length
+    D.info['f_cutoff'] = BetaLmin*D.info['v/c'][0]*3e8/(2*pi*length*1e-6)
+    D.info['length'] = length
     
     return D
 
@@ -1290,10 +1290,10 @@ def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
-    D.meta['rho'] = rho
-    D.meta['left_width'] =   arm_widths[0]
-    D.meta['right_width'] =  arm_widths[1]
-    D.meta['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
+    D.info['rho'] = rho
+    D.info['left_width'] =   arm_widths[0]
+    D.info['right_width'] =  arm_widths[1]
+    D.info['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
 
     return D
     
@@ -1926,9 +1926,9 @@ def mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = D
     route1 = D.add_ref(route(port1 = P.ports[1], port2 = bs2.ports[3], path_type = 'sine'))
     route2 = D.add_ref(route(port1 = P.ports[2], port2 = bs1.ports[3], path_type = 'sine'))
     route3 = D.add_ref(route(port1 = bs1.ports[4], port2 = bs2.ports[4]))
-    calc_length = route1.meta['length']+route2.meta['length']-route3.meta['length']
+    calc_length = route1.info['length']+route2.info['length']-route3.info['length']
     calc_fsr = wavelength**2/ng/calc_length
-    D.meta['Calculated fsr'] = calc_fsr
+    D.info['Calculated fsr'] = calc_fsr
 
     # now we put either devices or ports on the 4 outputs
     dest_ports = [bs2.ports[1], bs2.ports[2], bs1.ports[1], bs1.ports[2]]
@@ -2067,7 +2067,7 @@ def wg_snspd(meander_width = 0.4, meander_pitch = 0.8, num_squares = 1000,
     landingPad2.xmin = nwPad1.xmin - 1
     Route3 = route(port1 = landingPad1.ports['W'], port2 = landingPad2.ports['E'], layer = wg_layer)
     D.add_ref(Route3)
-    D.meta['num_squares'] = meander.meta['num_squares']
+    D.info['num_squares'] = meander.info['num_squares']
     return D
 
 

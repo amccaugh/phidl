@@ -25,7 +25,7 @@ def _arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution
     D.add_polygon(points = (xpts,ypts), layer = layer)
     D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
     D.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
-    D.meta['length'] = (abs(theta)*pi/180)*radius
+    D.info['length'] = (abs(theta)*pi/180)*radius
     return D
         
 
@@ -160,7 +160,7 @@ def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width
     D.add(route_path)
     p1 = D.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
     p2 = D.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
-    D.meta['length'] = route_path.length
+    D.info['length'] = route_path.length
 
     D.rotate(angle =  180 + port1.orientation - p1.orientation, center = p1.midpoint)
     D.move(origin = p1, destination = port1)

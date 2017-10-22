@@ -4,7 +4,6 @@
 
 # TODO Create a "remove" function which can delete geometry
 # Add support for gdspy.CellArray
-# Change D.meta to D.info
 # Change D.annotate to D.label
 # Add POI class 
 # Add D.flatten()
@@ -354,7 +353,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         else:
             Device.uid += 1
             self.ports = {}
-            self.meta = {}
+            self.info = {}
             self.aliases = {}
             self.references = []
             gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
@@ -373,6 +372,10 @@ class Device(gdspy.Cell, _GeometryHelper):
     def layers(self):
         return self.get_layers()
 
+    @property
+    def meta(self):
+        print('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
+        return self.info
         
     @property
     def bbox(self):
@@ -596,8 +599,13 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self._local_ports
 
     @property
+    def info(self):
+        return self.parent.info
+
+    @property
     def meta(self):
-        return self.parent.meta
+        print('[PHIDL] WARNING: .meta is being deprected, please use .info instead')
+        return self.parent.info
         
     @property
     def bbox(self):

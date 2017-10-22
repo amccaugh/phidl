@@ -10,7 +10,7 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
  - Added more informative error messages
 
 ### Changes
- - 
+ - Device.meta is now being replaced with Device.info for clarity of nomenclature.  Device.meta will still work but will issue a warning.
 
 ### Bugfixes
  - Gave several unnamed phidl.geometry objects proper names
