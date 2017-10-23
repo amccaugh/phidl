@@ -3,14 +3,16 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
-## 0.7.2
+## 0.8.0
 
 ### New features
- - pg.import_gds() can now import without flattening all the polygons to a single layer
+ - `pg.import_gds()` can now import without flattening all the polygons to a single layer
  - Added more informative error messages
 
 ### Changes
- - Device.meta is now being replaced with Device.info for clarity of nomenclature.  Device.meta will still work but will issue a warning.
+- Using a config dictionary as a specification is no longer done with `Device(device_function, config = myconfig)`.  Now it is done with an explicit function, `make_device(device_function, config = myconfig)` (importable as `import phidl.make_device`).  See the tutorial for more info
+ - `Device.meta` is now being replaced with `Device.info` for clarity of nomenclature.  `Device.meta` will still work but will issue a warning.
+ - `Device.annotate()` is now being replaced with `Device.label()` to be more consistent with GDS naming conventions.  `Device.annotate()` will still work but will issue a warning.
 
 ### Bugfixes
  - Gave several unnamed phidl.geometry objects proper names

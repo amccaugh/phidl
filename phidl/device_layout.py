@@ -4,7 +4,7 @@
 
 # TODO Create a "remove" function which can delete geometry
 # Add support for gdspy.CellArray
-# Change D.annotate to D.label
+# Change D.label to D.label
 # Add POI class 
 # Add D.flatten()
 
@@ -30,10 +30,11 @@ import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
+import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.7.2'
+__version__ = '0.8.0'
 
 
 
@@ -310,7 +311,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
     
 
-def _makedevice(fun, config = None, **kwargs):
+def make_device(fun, config = None, **kwargs):
     config_dict = {}
     if type(config) is str:
         with open(config) as f:
@@ -334,6 +335,7 @@ def _makedevice(fun, config = None, **kwargs):
 
 
 class Device(gdspy.Cell, _GeometryHelper):
+    
     uid = 0
     
     def __init__(self, *args, **kwargs):
@@ -342,22 +344,15 @@ class Device(gdspy.Cell, _GeometryHelper):
         if 'name' in kwargs:                          gds_name = kwargs['name']
         elif (len(args) == 1) and (len(kwargs) == 0): gds_name = args[0]
         else:                                         gds_name = 'Unnamed'
-        
-        # Check if first argument was a Device-making function.
-        # If so, use that function and any other arguments to generate a device
-        if (len(args) > 0) and callable(args[0]):
-            D = _makedevice(*args, **kwargs)
-            self.__dict__ = D.__dict__.copy() 
 
-        # Otherwise, make a new blank device
-        else:
-            Device.uid += 1
-            self.ports = {}
-            self.info = {}
-            self.aliases = {}
-            self.references = []
-            gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
-            super(Device, self).__init__(name = gds_name, exclude_from_current=True)
+        # Make a new blank device
+        Device.uid += 1
+        self.ports = {}
+        self.info = {}
+        self.aliases = {}
+        self.references = []
+        gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
+        super(Device, self).__init__(name = gds_name, exclude_from_current=True)
 
 
     def __getitem__(self, val):
@@ -374,7 +369,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def meta(self):
-        print('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
+        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
         return self.info
         
     @property
@@ -457,7 +452,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         
     def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
          # Check if ``device`` is actually a device-making function
-        if callable(device):    d = _makedevice(fun = device, config = config, **kwargs)
+        if callable(device):    d = make_device(fun = device, config = config, **kwargs)
         else:                   d = device
         references = []
         for n in range(num_devices):
@@ -467,7 +462,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return references
         
 
-    def annotate(self, text = 'hello', position = (0,0), layer = 255):
+    def label(self, text = 'hello', position = (0,0), layer = 255):
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
@@ -475,6 +470,10 @@ class Device(gdspy.Cell, _GeometryHelper):
                                  layer = gds_layer, texttype = gds_datatype))
         return self
         
+    def annotate(self, *args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
+        return self.label(*args, **kwargs)
+
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'

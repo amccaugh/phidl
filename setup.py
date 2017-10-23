@@ -3,7 +3,7 @@
 from setuptools import setup
 
 install_requires=[
-   'gdspy==1.1.2',
+   'gdspy>=1.1.2',
    'numpy',
    'matplotlib',
    'pyyaml',
@@ -12,7 +12,7 @@ install_requires=[
 ]
 
 setup(name='phidl',
-      version='0.7.2',
+      version='0.8.0',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',
