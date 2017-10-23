@@ -7,6 +7,7 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 ### New features
  - `pg.import_gds()` can now import without flattening all the polygons to a single layer
+ - Added `Device.flatten()` function to flatten.  See tutorial for details
  - Added more informative error messages
 
 ### Changes
@@ -15,7 +16,8 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
  - `Device.annotate()` is now being replaced with `Device.label()` to be more consistent with GDS naming conventions.  `Device.annotate()` will still work but will issue a warning.
 
 ### Bugfixes
- - Gave several unnamed phidl.geometry objects proper names
+ - Made compatible with gdspy >= 1.2
+ - Specified names for phidl.geometry objects
 
 ## 0.7.1
 

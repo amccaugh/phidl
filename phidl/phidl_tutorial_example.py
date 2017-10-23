@@ -488,6 +488,25 @@ ellipse_polygons = D.extract(layers = 1)
 D2.add_polygon(ellipse_polygons, layer = 3)
 quickplot(D2)
 
+#==============================================================================
+# Flattening a Device
+#==============================================================================
+# Sometimes you want to remove references from a Device while keeping all
+# of the shapes/polygons intact and in place.  The D.flatten() does this
+# Also, if you specify the `single_layer` argument it will move all of the
+# polyons to that single layer
+
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.ellipse(layer = 2)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+
+D.write_gds('D_ellipses.gds')
+D.flatten()
+D.write_gds('D_ellipses_flattened.gds')
+D.flatten(single_layer = 5)
+D.write_gds('D_ellipses_flattened_singlelayer.gds')
 
 
 #==============================================================================

@@ -4,9 +4,7 @@
 
 # TODO Create a "remove" function which can delete geometry
 # Add support for gdspy.CellArray
-# Change D.label to D.label
-# Add POI class 
-# Add D.flatten()
+# Add POI class
 
 #==============================================================================
 # Minor TODO
@@ -503,9 +501,13 @@ class Device(gdspy.Cell, _GeometryHelper):
             else:
                 raise ValueError('[PHIDL] distribute() needs a direction of "x", "+y", "-x", etc')
 
-        
-    def flatten(self, depth = None):
-        pass
+
+    def flatten(self,  single_layer = None):
+        if single_layer is None:
+            return super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
+        else:
+            gds_layer, gds_datatype = _parse_layer(single_layer)
+            return super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=None)
 
     
     def rotate(self, angle = 45, center = (0,0)):
