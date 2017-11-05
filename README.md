@@ -9,7 +9,7 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
  - `pg.import_gds()` can now import without flattening all the polygons to a single layer
  - Added `Device.flatten()` function to flatten.  See tutorial for details
  - Added more informative error messages
- - `__repr__` and `__str__` implemented for Device & DeviceReference: You can now quickly get usfeul information about a Device by just typing the variable into the console.  For instance entering `D` or `print(D)` into the Python console will print `Device (name "Myshape003191", ports ['R_center', 'bottom', 'input'], aliases ['hello'], 13 elements, 13 references)`
+ - `__repr__` and `__str__` implemented for Device & DeviceReference: You can now quickly get useful information about a Device by just typing the variable into the console.  For instance entering `D` or `print(D)` into the Python console will print `Device (name "Myshape003191", ports ['R_center', 'bottom', 'input'], aliases ['hello'], 13 elements, 13 references)`
 
 ### Changes
 - Using a config dictionary as a specification is no longer done with `Device(device_function, config = myconfig)`.  Now it is done with an explicit function, `make_device(device_function, config = myconfig)` (importable as `import phidl.make_device`).  See the tutorial for more info
