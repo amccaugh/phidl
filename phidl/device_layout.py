@@ -373,7 +373,9 @@ class Device(gdspy.Cell, _GeometryHelper):
     @property
     def bbox(self):
         self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
-        return np.array(self.get_bounding_box())
+        bbox = self.get_bounding_box()
+        if bbox is None:  bbox = ((0,0),(0,0))
+        return np.array(bbox)
         
         
     def extract(self, layers = 'all'):
@@ -610,7 +612,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         
     @property
     def bbox(self):
-        return self.get_bounding_box()
+        bbox = self.get_bounding_box()
+        if bbox is None:  bbox = ((0,0),(0,0))
+        return np.array(bbox)
         
         
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
