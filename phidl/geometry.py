@@ -1382,14 +1382,24 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
             D.add_ref(R)
     return D
 
-
+def _loop_over(var):
+    # Checks if a variable is in the form of an iterable (list/tuple)
+    # and if not, returns it as a list.  Useful for allowing argument
+    # inputs to be either lists (e.g. [1,3,4]) or single-valued (e.g. 3)
+    if hasattr(var,"__iter__"):
+        return var
+    else:
+        return [var]
     
 def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers = None,
                     margin = 100, fill_layers = (0,1,3), 
                    fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None):
     
     # Create the fill cell.  If fill_inverted is not specified, assume all False
+    fill_layers = _loop_over(fill_layers)
+    fill_densities = _loop_over(fill_densities)
     if fill_inverted is None: fill_inverted = [False]*len(fill_layers)
+    fill_inverted = _loop_over(fill_inverted)
     if len(fill_layers) != len(fill_densities):
         raise ValueError("[PHIDL] phidl.geometry.fill_rectangle() `fill_layers` and" +
         " `fill_densities` parameters must be lists of the same length")
@@ -1404,7 +1414,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
     if avoid_layers == 'all':
         exclude_polys = D.get_polygons(by_spec=False, depth=None)
     else:
-        avoid_layers = [_parse_layer(l) for l in avoid_layers]
+        avoid_layers = [_parse_layer(l) for l in _loop_over(avoid_layers)]
         exclude_polys = D.get_polygons(by_spec=True, depth=None)
         exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in avoid_layers}
         exclude_polys = itertools.chain.from_iterable(exclude_polys.values())
@@ -1412,7 +1422,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
     if include_layers is None:
         include_polys = []
     else:
-        include_layers = [_parse_layer(l) for l in include_layers]
+        include_layers = [_parse_layer(l) for l in _loop_over(include_layers)]
         include_polys = D.get_polygons(by_spec=True, depth=None)
         include_polys = {key:include_polys[key] for key in include_polys if key in include_layers}
         include_polys = itertools.chain.from_iterable(include_polys.values())
