@@ -10,7 +10,6 @@
 # Minor TODO
 #==============================================================================
 # TODO make reflect allow a port input for p1 
-# TODO make __str__ for devicereference and include ports
 # TODO Make ebeam cross marks 
 
 #==============================================================================
@@ -361,6 +360,15 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise ValueError('PHIDL: Tried to access alias %s, which does not exist \
                 in this device' % val)
 
+    def __repr__(self):
+        return ('Device (name "%s", ports %s, aliases %s, %s elements, %s references)' % \
+                (self.name, list(self.ports.keys()), list(self.aliases.keys()),
+                len(self.elements), len(self.references)))
+
+
+    def __str__(self):
+        return self.__repr__()
+
     @property
     def layers(self):
         return self.get_layers()
@@ -587,7 +595,14 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.parent = device
         self._parent_ports = device.ports
         self._local_ports = deepcopy(device.ports)
+
+    def __repr__(self):
+        return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
+                (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.magnification))
     
+    def __str__(self):
+        return self.__repr__()
+        
     @property
     def ports(self):
         """ This property allows you to access my_device_reference.ports, and receive a copy
