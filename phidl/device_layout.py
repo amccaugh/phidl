@@ -336,6 +336,12 @@ class Device(gdspy.Cell, _GeometryHelper):
     uid = 0
     
     def __init__(self, *args, **kwargs):
+        if len(args) > 0:
+            if callable(args[0]):
+                raise ValueError('[PHIDL] You can no longer create geometry \
+                    by calling Device(device_making_function()), please use \
+                    make_device() instead')
+
         
         # Allow name to be set like Device('arc') or Device(name = 'arc')
         if 'name' in kwargs:                          gds_name = kwargs['name']
@@ -357,8 +363,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:
             return self.aliases[val]
         except:
-            raise ValueError('PHIDL: Tried to access alias %s, which does not exist \
-                in this device' % val)
+            raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  \
+                which does not exist' % (val, self.name))
 
     def __repr__(self):
         return ('Device (name "%s", ports %s, aliases %s, %s elements, %s references)' % \
