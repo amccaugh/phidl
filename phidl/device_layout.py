@@ -225,7 +225,7 @@ class Port(object):
         self.width = width
         self.orientation = mod(orientation,360)
         self.parent = parent
-        if self.width <= 0: raise ValueError('[DEVICE] Port creation error: width cannot be negative or zero')
+        if self.width <= 0: raise ValueError('[PHIDL] Port creation error: width cannot be negative or zero')
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
@@ -286,12 +286,12 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
@@ -726,8 +726,22 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
         return self
+
+
+    def remove(self, items):
+        if type(items) is not list:  items = [items]
+        for item in items:
+            try:
+                self.elements.remove(item)
+            except:
+                raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                 to remove in Device "%s".""" % (self.name))
+            if isinstance(item, DeviceReference):
+                self.references.remove(item)
+                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+        return self
         
-        
+
     def connect(self, port, destination, overlap = 0):
         # ``port`` can either be a string with the name or an actual Port
         if port in self.ports: # Then ``port`` is a key for the ports dict
