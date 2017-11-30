@@ -7,7 +7,8 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 ### New features
  - `pg.import_gds()` can now import without flattening all the polygons to a single layer
- - Added `Device.flatten()` function to flatten.  See tutorial for details
+ - Added `Device.flatten()` function to flatten references into raw polygons.  See tutorial for details
+ - Added `Device.remove()` function to remove geometry.  See tutorial for details
  - Added more informative error messages
  - `__repr__` and `__str__` implemented for Device & DeviceReference: You can now quickly get useful information about a Device by just typing the variable into the console.  For instance entering `D` or `print(D)` into the Python console will print `Device (name "Myshape003191", ports ['R_center', 'bottom', 'input'], aliases ['hello'], 13 elements, 13 references)`
 

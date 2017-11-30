@@ -539,3 +539,24 @@ quickplot(D2)
 D = pg.ellipse(layer = 1)
 D2 = pg.outline(D, distance = 1, layer = 2)
 quickplot([D, D2])
+
+
+
+
+#==============================================================================
+# Removing geometry
+#==============================================================================
+# If you want, you can remove DeviceReferences or Polygons with D.remove()
+
+# Let's add some geometry to a blank Device D:
+D = Device()
+myell1 = D.add_ref(pg.L())
+mytee2 = D.add_ref(pg.tee().movex(15))
+mypoly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
+mypoly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] ).movey(-5)
+quickplot(D)
+
+# Now we can remove two of the elements we don't want anymore
+D.remove(mytee2)
+D.remove(mypoly2)
+quickplot(D)

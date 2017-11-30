@@ -525,6 +525,20 @@ class Device(gdspy.Cell, _GeometryHelper):
             gds_layer, gds_datatype = _parse_layer(single_layer)
             return super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=None)
 
+
+    def remove(self, items):
+        if type(items) not in (list, tuple):  items = [items]
+        for item in items:
+            try:
+                self.elements.remove(item)
+            except:
+                raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                 it was asked to remove in the Device "%s".""" % (self.name))
+            if isinstance(item, DeviceReference):
+                self.references.remove(item)
+                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+        return self
+
     
     def rotate(self, angle = 45, center = (0,0)):
         for e in self.elements:
@@ -725,20 +739,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
         self.rotation += angle
         self.origin = self.origin + p1
-        return self
-
-
-    def remove(self, items):
-        if type(items) not in (list, tuple):  items = [items]
-        for item in items:
-            try:
-                self.elements.remove(item)
-            except:
-                raise ValueError("""[PHIDL] Device.remove() cannot find the item
-                                 to remove in Device "%s".""" % (self.name))
-            if isinstance(item, DeviceReference):
-                self.references.remove(item)
-                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
         return self
         
 
