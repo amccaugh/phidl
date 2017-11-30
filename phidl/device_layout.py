@@ -729,7 +729,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def remove(self, items):
-        if type(items) is not list:  items = [items]
+        if type(items) not in (list, tuple):  items = [items]
         for item in items:
             try:
                 self.elements.remove(item)
