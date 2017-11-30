@@ -169,8 +169,6 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     return D
     
     
-
-    
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, layer = 0):
@@ -374,7 +372,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     return D
 
 
-def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0):
+def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
     f = np.array(size)
     p = np.array(stub_size)
     
@@ -386,14 +384,13 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = 'straight', layer = 0):
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0,0,taper_amount,0,0,taper_amount,0,0])
-    if taper_type == 'straight':
+    elif taper_type == 'straight':
         taper_poly1 = D.add_polygon([xpts[1:4],ypts[1:4]], layer = layer)
         taper_poly2 = D.add_polygon([xpts[4:7],ypts[4:7]], layer = layer)
         
-    D.add_port(name = 'N', midpoint = [0, f[1]],  width = f[0], orientation = 90)
-    D.add_port(name = 'S', midpoint = [0, -p[1]],  width = p[0], orientation = -90)
-    D.add_port(name = 'E', midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
-    D.add_port(name = 'W', midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
+    D.add_port(name = 1, midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
+    D.add_port(name = 2, midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
+    D.add_port(name = 3, midpoint = [0, -p[1]],  width = p[0], orientation = -90)
     return D
     
 
