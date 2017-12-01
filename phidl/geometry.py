@@ -435,6 +435,7 @@ def rectangle(size = (4,2), layer = 0):
     return D
 
 
+
 def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
     D = Device(name = 'bbox')
     (a,b),(c,d)  = bbox
@@ -519,12 +520,24 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
     D.move(origin = D.ports[1], destination = port)
     return D
 
+
+def straight(size = (4,2), layer = 0):
+    D = Device(name = 'wire')
+    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
+    D.add_polygon(points, layer = layer)
+    D.add_port(name = 1, midpoint = (size[0]/2, size[1]),  width = size[0], orientation = 90)
+    D.add_port(name = 2, midpoint = (size[0]/2, 0),  width = size[0], orientation = -90)
+    return D
+
+
 def L(width = 1, size = (10,20) , layer = 0):
     D = Device(name = 'L')
     w = width/2
     s1, s2 = size
     points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2), (-w,s2), (-w,-w)]
     D.add_polygon(points, layer = layer)
+    D.add_port(name = 1, midpoint = (0,s2),  width = width, orientation = 90)
+    D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
     return D
 
 
