@@ -611,18 +611,46 @@ class Device(gdspy.Cell, _GeometryHelper):
     
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
-        super(DeviceReference, self).__init__(device, origin, rotation, magnification, x_reflection)
+        super(DeviceReference, self).__init__(
+                 ref_cell = device,
+                 origin=origin,
+                 rotation=rotation,
+                 magnification=magnification,
+                 x_reflection=x_reflection,
+                 ignore_missing=False)
         self.parent = device
         self._parent_ports = device.ports
         self._local_ports = deepcopy(device.ports)
 
+
     def __repr__(self):
         return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
-                (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.magnification))
+                (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
     
+
     def __str__(self):
         return self.__repr__()
         
+
+    def __getitem__(self, val):
+        """ If you have a Device D, allows access to aliases you made like D['arc2'] """
+        try:
+            alias_device = self.parent[val]
+        except:
+            raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  '
+                'which does not exist' % (val, self.parent.name))
+        new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
+
+        if self.x_reflection:
+            new_reference.reflect((0,1))
+        if self.rotation is not None:
+            new_reference.rotate(self.rotation)
+        if self.origin is not None:
+            new_reference.move(self.origin)
+
+        return new_reference
+
+
     @property
     def ports(self):
         """ This property allows you to access my_device_reference.ports, and receive a copy
@@ -642,7 +670,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     @property
     def meta(self):
-        print('[PHIDL] WARNING: .meta is being deprected, please use .info instead')
+        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
         return self.parent.info
         
     @property
@@ -651,6 +679,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
         
+
         
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations to a port (x_ref)
