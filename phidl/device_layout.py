@@ -633,16 +633,17 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         
 
     def __getitem__(self, val):
-        """ If you have a Device D, allows access to aliases you made like D['arc2'] """
+        """ This allows you to access an alias from the reference's parent, and receive 
+        a copy of the reference which is correctly rotated and translated"""
         try:
             alias_device = self.parent[val]
         except:
-            raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  '
-                'which does not exist' % (val, self.parent.name))
+            raise ValueError('[PHIDL] Tried to access alias "%s" from parent '
+                'Device "%s", which does not exist' % (val, self.parent.name))
         new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
 
         if self.x_reflection:
-            new_reference.reflect((0,1))
+            new_reference.reflect((1,0))
         if self.rotation is not None:
             new_reference.rotate(self.rotation)
         if self.origin is not None:
