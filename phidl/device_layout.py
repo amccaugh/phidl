@@ -2,7 +2,6 @@
 # Major TODO
 #==============================================================================
 
-# TODO Create a "remove" function which can delete geometry
 # Add support for gdspy.CellArray
 # Add POI class
 
@@ -11,6 +10,7 @@
 #==============================================================================
 # TODO make reflect allow a port input for p1 
 # TODO Make ebeam cross marks 
+# Allow KLayout export of Layers
 
 #==============================================================================
 # Imports
