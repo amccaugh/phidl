@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-from phidl import Device, Layer, quickplot
+from phidl import Device, Layer, quickplot, make_device
 import phidl.geometry as pg
 import phidl.routing as pr
 
@@ -234,8 +234,8 @@ quickplot(D2)
 #==============================================================================
 # This label will display in a GDS viewer, but will not be rendered
 # or printed like the polygons created by the text()
-D2.annotate('First label', mwg1.center)
-D2.annotate('Second label', mwg2.center)
+D2.label('First label', mwg1.center)
+D2.label('Second label', mwg2.center)
 
 
 
@@ -366,11 +366,11 @@ quickplot(E3)
 # into the final GDS file without putting any extra geometry onto any layer
 
 # Let's add an annotation to our Multi-Layer Text GDS file
-DL.annotate(text = 'This is layer1\nit will be titanium', position = l1.center)
-DL.annotate(text = 'This is niobium', position = l2.center)
+DL.label(text = 'This is layer1\nit will be titanium', position = l1.center)
+DL.label(text = 'This is niobium', position = l2.center)
 
 # It's very useful for recording information about the devices or layout
-DL.annotate(text = 'The x size of this\nlayout is %s' % DL.xsize,
+DL.label(text = 'The x size of this\nlayout is %s' % DL.xsize,
             position = (DL.xmax, DL.ymax), layer = 255)
 
 # Again, note we have to write the GDS for it to be visible (view in KLayout)
@@ -409,12 +409,12 @@ quickplot(C1)
 
 # Or we can pass the complicated_waveguide function and our parameter list
 # to the Device() function which will generate it for us using our config
-C2 = Device(complicated_waveguide, config = cwg_parameters)
+C2 = make_device(complicated_waveguide, config = cwg_parameters)
 quickplot(C2)
 
 # We can also override any parameter we like in our dictionary of parameters
 # by adding keyword arguments -- the input dictionary is untouched afterwards
-C3 = Device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
+C3 = make_device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
 quickplot(C3)
 
 # The most useful implementation of this is to keep a standard set of 
@@ -423,7 +423,7 @@ quickplot(C3)
 #  each time:
 D = Device()
 for h in [0.1, 0.5, 1, 2, 4]:
-    C4 = Device(complicated_waveguide, config = cwg_parameters, height = h)
+    C4 = make_device(complicated_waveguide, config = cwg_parameters, height = h)
     c4 = D.add_ref( C4 )
     c4.ymin = D.ymax + 10
 quickplot(D)
@@ -488,6 +488,25 @@ ellipse_polygons = D.extract(layers = 1)
 D2.add_polygon(ellipse_polygons, layer = 3)
 quickplot(D2)
 
+#==============================================================================
+# Flattening a Device
+#==============================================================================
+# Sometimes you want to remove references from a Device while keeping all
+# of the shapes/polygons intact and in place.  The D.flatten() does this
+# Also, if you specify the `single_layer` argument it will move all of the
+# polyons to that single layer
+
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.ellipse(layer = 2)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+
+D.write_gds('D_ellipses.gds')
+D.flatten()
+D.write_gds('D_ellipses_flattened.gds')
+D.flatten(single_layer = 5)
+D.write_gds('D_ellipses_flattened_singlelayer.gds')
 
 
 #==============================================================================
@@ -520,3 +539,24 @@ quickplot(D2)
 D = pg.ellipse(layer = 1)
 D2 = pg.outline(D, distance = 1, layer = 2)
 quickplot([D, D2])
+
+
+
+
+#==============================================================================
+# Removing geometry
+#==============================================================================
+# If you want, you can remove DeviceReferences or Polygons with D.remove()
+
+# Let's add some geometry to a blank Device D:
+D = Device()
+myell1 = D.add_ref(pg.L())
+mytee2 = D.add_ref(pg.tee().movex(15))
+mypoly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
+mypoly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] ).movey(-5)
+quickplot(D)
+
+# Now we can remove two of the elements we don't want anymore
+D.remove(mytee2)
+D.remove(mypoly2)
+quickplot(D)

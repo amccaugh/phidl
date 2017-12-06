@@ -2,17 +2,15 @@
 # Major TODO
 #==============================================================================
 
-# TODO Create a "remove" function which can delete geometry
-# TODO PHIDL Import_gds: Import all layers by default, otherwise can specify
-#       list of layers to import. Automatically grab toplevel cell if none specified
-# TODO PHIDL import annotations from GDS files as labels
+# Add support for gdspy.CellArray
+# Add POI class
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
 # TODO make reflect allow a port input for p1 
-# TODO make __str__ for devicereference and include ports
-# TODO Create an "align / justify" function
+# TODO Make ebeam cross marks 
+# Allow KLayout export of Layers
 
 #==============================================================================
 # Imports
@@ -29,10 +27,11 @@ import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
+import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.7.1'
+__version__ = '0.8.0'
 
 
 
@@ -103,7 +102,11 @@ class Layer(object):
             
         Layer.layer_dict[(gds_layer, gds_datatype)] = self
 
+    def __repr__(self):
+        return ('Layer (name %s, GDS layer %s, GDS datatype %s, description %s, color %s)' % \
+                (self.name, self.gds_layer, self.gds_datatype, self.description, self.color))
                          
+
 def _parse_layer(layer):
     """ Check if the variable layer is a Layer object, a 2-element list like
     [0,1] representing layer=0 and datatype=1, or just a layer number """
@@ -222,7 +225,7 @@ class Port(object):
         self.width = width
         self.orientation = mod(orientation,360)
         self.parent = parent
-        if self.width <= 0: raise ValueError('[DEVICE] Port creation error: width cannot be negative or zero')
+        if self.width <= 0: raise ValueError('[PHIDL] Port creation error: width cannot be negative or zero')
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
@@ -283,12 +286,12 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
@@ -305,7 +308,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
     
 
-def _makedevice(fun, config = None, **kwargs):
+def make_device(fun, config = None, **kwargs):
     config_dict = {}
     if type(config) is str:
         with open(config) as f:
@@ -329,30 +332,30 @@ def _makedevice(fun, config = None, **kwargs):
 
 
 class Device(gdspy.Cell, _GeometryHelper):
+    
     uid = 0
     
     def __init__(self, *args, **kwargs):
+        if len(args) > 0:
+            if callable(args[0]):
+                raise ValueError('[PHIDL] You can no longer create geometry '
+                    'by calling Device(device_making_function), please use '
+                    'make_device(device_making_function) instead')
+
         
         # Allow name to be set like Device('arc') or Device(name = 'arc')
         if 'name' in kwargs:                          gds_name = kwargs['name']
         elif (len(args) == 1) and (len(kwargs) == 0): gds_name = args[0]
         else:                                         gds_name = 'Unnamed'
-        
-        # Check if first argument was a Device-making function.
-        # If so, use that function and any other arguments to generate a device
-        if (len(args) > 0) and callable(args[0]):
-            D = _makedevice(*args, **kwargs)
-            self.__dict__ = D.__dict__.copy() 
 
-        # Otherwise, make a new blank device
-        else:
-            Device.uid += 1
-            self.ports = {}
-            self.meta = {}
-            self.aliases = {}
-            self.references = []
-            gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
-            super(Device, self).__init__(name = gds_name, exclude_from_current=True)
+        # Make a new blank device
+        Device.uid += 1
+        self.ports = {}
+        self.info = {}
+        self.aliases = {}
+        self.references = []
+        gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
+        super(Device, self).__init__(name = gds_name, exclude_from_current=True)
 
 
     def __getitem__(self, val):
@@ -360,18 +363,33 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:
             return self.aliases[val]
         except:
-            raise ValueError('PHIDL: Tried to access alias %s, which does not exist \
-                in this device' % val)
+            raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  '
+                'which does not exist' % (val, self.name))
+
+    def __repr__(self):
+        return ('Device (name "%s", ports %s, aliases %s, %s elements, %s references)' % \
+                (self.name, list(self.ports.keys()), list(self.aliases.keys()),
+                len(self.elements), len(self.references)))
+
+
+    def __str__(self):
+        return self.__repr__()
 
     @property
     def layers(self):
         return self.get_layers()
 
+    @property
+    def meta(self):
+        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
+        return self.info
         
     @property
     def bbox(self):
         self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
-        return np.array(self.get_bounding_box())
+        bbox = self.get_bounding_box()
+        if bbox is None:  bbox = ((0,0),(0,0))
+        return np.array(bbox)
         
         
     def extract(self, layers = 'all'):
@@ -448,7 +466,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         
     def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
          # Check if ``device`` is actually a device-making function
-        if callable(device):    d = _makedevice(fun = device, config = config, **kwargs)
+        if callable(device):    d = make_device(fun = device, config = config, **kwargs)
         else:                   d = device
         references = []
         for n in range(num_devices):
@@ -458,7 +476,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return references
         
 
-    def annotate(self, text = 'hello', position = (0,0), layer = 255):
+    def label(self, text = 'hello', position = (0,0), layer = 255):
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
@@ -466,6 +484,10 @@ class Device(gdspy.Cell, _GeometryHelper):
                                  layer = gds_layer, texttype = gds_datatype))
         return self
         
+    def annotate(self, *args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
+        return self.label(*args, **kwargs)
+
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -495,9 +517,27 @@ class Device(gdspy.Cell, _GeometryHelper):
             else:
                 raise ValueError('[PHIDL] distribute() needs a direction of "x", "+y", "-x", etc')
 
-        
-    def flatten(self, depth = None):
-        pass
+
+    def flatten(self,  single_layer = None):
+        if single_layer is None:
+            return super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
+        else:
+            gds_layer, gds_datatype = _parse_layer(single_layer)
+            return super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=None)
+
+
+    def remove(self, items):
+        if type(items) not in (list, tuple):  items = [items]
+        for item in items:
+            try:
+                self.elements.remove(item)
+            except:
+                raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                 it was asked to remove in the Device "%s".""" % (self.name))
+            if isinstance(item, DeviceReference):
+                self.references.remove(item)
+                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+        return self
 
     
     def rotate(self, angle = 45, center = (0,0)):
@@ -566,16 +606,52 @@ class Device(gdspy.Cell, _GeometryHelper):
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
             p.orientation = 2*phi - p.orientation
-                
+        return self
     
     
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
-        super(DeviceReference, self).__init__(device, origin, rotation, magnification, x_reflection)
+        super(DeviceReference, self).__init__(
+                 ref_cell = device,
+                 origin=origin,
+                 rotation=rotation,
+                 magnification=magnification,
+                 x_reflection=x_reflection,
+                 ignore_missing=False)
         self.parent = device
         self._parent_ports = device.ports
         self._local_ports = deepcopy(device.ports)
+
+
+    def __repr__(self):
+        return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
+                (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
     
+
+    def __str__(self):
+        return self.__repr__()
+        
+
+    def __getitem__(self, val):
+        """ This allows you to access an alias from the reference's parent, and receive 
+        a copy of the reference which is correctly rotated and translated"""
+        try:
+            alias_device = self.parent[val]
+        except:
+            raise ValueError('[PHIDL] Tried to access alias "%s" from parent '
+                'Device "%s", which does not exist' % (val, self.parent.name))
+        new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
+
+        if self.x_reflection:
+            new_reference.reflect((1,0))
+        if self.rotation is not None:
+            new_reference.rotate(self.rotation)
+        if self.origin is not None:
+            new_reference.move(self.origin)
+
+        return new_reference
+
+
     @property
     def ports(self):
         """ This property allows you to access my_device_reference.ports, and receive a copy
@@ -590,13 +666,21 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self._local_ports
 
     @property
+    def info(self):
+        return self.parent.info
+
+    @property
     def meta(self):
-        return self.parent.meta
+        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
+        return self.parent.info
         
     @property
     def bbox(self):
-        return self.get_bounding_box()
+        bbox = self.get_bounding_box()
+        if bbox is None:  bbox = ((0,0),(0,0))
+        return np.array(bbox)
         
+
         
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations to a port (x_ref)
@@ -687,7 +771,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.origin = self.origin + p1
         return self
         
-        
+
     def connect(self, port, destination, overlap = 0):
         # ``port`` can either be a string with the name or an actual Port
         if port in self.ports: # Then ``port`` is a key for the ports dict

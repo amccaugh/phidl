@@ -1,6 +1,25 @@
 # PHIDL
 CAD layout and geometry creation utilities for photonic and superconducting circuits
 
+# Changelog
+
+## 0.8.0
+
+### New features
+ - `pg.import_gds()` can now import without flattening all the polygons to a single layer
+ - Added `Device.flatten()` function to flatten references into raw polygons.  See tutorial for details
+ - Added `Device.remove()` function to remove geometry.  See tutorial for details
+ - Added more informative error messages
+ - `__repr__` and `__str__` implemented for Device & DeviceReference: You can now quickly get useful information about a Device by just typing the variable into the console.  For instance entering `D` or `print(D)` into the Python console will print `Device (name "Myshape003191", ports ['R_center', 'bottom', 'input'], aliases ['hello'], 13 elements, 13 references)`
+
+### Changes
+- Using a config dictionary as a specification is no longer done with `Device(device_function, config = myconfig)`.  Now it is done with an explicit function, `make_device(device_function, config = myconfig)` (importable as `import phidl.make_device`).  See the tutorial for more info
+ - `Device.meta` is now being replaced with `Device.info` for clarity of nomenclature.  `Device.meta` will still work but will issue a warning.
+ - `Device.annotate()` is now being replaced with `Device.label()` to be more consistent with GDS naming conventions.  `Device.annotate()` will still work but will issue a warning.
+
+### Bugfixes
+ - Made compatible with gdspy >= 1.2
+ - Specified names for phidl.geometry objects
 
 ## 0.7.1
 
@@ -12,8 +31,6 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 ### Bugfixes
  - Many small ones under the hood
-
-# Changelog
 
 
 ## 0.7.0
