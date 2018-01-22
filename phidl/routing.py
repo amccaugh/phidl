@@ -2,9 +2,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import sqrt, pi, cos, sin, log, exp, sinh, mod
 from numpy.linalg import norm
-from phidl import Device
-import gdspy
+from phidl.device_layout import Device
 from phidl.device_layout import _parse_layer
+import gdspy
 
     
 def _arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
