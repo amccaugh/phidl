@@ -42,7 +42,7 @@ from skimage import draw, morphology
 #==============================================================================
 
 
-def import_gds(filename, cellname = None, layers = None, flatten = True):
+def import_gds(filename, cellname = None, layers = None, flatten = False):
     
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
@@ -61,7 +61,7 @@ def import_gds(filename, cellname = None, layers = None, flatten = True):
         return D
 
     elif flatten == True:
-        D = Device('import')
+        D = Device('import_gds')
         polygons = cell.get_polygons(by_spec = True)
 
         if layers is None:
