@@ -360,10 +360,11 @@ quickplot(E3)
 
 
 #==============================================================================
-# Annotation
+# Label
 #==============================================================================
-# We can also annotate our devices, in order to record information directly
-# into the final GDS file without putting any extra geometry onto any layer
+# We can also label (annotate) our devices, in order to record information 
+# directly into the final GDS file without putting any extra geometry onto any 
+# layer
 
 # Let's add an annotation to our Multi-Layer Text GDS file
 DL.label(text = 'This is layer1\nit will be titanium', position = l1.center)
