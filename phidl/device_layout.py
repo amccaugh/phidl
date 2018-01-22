@@ -31,7 +31,7 @@ import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 
 
 
@@ -353,7 +353,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.ports = {}
         self.info = {}
         self.aliases = {}
-        self.references = []
         gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
         super(Device, self).__init__(name = gds_name, exclude_from_current=True)
 
@@ -378,6 +377,15 @@ class Device(gdspy.Cell, _GeometryHelper):
     @property
     def layers(self):
         return self.get_layers()
+
+    @property
+    def references(self):
+        return [e for e in self.elements if isinstance(e, DeviceReference)]
+
+    @property
+    def polygons(self):
+        return [e for e in self.elements if isinstance(e, Polygon)]
+
 
     @property
     def meta(self):
@@ -413,7 +421,6 @@ class Device(gdspy.Cell, _GeometryHelper):
             was not a Device object. """)
         d = DeviceReference(D)   # Create a DeviceReference (CellReference)
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
-        self.references.append(d) # Add to the list of references (for convenience)
 
         if alias is not None:
             if alias in self.aliases:
@@ -477,6 +484,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         
 
     def label(self, text = 'hello', position = (0,0), layer = 255):
+        if len(text) >= 1023:
+            raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)') 
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
@@ -535,7 +544,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 raise ValueError("""[PHIDL] Device.remove() cannot find the item
                                  it was asked to remove in the Device "%s".""" % (self.name))
             if isinstance(item, DeviceReference):
-                self.references.remove(item)
+                # If appears in list of aliases, remove that alias
                 self.aliases = { k:v for k, v in self.aliases.items() if v != item}
         return self
 
@@ -544,7 +553,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         for e in self.elements:
             if isinstance(e, Polygon):
                 e.rotate(angle = angle, center = center)
-            elif isinstance(e, (gdspy.Polygon, gdspy.PolygonSet)):
+            elif isinstance(e, Polygon):
                 e.rotate(angle = angle*pi/180, center = center)
             elif isinstance(e, DeviceReference):
                 e.rotate(angle, center)
@@ -580,7 +589,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         
         # Move geometries
         for e in self.elements:
-            if isinstance(e, (gdspy.Polygon, gdspy.PolygonSet)): 
+            if isinstance(e, Polygon): 
                 e.translate(dx,dy)
             if isinstance(e, DeviceReference): 
                 e.move(destination = d, origin = o)
@@ -595,11 +604,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         for e in self.elements:
-            if isinstance(e, gdspy.Polygon):
+            if isinstance(e, Polygon):
                 e.points = _reflect_points(e.points, p1, p2)
-            elif isinstance(e, gdspy.PolygonSet):
-                for poly in e.polygons:
-                    poly.points = _reflect_points(poly.points, p1, p2)
             elif isinstance(e, DeviceReference):
                 e.reflect(p1, p2)
         for p in self.ports.values():
@@ -834,11 +840,11 @@ def quickplot(items, show_ports = True, show_subports = True,
             layerprop = _get_layerprop(item.layer, item.datatype)
             _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
-        elif isinstance(item, gdspy.PolygonSet):
-            polygons = item.polygons
-            layerprop = _get_layerprop(item.layer, item.datatype)
-            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-                           edgecolor = 'k', alpha = layerprop['alpha'])
+        # elif isinstance(item, gdspy.PolygonSet):
+        #     polygons = item.polygons
+        #     layerprop = _get_layerprop(item.layer, item.datatype)
+        #     _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+        #                    edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
     
 
