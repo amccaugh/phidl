@@ -9,7 +9,7 @@ from scipy import integrate
 from scipy.interpolate import interp1d
 
 import gdspy
-from phidl import Device, Port
+from phidl.device_layout import Device, Port
 from phidl.device_layout import _parse_layer, DeviceReference
 import phidl.routing as pr
 
@@ -43,7 +43,6 @@ from skimage import draw, morphology
 
 
 def import_gds(filename, cellname = None, layers = None, flatten = False):
-    
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
@@ -408,7 +407,7 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
 
 #cpm = compass_multi(size = [40,20], ports = {'N':3,'S':4, 'E':1, 'W':8}, layer = 0)
 #inset_polygon = offset(cpm, distance = -2, layer = 1)
-#cpm.add(inset_polygon)
+#cpm.add_polygon(inset_polygon)
 #quickplot(cpm)
 
 #fp = flagpole(size = [4,2], stub_size = [2,1], shape = 'p', taper_type = 'straight', layer = 0)
@@ -1468,16 +1467,16 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
 
 def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
     if type(elements) is not list: elements = [elements]
-    new_elements = []
+    polygons_to_offset = []
     for e in elements:
-        if isinstance(e, Device): new_elements += e.get_polygons()
-        else: new_elements.append(e)
+        if isinstance(e, Device): polygons_to_offset += e.get_polygons()
+        else: polygons_to_offset.append(e)
         
     gds_layer, gds_datatype = _parse_layer(layer)
     # This pre-joining (by expanding by precision) makes this take twice as
     # long but is necessary because of floating point errors which otherwise
     # separate polygons which are nominally joined
-    joined = gdspy.offset(new_elements, precision, join='miter', tolerance=2,
+    joined = gdspy.offset(polygons_to_offset, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
                           max_points=199, layer=gds_layer, datatype = gds_datatype)
     p = gdspy.offset(joined, distance, join='miter', tolerance=2,
@@ -1669,7 +1668,7 @@ def pad(width = 100, height = 300, po_offset = 20, pad_layer = 2, po_layer = 3):
 
 
     
-def dblpad(gap = 10, pad_device = Device()):
+def dblpad(gap = 10, pad_device = None):
     D = Device('dblpad')
 #    Pad = pad()
     pad1 = D.add_ref(pad_device)
@@ -1690,7 +1689,7 @@ def dblpad(gap = 10, pad_device = Device()):
 
 
 
-def cc_rings(radius = 10, gaps = [0.1, 0.2, 0.3], width_ring = 0.5, width = 0.4, dR = 0.15, period = 30, grating_device = Device(), layer = 0):
+def cc_rings(radius = 10, gaps = [0.1, 0.2, 0.3], width_ring = 0.5, width = 0.4, dR = 0.15, period = 30, grating_device = None, layer = 0):
 # number of rings defined by the length of the gaps vector    
     nrings = len(gaps)
     length_wg = (nrings + 1)*period
@@ -1732,7 +1731,7 @@ def cc_rings(radius = 10, gaps = [0.1, 0.2, 0.3], width_ring = 0.5, width = 0.4,
 
 
 def loss_rings(radius = 10, min_radius = 5, gaps = [0.1, 0.2, 0.3], width_ring = 0.5, width_wg = 0.4, period_vary = 0,
-              dR = 0.15, length_beamdump = 10, width_beamdump = 0.2, grating_device = Device(), layer = 0):
+              dR = 0.15, length_beamdump = 10, width_beamdump = 0.2, grating_device = None, layer = 0):
     
     period = length_beamdump + radius + min_radius + grating_device.xmax-grating_device.xmin + min_radius + period_vary
     D = Device("loss rings")
@@ -1915,7 +1914,7 @@ _get_const_MZI = interp1d(_MZI_factors[:,0], _MZI_factors[:,1], kind='cubic')
 
 
 
-def mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = Device(), port_devices = (None,None,None,None)):
+def mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = None, port_devices = (None,None,None,None)):
     # MZI. input the FSR and ng and it calculates the largest height_sines for a given minimum radius of curvature.
 # optionally you can input devices for the four ports of the MZI. If you leave them empty it will just put ports on.
 
@@ -1966,13 +1965,13 @@ def mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = D
 # Example code
 #==============================================================================
 
-# M = mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = Device(), port_devices = (None,grating(),grating(),None))
+# M = mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = None, port_devices = (None,grating(),grating(),None))
 
 
 def wg_snspd(meander_width = 0.4, meander_pitch = 0.8, num_squares = 1000, 
             wg_nw_width = 0.1, wg_nw_pitch = 0.3, wg_nw_length = 100, 
             pad_distance = 500, landing_pad_offset = 10, 
-            nw_layer = 6, wg_layer = 1, metal_layer = 2, dblpad_device = Device()):
+            nw_layer = 6, wg_layer = 1, metal_layer = 2, dblpad_device = None):
     
     # the length and width of the meander are chosen so that it is approximately 
     # square
@@ -2094,7 +2093,7 @@ def wg_snspd(meander_width = 0.4, meander_pitch = 0.8, num_squares = 1000,
 
 def led(width=1, length_wg=10, width_dope_offset=0.2, width_dope=5, wE=1, width_taper = 0.4, length_taper = 10, 
         metal_inset = 0.2, pad_device_distance = [50,0], pad_wire_width = 0.5,
-        wg_layer = 0, p_layer = 1, n_layer = 2, w_layer = 3, padtaper_layer = 4, dblpad_device = Device()):
+        wg_layer = 0, p_layer = 1, n_layer = 2, w_layer = 3, padtaper_layer = 4, dblpad_device = None):
 
     D = Device("LED")
     
