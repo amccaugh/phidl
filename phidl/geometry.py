@@ -12,11 +12,13 @@ import gdspy
 from phidl.device_layout import Device, Port
 from phidl.device_layout import _parse_layer, DeviceReference
 import phidl.routing as pr
+import copy as python_copy
 
 from skimage import draw, morphology
 
 
 ##### Categories:
+# Utility functions
 # Loading GDS files
 # Polygons / shapes
 # Optimal (current-crowding) curves
@@ -32,7 +34,44 @@ from skimage import draw, morphology
 # Boolean functions
 # Photonics
 
+        
+#==============================================================================
+#
+# Utility functions
+#
+#==============================================================================
+        
+def extract(D, layers = [0,1]):
+    D_extracted = Device('extract')
+    if type(layers) not in (list, tuple):
+        raise ValueError('[PHIDL] pg.extract() Argument `layers` needs to be passed a list or tuple')
+    poly_dict = D.get_polygons(by_spec = True)
+    parsed_layer_list = [_parse_layer(layer) for layer in layers]
+    for layer, polys in poly_dict.items():
+        if _parse_layer(layer) in parsed_layer_list:
+            D_extracted.add_polygon(polys, layer = layer)
+    return D_extracted
 
+
+def copy(D):
+    D_copy = Device(name = 'copy')
+    D_copy.info = python_copy.deepcopy(D.info)
+    for ref in D.references:
+        new_ref = DeviceReference(device = ref.parent,
+                                origin = ref.origin,
+                                rotation = ref.rotation,
+                                magnification = ref.magnification,
+                                x_reflection = ref.x_reflection)
+        D_copy.elements.append(new_ref)
+        for alias_name, alias_ref in D.aliases.items():
+            if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
+
+    for port in D.ports:      D_copy.add_port(port)
+    for poly in D.polygons:   D_copy.add_polygon(poly)
+    for label in D.labels:    D_copy.label(text = label.text,
+                                           position = label.position,
+                                           layer = (label.layer, label.texttype))
+    return D_copy
 
 
 #==============================================================================
