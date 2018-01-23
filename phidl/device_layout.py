@@ -3,7 +3,7 @@
 #==============================================================================
 
 # Add support for gdspy.CellArray
-# Add POI class
+# Auto-generate PHIDL geometry documentation
 
 #==============================================================================
 # Minor TODO
@@ -11,6 +11,10 @@
 # TODO make reflect allow a port input for p1 
 # TODO Make ebeam cross marks 
 # Allow KLayout export of Layers
+# TODO Use AttrDict for ports and aliases
+# TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
+# TODO Make shortcuts to Device.aliases with D.al
+# TODO PHIDL Allow add_ref to take list of Devices
 
 #==============================================================================
 # Imports
