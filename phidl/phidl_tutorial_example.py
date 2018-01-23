@@ -468,32 +468,12 @@ print(D.aliases)
 print(D.aliases.keys())
 
 
-
-#==============================================================================
-# Extracting shapes
-#==============================================================================
-# Say you want to copy a complicated shape from one layer to another.  You 
-# can do this using the D.extract() function, which will strip out the raw
-# polygon points from D and allow you to add them to another layer
-D = Device()
-E1 = pg.ellipse(layer = 1)
-E2 = pg.ellipse(layer = 2)
-E3 = pg.ellipse(layer = 1)
-D.add_ref(E1)
-D.add_ref(E2).movex(15)
-D.add_ref(E3).movex(30)
-quickplot(D)
-
-D2 = Device()
-ellipse_polygons = D.extract(layers = 1)
-D2.add_polygon(ellipse_polygons, layer = 3)
-quickplot(D2)
-
 #==============================================================================
 # Flattening a Device
 #==============================================================================
 # Sometimes you want to remove references from a Device while keeping all
-# of the shapes/polygons intact and in place.  The D.flatten() does this
+# of the shapes/polygons intact and in place.  The D.flatten() keeps all the 
+# polygons in D, but removes all the underlying references it's attached to.
 # Also, if you specify the `single_layer` argument it will move all of the
 # polyons to that single layer
 
@@ -508,6 +488,59 @@ D.flatten()
 D.write_gds('D_ellipses_flattened.gds')
 D.flatten(single_layer = 5)
 D.write_gds('D_ellipses_flattened_singlelayer.gds')
+
+
+#==============================================================================
+# Copying a Device
+#==============================================================================
+# Since copying a Device involves creating a new geometry, you can copy a 
+# Device D using the pg.copy(D) function.  It will perform a "shallow" copy of 
+# D which has all of the same references/ports/aliases/etc.  This is especially
+# this is especially useful if you want to flatten a geometry without damaging
+# the structure of the original Device.
+
+
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.rectangle(layer = 2)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+
+D_copy = pg.copy(D)
+quickplot(D_copy)
+
+# Observe that if we modify D now, D_copy is unaffected
+D.add_ref(pg.circle()) 
+D.rotate(45)
+quickplot(D)
+
+# However, note that if we now modify the underlying Devices (which
+# were referenced in D, and whose references were copied to D_copy), both
+# geometries are affected:
+E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
+quickplot(D)
+quickplot(D_copy)
+
+#==============================================================================
+# Extracting layers
+#==============================================================================
+# Say you want to grab all the polygons of a single layer from your Device. You 
+# can do this using the pg.extract() function, which will create a new Device
+# with all of the polygons from D.  Note that the Device created from this
+# function is necessarily flattened (otherwise it could inadvertantly modify 
+# other Devices which share references with the extracted Device)
+
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.rectangle(layer = 2)
+E3 = pg.arc(layer = 3)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+D.add_ref(E3).movex(30)
+quickplot(D)
+
+D_only_layers_1_and_2 = pg.extract(D, layers = [1,2])
+quickplot(D_only_layers_1_and_2)
 
 
 #==============================================================================

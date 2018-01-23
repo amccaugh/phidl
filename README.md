@@ -3,6 +3,20 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.8.1
+
+### New features
+ - New geometry/utility functions pg.copy() and pg.extract().  See tutorial for details
+
+### Changes
+- Since the extract() process creates new geometry, D.extract() has been removed in favor of placing it in the geometry library pg.extract()
+- Updated tutorial text
+- `pg.import_gds` default argument is now `flatten = False`
+
+### Bugfixes
+ - Fixed some rare errors with D.flatten()
+
+
 ## 0.8.0
 
 ### New features
