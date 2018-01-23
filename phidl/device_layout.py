@@ -402,19 +402,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         return np.array(bbox)
         
         
-    def extract(self, layers = 'all'):
-        if layers == 'all':
-             polys = self.get_polygons(by_spec = False)
-        else:
-             if type(layers) not in (list, tuple):
-                 layers = [layers]
-             poly_dict = self.get_polygons(by_spec = True)
-             keys = [_parse_layer(layer) for layer in layers]
-             polys = [poly_dict[k] for k in keys if k in poly_dict]
-             polys = list(itertools.chain.from_iterable(polys))
-        return polys
-        
-        
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
