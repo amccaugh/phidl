@@ -114,6 +114,8 @@ def _parse_layer(layer):
         gds_layer, gds_datatype = layer.gds_layer, layer.gds_datatype
     elif np.size(layer) == 2:
         gds_layer, gds_datatype = layer[0], layer[1]
+    elif layer is None:
+        gds_layer, gds_datatype = 0, 0
     else:
         gds_layer, gds_datatype = layer, 0
     return (gds_layer, gds_datatype)
@@ -429,7 +431,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return d                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = 0):
+    def add_polygon(self, points, layer = None):
         # Check if input a list of polygons by seeing if it's 3 levels deep
         try:    
             points[0][0][0] # Try to access first x point
@@ -438,9 +440,12 @@ class Device(gdspy.Cell, _GeometryHelper):
         
         
         if isinstance(points, gdspy.Polygon):
+            if layer is None: layer = (points.layer, points.datatype)
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
-            return [self.add_polygon(p, layer) for p in points.polygons]
+            if layer is None:   layers = points.layers
+            else:               layers = [layer]*len(points.polygons)
+            return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
         gds_layer, gds_datatype = _parse_layer(layer)
             
@@ -529,10 +534,19 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def flatten(self,  single_layer = None):
         if single_layer is None:
-            return super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
+            super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
         else:
             gds_layer, gds_datatype = _parse_layer(single_layer)
-            return super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=None)
+            super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
+        # Dtemp = Device()
+        # [Dtemp.add_polygon(poly) for poly in self.elements]
+        # new_elements = [self.add_polygon(poly) for poly in self.elements]
+        temp = self.elements
+        self.elements = []
+        [self.add_polygon(poly) for poly in temp]
+
+        return self
+
 
 
     def remove(self, items):
