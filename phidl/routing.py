@@ -149,15 +149,14 @@ def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width
         width_fun = lambda t: (width2 - width1)*(1-cos(t*pi))/2 + width1
     
     route_path = gdspy.Path(width = width1, initial_point = (0,0))
-    gds_layer, gds_datatype = _parse_layer(layer)
     route_path.parametric(curve_fun, curve_deriv_fun, number_of_evaluations=num_path_pts,
-            max_points=199, final_width=width_fun, final_distance=None,
-            layer=gds_layer, datatype = gds_datatype)
+            max_points=199, final_width=width_fun, final_distance=None)
+    route_path_polygons = route_path.polygons
     
     # Make the route path into a Device with ports, and use "connect" to move it
     # into the proper location
     D = Device()
-    D.add(route_path)
+    D.add_polygon(route_path_polygons, layer = layer)
     p1 = D.add_port(name = 1, midpoint = (0,0), width = width1, orientation = 180)
     p2 = D.add_port(name = 2, midpoint = [forward_distance,lateral_distance], width = width2, orientation = 0)
     D.info['length'] = route_path.length
