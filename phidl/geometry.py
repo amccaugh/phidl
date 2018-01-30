@@ -74,6 +74,12 @@ def copy(D):
     return D_copy
 
 
+def copy_layer(D, layer = 1, new_layer = 2):
+    D_copied_layer = extract(D, layers = [layer])
+    D_copied_layer.flatten(single_layer = new_layer)
+    return D_copied_layer
+
+
 #==============================================================================
 #
 # Loading GDS files
