@@ -54,7 +54,7 @@ def extract(D, layers = [0,1]):
 
 
 def copy(D):
-    D_copy = Device(name = 'copy')
+    D_copy = Device(name = D._internal_name)
     D_copy.info = python_copy.deepcopy(D.info)
     for ref in D.references:
         new_ref = DeviceReference(device = ref.parent,
@@ -71,6 +71,16 @@ def copy(D):
     for label in D.labels:    D_copy.label(text = label.text,
                                            position = label.position,
                                            layer = (label.layer, label.texttype))
+    return D_copy
+
+
+def deepcopy(D):
+    D_copy = python_copy.deepcopy(D)
+    D_copy.uid = Device._next_uid
+    Device._next_uid += 1
+    D_copy._internal_name = D._internal_name
+    D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid) # Write name e.g. 'Unnamed000005'
+
     return D_copy
 
 
@@ -583,6 +593,18 @@ def L(width = 1, size = (10,20) , layer = 0):
     D.add_port(name = 1, midpoint = (0,s2),  width = width, orientation = 90)
     D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
     return D
+
+
+def C(width = 1, size = (10,20) , layer = 0):
+    D = Device(name = 'C')
+    w = width/2
+    s1, s2 = size
+    points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2-w), (s1,s2-w), (s1,s2+w), (-w, s2+w), (-w,-w)]
+    D.add_polygon(points, layer = layer)
+    D.add_port(name = 1, midpoint = (s1,s2),  width = width, orientation = 0)
+    D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
+    return D
+
 
 
 #==============================================================================

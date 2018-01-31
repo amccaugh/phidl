@@ -72,7 +72,7 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
         
 def reset():
     Layer.layer_dict = {}
-    Device.uid = 0
+    Device._next_uid = 0
 
 
 class Layer(object):
@@ -339,7 +339,7 @@ def make_device(fun, config = None, **kwargs):
 
 class Device(gdspy.Cell, _GeometryHelper):
     
-    uid = 0
+    _next_uid = 0
     
     def __init__(self, *args, **kwargs):
         if len(args) > 0:
@@ -350,17 +350,19 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         
         # Allow name to be set like Device('arc') or Device(name = 'arc')
-        if 'name' in kwargs:                          gds_name = kwargs['name']
-        elif (len(args) == 1) and (len(kwargs) == 0): gds_name = args[0]
-        else:                                         gds_name = 'Unnamed'
+        if 'name' in kwargs:                          _internal_name = kwargs['name']
+        elif (len(args) == 1) and (len(kwargs) == 0): _internal_name = args[0]
+        else:                                         _internal_name = 'Unnamed'
 
         # Make a new blank device
-        Device.uid += 1
         self.ports = {}
         self.info = {}
         self.aliases = {}
-        gds_name = '%s%06d' % (gds_name[:20], Device.uid) # Write name e.g. 'Unnamed000005'
+        self.uid = Device._next_uid
+        self._internal_name = _internal_name
+        gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
         super(Device, self).__init__(name = gds_name, exclude_from_current=True)
+        Device._next_uid += 1
 
 
     def __getitem__(self, val):
@@ -372,8 +374,8 @@ class Device(gdspy.Cell, _GeometryHelper):
                 'which does not exist' % (val, self.name))
 
     def __repr__(self):
-        return ('Device (name "%s", ports %s, aliases %s, %s elements, %s references)' % \
-                (self.name, list(self.ports.keys()), list(self.aliases.keys()),
+        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s elements, %s references)' % \
+                (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
                 len(self.elements), len(self.references)))
 
 
@@ -404,7 +406,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
-        
         
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
