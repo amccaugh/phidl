@@ -18,8 +18,7 @@ from skimage import draw, morphology
 
 
 ##### Categories:
-# Utility functions
-# Loading GDS files
+# Utility functions (copying, importing, extracting)
 # Polygons / shapes
 # Optimal (current-crowding) curves
 # Pads
@@ -88,13 +87,6 @@ def copy_layer(D, layer = 1, new_layer = 2):
     D_copied_layer = extract(D, layers = [layer])
     D_copied_layer.flatten(single_layer = new_layer)
     return D_copied_layer
-
-
-#==============================================================================
-#
-# Loading GDS files
-#
-#==============================================================================
 
 
 def import_gds(filename, cellname = None, layers = None, flatten = False):
