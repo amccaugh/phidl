@@ -16,6 +16,7 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 ### Bugfixes
  - Fixed some rare errors with D.flatten()
+ - Some internal changes to make working with Device.uid easier
 
 
 ## 0.8.0
