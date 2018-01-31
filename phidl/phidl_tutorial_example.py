@@ -494,11 +494,14 @@ D.write_gds('D_ellipses_flattened_singlelayer.gds')
 # Copying a Device
 #==============================================================================
 # Since copying a Device involves creating a new geometry, you can copy a 
-# Device D using the pg.copy(D) function.  It will perform a "shallow" copy of 
-# D which has all of the same references/ports/aliases/etc.  This is especially
-# this is especially useful if you want to flatten a geometry without damaging
-# the structure of the original Device.
-
+# Device D using the pg.copy(D) or pg.deepcopy(D) function.  pg.copy(D) 
+# maintains the underlying connections to other Device, so that newly-created 
+# Device uses the same references as the original device.  Conversely, 
+# pg.deepcopy() creates completely new copies of every underlying polygon and
+# reference, so that the newly-created Device shares no dependencies/references
+# with the original Device.  These functions are especially useful if 
+# you want to flatten a geometry without damaging the structure of the 
+# original Device.
 
 D = Device()
 E1 = pg.ellipse(layer = 1)
@@ -506,20 +509,41 @@ E2 = pg.rectangle(layer = 2)
 D.add_ref(E1)
 D.add_ref(E2).movex(15)
 
-D_copy = pg.copy(D)
-quickplot(D_copy)
+D_copied = pg.copy(D)
+quickplot(D_copied)
 
-# Observe that if we modify D now, D_copy is unaffected
+# Observe that if we add geometry to D now, D_copied is unaffected
 D.add_ref(pg.circle()) 
 D.rotate(45)
-quickplot(D)
+quickplot(D_copied)
 
 # However, note that if we now modify the underlying Devices (which
-# were referenced in D, and whose references were copied to D_copy), both
-# geometries are affected:
+# were referenced in D, and whose references were copied to D_copied), both
+# the original D and D_copied are affected:
 E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
-quickplot(D)
-quickplot(D_copy)
+quickplot(D_copied)
+
+# If instead we use pg.deepcopy(), all of the underlying references are copied
+# and used in the new D_deepcopied device.  So if we change one of the old
+# references, the new D_deepcopied doesn't get affected
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.rectangle(layer = 2)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+
+D_deepcopied = pg.deepcopy(D)
+quickplot(D_deepcopied)
+
+# As before, if we add geometry to D now, D_deepcopied is unaffected
+D.add_ref(pg.circle()) 
+D.rotate(45)
+quickplot(D_deepcopied)
+
+# However, now if we mess with the underlying Devices of D, D_deepcopied
+# is not affected like it was before.
+E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
+quickplot(D_deepcopied)
 
 #==============================================================================
 # Extracting layers

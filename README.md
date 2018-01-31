@@ -6,8 +6,8 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 ## 0.8.1
 
 ### New features
- - New geometry/utility function pg.copy() which allows you to copy a Device wholesale (very useful if you want to flatten() a Device but not destroy the original)  See tutorial for details
- - New geometry/utility function pg.extract() which extracts all the polygons from a set of specified layers from a Device, and creates a new Devicew ith those polygons in them. See tutorial for details
+ - New Device-copying functions `pg.copy()` and `pg.deepcopy()` which allows you to copy a Device wholesale (very useful if you want to flatten() a Device but not destroy the original).  `pg.copy` maintains the underlying connections to other Device, while `pg.deepcopy` creates completely new copies of every underlying polygon and reference. 
+ - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Devicew ith those polygons in them. See tutorial for details
 
 ### Changes
 - Since the extract() process creates new geometry, D.extract() has been removed in favor of placing it in the geometry library pg.extract()
