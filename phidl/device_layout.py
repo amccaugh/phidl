@@ -4,6 +4,7 @@
 
 # Add support for gdspy.CellArray
 # Auto-generate PHIDL geometry documentation
+# Allow caching of bbox
 
 #==============================================================================
 # Minor TODO
@@ -394,7 +395,6 @@ class Device(gdspy.Cell, _GeometryHelper):
     def polygons(self):
         return [e for e in self.elements if isinstance(e, Polygon)]
 
-
     @property
     def meta(self):
         warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
@@ -402,11 +402,18 @@ class Device(gdspy.Cell, _GeometryHelper):
         
     @property
     def bbox(self):
-        self.bb_is_valid = False # IMPROVEMENT This is a hack to get around gdspy caching issues
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
-        
+    
+    # IMPROVEMENT: This is a hack to get around gdspy caching issues
+    @property
+    def _bb_valid(self):
+        return False
+    @_bb_valid.setter
+    def _bb_valid(self, value):
+        pass
+
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
