@@ -102,35 +102,39 @@ def import_gds(filename, cellname = None, layers = None, flatten = False):
     elif cellname is None and len(top_level_cells) > 1:
         raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
 
+    if layers is None:
+        layer_remapping = None
+    elif type(layers) in (list, tuple):
+        layer_remapping = {_parse_layer(l):_parse_layer(l) for l in layers}
+    if type(layers) is dict:
+        layer_remapping = {_parse_layer(k):_parse_layer(v) for k,v in layers.items()}
+
     if flatten == False:
-        D = _translate_cell(cell)
+        D = _translate_cell(cell, layer_remapping)
         return D
 
     elif flatten == True:
         D = Device('import_gds')
         polygons = cell.get_polygons(by_spec = True)
 
-        if layers is None:
+        if layer_remapping is None:
             for layer_in_gds, polys in polygons.items():
                 D.add_polygon(polys, layer = layer_in_gds)
-        elif type(layers) in (list, tuple):
+        else:
             for layer_in_gds, polys in polygons.items():
-                if _parse_layer(layer_in_gds) in [_parse_layer(l) for l in layers]:
-                    D.add_polygon(polys, layer = layer_in_gds)
-        elif type(layers) is dict:
-            remapped_layers = {_parse_layer(k):v for k,v in layers.items()}
-
-            for layer_in_gds, polys in polygons.items():
-                if _parse_layer(layer_in_gds) in remapped_layers.keys():
-                    D.add_polygon(polys, layer = remapped_layers[layer_in_gds])
+                parsed_layer_in_gds = _parse_layer(layer_in_gds)
+                if parsed_layer_in_gds in layer_remapping.keys():
+                    D.add_polygon(polys, layer = layer_remapping[parsed_layer_in_gds])
         return D
 
 
-def _translate_cell(c):
+def _translate_cell(c, layer_remapping):
     D = Device(name = c.name)
     for e in c.elements:
         if isinstance(e, gdspy.Polygon):
-            D.add_polygon(points = e.points, layer = (e.layer, e.datatype))
+            polygon_layer = _parse_layer((e.layer, e.datatype))
+            if polygon_layer in layer_remapping.keys():
+                D.add_polygon(points = e.points, layer = layer_remapping[polygon_layer])
         elif isinstance(e, gdspy.CellReference):
             dr = DeviceReference(device = _translate_cell(e.ref_cell),
                             origin = e.origin,
