@@ -268,6 +268,13 @@ class Port(object):
     def y(self):
         return self.midpoint[1]
         
+    # Use this function instead of copy() (which will not create a new numpy array
+    # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
+    # DeviceReference recursively, causing performance issues)
+    def _copy(self):
+        return Port(name = self.name, midpoint = self.midpoint,
+            width = self.width, orientation = self.orientation,
+            parent = self.parent))
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
@@ -463,9 +470,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
-        if isinstance(port, Port): p = deepcopy(port)
+        if isinstance(port, Port):
+            p = Port(name = port.name, midpoint = port.midpoint,
+                        width = port.width, orientation = port.orientation,
+                        parent = self)
         elif isinstance(name, Port):
-            p = deepcopy(name)
+            p = Port(name = name.name, midpoint = name.midpoint,
+                        width = name.width, orientation = name.orientation,
+                        parent = self)
             name = p.name
         else:                  p = Port(name, midpoint, width, orientation, parent = self)
         if name is not None: p.name = name
@@ -639,7 +651,11 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  ignore_missing=False)
         self.parent = device
         self._parent_ports = device.ports
-        self._local_ports = deepcopy(device.ports)
+        self._local_ports = {name:Port(name = port.name, midpoint = port.midpoint,
+                        width = port.width, orientation = port.orientation,
+                        parent = self) 
+            p =  ]deepcopy(device.ports)# FIXME START HERE
+        }
 
 
     def __repr__(self):
