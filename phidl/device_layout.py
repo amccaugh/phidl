@@ -274,7 +274,7 @@ class Port(object):
     def _copy(self):
         return Port(name = self.name, midpoint = self.midpoint,
             width = self.width, orientation = self.orientation,
-            parent = self.parent))
+            parent = self.parent)
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
@@ -471,15 +471,15 @@ class Device(gdspy.Cell, _GeometryHelper):
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
         if isinstance(port, Port):
-            p = Port(name = port.name, midpoint = port.midpoint,
-                        width = port.width, orientation = port.orientation,
-                        parent = self)
+            p = port._copy()
+            p.parent = self
         elif isinstance(name, Port):
-            p = Port(name = name.name, midpoint = name.midpoint,
-                        width = name.width, orientation = name.orientation,
-                        parent = self)
+            p = name._copy()
+            p.parent = self
             name = p.name
-        else:                  p = Port(name, midpoint, width, orientation, parent = self)
+        else:
+            p = Port(name = name, midpoint = midpoint, width = width,
+                orientation = orientation, parent = self)
         if name is not None: p.name = name
         if p.name in self.ports:
             raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
@@ -651,11 +651,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  ignore_missing=False)
         self.parent = device
         self._parent_ports = device.ports
-        self._local_ports = {name:Port(name = port.name, midpoint = port.midpoint,
-                        width = port.width, orientation = port.orientation,
-                        parent = self) 
-            p =  ]deepcopy(device.ports)# FIXME START HERE
-        }
+        self._local_ports = {name:port._copy() for name, port in device.ports.items()}
 
 
     def __repr__(self):
