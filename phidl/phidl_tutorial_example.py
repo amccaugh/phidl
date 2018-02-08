@@ -360,10 +360,11 @@ quickplot(E3)
 
 
 #==============================================================================
-# Annotation
+# Label
 #==============================================================================
-# We can also annotate our devices, in order to record information directly
-# into the final GDS file without putting any extra geometry onto any layer
+# We can also label (annotate) our devices, in order to record information 
+# directly into the final GDS file without putting any extra geometry onto any 
+# layer
 
 # Let's add an annotation to our Multi-Layer Text GDS file
 DL.label(text = 'This is layer1\nit will be titanium', position = l1.center)
@@ -467,32 +468,12 @@ print(D.aliases)
 print(D.aliases.keys())
 
 
-
-#==============================================================================
-# Extracting shapes
-#==============================================================================
-# Say you want to copy a complicated shape from one layer to another.  You 
-# can do this using the D.extract() function, which will strip out the raw
-# polygon points from D and allow you to add them to another layer
-D = Device()
-E1 = pg.ellipse(layer = 1)
-E2 = pg.ellipse(layer = 2)
-E3 = pg.ellipse(layer = 1)
-D.add_ref(E1)
-D.add_ref(E2).movex(15)
-D.add_ref(E3).movex(30)
-quickplot(D)
-
-D2 = Device()
-ellipse_polygons = D.extract(layers = 1)
-D2.add_polygon(ellipse_polygons, layer = 3)
-quickplot(D2)
-
 #==============================================================================
 # Flattening a Device
 #==============================================================================
 # Sometimes you want to remove references from a Device while keeping all
-# of the shapes/polygons intact and in place.  The D.flatten() does this
+# of the shapes/polygons intact and in place.  The D.flatten() keeps all the 
+# polygons in D, but removes all the underlying references it's attached to.
 # Also, if you specify the `single_layer` argument it will move all of the
 # polyons to that single layer
 
@@ -507,6 +488,83 @@ D.flatten()
 D.write_gds('D_ellipses_flattened.gds')
 D.flatten(single_layer = 5)
 D.write_gds('D_ellipses_flattened_singlelayer.gds')
+
+
+#==============================================================================
+# Copying a Device
+#==============================================================================
+# Since copying a Device involves creating a new geometry, you can copy a 
+# Device D using the pg.copy(D) or pg.deepcopy(D) function.  pg.copy(D) 
+# maintains the underlying connections to other Device, so that newly-created 
+# Device uses the same references as the original device.  Conversely, 
+# pg.deepcopy() creates completely new copies of every underlying polygon and
+# reference, so that the newly-created Device shares no dependencies/references
+# with the original Device.  These functions are especially useful if 
+# you want to flatten a geometry without damaging the structure of the 
+# original Device.
+
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.rectangle(layer = 2)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+
+D_copied = pg.copy(D)
+quickplot(D_copied)
+
+# Observe that if we add geometry to D now, D_copied is unaffected
+D.add_ref(pg.circle()) 
+D.rotate(45)
+quickplot(D_copied)
+
+# However, note that if we now modify the underlying Devices (which
+# were referenced in D, and whose references were copied to D_copied), both
+# the original D and D_copied are affected:
+E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
+quickplot(D_copied)
+
+# If instead we use pg.deepcopy(), all of the underlying references are copied
+# and used in the new D_deepcopied device.  So if we change one of the old
+# references, the new D_deepcopied doesn't get affected
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.rectangle(layer = 2)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+
+D_deepcopied = pg.deepcopy(D)
+quickplot(D_deepcopied)
+
+# As before, if we add geometry to D now, D_deepcopied is unaffected
+D.add_ref(pg.circle()) 
+D.rotate(45)
+quickplot(D_deepcopied)
+
+# However, now if we mess with the underlying Devices of D, D_deepcopied
+# is not affected like it was before.
+E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
+quickplot(D_deepcopied)
+
+#==============================================================================
+# Extracting layers
+#==============================================================================
+# Say you want to grab all the polygons of a single layer from your Device. You 
+# can do this using the pg.extract() function, which will create a new Device
+# with all of the polygons from D.  Note that the Device created from this
+# function is necessarily flattened (otherwise it could inadvertantly modify 
+# other Devices which share references with the extracted Device)
+
+D = Device()
+E1 = pg.ellipse(layer = 1)
+E2 = pg.rectangle(layer = 2)
+E3 = pg.arc(layer = 3)
+D.add_ref(E1)
+D.add_ref(E2).movex(15)
+D.add_ref(E3).movex(30)
+quickplot(D)
+
+D_only_layers_1_and_2 = pg.extract(D, layers = [1,2])
+quickplot(D_only_layers_1_and_2)
 
 
 #==============================================================================
@@ -560,3 +618,40 @@ quickplot(D)
 D.remove(mytee2)
 D.remove(mypoly2)
 quickplot(D)
+
+
+#==============================================================================
+# Using the LRU Cache
+#==============================================================================
+# Let's assume you have a Device-making function which takes a long time,
+# for instance because it requires extensive computations to calculate polygon
+# points.  PHIDL has a LRU cache decorator you can use, similar to the
+# built-in Python functools.lru_cache.  The cache can significantly speed up
+# 
+import time
+from phidl import device_lru_cache
+
+@device_lru_cache
+def computationally_intensive_device(width = 10, height = 1):
+    D = Device()
+    D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
+    time.sleep(1.5) # Pretend we're doing computations for 1.5 seconds here
+    return D
+
+# When we first generate the Device, it takes the usual amount of time to
+# generate.
+time_start = time.time()
+DC1 = computationally_intensive_device(width = 10, height = 1)
+print('Function took %s seconds to run initially' % (time.time()-time_start))
+
+# However, if we use the same input arguments, since we already computed the
+# Device using those arguments the cache can return a copy much quicker
+time_start = time.time()
+DC2 = computationally_intensive_device(width = 10, height = 1)
+print('Function took %s seconds to run a second time' % (time.time()-time_start))
+
+# Note that if we change the input arguments, we still need to generate
+# the function again (even if that argument isn't used!)
+time_start = time.time()
+DC2 = computationally_intensive_device(width = 10, height = 2.7)
+print('Function with new arguments took %s seconds to run' % (time.time()-time_start))
