@@ -6,7 +6,7 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 ## 0.8.1
 
 ### New features
- - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Devicew ith those polygons in them. See tutorial for details
+ - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Device with those polygons in them. See tutorial for details
  - New Device-copying functions `pg.copy()` and `pg.deepcopy()` which allows you to copy a Device wholesale (very useful if you want to flatten() a Device but not destroy the original).  `pg.copy` maintains the underlying connections & references to other Devices, while `pg.deepcopy` creates completely new copies of every underlying polygon and reference.  See tutorial for details
  - Introduced an LRU cache for computationally-intensive Device-making functions.  By using the `@device_lru_cache` decorator, any function which returns a Device can be memoized.  See tutorial for more details
 
