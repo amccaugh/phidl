@@ -41,7 +41,7 @@ from skimage import draw, morphology
 #
 #==============================================================================
 
-class MemoizeDevice:
+class device_lru_cache:
     def __init__(self, fn):
         self.maxsize = 32
         self.fn = fn
@@ -51,7 +51,7 @@ class MemoizeDevice:
         if pickle_str not in self.memo.keys():
             new_cache_item = self.fn(*args, **kwargs)
             if not isinstance(new_cache_item, Device):
-                raise ValueError('[PHIDL] @MemoizeDevice can only be used on functions which return a Device')
+                raise ValueError('[PHIDL] @device_lru_cache can only be used on functions which return a Device')
             if len(self.memo) > self.maxsize:
                 self.memo.popitem(last = False) # Remove oldest item from cache
             # Add a deepcopy of new item to cache so that if we change the
@@ -193,7 +193,7 @@ def connector(midpoint = (0,0), width = 1, orientation = 0):
 #
 #==============================================================================
 
-@MemoizeDevice
+@device_lru_cache
 def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer = 0):
 
     #==========================================================================
@@ -248,7 +248,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     
     
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
-@MemoizeDevice
+@device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, layer = 0):
 
@@ -649,7 +649,7 @@ def C(width = 1, size = (10,20) , layer = 0):
 
 
 
-@MemoizeDevice
+@device_lru_cache
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
           num_squares = None, terminals_same_side = False, layer = 0):
     if [size[0], size[1], num_squares].count(None) != 1:
@@ -844,7 +844,7 @@ def _G_integrand(xip, B):
 def _G(xi, B):
     return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
-@MemoizeDevice
+@device_lru_cache
 def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
                  Lk_per_sq = 250e-12, Z1 = None, Z2 = None, width1 = None, width2 = None,
                  num_pts = 100, layer = 0):
@@ -890,7 +890,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     return D
 
 
-@MemoizeDevice
+@device_lru_cache
 def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
     
@@ -1702,7 +1702,7 @@ def polygon(xpts=[-1,-1, 0, 0],
 # quickplot(P)
 
 
-@MemoizeDevice
+@device_lru_cache
 def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 5, length_taper = 10, width = 0.4, partial_etch = False):
     #returns a fiber grating
     G = Device('grating')

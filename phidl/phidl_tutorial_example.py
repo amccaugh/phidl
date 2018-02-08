@@ -618,3 +618,40 @@ quickplot(D)
 D.remove(mytee2)
 D.remove(mypoly2)
 quickplot(D)
+
+
+#==============================================================================
+# Using the LRU Cache
+#==============================================================================
+# Let's assume you have a Device-making function which takes a long time,
+# for instance because it requires extensive computations to calculate polygon
+# points.  PHIDL has a LRU cache decorator you can use, similar to the
+# built-in Python functools.lru_cache.  The cache can significantly speed up
+# 
+import time
+from phidl import device_lru_cache
+
+@device_lru_cache
+def computationally_intensive_device(width = 10, height = 1):
+    D = Device()
+    D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
+    time.sleep(1.5) # Pretend we're doing computations for 1.5 seconds here
+    return D
+
+# When we first generate the Device, it takes the usual amount of time to
+# generate.
+time_start = time.time()
+DC1 = computationally_intensive_device(width = 10, height = 1)
+print('Function took %s seconds to run initially' % (time.time()-time_start))
+
+# However, if we use the same input arguments, since we already computed the
+# Device using those arguments the cache can return a copy much quicker
+time_start = time.time()
+DC2 = computationally_intensive_device(width = 10, height = 1)
+print('Function took %s seconds to run a second time' % (time.time()-time_start))
+
+# Note that if we change the input arguments, we still need to generate
+# the function again (even if that argument isn't used!)
+time_start = time.time()
+DC2 = computationally_intensive_device(width = 10, height = 2.7)
+print('Function with new arguments took %s seconds to run' % (time.time()-time_start))
