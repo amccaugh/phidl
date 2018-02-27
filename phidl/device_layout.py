@@ -16,6 +16,7 @@
 # TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
 # TODO Make shortcuts to Device.aliases with D.al
 # TODO PHIDL Allow add_ref to take list of Devices
+# TODO PHIDL make pg.copy() accept DeviceReferences
 
 #==============================================================================
 # Imports
@@ -335,7 +336,7 @@ def make_device(fun, config = None, **kwargs):
         raise TypeError("""[PHIDL] When creating Device() from a function, the
         second argument should be a ``config`` argument which is either a
         filename or a dictionary containing arguments for the function.
-        e.g. Device(arc, config = 'myconfig.yaml') """)
+        e.g. make_device(ellipse, config = 'myconfig.yaml') """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
