@@ -2253,14 +2253,22 @@ def via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_laye
 
 def via_route(num_vias, pad_size = (300,300), wire_width=10, via_spacing = 40, min_pad_spacing = 0, pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3):
     """
-    total requested vias (num_vias) -> this needs to be even
-    pad size (pad_size) -> given in a pair (width, height)
-    wire_width -> how wide each wire should be
-    pad_layer -> GDS layer number of the pads
-    wiring1_layer -> GDS layer number of the top wiring
-    wiring2_layer -> GDS layer number of the bottom wiring
-    via_layer -> GDS layer number of the vias
-    ex: via_route(54, min_pad_spacing=300)
+    Usage:
+        Call via_route() by indicating the number of vias you want drawn. You can also change the other parameters however 
+        if you do not specifiy a value for a parameter it will just use the default value
+        Ex:
+            via_route(num_vias=54)
+            -or-
+            via_route(num_vias=12, pad_size=(100,100),wire_width=8)
+            
+        total requested vias (num_vias) -> this needs to be even
+        pad size (pad_size) -> given in a pair (width, height)
+        wire_width -> how wide each wire should be
+        pad_layer -> GDS layer number of the pads
+        wiring1_layer -> GDS layer number of the top wiring
+        wiring2_layer -> GDS layer number of the bottom wiring
+        via_layer -> GDS layer number of the vias
+        ex: via_route(54, min_pad_spacing=300)
     """
     
     VR = Device('Via Route')
@@ -2342,7 +2350,19 @@ def via_route(num_vias, pad_size = (300,300), wire_width=10, via_spacing = 40, m
 # End Via Route-----------------------------------------
     
 # Comb Insulation---------------------------------------
+
 def comb_insulation(pad_size = (200,200), wire_width = 1, wire_gap = 3, padr_layer = 0, padlt_layer=1, comb_layer = 2, zig_layer=3,padb_layer = 4):
+    """
+    Usage:
+    
+    Call comb_insulation() with any of the parameters shown below which you'd like to change. You only need to supply
+    the parameters which you intend on changing You can alternatively call it with no parameters and it will take all 
+    the default alues shown below.
+    Ex:
+        comb_insulation(pad_size=(175,175), wire_width=2, wire_gap=5)
+        - or -
+        comb_insulation()
+    """ 
     CI = Device("Comb Insulation")
 
     #%% pad overlays
@@ -2460,4 +2480,65 @@ def comb_insulation(pad_size = (200,200), wire_width = 1, wire_gap = 3, padr_lay
     return CI
     
 # End Comb Insulation-----------------------------------
+    
+# Start Ic Step-----------------------------------------
+ 
+#This is a helper function to make the Ic step wire structure
+def wire_step4(thick_width = 10, thin_width = 1, wire_layer = 2):
+    WS4 = Device('Optimal Wire Step Symmetric')
+    wire_stepa = WS4.add_ref(optimal_step(thick_width/2, thin_width/2, layer=wire_layer))
+    wire_stepb = WS4.add_ref(optimal_step(thin_width/2, thick_width/2, layer=wire_layer))
+    wire_stepc = WS4.add_ref(optimal_step(thick_width/2, thin_width/2, layer=wire_layer))
+    wire_stepd = WS4.add_ref(optimal_step(thin_width/2, thick_width/2, layer=wire_layer))
+    wire_stepb.rotate(180)
+    wire_stepb.xmin = wire_stepa.xmin
+    wire_stepc.rotate(180)
+    wire_stepc.xmin = wire_stepa.xmax
+    wire_stepd.xmin = wire_stepc.xmin
+    return WS4
+
+
+def optimal_ic_step(pad_size=(200,200), step_width_growth_factor = 5, thick_width = [], narrow_width = [0.5,1,2,4,5], padb_layer = 0, padt_layer = 1, wire_layer=2):
+    """
+    Usage:
+    
+    Call optimal_ic_step() with either a list of widths for the thickest part of each wire to test and a list for the 
+    thinnest parts of each wire. Alternatively, specify a list of widths for the thinnest part of each wire and ignore the
+    thick_width parameter. Instead you should specify the step_width_growth_factor which indicates by what factor the thick
+    part of the wire will be larger than the thin part. 
+    Ex:
+        optimal_ic_step(thick_width = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
+        - or -
+        optimal_ic_step(step_width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
+    """
+    ICS = Device('Critical Current Step')
+    if(np.size(thick_width) == 0):
+        for i, val in enumerate(narrow_width):
+            thick_width.append(step_width_growth_factor * narrow_width[i])
+    translation = 0
+    padb = ICS.add_ref(rectangle(size=(np.size(narrow_width) * (pad_size[0]*6/5), pad_size[1]), layer=wire_layer))
+    padb_overlay = ICS.add_ref(rectangle(size=((np.size(narrow_width) * (pad_size[0]*6/5))*9/10, pad_size[1]*9/10), layer=padb_layer))
+    padb_overlay.center = padb.center
+    padb_overlay.ymin = padb.ymin
+    for i, x in enumerate(thick_width):
+        padt = ICS.add_ref(rectangle(pad_size, wire_layer))
+        padt.xmin = padb.xmin + translation
+        padt.ymax = pad_size[1]*3
+        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=padt_layer))
+        padt_overlay.center = padt.center
+        padt_overlay.ymax = padt.ymax
+        difference = padt.ymin-padb.ymax
+        wire_step = ICS.add_ref(wire_step4(thick_width[i], narrow_width[i], wire_layer=wire_layer))
+        wire_step.rotate(90)
+        wire_step.center = (padt.center[0], padb.ymax + difference/2)
+        translation = translation + pad_size[1]*12/10 
+        conn_wire_top = ICS.add_ref(rectangle(size=(thick_width[i], padt.ymin-wire_step.ymax), layer=wire_layer))
+        conn_wire_bottom = ICS.add_ref(rectangle(size=(thick_width[i], wire_step.ymin-padb.ymax), layer=wire_layer))
+        conn_wire_top.ymax = padt.ymin
+        conn_wire_top.xmin = wire_step.xmin
+        conn_wire_bottom.ymin = padb.ymax
+        conn_wire_bottom.xmin = wire_step.xmin
+    return ICS    
+
+# End Ic Step-------------------------------------------
     
