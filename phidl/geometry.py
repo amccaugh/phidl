@@ -2226,3 +2226,238 @@ def hydra():
 def hexapod():
     pass
 
+
+#==============================================================================
+#
+# Test Structures
+#
+#==============================================================================
+
+
+# Via Route ----------------------------------------
+def via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, via_width):
+    VI = Device('Via Route')
+    wire1 = VI.add_ref(compass(size=(via_spacing, wire_width), layer=wiring1_layer))
+    wire2 = VI.add_ref(compass(size=(via_spacing, wire_width), layer=wiring2_layer))
+    via1 = VI.add_ref(compass(size=(via_width, via_width), layer=via_layer))
+    via2 = VI.add_ref(compass(size=(via_width, via_width), layer=via_layer))
+    wire1.connect(port='E', destination = wire2.ports['W'], overlap=wire_width)
+    via1.connect(port='W', destination = wire1.ports['E'], overlap = (wire_width + via_width)/2)
+    via2.connect(port='W', destination = wire2.ports['E'], overlap = (wire_width + via_width)/2)
+    VI.add_port(name='W', port = wire1.ports['W'])
+    VI.add_port(name='E', port = wire2.ports['E'])
+    VI.add_port(name='S', midpoint = [(1*wire_width)+ wire_width/2,-wire_width/2], width = wire_width, orientation = -90)
+    VI.add_port(name='N', midpoint = [(1*wire_width)+ wire_width/2,wire_width/2], width = wire_width, orientation = 90)
+
+    return VI
+
+def via_route(num_vias, pad_size = (300,300), wire_width=10, via_spacing = 40, min_pad_spacing = 0, pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3):
+    """
+    total requested vias (num_vias) -> this needs to be even
+    pad size (pad_size) -> given in a pair (width, height)
+    wire_width -> how wide each wire should be
+    pad_layer -> GDS layer number of the pads
+    wiring1_layer -> GDS layer number of the top wiring
+    wiring2_layer -> GDS layer number of the bottom wiring
+    via_layer -> GDS layer number of the vias
+    ex: via_route(54, min_pad_spacing=300)
+    """
+    
+    VR = Device('Via Route')
+    pad1 = VR.add_ref(rectangle(size=pad_size, layer=pad_layer))
+    pad1_overlay = VR.add_ref(rectangle(size=pad_size, layer=wiring1_layer))
+    pad2 = VR.add_ref(rectangle(size=pad_size, layer=pad_layer))
+    pad2_overlay = VR.add_ref(rectangle(size=pad_size, layer=wiring1_layer))
+    nub = VR.add_ref(compass(size=(3*wire_width,wire_width),layer=pad_layer))
+    nub_overlay = VR.add_ref(compass(size=(3*wire_width,wire_width),layer=wiring1_layer))
+    head = VR.add_ref(compass(size=(wire_width,wire_width),layer=pad_layer))
+    head_overlay = VR.add_ref(compass(size=(wire_width,wire_width),layer=wiring1_layer))
+    nub.ymax = pad1.ymax-5
+    nub.xmin = pad1.xmax
+    nub_overlay.ymax = pad1.ymax-5
+    nub_overlay.xmin = pad1.xmax
+    head.connect(port = "W", destination = nub.ports["E"])
+    head_overlay.connect(port = "W", destination = nub_overlay.ports["E"])
+    pad1_overlay.xmin = pad1.xmin
+    pad1_overlay.ymin = pad1.ymin
+
+    old_port = head.ports['S']
+    count = 0
+    width_via_iter = 2*via_spacing - 2*wire_width
+
+    pad2.xmin = pad1.xmax + min_pad_spacing
+    up = False
+    down = True
+    edge = True
+    current_width = 3*wire_width + wire_width #width of nub and 1 overlap
+    obj_old = head
+    obj = head
+    while( (count+2) <= num_vias):
+        obj = VR.add_ref(via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, wire_width*1.5))
+        obj.connect(port = 'W', destination = old_port, overlap = wire_width)
+        old_port = obj.ports['E']
+        edge = False
+        if(obj.ymax > pad1.ymax):
+            obj.connect(port = 'W', destination = obj_old.ports['S'], overlap = wire_width)
+            old_port = obj.ports['S']
+            current_width += width_via_iter
+            down = True
+            up = False
+            edge = True
+
+        elif(obj.ymin < pad1.ymin):
+            obj.connect(port = 'W', destination = obj_old.ports['N'], overlap = wire_width)
+            old_port = obj.ports['N']
+            current_width += width_via_iter
+            up = True
+            down = False
+            edge = True
+        count = count + 2
+        obj_old = obj
+
+    if(current_width < min_pad_spacing and (min_pad_spacing - current_width) > 3*wire_width):
+        tail = VR.add_ref(compass(size=(min_pad_spacing-current_width+wire_width,wire_width),layer=wiring1_layer))
+        tail_overlay = VR.add_ref(compass(size=(min_pad_spacing-current_width+wire_width,wire_width),layer=pad_layer))
+    else:
+        tail = VR.add_ref(compass(size=(3*wire_width,wire_width),layer=wiring1_layer))
+        tail_overlay = VR.add_ref(compass(size=(3*wire_width,wire_width),layer=wiring1_layer))
+        
+    if(up == True and edge != True):
+        tail.connect(port = 'W', destination = obj.ports['S'], overlap = wire_width)
+        tail_overlay.connect(port = 'W', destination = obj.ports['S'], overlap = wire_width)
+    elif(down == True and edge != True):
+        tail.connect(port = 'W', destination = obj.ports['N'], overlap = wire_width)
+        tail_overlay.connect(port = 'W', destination = obj.ports['N'], overlap = wire_width)
+    else:
+        tail.connect(port = 'W', destination = obj.ports['E'], overlap = wire_width)
+        tail_overlay.connect(port = 'W', destination = obj.ports['E'], overlap = wire_width)
+
+        
+    pad2.xmin = tail.xmax
+    pad2_overlay.xmin = pad2.xmin
+    pad2_overlay.ymin = pad2.ymin
+    
+    return VR
+
+# End Via Route-----------------------------------------
+    
+# Comb Insulation---------------------------------------
+def comb_insulation(pad_size = (200,200), wire_width = 1, wire_gap = 3, padr_layer = 0, padlt_layer=1, comb_layer = 2, zig_layer=3,padb_layer = 4):
+    CI = Device("Comb Insulation")
+
+    #%% pad overlays
+    overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padb_layer))
+    overlay_padl = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padlt_layer))
+    overlay_padt = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padlt_layer))
+    overlay_padr = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padr_layer))
+    
+    overlay_padl.xmin = 0
+    overlay_padl.ymin = 0
+    overlay_padb.ymax = 0
+    overlay_padb.xmin = overlay_padl.xmax + pad_size[1]/5
+    overlay_padr.ymin = overlay_padl.ymin
+    overlay_padr.xmin = overlay_padb.xmax + pad_size[1]/5
+    overlay_padt.xmin = overlay_padl.xmax + pad_size[1]/5
+    overlay_padt.ymin = overlay_padl.ymax
+    
+    #%% pads
+    padl = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
+    padt = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
+    padr = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
+    padb = CI.add_ref(rectangle(size=pad_size, layer=zig_layer))
+    padl_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
+    padr_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
+    
+    padl.xmin = overlay_padl.xmin
+    padl.center = [padl.center[0],overlay_padl.center[1]]
+    padt.ymax = overlay_padt.ymax
+    padt.center = [overlay_padt.center[0],padt.center[1]]
+    padr.xmax = overlay_padr.xmax
+    padr.center = [padr.center[0],overlay_padr.center[1]]
+    padb.ymin = overlay_padb.ymin
+    padb.center = [overlay_padb.center[0],padb.center[1]]
+    padl_nub.xmin = padl.xmax
+    padl_nub.center = [padl_nub.center[0],padl.center[1]]
+    padr_nub.xmax = padr.xmin
+    padr_nub.center = [padr_nub.center[0],padr.center[1]]
+    
+    #%% connected zig
+    
+    head = CI.add_ref(compass(size=(10*wire_width, wire_width), layer=comb_layer))
+    head.xmin = padl_nub.xmax
+    head.ymax = padl_nub.ymax
+    connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
+    connector.connect(port = 'W', destination=head.ports['E'])
+    old_port = connector.ports['S']
+    top = True
+    obj = connector
+    while(obj.xmax + wire_width*10 < padr_nub.xmin):
+        obj = CI.add_ref(compass(size=(pad_size[1]/2 - 2*wire_width, wire_width), layer=comb_layer))
+        obj.connect(port = 'W', destination=old_port)
+        old_port = obj.ports['E']
+        if(top):
+            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
+            obj.connect(port = 'N', destination=old_port)
+            top = False
+        else:
+            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
+            obj.connect(port = 'S', destination=old_port)
+            top = True
+            comb = CI.add_ref(rectangle(size=((padt.ymin-head.ymax)+pad_size[1]/2 - 2*wire_width, wire_width), layer=comb_layer))
+            comb.rotate(90)
+            comb.ymax = padt.ymin
+            comb.xmax = obj.xmax - (wire_gap+wire_width)/2
+        old_port = obj.ports['E']
+        obj = CI.add_ref(compass(size=(wire_gap, wire_width), layer=comb_layer))
+        obj.connect(port = 'W', destination=old_port)
+        old_port = obj.ports['E']
+        obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
+        obj.connect(port = 'W', destination=old_port)
+        if(top):
+            old_port = obj.ports['S']
+        else:
+            old_port = obj.ports['N']
+    old_port = obj.ports['E']
+    tail = CI.add_ref(compass(size=(padr_nub.xmin-obj.xmax, wire_width), layer=comb_layer))
+    tail.connect(port = 'W', destination=old_port)
+    
+
+    #%% disconnected zig
+    
+    dhead = CI.add_ref(compass(size=(tail.ymin-padb.ymax - wire_width, wire_width), layer=zig_layer))
+    dhead.rotate(90)
+    dhead.ymin = padb.ymax
+    dhead.xmax = tail.xmin - 3*wire_gap
+    connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+    connector.connect(port = 'S', destination=dhead.ports['E'])
+    old_port = connector.ports['N']
+    right = True
+    obj = connector
+    while(obj.ymax + wire_gap + wire_width < head.ymax):
+        obj = CI.add_ref(compass(size=(wire_gap, wire_width), layer=zig_layer))
+        obj.connect(port = 'W', destination=old_port)
+        old_port = obj.ports['E']
+        if(right):
+            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+            obj.connect(port = 'W', destination=old_port)
+            right = False
+        else:
+            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+            obj.connect(port = 'E', destination=old_port)
+            right = True
+        old_port = obj.ports['N']
+        obj = CI.add_ref(compass(size=(dhead.xmin-head.xmax + wire_width, wire_width), layer=zig_layer))
+        obj.connect(port = 'E', destination=old_port)
+        old_port = obj.ports['W']
+        obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+        obj.connect(port = 'S', destination=old_port)
+        if(right):
+            old_port = obj.ports['W']
+        else:
+            old_port = obj.ports['E']
+            
+    
+    return CI
+    
+# End Comb Insulation-----------------------------------
+    
