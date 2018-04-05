@@ -17,7 +17,7 @@ import numpy as np
 import sys
 
 import phidl
-from phidl import Device, Layer
+from phidl.device_layout import Device, DeviceReference, Port, Layer
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
@@ -372,10 +372,11 @@ def quickplot2(item_list):
                 viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
             for name, port in element.ports.items():
                 viewer.add_port(port)
-            for ref in element.references:
-                for name, port in ref.ports.items():
-                    viewer.add_port(port, is_subport = True)
-            viewer.add_aliases(element.aliases)
+            if isinstance(element, phidl.device_layout.Device):
+                for ref in element.references:
+                    for name, port in ref.ports.items():
+                        viewer.add_port(port, is_subport = True)
+                viewer.add_aliases(element.aliases)
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layer, datatype = element.datatype)
                 viewer.add_polygons([element.points], color = layerprop['color'], alpha = layerprop['alpha'])
