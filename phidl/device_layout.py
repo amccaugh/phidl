@@ -10,13 +10,8 @@
 # Minor TODO
 #==============================================================================
 # TODO make reflect allow a port input for p1 
-# TODO Make ebeam cross marks 
-# Allow KLayout export of Layers
 # TODO Use AttrDict for ports and aliases
 # TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
-# TODO Make shortcuts to Device.aliases with D.al
-# TODO PHIDL Allow add_ref to take list of Devices
-# TODO PHIDL make pg.copy() accept DeviceReferences
 
 #==============================================================================
 # Imports
@@ -367,6 +362,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.ports = {}
         self.info = {}
         self.aliases = {}
+        # self.a = self.aliases
+        # self.p = self.ports
         self.uid = Device._next_uid
         self._internal_name = _internal_name
         gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
@@ -425,6 +422,8 @@ class Device(gdspy.Cell, _GeometryHelper):
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
+        if type(D) in (list, tuple):
+            return [self.add_ref(E) for E in D]
         if not isinstance(D, Device):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
