@@ -2220,11 +2220,6 @@ def led(width=1, length_wg=10, width_dope_offset=0.2, width_dope=5, wE=1, width_
     return D
 
 
-def hydra():
-    pass
-
-def hexapod():
-    pass
 
 
 #==============================================================================
@@ -2235,8 +2230,8 @@ def hexapod():
 
 
 # Via Route ----------------------------------------
-def via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, via_width):
-    VI = Device('Via Route')
+def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, via_width):
+    VI = Device('test_via_iter')
     wire1 = VI.add_ref(compass(size=(via_spacing, wire_width), layer=wiring1_layer))
     wire2 = VI.add_ref(compass(size=(via_spacing, wire_width), layer=wiring2_layer))
     via1 = VI.add_ref(compass(size=(via_width, via_width), layer=via_layer))
@@ -2251,7 +2246,8 @@ def via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_laye
 
     return VI
 
-def via_route_test_structure(num_vias, pad_size = (300,300), wire_width=10, via_spacing = 40, min_pad_spacing = 0, pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3):
+def test_via(num_vias = 100, wire_width = 10, via_spacing = 40, pad_size = (300,300), min_pad_spacing = 0,
+                             pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3):
     """
     Usage:
         Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
@@ -2271,7 +2267,7 @@ def via_route_test_structure(num_vias, pad_size = (300,300), wire_width=10, via_
         ex: via_route(54, min_pad_spacing=300)
     """
     
-    VR = Device('Via Route Test Structure')
+    VR = Device('test_via')
     pad1 = VR.add_ref(rectangle(size=pad_size, layer=pad_layer))
     pad1_overlay = VR.add_ref(rectangle(size=pad_size, layer=wiring1_layer))
     pad2 = VR.add_ref(rectangle(size=pad_size, layer=pad_layer))
@@ -2301,7 +2297,7 @@ def via_route_test_structure(num_vias, pad_size = (300,300), wire_width=10, via_
     obj_old = head
     obj = head
     while( (count+2) <= num_vias):
-        obj = VR.add_ref(via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, wire_width*1.5))
+        obj = VR.add_ref(_via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, wire_width*1.5))
         obj.connect(port = 'W', destination = old_port, overlap = wire_width)
         old_port = obj.ports['E']
         edge = False
@@ -2347,29 +2343,37 @@ def via_route_test_structure(num_vias, pad_size = (300,300), wire_width=10, via_
     
     return VR
 
-# End Via Route-----------------------------------------
-    
-# Comb Insulation---------------------------------------
 
-def comb_insulation_test_structure(pad_size = (200,200), wire_width = 1, wire_gap = 3, padr_layer = 0, padlt_layer=1, comb_layer = 2, zig_layer=3,padb_layer = 4):
+
+
+
+def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
+              comb_layer = 0, overlap_zigzag_layer = 1,
+              comb_pad_layer = None, comb_gnd_layer = None, overlap_pad_layer = None):
     """
     Usage:
     
-    Call comb_insulation_test_structure() with any of the parameters shown below which you'd like to change. You only need to supply
-    the parameters which you intend on changing You can alternatively call it with no parameters and it will take all 
-    the default alues shown below.
+    Call comb_insulation_test_structure() with any of the
+    parameters shown below which you'd like to change. You
+    only need to supply the parameters which you intend on
+    changing You can alternatively call it with no parameters
+    and it will take all the default alues shown below.
     Ex:
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
         - or -
         comb_insulation_test_structure()
     """ 
-    CI = Device("Comb Insulation Test Structure")
+    CI = Device("test_comb")
+
+    if comb_pad_layer is None:  comb_pad_layer = comb_layer
+    if comb_gnd_layer is None:  comb_gnd_layer = comb_layer
+    if overlap_pad_layer is None:  overlap_pad_layer = overlap_zigzag_layer
 
     #%% pad overlays
-    overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padb_layer))
-    overlay_padl = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padlt_layer))
-    overlay_padt = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padlt_layer))
-    overlay_padr = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=padr_layer))
+    overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=overlap_pad_layer))
+    overlay_padl = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_pad_layer ) )
+    overlay_padt = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_pad_layer ) )
+    overlay_padr = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_gnd_layer))
     
     overlay_padl.xmin = 0
     overlay_padl.ymin = 0
@@ -2384,7 +2388,7 @@ def comb_insulation_test_structure(pad_size = (200,200), wire_width = 1, wire_ga
     padl = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
     padt = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
     padr = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
-    padb = CI.add_ref(rectangle(size=pad_size, layer=zig_layer))
+    padb = CI.add_ref(rectangle(size=pad_size, layer=overlap_zigzag_layer))
     padl_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
     padr_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
     
@@ -2444,48 +2448,46 @@ def comb_insulation_test_structure(pad_size = (200,200), wire_width = 1, wire_ga
 
     #%% disconnected zig
     
-    dhead = CI.add_ref(compass(size=(tail.ymin-padb.ymax - wire_width, wire_width), layer=zig_layer))
+    dhead = CI.add_ref(compass(size=(tail.ymin-padb.ymax - wire_width, wire_width), layer=overlap_zigzag_layer))
     dhead.rotate(90)
     dhead.ymin = padb.ymax
     dhead.xmax = tail.xmin - 3*wire_gap
-    connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+    connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
     connector.connect(port = 'S', destination=dhead.ports['E'])
     old_port = connector.ports['N']
     right = True
     obj = connector
     while(obj.ymax + wire_gap + wire_width < head.ymax):
-        obj = CI.add_ref(compass(size=(wire_gap, wire_width), layer=zig_layer))
+        obj = CI.add_ref(compass(size=(wire_gap, wire_width), layer=overlap_zigzag_layer))
         obj.connect(port = 'W', destination=old_port)
         old_port = obj.ports['E']
         if(right):
-            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
             obj.connect(port = 'W', destination=old_port)
             right = False
         else:
-            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
             obj.connect(port = 'E', destination=old_port)
             right = True
         old_port = obj.ports['N']
-        obj = CI.add_ref(compass(size=(dhead.xmin-head.xmax + wire_width, wire_width), layer=zig_layer))
+        obj = CI.add_ref(compass(size=(dhead.xmin-head.xmax + wire_width, wire_width), layer=overlap_zigzag_layer))
         obj.connect(port = 'E', destination=old_port)
         old_port = obj.ports['W']
-        obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=zig_layer))
+        obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
         obj.connect(port = 'S', destination=old_port)
         if(right):
             old_port = obj.ports['W']
         else:
             old_port = obj.ports['E']
-            
     
     return CI
     
-# End Comb Insulation-----------------------------------
-    
-# Start Ic Step-----------------------------------------
+
+
  
 #This is a helper function to make the Ic step wire structure
-def wire_step4(thick_width = 10, thin_width = 1, wire_layer = 2):
-    WS4 = Device('Symmetric Optimal Wire Step')
+def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
+    WS4 = Device('test_ic_step')
     wire_stepa = WS4.add_ref(optimal_step(thick_width/2, thin_width/2, layer=wire_layer))
     wire_stepb = WS4.add_ref(optimal_step(thin_width/2, thick_width/2, layer=wire_layer))
     wire_stepc = WS4.add_ref(optimal_step(thick_width/2, thin_width/2, layer=wire_layer))
@@ -2498,47 +2500,44 @@ def wire_step4(thick_width = 10, thin_width = 1, wire_layer = 2):
     return WS4
 
 
-def ic_test_structure(pad_size=(200,200), step_width_growth_factor = 5, thick_width = [], narrow_width = [0.5,1,2,4,5], padb_layer = 0, padt_layer = 1, wire_layer=2):
+def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200,200),
+            wire_layer = 0, pad_layer = 1, gnd_layer = None):
     """
     Usage:
     
     Call ic_test_structure() with either a list of widths for the thickest part of each wire to test and a list for the 
     thinnest parts of each wire. Alternatively, specify a list of widths for the thinnest part of each wire and ignore the
-    thick_width parameter. Instead you should specify the step_width_growth_factor which indicates by what factor the thick
+    wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
     part of the wire will be larger than the thin part. 
     Ex:
-        ic_test_structure(thick_width = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
+        ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
         - or -
-        ic_test_structure(step_width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
+        ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
     """
-    ICS = Device('Critical Current Step Test Structure')
-    if(np.size(thick_width) == 0):
-        for i, val in enumerate(narrow_width):
-            thick_width.append(step_width_growth_factor * narrow_width[i])
+    ICS = Device('test_ic')
+
+    if gnd_layer is None: gnd_layer = pad_layer
     translation = 0
-    padb = ICS.add_ref(rectangle(size=(np.size(narrow_width) * (pad_size[0]*6/5), pad_size[1]), layer=wire_layer))
-    padb_overlay = ICS.add_ref(rectangle(size=((np.size(narrow_width) * (pad_size[0]*6/5))*9/10, pad_size[1]*9/10), layer=padb_layer))
+    padb = ICS.add_ref(rectangle(size=(np.size(wire_widths) * (pad_size[0]*6/5), pad_size[1]), layer=wire_layer))
+    padb_overlay = ICS.add_ref(rectangle(size=((np.size(wire_widths) * (pad_size[0]*6/5))*9/10, pad_size[1]*9/10), layer=gnd_layer))
     padb_overlay.center = padb.center
     padb_overlay.ymin = padb.ymin
-    for i, x in enumerate(thick_width):
-        padt = ICS.add_ref(rectangle(pad_size, wire_layer))
+    for i, x in enumerate(wire_widths_wide):
+        padt = ICS.add_ref(rectangle(pad_size, wire_layer), alias = f'padt{i}')
         padt.xmin = padb.xmin + translation
         padt.ymax = pad_size[1]*3
-        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=padt_layer))
+        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=pad_layer), alias = f'padt_overlay{i}')
         padt_overlay.center = padt.center
         padt_overlay.ymax = padt.ymax
         difference = padt.ymin-padb.ymax
-        wire_step = ICS.add_ref(wire_step4(thick_width[i], narrow_width[i], wire_layer=wire_layer))
+        wire_step = ICS.add_ref(_test_ic_wire_step(wire_widths_wide[i], wire_widths[i], wire_layer=wire_layer), alias = f'wire_step{i}')
         wire_step.rotate(90)
         wire_step.center = (padt.center[0], padb.ymax + difference/2)
-        translation = translation + pad_size[1]*12/10 
-        conn_wire_top = ICS.add_ref(rectangle(size=(thick_width[i], padt.ymin-wire_step.ymax), layer=wire_layer))
-        conn_wire_bottom = ICS.add_ref(rectangle(size=(thick_width[i], wire_step.ymin-padb.ymax), layer=wire_layer))
+        translation = translation + pad_size[0]*12/10 
+        conn_wire_top = ICS.add_ref(rectangle(size=(wire_widths_wide[i], padt.ymin-wire_step.ymax), layer=wire_layer), alias = f'conn_wire_top{i}')
+        conn_wire_bottom = ICS.add_ref(rectangle(size=(wire_widths_wide[i], wire_step.ymin-padb.ymax), layer=wire_layer), alias = f'conn_wire_bottom{i}')
         conn_wire_top.ymax = padt.ymin
         conn_wire_top.xmin = wire_step.xmin
         conn_wire_bottom.ymin = padb.ymax
         conn_wire_bottom.xmin = wire_step.xmin
-    return ICS    
-
-# End Ic Step-------------------------------------------
-    
+    return ICS
