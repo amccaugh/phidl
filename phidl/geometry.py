@@ -2246,7 +2246,7 @@ def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_lay
 
     return VI
 
-def test_via(num_vias = 100, wire_width = 10, via_spacing = 40, pad_size = (300,300), min_pad_spacing = 0,
+def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, pad_size = (300,300), min_pad_spacing = 0,
                              pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3):
     """
     Usage:
@@ -2296,8 +2296,9 @@ def test_via(num_vias = 100, wire_width = 10, via_spacing = 40, pad_size = (300,
     current_width = 3*wire_width + wire_width #width of nub and 1 overlap
     obj_old = head
     obj = head
+    via_iterable = _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, via_width)
     while( (count+2) <= num_vias):
-        obj = VR.add_ref(_via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, wire_width*1.5))
+        obj = VR.add_ref(via_iterable)
         obj.connect(port = 'W', destination = old_port, overlap = wire_width)
         old_port = obj.ports['E']
         edge = False
