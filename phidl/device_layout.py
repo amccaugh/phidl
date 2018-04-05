@@ -470,7 +470,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
-        if isinstance(port, Port):
+        if port is not None:
+            if not isinstance(port, Port):
+                raise ValueError('[DEVICE] add_port() error: Argument `port` must be a Port for copying')
             p = port._copy()
             p.parent = self
         elif isinstance(name, Port):

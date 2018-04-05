@@ -93,7 +93,7 @@ def copy(D):
         for alias_name, alias_ref in D.aliases.items():
             if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
 
-    for port in D.ports:      D_copy.add_port(port)
+    for port in D.ports.values():      D_copy.add_port(port = port)
     for poly in D.polygons:   D_copy.add_polygon(poly)
     for label in D.labels:    D_copy.label(text = label.text,
                                            position = label.position,
