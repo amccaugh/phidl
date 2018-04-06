@@ -77,12 +77,13 @@ class Layer(object):
 
     def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
                  description = 'Gold pads liftoff', inverted = False,
-                 color = None, alpha = 0.6):
+                 color = None, alpha = 0.6, dither = None):
         self.name = name
         self.gds_layer = gds_layer
         self.gds_datatype = gds_datatype
         self.description = description
         self.alpha = alpha
+        self.dither = dither
         
         try:
             if color is None: # not specified
