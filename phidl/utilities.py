@@ -1,18 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 28 11:34:09 2018
-
-@author: Dylan Oh
-"""
-
-#%% Creating Layer object
-
 import webcolors
 import numpy as np
 
 
 def write_lyp(filename, layers):
-    # Generating list of default values for stipple
+    """ Creates a KLayout .lyp Layer Properties file from a set of 
+    PHIDL layers """
     stipple_default = ['I2','I5','I9','I17','I19','I22','I33','I38']
     stipple_count = 0
 
