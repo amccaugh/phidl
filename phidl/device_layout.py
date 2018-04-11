@@ -32,7 +32,7 @@ import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 
 
