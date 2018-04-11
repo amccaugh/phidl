@@ -2369,6 +2369,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     if comb_pad_layer is None:  comb_pad_layer = comb_layer
     if comb_gnd_layer is None:  comb_gnd_layer = comb_layer
     if overlap_pad_layer is None:  overlap_pad_layer = overlap_zigzag_layer
+    wire_spacing = wire_width + wire_gap*2 
 
     #%% pad overlays
     overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=overlap_pad_layer))
@@ -2408,7 +2409,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     
     #%% connected zig
     
-    head = CI.add_ref(compass(size=(10*wire_width, wire_width), layer=comb_layer))
+    head = CI.add_ref(compass(size=(pad_size[0]/12, wire_width), layer=comb_layer))
     head.xmin = padl_nub.xmax
     head.ymax = padl_nub.ymax
     connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
@@ -2416,24 +2417,28 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     old_port = connector.ports['S']
     top = True
     obj = connector
-    while(obj.xmax + wire_width*10 < padr_nub.xmin):
+    while(obj.xmax + pad_size[0]/12 < padr_nub.xmin):
+        #long zig zag rectangle
         obj = CI.add_ref(compass(size=(pad_size[1]/2 - 2*wire_width, wire_width), layer=comb_layer))
         obj.connect(port = 'W', destination=old_port)
         old_port = obj.ports['E']
         if(top):
+            #zig zag edge rectangle
             obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
             obj.connect(port = 'N', destination=old_port)
             top = False
         else:
+            #zig zag edge rectangle
             obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
             obj.connect(port = 'S', destination=old_port)
             top = True
-            comb = CI.add_ref(rectangle(size=((padt.ymin-head.ymax)+pad_size[1]/2 - 2*wire_width, wire_width), layer=comb_layer))
+            # comb rectange
+            comb = CI.add_ref(rectangle(size=((padt.ymin-head.ymax)+pad_size[1]/2  - (wire_spacing + wire_width)/2, wire_width), layer=comb_layer))
             comb.rotate(90)
             comb.ymax = padt.ymin
-            comb.xmax = obj.xmax - (wire_gap+wire_width)/2
+            comb.xmax = obj.xmax - (wire_spacing+wire_width)/2
         old_port = obj.ports['E']
-        obj = CI.add_ref(compass(size=(wire_gap, wire_width), layer=comb_layer))
+        obj = CI.add_ref(compass(size=(wire_spacing, wire_width), layer=comb_layer))
         obj.connect(port = 'W', destination=old_port)
         old_port = obj.ports['E']
         obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
@@ -2443,23 +2448,25 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
         else:
             old_port = obj.ports['N']
     old_port = obj.ports['E']
-    tail = CI.add_ref(compass(size=(padr_nub.xmin-obj.xmax, wire_width), layer=comb_layer))
+    if(padr_nub.xmin-obj.xmax > 0):
+        tail = CI.add_ref(compass(size=(padr_nub.xmin-obj.xmax, wire_width), layer=comb_layer))
+    else:
+        tail = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
     tail.connect(port = 'W', destination=old_port)
-    
 
     #%% disconnected zig
     
-    dhead = CI.add_ref(compass(size=(tail.ymin-padb.ymax - wire_width, wire_width), layer=overlap_zigzag_layer))
+    dhead = CI.add_ref(compass(size=(padr_nub.ymin -padb.ymax - wire_width, wire_width), layer=overlap_zigzag_layer))
     dhead.rotate(90)
     dhead.ymin = padb.ymax
-    dhead.xmax = tail.xmin - 3*wire_gap
+    dhead.xmax = tail.xmin-(wire_spacing+wire_width)/2
     connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
     connector.connect(port = 'S', destination=dhead.ports['E'])
     old_port = connector.ports['N']
     right = True
     obj = connector
-    while(obj.ymax + wire_gap + wire_width < head.ymax):
-        obj = CI.add_ref(compass(size=(wire_gap, wire_width), layer=overlap_zigzag_layer))
+    while(obj.ymax + wire_spacing + wire_width < head.ymax):
+        obj = CI.add_ref(compass(size=(wire_spacing, wire_width), layer=overlap_zigzag_layer))
         obj.connect(port = 'W', destination=old_port)
         old_port = obj.ports['E']
         if(right):
@@ -2471,7 +2478,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
             obj.connect(port = 'E', destination=old_port)
             right = True
         old_port = obj.ports['N']
-        obj = CI.add_ref(compass(size=(dhead.xmin-head.xmax + wire_width, wire_width), layer=overlap_zigzag_layer))
+        obj = CI.add_ref(compass(size=(dhead.xmin-(head.xmax+head.xmin+wire_width)/2, wire_width), layer=overlap_zigzag_layer))
         obj.connect(port = 'E', destination=old_port)
         old_port = obj.ports['W']
         obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
@@ -2501,7 +2508,7 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
     return WS4
 
 
-def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200,200),
+def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200,200), pad_gap=75,
             wire_layer = 0, pad_layer = 1, gnd_layer = None):
     """
     Usage:
@@ -2526,7 +2533,7 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     for i, x in enumerate(wire_widths_wide):
         padt = ICS.add_ref(rectangle(pad_size, wire_layer), alias = f'padt{i}')
         padt.xmin = padb.xmin + translation
-        padt.ymax = pad_size[1]*3
+        padt.ymin = padb.ymax + pad_gap
         padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=pad_layer), alias = f'padt_overlay{i}')
         padt_overlay.center = padt.center
         padt_overlay.ymax = padt.ymax
