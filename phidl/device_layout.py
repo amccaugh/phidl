@@ -22,7 +22,7 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-import itertools
+# import itertools
 from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
