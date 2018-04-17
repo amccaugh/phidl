@@ -161,10 +161,12 @@ def _translate_cell(c, layer_remapping):
     for e in c.elements:
         if isinstance(e, gdspy.Polygon):
             polygon_layer = _parse_layer((e.layer, e.datatype))
-            if polygon_layer in layer_remapping.keys():
+            if layer_remapping is None: 
+                D.add_polygon(points = e.points, layer = polygon_layer)
+            elif polygon_layer in layer_remapping.keys():
                 D.add_polygon(points = e.points, layer = layer_remapping[polygon_layer])
         elif isinstance(e, gdspy.CellReference):
-            dr = DeviceReference(device = _translate_cell(e.ref_cell),
+            dr = DeviceReference(device = _translate_cell(e.ref_cell, layer_remapping),
                             origin = e.origin,
                             rotation = e.rotation, magnification = None,
                             x_reflection = e.x_reflection)
