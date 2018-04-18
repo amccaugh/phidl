@@ -32,7 +32,7 @@ import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.8.2'
+__version__ = '0.9.0'
 
 
 
@@ -70,6 +70,37 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
 def reset():
     Layer.layer_dict = {}
     Device._next_uid = 0
+
+
+
+class LayerSet(object):
+
+    def __init__(self):
+        self._layers = {}
+
+    def add_layer(self, name = 'mylayer', gds_layer = 0, gds_datatype = 0,
+                 description = '', inverted = False,
+                 color = None, alpha = 0.6, dither = None):
+        new_layer = Layer(name = name, gds_layer = gds_layer, gds_datatype = gds_datatype,
+                 description = description, inverted = inverted,
+                 color = color, alpha = alpha, dither = dither)
+        if name in self._layers:
+            raise ValueError('[PHIDL] LayerSet: Tried to add layer named "%s", but a layer' 
+                ' with that name already exists in this LayerSet' % (name))
+        else:
+            self._layers[name] = new_layer
+
+    def __getitem__(self, val):
+        """ If you have a LayerSet `ls`, allows access to the layer names like ls['gold2'] """
+        try:
+            return self._layers[val]
+        except:
+            raise ValueError('[PHIDL] LayerSet: Tried to access layer named "%s"' 
+                ' which does not exist' % (val))
+
+
+    def __repr__(self):
+        return str(list(self._layers.values()))
 
 
 class Layer(object):
@@ -217,8 +248,6 @@ class _GeometryHelper(object):
             origin = 0
         self.move(origin = (0,origin), destination = (0,destination))
         return self
-        
-
 
 
 

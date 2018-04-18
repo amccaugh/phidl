@@ -1,8 +1,7 @@
 import webcolors
 import numpy as np
 
-
-def write_lyp(filename, layers):
+def create_lyp(filename, layers):
     """ Creates a KLayout .lyp Layer Properties file from a set of 
     PHIDL layers """
     stipple_default = ['I2','I5','I9','I17','I19','I22','I33','I38']
@@ -33,7 +32,7 @@ def write_lyp(filename, layers):
                 dither = stipple_default[stipple_count]
                 stipple_count += 1
             elif dither[0] != 'I':
-                raise TypeError("""Stipple must begin with an I""")
+                raise ValueError("""Stipple must begin with an I""")
             elif int(dither[1:len(dither)]) < 0:
                 raise ValueError("""Stipple index cannot be less than 0""")
             elif int(dither[1:len(dither)]) > 46:
