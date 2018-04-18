@@ -32,7 +32,7 @@ import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.9.0'
+__version__ = '0.8.2'
 
 
 
@@ -79,8 +79,8 @@ class LayerSet(object):
         self._layers = {}
 
     def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
-                 description = None, inverted = False,
-                 color = None, alpha = 0.6, dither = None):
+                 description = None, color = None, inverted = False,
+                  alpha = 0.6, dither = None):
         new_layer = Layer(name = name, gds_layer = gds_layer, gds_datatype = gds_datatype,
                  description = description, inverted = inverted,
                  color = color, alpha = alpha, dither = dither)

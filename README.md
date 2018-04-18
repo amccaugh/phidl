@@ -3,6 +3,22 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.8.2
+
+### New features
+- Added the LayerSet class.  See the tutorial, but essentially this class makes a convenient container to stores layers
+- Added `phidl.utilities.write_lyp()` (Contribution from Dylan Oh @dmwo).  Using a LayerSet, you can now create KLayout-compatible .lyp files.  This allows you to get the same coloring in the KLayout viewer as you have specified in PHIDL.
+- Several new electrical test structures (Contribution from Jacob Melonis @melonisj)  Specifically: via chain tests (`pg.test_via()`), inter- and intra-layer comb insulation tests (`pg.test_comb()`), and critical current test structures (`pg.test_ic`).
+- `add_ref()` can now take a list of input Devices and will return a list of the generated references, e.g. `ref_a,ref_b,ref_c = D.add_ref([A,B,C])` 
+
+### Changes
+
+### Bugfixes
+- Fixed issue with pg.import_gds() when `layers` (remapping argument) was None.
+- Bugfix in pg.copy() which produced incorrectly-copied ports
+
+
+
 ## 0.8.1
 
 ### New features
