@@ -1,7 +1,4 @@
-import webcolors
-import numpy as np
-
-def create_lyp(filename, layers):
+def write_lyp(filename, layerset):
     """ Creates a KLayout .lyp Layer Properties file from a set of 
     PHIDL layers """
     stipple_default = ['I2','I5','I9','I17','I19','I22','I33','I38']
@@ -18,12 +15,15 @@ def create_lyp(filename, layers):
         # Writing layer properties opener
         f.write('<layer-properties>\n')
     
-        for key, layer in layers.items():  
+        for layer in layerset._layers.values():  
             # Extracting information from dictionary layer by layer
             gds_layer = layer.gds_layer
             gds_datatype = layer.gds_datatype
             color = layer.color
-            name = '%s/%s - ' % (str(gds_layer), str(gds_datatype)) + key
+
+            name = '%s/%s - ' % (str(gds_layer), str(gds_datatype)) + layer.name
+            if layer.description is not None:
+                name = name + ' - ('  + layer.description + ')'
 
             
             # Setting stipple or 'dither'

@@ -78,8 +78,8 @@ class LayerSet(object):
     def __init__(self):
         self._layers = {}
 
-    def add_layer(self, name = 'mylayer', gds_layer = 0, gds_datatype = 0,
-                 description = '', inverted = False,
+    def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
+                 description = None, inverted = False,
                  color = None, alpha = 0.6, dither = None):
         new_layer = Layer(name = name, gds_layer = gds_layer, gds_datatype = gds_datatype,
                  description = description, inverted = inverted,
@@ -106,8 +106,8 @@ class LayerSet(object):
 class Layer(object):
     layer_dict = {}
 
-    def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
-                 description = 'Gold pads liftoff', inverted = False,
+    def __init__(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
+                 description = None, inverted = False,
                  color = None, alpha = 0.6, dither = None):
         self.name = name
         self.gds_layer = gds_layer
