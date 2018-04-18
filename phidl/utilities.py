@@ -30,7 +30,7 @@ def write_lyp(filename, layerset):
             dither = layer.dither
             if dither is None:
                 dither = stipple_default[stipple_count]
-                stipple_count += 1
+                stipple_count = (stipple_count + 1) % len(stipple_default)
             elif dither[0] != 'I':
                 raise ValueError("""Stipple must begin with an I""")
             elif int(dither[1:len(dither)]) < 0:
