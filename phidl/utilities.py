@@ -1,3 +1,5 @@
+import operator
+
 def write_lyp(filename, layerset):
     """ Creates a KLayout .lyp Layer Properties file from a set of 
     PHIDL layers """
@@ -14,8 +16,11 @@ def write_lyp(filename, layerset):
     
         # Writing layer properties opener
         f.write('<layer-properties>\n')
-    
-        for layer in layerset._layers.values():  
+        
+        unsorted_layers = layerset._layers.values()
+        sorted_layers = sorted(unsorted_layers, key = operator.attrgetter('gds_layer', 'gds_datatype'))
+
+        for layer in sorted_layers:  
             # Extracting information from dictionary layer by layer
             gds_layer = layer.gds_layer
             gds_datatype = layer.gds_datatype
