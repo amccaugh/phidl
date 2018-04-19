@@ -17,7 +17,7 @@ import numpy as np
 import sys
 
 import phidl
-from phidl import Device, Layer
+from phidl.device_layout import Device, DeviceReference, Port, Layer
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
@@ -352,7 +352,7 @@ class Viewer(QGraphicsView):
             self.set_subport_visibility(not self.subports_visible)
 
 
-def quickplot2(item):
+def quickplot2(item_list):
     global app
     if QCoreApplication.instance() is None:
         app = QApplication(sys.argv)
@@ -361,18 +361,25 @@ def quickplot2(item):
         viewer_window = ViewerWindow()
     viewer = viewer_window.viewer
     viewer.initialize()
-    if isinstance(item, (phidl.device_layout.Device, phidl.device_layout.DeviceReference)):
-        polygons_spec = item.get_polygons(by_spec=True, depth=None)
-        for key in sorted(polygons_spec):
-            polygons = polygons_spec[key]
-            layerprop = _get_layerprop(layer = key[0], datatype = key[1])
-            viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
-        for name, port in item.ports.items():
-            viewer.add_port(port)
-        for ref in item.references:
-            for name, port in ref.ports.items():
-                viewer.add_port(port, is_subport = True)
-        viewer.add_aliases(item.aliases)
+    if type(item_list) not in (list, tuple):
+        item_list = [item_list]
+    for element in item_list:
+        if isinstance(element, (phidl.device_layout.Device, phidl.device_layout.DeviceReference)):
+            polygons_spec = element.get_polygons(by_spec=True, depth=None)
+            for key in sorted(polygons_spec):
+                polygons = polygons_spec[key]
+                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+                viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
+            for name, port in element.ports.items():
+                viewer.add_port(port)
+            if isinstance(element, phidl.device_layout.Device):
+                for ref in element.references:
+                    for name, port in ref.ports.items():
+                        viewer.add_port(port, is_subport = True)
+                viewer.add_aliases(element.aliases)
+        elif isinstance(element, (phidl.device_layout.Polygon)):
+                layerprop = _get_layerprop(layer = element.layer, datatype = element.datatype)
+                viewer.add_polygons([element.points], color = layerprop['color'], alpha = layerprop['alpha'])
     viewer.reset_view()
     viewer_window.setVisible(True)
     viewer_window.show()

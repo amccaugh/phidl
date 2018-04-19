@@ -10,12 +10,8 @@
 # Minor TODO
 #==============================================================================
 # TODO make reflect allow a port input for p1 
-# TODO Make ebeam cross marks 
-# Allow KLayout export of Layers
 # TODO Use AttrDict for ports and aliases
 # TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
-# TODO Make shortcuts to Device.aliases with D.al
-# TODO PHIDL Allow add_ref to take list of Devices
 
 #==============================================================================
 # Imports
@@ -26,7 +22,7 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-import itertools
+# import itertools
 from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
@@ -36,7 +32,7 @@ import warnings
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 
 
@@ -76,17 +72,49 @@ def reset():
     Device._next_uid = 0
 
 
+
+class LayerSet(object):
+
+    def __init__(self):
+        self._layers = {}
+
+    def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
+                 description = None, color = None, inverted = False,
+                  alpha = 0.6, dither = None):
+        new_layer = Layer(name = name, gds_layer = gds_layer, gds_datatype = gds_datatype,
+                 description = description, inverted = inverted,
+                 color = color, alpha = alpha, dither = dither)
+        if name in self._layers:
+            raise ValueError('[PHIDL] LayerSet: Tried to add layer named "%s", but a layer' 
+                ' with that name already exists in this LayerSet' % (name))
+        else:
+            self._layers[name] = new_layer
+
+    def __getitem__(self, val):
+        """ If you have a LayerSet `ls`, allows access to the layer names like ls['gold2'] """
+        try:
+            return self._layers[val]
+        except:
+            raise ValueError('[PHIDL] LayerSet: Tried to access layer named "%s"' 
+                ' which does not exist' % (val))
+
+
+    def __repr__(self):
+        return str(list(self._layers.values()))
+
+
 class Layer(object):
     layer_dict = {}
 
-    def __init__(self, name = 'goldpads', gds_layer = 0, gds_datatype = 0,
-                 description = 'Gold pads liftoff', inverted = False,
-                 color = None, alpha = 0.6):
+    def __init__(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
+                 description = None, inverted = False,
+                 color = None, alpha = 0.6, dither = None):
         self.name = name
         self.gds_layer = gds_layer
         self.gds_datatype = gds_datatype
         self.description = description
         self.alpha = alpha
+        self.dither = dither
         
         try:
             if color is None: # not specified
@@ -220,8 +248,6 @@ class _GeometryHelper(object):
             origin = 0
         self.move(origin = (0,origin), destination = (0,destination))
         return self
-        
-
 
 
 
@@ -335,7 +361,7 @@ def make_device(fun, config = None, **kwargs):
         raise TypeError("""[PHIDL] When creating Device() from a function, the
         second argument should be a ``config`` argument which is either a
         filename or a dictionary containing arguments for the function.
-        e.g. Device(arc, config = 'myconfig.yaml') """)
+        e.g. make_device(ellipse, config = 'myconfig.yaml') """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
@@ -366,6 +392,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.ports = {}
         self.info = {}
         self.aliases = {}
+        # self.a = self.aliases
+        # self.p = self.ports
         self.uid = Device._next_uid
         self._internal_name = _internal_name
         gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
@@ -424,6 +452,8 @@ class Device(gdspy.Cell, _GeometryHelper):
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
+        if type(D) in (list, tuple):
+            return [self.add_ref(E) for E in D]
         if not isinstance(D, Device):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
@@ -470,7 +500,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
-        if isinstance(port, Port):
+        if port is not None:
+            if not isinstance(port, Port):
+                raise ValueError('[DEVICE] add_port() error: Argument `port` must be a Port for copying')
             p = port._copy()
             p.parent = self
         elif isinstance(name, Port):

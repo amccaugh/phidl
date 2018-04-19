@@ -2,14 +2,21 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-from phidl import Device, Layer, quickplot, make_device
+from phidl import Device, Layer, LayerSet, quickplot, make_device
 import phidl.geometry as pg
 import phidl.routing as pr
 
+# Note: If you have Qt + PyQt installed, you may be able to use the much
+# faster quickplot2() function.  Personally, we recommend trying the following
+# Just to see if it works:
+# import quickplot2 as qp
+# qp(pg.rectangle())
 
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
-# and makes us a simple waveguide rectangle
+# and makes us a simple waveguide rectangle.  Many functions like this
+# exist in the phidl.geometry library and are ready-for-use.  We write this
+# one out fully just so it's explicitly clear what's happening
 #==============================================================================
 
 def waveguide(width = 10, height = 1):
@@ -18,7 +25,6 @@ def waveguide(width = 10, height = 1):
     WG.add_port(name = 'wgport1', midpoint = [0,height/2], width = height, orientation = 180)
     WG.add_port(name = 'wgport2', midpoint = [width,height/2], width = height, orientation = 0)
     return WG
-   
 
 
 #==============================================================================
@@ -265,33 +271,39 @@ DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
 
 
 # 3) as a Layer object  
-gold = Layer(name = 'goldpads', gds_layer = 3, gds_datatype = 0,
-                 description = 'Gold pads liftoff')
-DL.add_ref( pg.text('Layer3', size = 10, layer = gold) ).movey(-40)
+my_gold_layer = Layer(name = 'goldpads', gds_layer = 3, gds_datatype = 0, description = 'Gold pads liftoff')
+DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 
 
-# What you can also do is make a dictionary of layers, which lets you
+# What you can also do is make a set of layers, which lets you
 # conveniently call each Layer object just by its name.  You can also specify
 # the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
 # (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'
 # see http://www.w3schools.com/colors/colors_names.asp )
 # The 'alpha' argument also lets you specify how transparent that layer should
 # look when using quickplot (has no effect on the written GDS file)
-layers = {
-        'titanium' : Layer(gds_layer = 4, gds_datatype = 0, description = 'Titanium resistor', color = 'gray'),
-        'niobium'  : Layer(gds_layer = 5, gds_datatype = 0, description = 'Niobium liftoff', color = (0.4,0.1,0.1)),
-        'nb_etch'  : Layer(gds_layer = 6, gds_datatype = 3, description = 'Niobium etch', color = 'lightblue', alpha = 0.2),
-         }
 
-# Now that our layers are defined, we can pass them to our text function
-l1 = DL.add_ref( pg.text('Titanium layer', size = 10, layer = layers['titanium']) ).movey(-60)
-l2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = layers['niobium']) ).movey(-80)
-l3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = layers['nb_etch']) ).movey(-90).movex(5)
+ls = LayerSet() # Create a blank LayerSet
+ls.add_layer(name = 'ti', gds_layer = 4, gds_datatype = 0, description = 'Titanium resistor', color = 'gray')
+ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0, description = 'Niobium liftoff', color = (0.4,0.1,0.1))
+ls.add_layer('nb_etch', 6, 0, color = 'lightblue', alpha = 0.2)
+
+
+# Now that our layers are defined, we can call them from the LayerSet in the same way
+# we would from a dictionary, where the name becomes the key:
+text1 = DL.add_ref( pg.text('Titanium layer', size = 10, layer = ls['ti']) ).movey(-60)
+text2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = ls['nb']) ).movey(-80)
+text3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = ls['nb_etch']) ).movey(-90).movex(5)
 
 quickplot(DL)
 
 DL.write_gds('MultipleLayerText.gds')
 
+
+# If we want to examine any single layer, we can call them by their names,
+# for example
+titanium_layer = ls['ti']
+print(ls['nb'])
 
 
 #==============================================================================
