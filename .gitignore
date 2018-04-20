@@ -12,6 +12,12 @@ __pycache__/
 # C extensions
 *.so
 
+# Developer
+venv
+venvinfo
+*.sublime-project
+*.sublime-workspace
+
 # Distribution / packaging
 .Python
 env/
