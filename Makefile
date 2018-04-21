@@ -4,6 +4,7 @@ SHELL := /usr/bin/env bash
 REINSTALL_DEPS = $(shell find phidl -type f) venv setup.py
 
 TESTARGS = -s --cov=phidl --cov-config .coveragerc
+TESTARGSNB = --nbval-lax
 
 venv: venv/bin/activate
 venv/bin/activate:
@@ -50,6 +51,15 @@ test-unit: testbuild
 	( \
 		source venv/bin/activate; \
 		py.test $(TESTARGS) tests; \
+	)
+
+test-nb: testbuild
+	( \
+		source venv/bin/activate; \
+		py.test $(TESTARGS) $(TESTARGSNB) notebooks/Tests; \
+	)
+
+test: test-unit test-nb
 
 jupyter: devbuild
 	( \
