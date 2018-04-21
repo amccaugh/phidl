@@ -18,6 +18,11 @@ venvinfo
 *.sublime-project
 *.sublime-workspace
 
+
+# IPython notebooks
+.ipynb_checkpoints
+notebooks/sketchpad
+
 # Distribution / packaging
 .Python
 env/

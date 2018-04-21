@@ -31,6 +31,8 @@ import webcolors
 import warnings
 
 from matplotlib import pyplot as plt
+from IPython import display
+from .utilities import in_ipynb
 
 __version__ = '0.8.2'
 
@@ -890,8 +892,12 @@ def quickplot(items, show_ports = True, show_subports = True,
         #     layerprop = _get_layerprop(item.layer, item.datatype)
         #     _draw_polygons(polygons, ax, facecolor = layerprop['color'],
         #                    edgecolor = 'k', alpha = layerprop['alpha'])
-    plt.draw()
-    
+    if in_ipynb():
+        plt.gca().set_aspect('equal', adjustable='datalim')
+        display.display(plt.gcf())
+        display.clear_output(wait=True)
+    else:
+        plt.draw()
 
 
 def _get_layerprop(layer, datatype):

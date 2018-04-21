@@ -59,6 +59,18 @@ dochost: docs
 		source venv/bin/activate; \
 		cd docs/_build/$(DOCTYPE_DEFAULT); \
 		python3 -m http.server $(DOCHOSTPORT); \
+
+jupyter: devbuild
+	( \
+		source venv/bin/activate; \
+		cd notebooks; \
+		jupyter notebook; \
+	)
+
+jupyter-password: venv
+	( \
+		source venv/bin/activate; \
+		jupyter notebook password; \
 	)
 
 help:
@@ -70,10 +82,12 @@ help:
 	@echo "  purge             clean and delete virtual environment"
 	@echo "--- development ---"
 	@echo "  devbuild          install dev dependencies, build lightlab, and install inside venv"
+	@echo "  jupyter           start a jupyter notebook for development"
+	@echo "  jupyter-password  change your jupyter notebook user password"
 	@echo "--- testing ---"
 	@echo "--- documentation ---"
 	@echo "  docs              build documentation"
 	@echo "  dochost           build documentation and start local http server"
 
 
-.PHONY: help docs clean purge dochost pip-freeze
+.PHONY: help docs clean purge dochost pip-freeze jupyter
