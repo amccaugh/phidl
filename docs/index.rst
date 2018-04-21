@@ -7,6 +7,7 @@ Welcome to PHIDL's documentation!
 
    _static/example
    _static/changelog
+   Notebook tutorial </ipynbs/phidl_tutorial_example.ipynb>
 
 
 API
