@@ -2,7 +2,7 @@ MANIFEST
 test.sh
 debug.py
 winbuild*
-docs/_*
+docs/_build
 .*.swp
 
 # Byte-compiled / optimized / DLL files
