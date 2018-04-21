@@ -50,6 +50,18 @@ test-unit: testbuild
 	( \
 		source venv/bin/activate; \
 		py.test $(TESTARGS) tests; \
+
+jupyter: devbuild
+	( \
+		source venv/bin/activate; \
+		cd notebooks; \
+		jupyter notebook; \
+	)
+
+jupyter-password: venv
+	( \
+		source venv/bin/activate; \
+		jupyter notebook password; \
 	)
 
 help:
@@ -61,10 +73,12 @@ help:
 	@echo "  purge             clean and delete virtual environment"
 	@echo "--- development ---"
 	@echo "  devbuild          install dev dependencies, build phidl, and install inside venv"
+	@echo "  jupyter           start a jupyter notebook for development"
+	@echo "  jupyter-password  change your jupyter notebook user password"
 	@echo "--- testing ---"
 	@echo "  testbuild         install test dependencies, build phidl, and install inside venv"
 	@echo "  test-unit         perform basic unit tests"
 	@echo "--- documentation ---"
 
 
-.PHONY: help clean purge pip-freeze test-unit
+.PHONY: help clean purge pip-freeze jupyter test-unit
