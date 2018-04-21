@@ -379,8 +379,8 @@ quickplot(E3)
 # layer
 
 # Let's add an annotation to our Multi-Layer Text GDS file
-DL.label(text = 'This is layer1\nit will be titanium', position = l1.center)
-DL.label(text = 'This is niobium', position = l2.center)
+DL.label(text = 'This is layer1\nit will be titanium', position = text1.center)
+DL.label(text = 'This is niobium', position = text2.center)
 
 # It's very useful for recording information about the devices or layout
 DL.label(text = 'The x size of this\nlayout is %s' % DL.xsize,
