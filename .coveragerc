@@ -1,0 +1,5 @@
+[run]
+omit = phidl/phidl_tutorial_example.py
+
+[report]
+omit = phidl/phidl_tutorial_example.py

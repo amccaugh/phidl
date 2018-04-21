@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 # General dependencies for devbuild, docbuild
 REINSTALL_DEPS = $(shell find phidl -type f) venv setup.py
 
-TESTARGS = -s
+TESTARGS = -s --cov=phidl --cov-config .coveragerc
 
 venv: venv/bin/activate
 venv/bin/activate:
@@ -60,9 +60,11 @@ help:
 	@echo "  clean             clean all build files"
 	@echo "  purge             clean and delete virtual environment"
 	@echo "--- development ---"
-	@echo "  devbuild          install dev dependencies, build lightlab, and install inside venv"
+	@echo "  devbuild          install dev dependencies, build phidl, and install inside venv"
 	@echo "--- testing ---"
+	@echo "  testbuild         install test dependencies, build phidl, and install inside venv"
+	@echo "  test-unit         perform basic unit tests"
 	@echo "--- documentation ---"
 
 
-.PHONY: help clean purge pip-freeze
+.PHONY: help clean purge pip-freeze test-unit
