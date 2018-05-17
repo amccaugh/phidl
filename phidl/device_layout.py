@@ -251,13 +251,14 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 90, parent = None):
+    def __init__(self, name = None, midpoint = (0,0), width = 0, orientation = 0, parent = None):
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
         self.orientation = mod(orientation,360)
         self.parent = parent
-        if self.width <= 0: raise ValueError('[PHIDL] Port creation error: width cannot be negative or zero')
+        self.info = {}
+        if self.width < 0: raise ValueError('[PHIDL] Port creation error: width must be >=0')
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
