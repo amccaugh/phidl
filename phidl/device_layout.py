@@ -2,15 +2,14 @@
 # Major TODO
 #==============================================================================
 
-# Add support for gdspy.CellArray
-# Auto-generate PHIDL geometry documentation
-# Allow caching of bbox
+# TODO Add support for gdspy.CellArray
+# TODO Auto-generate PHIDL geometry documentation
+# TODO Allow caching of bbox
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# TODO make reflect allow a port input for p1 
-# TODO Use AttrDict for ports and aliases
+# TODO Move quickplot to phidl.quickplotter
 # TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
 
 #==============================================================================
@@ -22,17 +21,17 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-# import itertools
 from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
 import warnings
+import yaml
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 
 
