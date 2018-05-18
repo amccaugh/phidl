@@ -31,7 +31,7 @@ import yaml
 
 from matplotlib import pyplot as plt
 
-__version__ = '0.8.3'
+__version__ = '0.8.4'
 
 
 
@@ -305,12 +305,19 @@ class Port(object):
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
     
+    def __init__(self, points, gds_layer, gds_datatype, parent):
+        self.parent = parent
+        super(Polygon, self).__init__(points = points, layer=gds_layer, datatype=gds_datatype, verbose=False)
+
+
     @property
     def bbox(self):
         return np.asarray( (np.min(self.points, axis = 0), np.max(self.points, axis = 0)))
 
     def rotate(self, angle = 45, center = (0,0)):
         super(Polygon, self).rotate(angle = angle*pi/180, center = center)
+        if self.parent is not None:
+            self.parent._bb_valid = False
         return self
             
     def move(self, origin = (0,0), destination = None, axis = None):
@@ -339,11 +346,15 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         dx,dy = np.array(d) - o
 
         super(Polygon, self).translate(dx, dy)
+        if self.parent is not None:
+            self.parent._bb_valid = False
         return self
 
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         self.points = _reflect_points(self.points, p1, p2)
+        if self.parent is not None:
+            self.parent._bb_valid = False
         return self
 
     
@@ -441,13 +452,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
     
-    # IMPROVEMENT: This is a hack to get around gdspy caching issues
-    @property
-    def _bb_valid(self):
-        return False
-    @_bb_valid.setter
-    def _bb_valid(self, value):
-        pass
+    # # IMPROVEMENT: This is a hack to get around gdspy caching issues
+    # @property
+    # def _bb_valid(self):
+    #     return False
+    # @_bb_valid.setter
+    # def _bb_valid(self, value):
+    #     pass
 
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
@@ -491,7 +502,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         # # Close polygon manually
         # if not np.array_equal(points[0],points[-1]):
         #     points = np.vstack((points, points[0]))
-        polygon = Polygon(points, gds_layer, gds_datatype)
+        polygon = Polygon(points = points, gds_layer = gds_layer,
+            gds_datatype = gds_datatype, parent = self)
         self.add(polygon)
         return polygon
         
@@ -588,6 +600,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.elements = []
         [self.add_polygon(poly) for poly in temp]
 
+        self._bb_valid = False
         return self
 
 
@@ -603,6 +616,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             if isinstance(item, DeviceReference):
                 # If appears in list of aliases, remove that alias
                 self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+
+        self._bb_valid = False
         return self
 
     
@@ -617,6 +632,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         for p in self.ports.values():
             p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
+        self._bb_valid = False
         return self
             
     def move(self, origin = (0,0), destination = None, axis = None):
@@ -657,6 +673,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         for l in self.labels:
             l.translate(dx,dy)
         
+        self._bb_valid = False
         return self
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
@@ -669,6 +686,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
             p.orientation = 2*phi - p.orientation
+        self._bb_valid = False
         return self
     
     
@@ -789,6 +807,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+        self.parent._bb_valid = False
         return self
 
         
@@ -796,6 +815,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+        self.parent._bb_valid = False
         return self
         
         
@@ -820,6 +840,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
         self.rotation += angle
         self.origin = self.origin + p1
+
+        self.parent._bb_valid = False
         return self
         
 
