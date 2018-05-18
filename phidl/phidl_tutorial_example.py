@@ -208,7 +208,7 @@ quickplot(D2)
 # Since the references mwg1 and mwg2 only point to the device ``D``, any
 # changes that we make to the original ``D`` will be reflected in ``D2``
 
-wg2.x += 7
+poly2.x += 40
 
 quickplot(D2)
 
@@ -288,6 +288,8 @@ ls.add_layer(name = 'ti', gds_layer = 4, gds_datatype = 0, description = 'Titani
 ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0, description = 'Niobium liftoff', color = (0.4,0.1,0.1))
 ls.add_layer('nb_etch', 6, 0, color = 'lightblue', alpha = 0.2)
 
+
+ls['ti']
 
 # Now that our layers are defined, we can call them from the LayerSet in the same way
 # we would from a dictionary, where the name becomes the key:
