@@ -251,7 +251,7 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    def __init__(self, name = None, midpoint = (0,0), width = 0, orientation = 0, parent = None):
+    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
