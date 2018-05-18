@@ -869,7 +869,10 @@ def quickplot(items, show_ports = True, show_subports = True,
                 _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                                edgecolor = 'k', alpha = layerprop['alpha'])
                 for name, port in item.ports.items():
-                    _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                    if (port.width is None) or (port.width == 0):
+                        _draw_port_as_point(port)
+                    else:
+                        _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
                     plt.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
@@ -932,3 +935,8 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
               head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
 
+
+def _draw_port_as_point(port, **kwargs):
+    x = port.midpoint[0]
+    y = port.midpoint[1]
+    plt.plot(x, y, 'r+', alpha = 0.5, markersize = 15, markeredgewidth = 2) # Draw port edge

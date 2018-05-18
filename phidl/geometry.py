@@ -5,7 +5,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 from scipy.special import iv as besseli
 from scipy.optimize import fmin, fminbound
 from scipy import integrate
-from scipy.interpolate import interp1d
+# from scipy.interpolate import interp1d
 
 import gdspy
 from phidl.device_layout import Device, Port
