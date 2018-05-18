@@ -3,6 +3,14 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.8.3
+### New features
+- Every `Port` now has a `.info` dictionary which can store information about the port
+- `quickplot` now supports zero-width ports (displayed as + symbols) -- meant for usage as electrical pins
+
+### Changes
+- Removed some deprecated old geometry
+
 ## 0.8.2
 
 ### New features
