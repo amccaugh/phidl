@@ -1895,6 +1895,8 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     if comb_gnd_layer is None:  comb_gnd_layer = comb_layer
     if overlap_pad_layer is None:  overlap_pad_layer = overlap_zigzag_layer
     wire_spacing = wire_width + wire_gap*2 
+    
+
 
     #%% pad overlays
     overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=overlap_pad_layer))
@@ -2075,3 +2077,87 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
         conn_wire_bottom.xmin = wire_step.xmin
     return ICS
   
+def test_res(pad_size = [50,50],
+                     num_squares = 1000,
+                     width = 1,
+                     res_layer = 0,
+                     pad_layer = None,
+                     gnd_layer = None):
+    
+    """ Creates an efficient resonator structure for a wafer layout.
+    
+    Keyword arguments:
+    pad_size    -- Size of the two matched impedance pads (microns)
+    num_squares -- Number of squares comprising the resonator wire
+    width       -- The width of the squares (microns)
+    """
+
+    x = pad_size[0]
+    z = pad_size[1]
+    
+    # Checking validity of input
+    if x <= 0 or z <= 0:
+        raise ValueError('Pad must have positive, real dimensions')
+    elif width > z:
+        raise ValueError('Width of cell cannot be greater than height of pad')
+    elif num_squares <= 0:
+        raise ValueError('Number of squares must be a positive real number')
+    elif width <= 0:
+        raise ValueError('Width of cell must be a positive real number')
+    
+    # Performing preliminary calculations
+    num_rows = int(np.floor(z / (2 * width)))
+    if num_rows % 2 == 0:
+        num_rows -= 1
+    num_columns = num_rows - 1
+    squares_in_row = (num_squares - num_columns - 2) / num_rows
+    
+    # Compensating for weird edge cases
+    if squares_in_row < 1:
+        num_rows = round(num_rows / 2) - 2   
+        squares_in_row = 1
+    if width * 2 > z:
+        num_rows = 1        
+        squares_in_row = num_squares - 2
+    
+    length_row = squares_in_row * width
+    
+    # Creating row/column corner combination structure
+    T = Device()
+    Row = rectangle(size = (length_row, width), layer = res_layer)
+    Col = rectangle(size = (width, width), layer = res_layer)
+    
+    row = T.add_ref(Row)
+    col = T.add_ref(Col)
+    col.move([length_row - width, -width])
+    
+    # Creating entire waveguide net
+    N = Device('Net')
+    n = 1
+    for i in range(num_rows):
+        if i != num_rows - 1: 
+            d = N.add_ref(T)
+        else: 
+            d = N.add_ref(Row)
+        if n % 2 == 0:
+            d.reflect(p1 = (d.x, d.ymax), p2 = (d.x, d.ymin))
+        d.movey(-(n - 1) * T.ysize)
+        n += 1
+    d = N.add_ref(Col).movex(-width)
+    d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
+    
+    # Creating pads
+    P = Device('Pads')
+    Pad1 = rectangle(size = (x,z), layer = pad_layer)
+    Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
+    Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
+    Gnd2 = offset(Pad2, distance = -5, layer = gnd_layer)
+    pad1 = P.add_ref(Pad1).movex(-x - width)
+    pad2 = P.add_ref(Pad1).movex(length_row + width)
+    gnd1 = P.add_ref(Gnd1).center = pad1.center
+    gnd2 = P.add_ref(Gnd2)
+    nets = P.add_ref(N).y = pad1.y
+    gnd2.center = pad2.center
+    gnd2.movex(2.5)
+    
+    return P
