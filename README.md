@@ -6,7 +6,8 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 ## 0.8.4
 ### New features
 - A LayerSet can now be previewed.  Running ls.preview() will generate a Device which shows all of the layers, useful for previewing color schemes.
-
+- quickplot now shows zero-width ports (e.g. a "pin") as a + sign.
+- Added a .info dictionary to Port, useful for recording information about a port
 
 ### Changes
 

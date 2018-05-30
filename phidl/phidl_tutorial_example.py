@@ -5,6 +5,7 @@ import numpy as np
 from phidl import Device, Layer, LayerSet, quickplot, make_device
 import phidl.geometry as pg
 import phidl.routing as pr
+import phidl.utilities as pu
 
 # Note: If you have Qt + PyQt installed, you may be able to use the much
 # faster quickplot2() function.  Personally, we recommend trying the following
@@ -269,10 +270,13 @@ DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
 # number (0-255) and gds layer datatype (0-255)  
 DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
 
-
 # 3) as a Layer object  
 my_gold_layer = Layer(name = 'goldpads', gds_layer = 3, gds_datatype = 0, description = 'Gold pads liftoff')
 DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
+
+#==============================================================================
+# Advanced layers: Containing multiple Layers in a LayerSet object
+#==============================================================================
 
 
 # What you can also do is make a set of layers, which lets you
@@ -660,8 +664,8 @@ from phidl import device_lru_cache
 @device_lru_cache
 def computationally_intensive_device(width = 10, height = 1):
     D = Device()
-    D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
     time.sleep(1.5) # Pretend we're doing computations for 1.5 seconds here
+    D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
     return D
 
 # When we first generate the Device, it takes the usual amount of time to
