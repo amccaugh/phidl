@@ -3,6 +3,16 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 # Changelog
 
+## 0.8.4
+### New features
+- A LayerSet can now be previewed.  Running ls.preview() will generate a Device which shows all of the layers, useful for previewing color schemes.
+
+
+### Changes
+
+### Bugfixes
+- None
+
 ## 0.8.3
 ### New features
 - Every `Port` now has a `.info` dictionary which can store information about the port

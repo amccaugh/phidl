@@ -308,6 +308,18 @@ titanium_layer = ls['ti']
 print(ls['nb'])
 
 
+# We can quickly preview our color scheme using the LayerSet.preview()
+# function as well.
+P = ls.preview()
+quickplot(P)
+P.write_gds('MyLayerSetPreview.gds')
+
+# We can even save the LayerSet as a KLayout .lyp file ("layer properties" file)
+# useful for getting the color scheme in KLayout to match quickplot
+import phidl.utilities as pu
+pu.write_lyp('MyLayerSetPreview.lyp', layerset = ls)
+
+
 #==============================================================================
 # Adding premade geometry with phidl.geometry
 #==============================================================================
