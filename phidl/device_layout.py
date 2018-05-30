@@ -28,7 +28,6 @@ from numpy.linalg import norm
 import webcolors
 import warnings
 import yaml
-import math
 import phidl.geometry as pg
 
 from matplotlib import pyplot as plt
@@ -104,60 +103,26 @@ class LayerSet(object):
         return str(list(self._layers.values()))
     
     def preview(self):
-        dict_key = []
-        dict_name = []
-        dict_layer = []
-        dict_datatype = []
-        for key, value in self._layers.items():
-            dict_key.append(key)
-            dict_name.append(value.name)
-            dict_layer.append(value.gds_layer)
-            dict_datatype.append(value.gds_datatype)
-        numel_dict = len(dict_key)
-
-        # Calculating the optimal number of cells in the x and y directions
-        sqt_n = math.sqrt(numel_dict)
-        n = math.floor(sqt_n)
-        d = sqt_n - n
-        if sqt_n % 2 == 0:
-            x = n
-            y = x
-        else:
-            if d != 0:
-                y = n
-                x = y + 1
-            else:
-                x = n + 1
-                y = x
-        
-        # Creating geometry
-        countx = 0
-        county = 0
+        """ Generates a preview Device with representations of all the layers,
+        used for previewing LayerSet color schemes in quickplot or saved .gds 
+        files """
         D = Device()
-        for i in range(numel_dict):
-            R = pg.rectangle(size = (10, 10), layer = dict_layer[i])
-            T1 = pg.text(
-                    text = '%s' % dict_name[i],
-                    size = 1,
-                    position=(5,-2),
+        num_layers = len(self._layers)
+        matrix_size = int(np.ceil(np.sqrt(num_layers)))
+        for n, layer in enumerate(self._layers.values()):
+            R = pg.rectangle(size = (100, 100), layer = layer)
+            T = pg.text(
+                    text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
+                    size = 20,
+                    position=(50,-20),
                     justify = 'center',
-                    layer = dict_layer[i]) # Material name
-            T2 = pg.text(
-                    text = '%s / %s' % (dict_layer[i], dict_datatype[i]),
-                    size = 1,
-                    position = (5,-4),
-                    justify = 'center',
-                    layer = dict_layer[i]) # Layer and datatype
-            r = D.add_ref(R).movex(15 * countx).movey(-20 * county)
-            t1 = D.add_ref(T1).movex(15 * countx).movey(-20 * county)
-            t2 = D.add_ref(T2).movex(15 * countx).movey(-20 * county)
-            if countx < x - 1:
-                countx += 1
-            else:
-                countx = 0
-                county += 1
-        qp(D)
-        return(D)
+                    layer = layer)
+                    
+            xloc = n % matrix_size
+            yloc = int(n // matrix_size)
+            D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
+            D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
+        return D
 
 
 class Layer(object):
