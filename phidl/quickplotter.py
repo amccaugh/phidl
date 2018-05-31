@@ -363,7 +363,7 @@ class Viewer(QGraphicsView):
             self.set_subport_visibility(not self.subports_visible)
 
 
-def quickplot2(item_list):
+def quickplot2(item_list, *args, **kwargs):
     global app
     if QCoreApplication.instance() is None:
         app = QApplication(sys.argv)
