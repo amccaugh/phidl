@@ -196,7 +196,8 @@ def connector(midpoint = (0,0), width = 1, orientation = 0):
 #==============================================================================
 
 @device_lru_cache
-def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer = 0):
+def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
+    turn_ratio = 4, num_pts = 50, layer = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -224,7 +225,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     ypts = ypts[::-ds_factor]; ypts = ypts[::-1]    # so the last point is guaranteed to be included when downsampled
 
     # Add points for the rest of meander
-    xpts.append(xpts[-1] + 4*width); ypts.append(0)
+    xpts.append(xpts[-1] + turn_ratio*width); ypts.append(0)
     xpts.append(xpts[-1]); ypts.append(-a)
     xpts.append(xpts[0]); ypts.append(-a)
     xpts.append(max(xpts)-length); ypts.append(-a)
@@ -653,8 +654,9 @@ def C(width = 1, size = (10,20) , layer = 0):
 
 @device_lru_cache
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-          num_squares = None, terminals_same_side = False, layer = 0):
-    if [size[0], size[1], num_squares].count(None) != 1:
+        num_squares = None, turn_ratio = 4, 
+        terminals_same_side = False, layer = 0):
+    if ([size[0], size[1], num_squares].count(None) != 1):
         raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
                          ' the arguments ``num_squares`` and ``size`` be None'+
                          ' to prevent overconstraining, for example:\n' +
@@ -672,7 +674,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     num_meanders = int(np.ceil(ysize/wire_pitch))
     
     D = Device(name = 'snspd')
-    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20, layer = layer)
+    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch,
+        turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
     
     
     if (terminals_same_side is False) and (num_meanders % 2) == 0:
@@ -708,12 +711,12 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
     
 def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
-           num_squares = None, connector_width = 1,
+           num_squares = None, connector_width = 1, turn_ratio = 4, 
            terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
     s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch,
-                        size = size, num_squares = num_squares,
+                        size = size, num_squares = num_squares, turn_ratio = turn_ratio, 
                         terminals_same_side = terminals_same_side, layer = layer))
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
                             num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
