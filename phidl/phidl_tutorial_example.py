@@ -18,7 +18,10 @@ import phidl.utilities as pu
 # >>> qp(pg.rectangle())
 #==============================================================================
 
-
+# Uncomment this if you're using the original quickplot (not quickplot2)
+# and you'd like to see each result in a new window
+# import functools
+# qp = functools.partial(qp, new_window = True)
 
 
 #==============================================================================

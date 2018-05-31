@@ -5,8 +5,9 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 
 ## 0.8.4
 ### New features
-- A `LayerSet` can now be previewed.  Running `ls.preview()` will generate a `Device` which shows all of the layers, useful for previewing color schemes.
-- quickplot now shows zero-width ports (e.g. a "pin") as a + sign.
+- A `LayerSet` can now be previewed.  Running the geometry function `pg.preview_layerset()` will generate a `Device` which shows all of the layers, useful for previewing color schemes.
+- `quickplot()` now shows zero-width ports (e.g. a "pin") as a + sign.
+- `quickplot()` now defaults to redrawing a single window, rather than creating a new window for every call
 - Added a `.info` dictionary to `Port`, useful for recording information about a port (e.g. `myport.info['wavelength'] = 1550`)
 
 ### Changes
