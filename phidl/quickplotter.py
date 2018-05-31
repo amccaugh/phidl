@@ -406,9 +406,11 @@ def _get_layerprop(layer, datatype):
     if l is not None:
         color = l.color
         alpha = l.alpha
+        if color is None:
+            color = layer_colors[np.mod(layer, len(layer_colors))]
     else:
         color = layer_colors[np.mod(layer, len(layer_colors))]
-        alpha = 0.8
+        alpha = 0.7
     return {'color':color, 'alpha':alpha}
 
 
