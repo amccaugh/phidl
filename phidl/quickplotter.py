@@ -410,7 +410,7 @@ def _get_layerprop(layer, datatype):
             color = layer_colors[np.mod(layer, len(layer_colors))]
     else:
         color = layer_colors[np.mod(layer, len(layer_colors))]
-        alpha = 0.7
+        alpha = 0.6
     return {'color':color, 'alpha':alpha}
 
 
