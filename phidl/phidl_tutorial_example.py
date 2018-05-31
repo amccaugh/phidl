@@ -2,16 +2,24 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-from phidl import Device, Layer, LayerSet, quickplot, make_device
+from phidl import Device, Layer, LayerSet, make_device
+from phidl import quickplot as qp # Rename "quickplot()" to the easier "qp()"
 import phidl.geometry as pg
 import phidl.routing as pr
 import phidl.utilities as pu
 
+#==============================================================================
 # Note: If you have Qt + PyQt installed, you may be able to use the much
-# faster quickplot2() function.  Personally, we recommend trying the following
-# Just to see if it works:
-# import quickplot2 as qp
-# qp(pg.rectangle())
+# faster quickplot2() function, which acts like KLayout (try zooming with
+# the mousewheel, and right-click-dragging to zoom).
+# We recommend trying the following just to see if it works:
+# >>> from phidl import quickplot2 as qp
+# >>> import phidl.geometry as pg
+# >>> qp(pg.rectangle())
+#==============================================================================
+
+
+
 
 #==============================================================================
 # We'll start by assuming we have a function waveguide() which already exists
@@ -58,7 +66,7 @@ wg2 = D.add_ref(WG2)
 # Alternatively, we can do this all on one line
 wg3 = D.add_ref(waveguide(width=14, height = 3))
 
-quickplot(D)
+qp(D) # quickplot it!
 
 
 
@@ -73,7 +81,7 @@ poly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
 # e.g. [(x1,y1), (x2,y2), (x3,y3), ...] using the same function
 poly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] )
 
-quickplot(D)
+qp(D) # quickplot it!
 
 
 
@@ -121,7 +129,7 @@ wg3.ymin # Gives you the bottommost (-y) edge of the wg3 bounding box
 wg3.ymin = -14 # Moves wg3 such that it's bottommost edge is at y = -14
 
 
-quickplot(D)
+qp(D) # quickplot it!
 
 
 #==============================================================================
@@ -141,7 +149,7 @@ wg2.move(origin = wg2.ports['wgport1'], destination = wg3.ports['wgport2'])
 wg1.rotate(angle = -60, center = wg1.ports['wgport2'])
 wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
 
-quickplot(D)
+qp(D) # quickplot it!
 
 
 
@@ -168,7 +176,7 @@ wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 wg1.connect(port = 'wgport1', destination = wg2.ports['wgport2'])
 wg3.connect(port = 'wgport2', destination = wg2.ports['wgport1'], overlap = -1)
 
-quickplot(D)
+qp(D) # quickplot it!
 
 
 
@@ -182,7 +190,7 @@ quickplot(D)
 D.add_port(port = wg1.ports['wgport2'], name = 1)
 D.add_port(port = wg3.ports['wgport1'], name = 2)
 
-quickplot(D)
+qp(D) # quickplot it!
 
 
 
@@ -197,13 +205,13 @@ mwg1 = D2.add_ref(D)
 mwg2 = D2.add_ref(D)
 mwg2.move(destination = [10,10])
 
-quickplot(D2)
+qp(D2) # quickplot it!
 
 # Like before, let's connect mwg1 and mwg2 together then offset them slightly
 mwg1.connect(port = 1, destination = mwg2.ports[2])
 mwg2.move(destination = [30,30])
 
-quickplot(D2)
+qp(D2) # quickplot it!
 
 
 # Since the references mwg1 and mwg2 only point to the device ``D``, any
@@ -211,7 +219,7 @@ quickplot(D2)
 
 poly2.x += 40
 
-quickplot(D2)
+qp(D2) # quickplot it!
 
 
 
@@ -221,7 +229,7 @@ quickplot(D2)
 # Routing allows us to connect two ports which face each other with a smooth
 # polygon.  Since we connected our two 
 D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight') )
-quickplot(D2)
+qp(D2)
 
 
 
@@ -232,17 +240,28 @@ quickplot(D2)
 # manipulate it like any other Device
 t = D2.add_ref( pg.text('Hello\nworld!', size = 10, justify = 'center'))
 t.move([0,40]).rotate(45)
-quickplot(D2)
-
+qp(D2)
 
 
 #==============================================================================
 # Labeling
 #==============================================================================
+# We can also label (annotate) our devices, in order to record information 
+# directly into the final GDS file without putting any extra geometry onto any 
+# layer
 # This label will display in a GDS viewer, but will not be rendered
 # or printed like the polygons created by the text()
-D2.label('First label', mwg1.center)
+
+
+D2.label(text = 'First label', position = mwg1.center)
 D2.label('Second label', mwg2.center)
+
+# It's very useful for recording information about the devices or layout
+D2.label(text = 'The x size of this\nlayout is %s' % D2.xsize,
+            position = (D2.xmax, D2.ymax), layer = 255)
+
+# Again, note we have to write the GDS for it to be visible (view in KLayout)
+D2.write_gds('MultiMultiWaveguideWithLabels.gds')
 
 
 
@@ -250,6 +269,13 @@ D2.label('Second label', mwg2.center)
 # Saving the file as a .gds
 #==============================================================================
 D2.write_gds('MultiMultiWaveguideTutorial.gds')
+
+# If we want to use different units than micron units, we can do that too.
+# say instead of microns (1e-6) with nanometer precision (1e-6*1e-3),
+# we want to use millimeters (1e-3) subdivided onto a 10-micron grid,
+# our precision would then be (1e-2) so the grid would be (1e-3*1e-2) = 10e-6
+D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
+             unit = 1e-3, precision = 1e-2)
 
 
 
@@ -301,7 +327,7 @@ text1 = DL.add_ref( pg.text('Titanium layer', size = 10, layer = ls['ti']) ).mov
 text2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = ls['nb']) ).movey(-80)
 text3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = ls['nb_etch']) ).movey(-90).movex(5)
 
-quickplot(DL)
+qp(DL)
 
 DL.write_gds('MultipleLayerText.gds')
 
@@ -314,8 +340,8 @@ print(ls['nb'])
 
 # We can quickly preview our color scheme using the LayerSet.preview()
 # function as well.
-P = ls.preview()
-quickplot(P)
+P = pg.layerset_preview(ls)
+qp(P)
 P.write_gds('MyLayerSetPreview.gds')
 
 # We can even save the LayerSet as a KLayout .lyp file ("layer properties" file)
@@ -343,7 +369,7 @@ g2 = D.add_ref(G2)
 g3 = D.add_ref(G3)
 g1.xmin = g2.xmax + 5
 g3.xmin = g1.xmax + 5
-quickplot(D)
+qp(D)
 
 # There are dozens of these types of structures.  See the /phidl/geometry.py
 # file for a full geometry list.  Note some of the more complex shapes are 
@@ -371,13 +397,13 @@ D.write_gds('MyNewGDS.gds')
 
 # Let's first just import the entire GDS as-is
 E = pg.import_gds(filename = 'MyNewGDS.gds')
-quickplot(E)
+qp(E)
 
 # Now say we only wanted to get layers 2 and 3 from the file.  We can specify
 # a list of layers using the `layers` argument
 E2 = pg.import_gds(filename = 'MyNewGDS.gds',
                    layers = [2, 3])
-quickplot(E2)
+qp(E2)
 
 # We can also use the `layers` argument to map layers arbitrarily. Say we
 # wanted to combine shapes on layer 1 with those on layer 3, but leave layer 2
@@ -385,27 +411,9 @@ quickplot(E2)
 # `layers` argument
 E3 = pg.import_gds(filename = 'MyNewGDS.gds',
                    layers = {1: 3,  3: 3,  2: 2})
-quickplot(E3)
+qp(E3)
 
 
-
-#==============================================================================
-# Label
-#==============================================================================
-# We can also label (annotate) our devices, in order to record information 
-# directly into the final GDS file without putting any extra geometry onto any 
-# layer
-
-# Let's add an annotation to our Multi-Layer Text GDS file
-DL.label(text = 'This is layer1\nit will be titanium', position = l1.center)
-DL.label(text = 'This is niobium', position = l2.center)
-
-# It's very useful for recording information about the devices or layout
-DL.label(text = 'The x size of this\nlayout is %s' % DL.xsize,
-            position = (DL.xmax, DL.ymax), layer = 255)
-
-# Again, note we have to write the GDS for it to be visible (view in KLayout)
-DL.write_gds('MultipleLayerText.gds')
 
 
 
@@ -436,17 +444,17 @@ cwg_parameters = {
 
 # We can either create the complicated_waveguide() the normal way
 C1 = complicated_waveguide(width = 14, height = 1, x = 15, y = 20, rotation = 0)
-quickplot(C1)
+qp(C1)
 
 # Or we can pass the complicated_waveguide function and our parameter list
 # to the Device() function which will generate it for us using our config
 C2 = make_device(complicated_waveguide, config = cwg_parameters)
-quickplot(C2)
+qp(C2)
 
 # We can also override any parameter we like in our dictionary of parameters
 # by adding keyword arguments -- the input dictionary is untouched afterwards
 C3 = make_device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
-quickplot(C3)
+qp(C3)
 
 # The most useful implementation of this is to keep a standard set of 
 # parameters and then override certain parameters each iteration of the for 
@@ -457,7 +465,7 @@ for h in [0.1, 0.5, 1, 2, 4]:
     C4 = make_device(complicated_waveguide, config = cwg_parameters, height = h)
     c4 = D.add_ref( C4 )
     c4.ymin = D.ymax + 10
-quickplot(D)
+qp(D)
 
 
 
@@ -475,8 +483,8 @@ C = pg.circle()
 c1 = D.add_ref(C)   # Add first reference
 c2 = D.add_ref(C)   # Add second reference
 c2.x += 15          # Move the second circle over by 10
-quickplot(c2)
-quickplot(D)
+qp(c2)
+qp(D)
 
 
 # But rather than cluttering up the list of variables with these refernces,
@@ -489,8 +497,8 @@ D.add_ref(C, alias = 'circle2') # Add second reference
 D['circle2'].x += 15            # Moving the second circle over by 10
 # Note that at this point, D['circle2'] is equivalent to the variable c2
 # we made above
-quickplot(D['circle2'], label_aliases = True)
-quickplot(D, label_aliases = True)
+qp(D['circle2'], label_aliases = True)
+qp(D, label_aliases = True)
 
 # You can also access the list of aliases for your Device whenever you want 
 # to by accessing Device.aliases, which is a Python dictionary.  For example:
@@ -540,18 +548,18 @@ D.add_ref(E1)
 D.add_ref(E2).movex(15)
 
 D_copied = pg.copy(D)
-quickplot(D_copied)
+qp(D_copied)
 
 # Observe that if we add geometry to D now, D_copied is unaffected
 D.add_ref(pg.circle()) 
 D.rotate(45)
-quickplot(D_copied)
+qp(D_copied)
 
 # However, note that if we now modify the underlying Devices (which
 # were referenced in D, and whose references were copied to D_copied), both
 # the original D and D_copied are affected:
 E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
-quickplot(D_copied)
+qp(D_copied)
 
 # If instead we use pg.deepcopy(), all of the underlying references are copied
 # and used in the new D_deepcopied device.  So if we change one of the old
@@ -563,17 +571,17 @@ D.add_ref(E1)
 D.add_ref(E2).movex(15)
 
 D_deepcopied = pg.deepcopy(D)
-quickplot(D_deepcopied)
+qp(D_deepcopied)
 
 # As before, if we add geometry to D now, D_deepcopied is unaffected
 D.add_ref(pg.circle()) 
 D.rotate(45)
-quickplot(D_deepcopied)
+qp(D_deepcopied)
 
 # However, now if we mess with the underlying Devices of D, D_deepcopied
 # is not affected like it was before.
 E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
-quickplot(D_deepcopied)
+qp(D_deepcopied)
 
 #==============================================================================
 # Extracting layers
@@ -591,10 +599,10 @@ E3 = pg.arc(layer = 3)
 D.add_ref(E1)
 D.add_ref(E2).movex(15)
 D.add_ref(E3).movex(30)
-quickplot(D)
+qp(D)
 
 D_only_layers_1_and_2 = pg.extract(D, layers = [1,2])
-quickplot(D_only_layers_1_and_2)
+qp(D_only_layers_1_and_2)
 
 
 #==============================================================================
@@ -610,10 +618,10 @@ D = Device()
 E1 = pg.ellipse()
 E2 = pg.ellipse().movex(15)
 E3 = pg.ellipse().movex(30)
-quickplot([E1, E2, E3])
+qp([E1, E2, E3])
 
 D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
-quickplot(D2)
+qp(D2)
 
 
 
@@ -626,7 +634,7 @@ quickplot(D2)
 
 D = pg.ellipse(layer = 1)
 D2 = pg.outline(D, distance = 1, layer = 2)
-quickplot([D, D2])
+qp([D, D2])
 
 
 
@@ -642,12 +650,12 @@ myell1 = D.add_ref(pg.L())
 mytee2 = D.add_ref(pg.tee().movex(15))
 mypoly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
 mypoly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] ).movey(-5)
-quickplot(D)
+qp(D)
 
 # Now we can remove two of the elements we don't want anymore
 D.remove(mytee2)
 D.remove(mypoly2)
-quickplot(D)
+qp(D)
 
 
 #==============================================================================
