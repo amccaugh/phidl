@@ -7,14 +7,16 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 ### New features
 - A `LayerSet` can now be previewed.  Running the geometry function `pg.preview_layerset()` will generate a `Device` which shows all of the layers, useful for previewing color schemes.
 - `quickplot()` now shows zero-width ports (e.g. a "pin") as a + sign.
-- `quickplot()` now defaults to redrawing a single window, rather than creating a new window for every call
+- `quickplot()` now defaults to redrawing within a single window, rather than creating a new window for every call
 - Added a `.info` dictionary to `Port`, useful for recording information about a port (e.g. `myport.info['wavelength'] = 1550`)
+- Updated tutorial
 
 ### Changes
 - `pg.optimal_hairpin()`,  `pg.snspd()`,  and `pg.snspd_expanded()` now have the argument `turn_ratio` which defines how wide the turn is w.r.t. the argument `wire_width`
+- The `layer` argument in `D.add_polygon()` can now accept lists of `Layer`s. Use this if you want to a single polygon shape to multiple layers.
 
 ### Bugfixes
-- None
+- Minor bugfix in tutorial example file
 
 ## 0.8.3
 ### New features
