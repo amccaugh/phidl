@@ -499,6 +499,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:    
             if any([isinstance(l, Layer) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
+            else:
+                raise ValueError(""" [PHIDL] When using add_polygon() with 
+                    multiple layers, at least one of the layers in the 
+                    `layer` argument must be of type Layer """)
         except: pass
 
         # # If layer is None, return a Polygon but don't actually
@@ -528,7 +532,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
         if port is not None:
             if not isinstance(port, Port):
-                raise ValueError('[DEVICE] add_port() error: Argument `port` must be a Port for copying')
+                raise ValueError('[PHIDL] add_port() error: Argument `port` must be a Port for copying')
             p = port._copy()
             p.parent = self
         elif isinstance(name, Port):
