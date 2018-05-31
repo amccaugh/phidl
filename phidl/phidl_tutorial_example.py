@@ -340,7 +340,7 @@ print(ls['nb'])
 
 # We can quickly preview our color scheme using the LayerSet.preview()
 # function as well.
-P = pg.layerset_preview(ls)
+P = pg.preview_layerset(ls)
 qp(P)
 P.write_gds('MyLayerSetPreview.gds')
 
