@@ -495,11 +495,11 @@ class Device(gdspy.Cell, _GeometryHelper):
             layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
-        # # Check if layer is actually a list of Layer objects
-        # try:    
-        #     if all([isinstance(l, Layer) for l in layer]):
-        #         return [self.add_polygon(p, layer) for p in layer]
-        # except: pass # Verified points is not a list of polygons, continue on
+        # Check if layer is actually a list of Layer objects
+        try:    
+            if any([isinstance(l, Layer) for l in layer]):
+                return [self.add_polygon(points, l) for l in layer]
+        except: pass
 
         # # If layer is None, return a Polygon but don't actually
         # # add it to the geometry
@@ -508,7 +508,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         #     gds_datatype = 0, parent = None)
         
 
-        elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
+        if len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
             # Convert to form [[1,2],[3,4],[5,6]]
             points = np.column_stack((points))
 
