@@ -14,8 +14,10 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 ### Changes
 - `pg.optimal_hairpin()`,  `pg.snspd()`,  and `pg.snspd_expanded()` now have the argument `turn_ratio` which defines how wide the turn is w.r.t. the argument `wire_width`
 - The `layer` argument in `D.add_polygon()` can now accept lists of `Layer`s. Use this if you want to a single polygon shape to multiple layers.
+- Rearranged an argument location: The `name` argument for the `Layer()` class is now the third argument to allow the ability to make `Layer`s like Layer(1,0)
 
 ### Bugfixes
+- Minor bugfix to guarantee quickplot() shows up from the Python/IPython console.
 - Minor bugfix in tutorial example file
 
 ## 0.8.3

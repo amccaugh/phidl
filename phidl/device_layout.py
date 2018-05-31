@@ -80,7 +80,7 @@ class LayerSet(object):
     def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
                  description = None, color = None, inverted = False,
                   alpha = 0.6, dither = None):
-        new_layer = Layer(name = name, gds_layer = gds_layer, gds_datatype = gds_datatype,
+        new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, name = name, 
                  description = description, inverted = inverted,
                  color = color, alpha = alpha, dither = dither)
         if name in self._layers:
@@ -106,13 +106,25 @@ class LayerSet(object):
 class Layer(object):
     layer_dict = {}
 
-    def __init__(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
+    def __init__(self, gds_layer = 0, gds_datatype = 0, name = 'unnamed', 
                  description = None, inverted = False,
                  color = None, alpha = 0.6, dither = None):
-        self.name = name
+        if isinstance(gds_layer, Layer):
+            l = gds_layer # We were actually passed Layer(mylayer), make a copy
+            gds_datatype = l.gds_datatype
+            name = l.name
+            description = l.description
+            alpha = l.alpha
+            dither = l.dither
+            inverted = l.inverted
+            gds_layer = l.gds_layer
+
+
         self.gds_layer = gds_layer
         self.gds_datatype = gds_datatype
+        self.name = name
         self.description = description
+        self.inverted = inverted
         self.alpha = alpha
         self.dither = dither
         
@@ -502,13 +514,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                 
         # Check if layer is actually a list of Layer objects
         try:    
-            if all([isinstance(l, (Layer, list, tuple)) for l in layer]):
+            if all([isinstance(l, (Layer)) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
             elif len(layer) > 2: # Someone wrote e.g. layer = [1,4,5]
                 raise ValueError(""" [PHIDL] When using add_polygon() with 
                     multiple layers, each element in your `layer` argument
-                    list must be of type Layer(), list, or tuple, e.g.:
-                    `layer = [[1,0], my_layer, [4]]""")
+                    list must be of type Layer(), e.g.:
+                    `layer = [Layer(1,0), my_layer, Layer(4)]""")
         except: pass
 
         # # If layer is None, return a Polygon but don't actually

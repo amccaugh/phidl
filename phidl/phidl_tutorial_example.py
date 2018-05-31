@@ -300,7 +300,8 @@ DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
 DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
 
 # 3) as a Layer object  
-my_gold_layer = Layer(name = 'goldpads', gds_layer = 3, gds_datatype = 0, description = 'Gold pads liftoff')
+my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', description = 'Gold pads liftoff')
+my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
 DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 
 #==============================================================================
@@ -317,8 +318,8 @@ DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 # look when using quickplot (has no effect on the written GDS file)
 
 ls = LayerSet() # Create a blank LayerSet
-ls.add_layer(name = 'ti', gds_layer = 4, gds_datatype = 0, description = 'Titanium resistor', color = 'gray')
-ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0, description = 'Niobium liftoff', color = (0.4,0.1,0.1))
+ls.add_layer(name = 'ti', gds_layer = 4, gds_datatype = 0,  description = 'Titanium resistor', color = 'gray')
+ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0,  description = 'Niobium liftoff', color = (0.4,0.1,0.1))
 ls.add_layer('nb_etch', 6, 0, color = 'lightblue', alpha = 0.2)
 
 
