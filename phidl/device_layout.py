@@ -501,27 +501,40 @@ class Device(gdspy.Cell, _GeometryHelper):
         return d                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = None):
+    def add_polygon(self, points, layer = (0,0)):
         # Check if input a list of polygons by seeing if it's 3 levels deep
         try:    
             points[0][0][0] # Try to access first x point
             return [self.add_polygon(p, layer) for p in points]
         except: pass # Verified points is not a list of polygons, continue on
-        
+
         
         if isinstance(points, gdspy.Polygon):
-            if layer is None: layer = (points.layer, points.datatype)
+            # if layer is None: layer = (points.layer, points.datatype)
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
-            if layer is None:   layers = points.layers
-            else:               layers = [layer]*len(points.polygons)
+            # if layer is None:   layers = points.layers
+            layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
-        gds_layer, gds_datatype = _parse_layer(layer)
-            
-        if len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
+        # # Check if layer is actually a list of Layer objects
+        # try:    
+        #     if all([isinstance(l, Layer) for l in layer]):
+        #         return [self.add_polygon(p, layer) for p in layer]
+        # except: pass # Verified points is not a list of polygons, continue on
+
+        # If layer is None, return a Polygon but don't actually
+        # add it to the geometry
+        if layer is None:
+            return Polygon(points = [(0,0)], gds_layer = 0,
+            gds_datatype = 0, parent = None)
+        
+
+        elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
             # Convert to form [[1,2],[3,4],[5,6]]
             points = np.column_stack((points))
+
+        gds_layer, gds_datatype = _parse_layer(layer)
         # # Close polygon manually
         # if not np.array_equal(points[0],points[-1]):
         #     points = np.vstack((points, points[0]))
