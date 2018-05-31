@@ -28,7 +28,6 @@ from numpy.linalg import norm
 import webcolors
 import warnings
 import yaml
-import phidl.geometry as pg
 
 from matplotlib import pyplot as plt
 
@@ -101,28 +100,7 @@ class LayerSet(object):
 
     def __repr__(self):
         return str(list(self._layers.values()))
-    
-    def preview(self):
-        """ Generates a preview Device with representations of all the layers,
-        used for previewing LayerSet color schemes in quickplot or saved .gds 
-        files """
-        D = Device()
-        num_layers = len(self._layers)
-        matrix_size = int(np.ceil(np.sqrt(num_layers)))
-        for n, layer in enumerate(self._layers.values()):
-            R = pg.rectangle(size = (100, 100), layer = layer)
-            T = pg.text(
-                    text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
-                    size = 20,
-                    position=(50,-20),
-                    justify = 'center',
-                    layer = layer)
-                    
-            xloc = n % matrix_size
-            yloc = int(n // matrix_size)
-            D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
-            D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
-        return D
+
 
 
 class Layer(object):
@@ -903,14 +881,14 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
 def quickplot(items, show_ports = True, show_subports = True,
-              label_ports = True, label_aliases = False, new_window = True):
+              label_ports = True, label_aliases = False, new_window = False):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if new_window: fig, ax = plt.subplots(1)
     else:
         ax = plt.gca()  # Get current figure
         ax.cla()        # Clears the axes of all previous polygons
-    plt.axis('equal')
+    ax.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
@@ -931,15 +909,15 @@ def quickplot(items, show_ports = True, show_subports = True,
                         _draw_port_as_point(port)
                     else:
                         _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                    plt.text(port.midpoint[0], port.midpoint[1], name)
+                    ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
                     for name, port in sd.ports.items():
                         _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                        plt.text(port.midpoint[0], port.midpoint[1], name)
+                        ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
-                    plt.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
+                    ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
                              weight = 'bold', size = 'large', ha = 'center')
         elif isinstance(item, gdspy.Polygon):
             polygons = [item.points]
@@ -952,6 +930,7 @@ def quickplot(items, show_ports = True, show_subports = True,
         #     _draw_polygons(polygons, ax, facecolor = layerprop['color'],
         #                    edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
+    plt.show(block = False)
     
 
 

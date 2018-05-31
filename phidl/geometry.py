@@ -174,6 +174,30 @@ def _translate_cell(c, layer_remapping):
     D.labels = c.labels
     return D
 
+
+    
+def preview_layerset(ls):
+    """ Generates a preview Device with representations of all the layers,
+    used for previewing LayerSet color schemes in quickplot or saved .gds 
+    files """
+    D = Device()
+    num_layers = len(ls._layers)
+    matrix_size = int(np.ceil(np.sqrt(num_layers)))
+    for n, layer in enumerate(ls._layers.values()):
+        R = rectangle(size = (100, 100), layer = layer)
+        T = text(
+                text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
+                size = 20,
+                position=(50,-20),
+                justify = 'center',
+                layer = layer)
+                
+        xloc = n % matrix_size
+        yloc = int(n // matrix_size)
+        D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
+        D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
+    return D
+
 #==============================================================================
 #
 # Connectors
