@@ -479,7 +479,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return d                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = (0,0)):
+    def add_polygon(self, points, layer = None):
         # Check if input a list of polygons by seeing if it's 3 levels deep
         try:    
             points[0][0][0] # Try to access first x point
@@ -488,10 +488,10 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         
         if isinstance(points, gdspy.Polygon):
-            # if layer is None: layer = (points.layer, points.datatype)
+            if layer is None: layer = (points.layer, points.datatype)
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
-            # if layer is None:   layers = points.layers
+            if layer is None:   layers = points.layers
             layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
@@ -501,11 +501,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         #         return [self.add_polygon(p, layer) for p in layer]
         # except: pass # Verified points is not a list of polygons, continue on
 
-        # If layer is None, return a Polygon but don't actually
-        # add it to the geometry
-        if layer is None:
-            return Polygon(points = [(0,0)], gds_layer = 0,
-            gds_datatype = 0, parent = None)
+        # # If layer is None, return a Polygon but don't actually
+        # # add it to the geometry
+        # if layer is None:
+        #     return Polygon(points = [(0,0)], gds_layer = 0,
+        #     gds_datatype = 0, parent = None)
         
 
         elif len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
