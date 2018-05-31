@@ -145,12 +145,17 @@ def _parse_layer(layer):
     [0,1] representing layer=0 and datatype=1, or just a layer number """
     if isinstance(layer, Layer):
         gds_layer, gds_datatype = layer.gds_layer, layer.gds_datatype
-    elif np.size(layer) == 2:
+    elif np.shape(layer) == (2,): # In form [3,0]
         gds_layer, gds_datatype = layer[0], layer[1]
+    elif np.shape(layer) == (1,): # In form [3]
+        gds_layer, gds_datatype = layer[0], 0
     elif layer is None:
         gds_layer, gds_datatype = 0, 0
-    else:
+    elif isinstance(layer, (int, float)):
         gds_layer, gds_datatype = layer, 0
+    else:
+        raise ValueError("""[PHIDL] _parse_layer() was passed something
+            that could not be interpreted as a layer: layer = %s""" % layer)
     return (gds_layer, gds_datatype)
 
     
@@ -497,12 +502,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                 
         # Check if layer is actually a list of Layer objects
         try:    
-            if any([isinstance(l, Layer) for l in layer]):
+            if all([isinstance(l, (Layer, list, tuple)) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
-            else:
+            elif len(layer) > 2: # Someone wrote e.g. layer = [1,4,5]
                 raise ValueError(""" [PHIDL] When using add_polygon() with 
-                    multiple layers, at least one of the layers in the 
-                    `layer` argument must be of type Layer """)
+                    multiple layers, each element in your `layer` argument
+                    list must be of type Layer(), list, or tuple, e.g.:
+                    `layer = [[1,0], my_layer, [4]]""")
         except: pass
 
         # # If layer is None, return a Polygon but don't actually
