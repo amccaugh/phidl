@@ -111,16 +111,29 @@ class Viewer(QGraphicsView):
         self.update_grid()
         
     def add_port(self, port, is_subport = False):
-        point1, point2 = port.endpoints
-        point1 = QPointF(point1[0], point1[1])
-        point2 = QPointF(point2[0], point2[1])
-        qline = self.scene.addLine(QLineF(point1, point2))
-        arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
-        arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
-        arrow_scene_poly = self.scene.addPolygon(arrow_qpoly)
-        arrow_scene_poly.setRotation(port.orientation)
-        arrow_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
+        if (port.width is None) or (port.width == 0):
+            x,y = port.midpoint
+            cs = 1 # cross size
+            pn = QPointF(x, y+cs)
+            ps = QPointF(x, y-cs)
+            pe = QPointF(x+cs, y)
+            pw = QPointF(x-cs, y)
+            qline1 = self.scene.addLine(QLineF(pn, ps))
+            qline2 = self.scene.addLine(QLineF(pw, pe))
+            port_shapes = [qline1,qline2]
+        else:
+            point1, point2 = port.endpoints
+            point1 = QPointF(point1[0], point1[1])
+            point2 = QPointF(point2[0], point2[1])
+            qline = self.scene.addLine(QLineF(point1, point2))
+            arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
+            arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
+            port_scene_poly = self.scene.addPolygon(arrow_qpoly)
+            port_scene_poly.setRotation(port.orientation)
+            port_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
+            port_shapes = [qline,port_scene_poly]
         qtext = self.scene.addText(str(port.name), self.portfont)
+        port_items = port_shapes + [qtext]
         rad = port.orientation*np.pi/180
         x,y = port.endpoints[0]*1/4 +  port.endpoints[1]*3/4 + np.array([np.cos(rad), np.sin(rad)])*port.width/8
 #        x,y = port.midpoint[0], port.midpoint[1]
@@ -129,15 +142,13 @@ class Viewer(QGraphicsView):
         qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         
         if not is_subport:
-            arrow_scene_poly.setPen(self.portpen)
-            qline.setPen(self.portpen)
+            [shape.setPen(self.portpen) for shape in port_shapes]
             qtext.setDefaultTextColor(self.portfontcolor)
-            self.portitems += [arrow_scene_poly, qline, qtext]
+            self.portitems += port_items
         else:
-            arrow_scene_poly.setPen(self.subportpen)
-            qline.setPen(self.subportpen)
+            [shape.setPen(self.subportpen) for shape in port_shapes]
             qtext.setDefaultTextColor(self.subportfontcolor)
-            self.subportitems += [arrow_scene_poly, qline, qtext]
+            self.subportitems += port_items
 #        self.portlabels.append(qtext)
         
     def add_aliases(self, aliases):

@@ -2,15 +2,14 @@
 # Major TODO
 #==============================================================================
 
-# Add support for gdspy.CellArray
-# Auto-generate PHIDL geometry documentation
-# Allow caching of bbox
+# TODO Add support for gdspy.CellArray
+# TODO Auto-generate PHIDL geometry documentation
+# TODO Allow caching of bbox
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# TODO make reflect allow a port input for p1 
-# TODO Use AttrDict for ports and aliases
+# TODO Move quickplot to phidl.quickplotter
 # TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
 
 #==============================================================================
@@ -22,19 +21,19 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-# import itertools
 from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
 import warnings
+import yaml
 
 from matplotlib import pyplot as plt
 from IPython import display
 from .utilities import in_ipynb
 
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 
 
@@ -254,13 +253,14 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 90, parent = None):
+    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
         self.orientation = mod(orientation,360)
         self.parent = parent
-        if self.width <= 0: raise ValueError('[PHIDL] Port creation error: width cannot be negative or zero')
+        self.info = {}
+        if self.width < 0: raise ValueError('[PHIDL] Port creation error: width must be >=0')
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
@@ -871,7 +871,10 @@ def quickplot(items, show_ports = True, show_subports = True,
                 _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                                edgecolor = 'k', alpha = layerprop['alpha'])
                 for name, port in item.ports.items():
-                    _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                    if (port.width is None) or (port.width == 0):
+                        _draw_port_as_point(port)
+                    else:
+                        _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
                     plt.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
@@ -938,3 +941,8 @@ def _draw_port(port, arrow_scale = 1, **kwargs):
     plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
               head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
 
+
+def _draw_port_as_point(port, **kwargs):
+    x = port.midpoint[0]
+    y = port.midpoint[1]
+    plt.plot(x, y, 'r+', alpha = 0.5, markersize = 15, markeredgewidth = 2) # Draw port edge
