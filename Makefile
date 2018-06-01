@@ -1,5 +1,11 @@
 SHELL := /usr/bin/env bash
 
+# DOCTYPE_DEFAULT can be html or latexpdf
+DOCTYPE_DEFAULT = html
+
+# Server ports for CI hosting. You can override by setting an environment variable DOCHOSTPORT
+DOCHOSTPORT ?= 8049
+
 # General dependencies for devbuild, docbuild
 REINSTALL_DEPS = $(shell find phidl -type f) venv setup.py
 
@@ -26,6 +32,7 @@ clean:
 	rm -rf phidl.egg-info
 	rm -rf build
 	rm -rf venvinfo
+	$(MAKE) -C docs clean
 
 purge: clean
 	rm -rf venv
@@ -61,6 +68,25 @@ test-nb: testbuild
 
 test: test-unit test-nb
 
+docbuild: venvinfo/docreqs~
+venvinfo/docreqs~: $(REINSTALL_DEPS) doc-requirements.txt
+	( \
+		source venv/bin/activate; \
+		pip install -r doc-requirements.txt | grep -v 'Requirement already satisfied'; \
+		pip install -e . | grep -v 'Requirement already satisfied'; \
+	)
+	@mkdir -p venvinfo
+	@touch venvinfo/docreqs~
+
+docs: docbuild
+	source venv/bin/activate; $(MAKE) -C docs $(DOCTYPE_DEFAULT)
+
+dochost: docs
+	( \
+		source venv/bin/activate; \
+		cd docs/_build/$(DOCTYPE_DEFAULT); \
+		python3 -m http.server $(DOCHOSTPORT); \
+
 jupyter: devbuild
 	( \
 		source venv/bin/activate; \
@@ -89,6 +115,8 @@ help:
 	@echo "  testbuild         install test dependencies, build phidl, and install inside venv"
 	@echo "  test-unit         perform basic unit tests"
 	@echo "--- documentation ---"
+	@echo "  docs              build documentation"
+	@echo "  dochost           build documentation and start local http server"
 
 
-.PHONY: help clean purge pip-freeze jupyter test-unit
+.PHONY: help docs clean purge dochost pip-freeze jupyter test-unit
