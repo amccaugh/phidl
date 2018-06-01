@@ -140,6 +140,24 @@ class Layer(object):
         return ('Layer (name %s, GDS layer %s, GDS datatype %s, description %s, color %s)' % \
                 (self.name, self.gds_layer, self.gds_datatype, self.description, self.color))
                          
+    def __lt__(self, other):
+        selfIntVal = self.gds_layer
+        if type(other) is Layer:
+            otherIntVal = other.gds_layer
+        else:
+            otherIntVal = other
+        return selfIntVal < otherIntVal
+
+    def __gt__(self, other):
+        selfIntVal = self.gds_layer
+        if type(other) is Layer:
+            otherIntVal = other.gds_layer
+        else:
+            otherIntVal = other
+        return selfIntVal > otherIntVal
+
+    def __mod__(self, other):
+        return self.gds_layer % other
 
 def _parse_layer(layer):
     """ Check if the variable layer is a Layer object, a 2-element list like
