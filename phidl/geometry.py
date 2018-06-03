@@ -2085,19 +2085,19 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     padb_overlay.center = padb.center
     padb_overlay.ymin = padb.ymin
     for i, x in enumerate(wire_widths_wide):
-        padt = ICS.add_ref(rectangle(pad_size, wire_layer), alias = f'padt{i}')
+        padt = ICS.add_ref(rectangle(pad_size, wire_layer))
         padt.xmin = padb.xmin + translation
         padt.ymin = padb.ymax + pad_gap
-        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=pad_layer), alias = f'padt_overlay{i}')
+        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=pad_layer))
         padt_overlay.center = padt.center
         padt_overlay.ymax = padt.ymax
         difference = padt.ymin-padb.ymax
-        wire_step = ICS.add_ref(_test_ic_wire_step(wire_widths_wide[i], wire_widths[i], wire_layer=wire_layer), alias = f'wire_step{i}')
+        wire_step = ICS.add_ref(_test_ic_wire_step(wire_widths_wide[i], wire_widths[i], wire_layer=wire_layer))
         wire_step.rotate(90)
         wire_step.center = (padt.center[0], padb.ymax + difference/2)
         translation = translation + pad_size[0]*12/10 
-        conn_wire_top = ICS.add_ref(rectangle(size=(wire_widths_wide[i], padt.ymin-wire_step.ymax), layer=wire_layer), alias = f'conn_wire_top{i}')
-        conn_wire_bottom = ICS.add_ref(rectangle(size=(wire_widths_wide[i], wire_step.ymin-padb.ymax), layer=wire_layer), alias = f'conn_wire_bottom{i}')
+        conn_wire_top = ICS.add_ref(rectangle(size=(wire_widths_wide[i], padt.ymin-wire_step.ymax), layer=wire_layer))
+        conn_wire_bottom = ICS.add_ref(rectangle(size=(wire_widths_wide[i], wire_step.ymin-padb.ymax), layer=wire_layer))
         conn_wire_top.ymax = padt.ymin
         conn_wire_top.xmin = wire_step.xmin
         conn_wire_bottom.ymin = padb.ymax
