@@ -430,13 +430,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         Device._next_uid += 1
 
 
-    def __getitem__(self, val):
+    def __getitem__(self, key):
         """ If you have a Device D, allows access to aliases you made like D['arc2'] """
         try:
-            return self.aliases[val]
+            return self.aliases[key]
         except:
             raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  '
-                'which does not exist' % (val, self.name))
+                'which does not exist' % (key, self.name))
 
     def __repr__(self):
         return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s elements, %s references)' % \
@@ -446,6 +446,17 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def __str__(self):
         return self.__repr__()
+
+    def __lshift__(self, element):
+        return self.add_ref(element)
+
+    def __setitem__(self, key, element):
+        """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
+        if isinstance(element, DeviceReference):
+            self.aliases[key] = element
+        else:
+            raise ValueError('[PHIDL] Tried to assign alias "%s" in Device "%s",  '
+                'but failed because the item was not a DeviceReference' % (key, self.name))
 
     @property
     def layers(self):
@@ -490,8 +501,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
-            if alias in self.aliases:
-                raise ValueError("""[PHIDL] add_ref(): Alias already exists """)
             self.aliases[alias] = d
         return d                # Return the DeviceReference (CellReference)
 
