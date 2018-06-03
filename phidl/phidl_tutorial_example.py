@@ -63,8 +63,8 @@ WG2 = waveguide(width=12, height = 2)
 # After adding WG1, we see that the add_ref() function returns a handle to our
 # reference, which we will label with lowercase letters wg1 and wg2.  This
 # handle will be useful later when we want to move wg1 and wg2 around in D.
-wg1 = D.add_ref(WG1)
-wg2 = D.add_ref(WG2)
+wg1 = D.add_ref(WG1)  # Using the function add_ref()
+wg2 = D << WG2        # Using the << operator which is identical to add_ref()
 
 # Alternatively, we can do this all on one line
 wg3 = D.add_ref(waveguide(width=14, height = 3))
@@ -231,7 +231,8 @@ qp(D2) # quickplot it!
 #==============================================================================
 # Routing allows us to connect two ports which face each other with a smooth
 # polygon.  Since we connected our two 
-D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2], path_type = 'sine', width_type = 'straight') )
+D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2],
+            path_type = 'sine', width_type = 'straight') )
 qp(D2)
 
 
@@ -496,9 +497,15 @@ qp(D)
 # out of D like you would with a Python dictionary.  For example:
 D = Device()
 C = pg.circle()
-D.add_ref(C, alias = 'circle1') # Add first reference 
-D.add_ref(C, alias = 'circle2') # Add second reference
-D['circle2'].x += 15            # Moving the second circle over by 10
+D.add_ref(C, alias = 'circle1') # Add first reference
+D['circle2'] = D.add_ref(C) # Add second reference in a different style
+D['circle3'] = D << C # Add third reference in yet another way!
+
+# Even though we created these references/aliases three different ways,
+# they all behave the same way:
+D['circle1'].x += 5            # Moving the second circle over by 5
+D['circle2'].x += 10            # Moving the second circle over by 10
+D['circle3'].x += 15            # Moving the second circle over by 15
 # Note that at this point, D['circle2'] is equivalent to the variable c2
 # we made above
 qp(D['circle2'], label_aliases = True)
@@ -663,7 +670,7 @@ qp(D)
 
 
 #==============================================================================
-# Using the LRU Cache
+# Advanced: Using the LRU Cache decorator
 #==============================================================================
 # Let's assume you have a Device-making function which takes a long time,
 # for instance because it requires extensive computations to calculate polygon
