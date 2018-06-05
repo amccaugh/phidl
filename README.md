@@ -1,10 +1,62 @@
 # PHIDL
-CAD layout and geometry creation utilities for photonic and superconducting circuits
+PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
+
+## Installation / requirements
+- Install or upgrade with `pip install -U phidl`
+- Python 2 >=2.6 or Python 3 >=3.5
+- If you are on Windows and don't already have `gdspy` installed, you will need a C++ compiler
+    - For Python 3, install the [MS C++ Build Tools for VS 2017](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
+    - For Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+
+## About PHIDL
+
+PHIDL is an open-source GDS-based CAD tool for Python 2 and 3, based on the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized.
+
+The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate code just to draw a simple ring. 
+
+The goal to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
+
+`ellipse1.xmin = ellipse2.xmax + 5`
+
+or if you want to move then rotate one ellipse by 45 degrees you can do
+
+`ellipse2.move([1,7]).rotate(45)`
+
+There's a few dozen shortcuts like this that make life easier built into PHIDL--they're simple, but they make a world of difference when you just want to e.g. space a ring resonator some distance from a waveguide without having to track each and every coordinate of the shape.
+
+[](http://amccaugh.github.io/phidl)
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_1.png)
+
+
+There's also a "port" functionality which allows you to snap together geometry like Legos without caring about where exactly the absolute coordinates of either geometry is.  For instance, this is a two-line command:
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_1.png)
+![phidl example image](https://amccaugh.github.io/phidl/readme_2.png)
+
+It also allows you to do things like add text and create smooth or straight routing curves between "ports" of different devices, convenient for making electrical or optical connections:
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_3.png)
+![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
+    
+
+Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  Here's me making a positive-tone ZEP outline (blue color) for a complex meander structure attached to a contact pad.  A whole complicated layout can be outlined without requiring you to use Beamer now:
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
+ 
+
+You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device I made where I needed a ground plane, so I just used the fill function to make the textured fill in purple below, electrically connecting all of my ground structures together:
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_6.jpg)
+
+The PHIDL module has a [thorough tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
+
 
 # Changelog
 
 ## 0.8.4
 ### New features
+- Added `<<` operator to add references.  `r = D.add_ref(Rect)` can now be (optionally) written as `r = D << Rect`.
 - A `LayerSet` can now be previewed.  Running the geometry function `pg.preview_layerset()` will generate a `Device` which shows all of the layers, useful for previewing color schemes.
 - `quickplot()` now shows zero-width ports (e.g. a "pin") as a + sign.
 - `quickplot()` now defaults to redrawing within a single window, rather than creating a new window for every call
@@ -15,18 +67,11 @@ CAD layout and geometry creation utilities for photonic and superconducting circ
 - `pg.optimal_hairpin()`,  `pg.snspd()`,  and `pg.snspd_expanded()` now have the argument `turn_ratio` which defines how wide the turn is w.r.t. the argument `wire_width`
 - The `layer` argument in `D.add_polygon()` can now accept lists of `Layer`s. Use this if you want to a single polygon shape to multiple layers.
 - Rearranged an argument location: The `name` argument for the `Layer()` class is now the third argument to allow the ability to make `Layer`s like Layer(1,0)
+- Removed some deprecated old geometry
 
 ### Bugfixes
 - Minor bugfix to guarantee quickplot() shows up from the Python/IPython console.
 - Minor bugfix in tutorial example file
-
-## 0.8.3
-### New features
-- Every `Port` now has a `.info` dictionary which can store information about the port
-- `quickplot` now supports zero-width ports (displayed as + symbols) -- meant for usage as electrical pins
-
-### Changes
-- Removed some deprecated old geometry
 
 ## 0.8.2
 
