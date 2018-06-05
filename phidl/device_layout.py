@@ -649,6 +649,29 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
 
+    def get_ports(self, depth = None):
+        """ Returns copies of all the ports of the Device"""
+        port_list = [p._copy() for p in self.ports.values()]
+        
+        if depth is None or depth > 0:
+            for r in self.references:
+                if depth is None: new_depth = None
+                else:             new_depth = depth - 1
+                ref_ports = r.parent.get_ports(depth=new_depth)
+                
+                # Transform ports that came from a reference
+                ref_ports_transformed = []
+                for rp in ref_ports:
+                    new_port = rp._copy()
+                    new_midpoint, new_orientation = r._transform_port(rp.midpoint, \
+                    rp.orientation, r.origin, r.rotation, r.x_reflection)
+                    new_port.midpoint = new_midpoint
+                    new_port.new_orientation = new_orientation
+                    ref_ports_transformed.append(new_port)
+                port_list += ref_ports_transformed
+            
+        return port_list
+
 
     def remove(self, items):
         if type(items) not in (list, tuple):  items = [items]
