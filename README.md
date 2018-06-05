@@ -29,9 +29,8 @@ There's a few dozen shortcuts like this that make life easier built into PHIDL--
 ![phidl example image](https://amccaugh.github.io/phidl/readme_1.png)
 
 
-There's also a "port" functionality which allows you to snap together geometry like Legos without caring about where exactly the absolute coordinates of either geometry is.  For instance, this is a two-line command:
+There's also a "port" functionality which allows you to snap together geometry like Legos without caring about where exactly the absolute coordinates of either geometry is.  For instance, connecting the above misaligned rectangles is a two-line command:
 
-![phidl example image](https://amccaugh.github.io/phidl/readme_1.png)
 ![phidl example image](https://amccaugh.github.io/phidl/readme_2.png)
 
 It also allows you to do things like add text and create smooth or straight routing curves between "ports" of different devices, convenient for making electrical or optical connections:
@@ -40,14 +39,14 @@ It also allows you to do things like add text and create smooth or straight rout
 ![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
     
 
-Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  Here's me making a positive-tone ZEP outline (blue color) for a complex meander structure attached to a contact pad.  A whole complicated layout can be outlined without requiring you to use Beamer now:
+Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  One of the predefined commands can outline a complex meander structure (blue color) attached to a contact pad, very useful when using positive-tone electron-beam lithography resists.  A whole complicated layout can be outlined directly in the GDS without requiring you to use Beamer:
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
  
 
 You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device I made where I needed a ground plane, so I just used the fill function to make the textured fill in purple below, electrically connecting all of my ground structures together:
 
-![phidl example image](https://amccaugh.github.io/phidl/readme_6.jpg)
+![phidl example image](https://amccaugh.github.io/phidl/readme_6.png)
 
 The PHIDL module has a [thorough tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
 
