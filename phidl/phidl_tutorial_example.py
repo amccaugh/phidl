@@ -190,8 +190,14 @@ qp(D) # quickplot it!
 # of the device ``D`` we're working in, and D itself does not -- it only draws
 # the subports (ports of wg1, wg2, wg3) as a convenience.  We need to add ports
 # that we specifically want in our new device ``D``
-D.add_port(port = wg1.ports['wgport2'], name = 1)
-D.add_port(port = wg3.ports['wgport1'], name = 2)
+p1 = D.add_port(port = wg1.ports['wgport2'], name = 1)
+p2 = D.add_port(port = wg3.ports['wgport1'], name = 2)
+
+# Optionally, let's assign some information to these ports.  Every Port has
+# a Port.info dictionary which can be used to store information about that port
+p1.info['is_useful'] = True
+p2.info['is_useful'] = False
+
 
 qp(D) # quickplot it!
 
@@ -214,6 +220,13 @@ qp(D2) # quickplot it!
 mwg1.connect(port = 1, destination = mwg2.ports[2])
 mwg2.move(destination = [30,30])
 
+# Let's also copy the underlying ports so that we can easily access them
+# in our new higher-level device.  add_port() can take a port argument
+# which allows you to pass it an underlying reference port to copy.
+# You can also rename the port if you desire:
+D2.add_port(port = mwg2.ports[1], name = 'in')
+D2.add_port(port = mwg2.ports[1], name = 'out')
+
 qp(D2) # quickplot it!
 
 
@@ -223,7 +236,6 @@ qp(D2) # quickplot it!
 poly2.x += 40
 
 qp(D2) # quickplot it!
-
 
 
 #==============================================================================
@@ -281,6 +293,14 @@ D2.write_gds('MultiMultiWaveguideTutorial.gds')
 D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
              unit = 1e-3, precision = 1e-2)
 
+
+#==============================================================================
+# Advanced: Acquiring port information
+#==============================================================================
+# In some cases, you may want to gather information about the ports in your
+# Device.  You can do that using the get_ports(depth) function, which will
+# return ports within the device
+top_level_port = D2.get_ports
 
 
 #==============================================================================

@@ -29,7 +29,12 @@ import webcolors
 import warnings
 import yaml
 
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except:
+    warnings.warn("""PHIDL tried to import matplotlib but it failed. It will'
+                     still work but quickplot() may not.  Try using
+                     quickplot2() instead (see note in tutorial) """)
 
 __version__ = '0.8.4'
 
