@@ -321,9 +321,11 @@ class Port(object):
     # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
     # DeviceReference recursively, causing performance issues)
     def _copy(self):
-        return Port(name = self.name, midpoint = self.midpoint,
+        new_port = Port(name = self.name, midpoint = self.midpoint,
             width = self.width, orientation = self.orientation,
             parent = self.parent)
+        new_port.info = deepcopy(self.info)
+        return new_port
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
