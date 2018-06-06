@@ -56,6 +56,7 @@ The PHIDL module has a [thorough tutorial](https://github.com/amccaugh/phidl/blo
 ## 0.8.4
 ### New features
 - Added `<<` operator to add references.  `r = D.add_ref(Rect)` can now be (optionally) written as `r = D << Rect`.
+- Added `D.get_ports()` which allows you to gather the locations and information about all ports in Device.
 - A `LayerSet` can now be previewed.  Running the geometry function `pg.preview_layerset()` will generate a `Device` which shows all of the layers, useful for previewing color schemes.
 - `quickplot()` now shows zero-width ports (e.g. a "pin") as a + sign.
 - `quickplot()` now defaults to redrawing within a single window, rather than creating a new window for every call

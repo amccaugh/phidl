@@ -11,7 +11,9 @@ import phidl.utilities as pu
 #==============================================================================
 # Note: If you have Qt + PyQt installed, you may be able to use the much
 # faster quickplot2() function, which acts like KLayout (try zooming with
-# the mousewheel, and right-click-dragging to zoom).
+# the mousewheel, and right-click-dragging to zoom). The F1/F2/F3 keys also
+# show/hide Ports, Subports, and Aliases respectively
+#
 # We recommend trying the following just to see if it works:
 # >>> from phidl import quickplot2 as qp
 # >>> import phidl.geometry as pg
@@ -189,7 +191,9 @@ qp(D) # quickplot it!
 # Although our waveguides wg1/wg2/wg3 have ports, they're only references
 # of the device ``D`` we're working in, and D itself does not -- it only draws
 # the subports (ports of wg1, wg2, wg3) as a convenience.  We need to add ports
-# that we specifically want in our new device ``D``
+# that we specifically want in our new device ``D``. add_port() can take a 
+# port argument which allows you to pass it an underlying reference port to 
+# copy. You can also rename the port if you desire:
 p1 = D.add_port(port = wg1.ports['wgport2'], name = 1)
 p2 = D.add_port(port = wg3.ports['wgport1'], name = 2)
 
@@ -219,13 +223,6 @@ qp(D2) # quickplot it!
 # Like before, let's connect mwg1 and mwg2 together then offset them slightly
 mwg1.connect(port = 1, destination = mwg2.ports[2])
 mwg2.move(destination = [30,30])
-
-# Let's also copy the underlying ports so that we can easily access them
-# in our new higher-level device.  add_port() can take a port argument
-# which allows you to pass it an underlying reference port to copy.
-# You can also rename the port if you desire:
-D2.add_port(port = mwg2.ports[1], name = 'in')
-D2.add_port(port = mwg2.ports[1], name = 'out')
 
 qp(D2) # quickplot it!
 
@@ -300,8 +297,21 @@ D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
 # In some cases, you may want to gather information about the ports in your
 # Device.  You can do that using the get_ports(depth) function, which will
 # return ports within the device
-top_level_port = D2.get_ports
 
+# This is empty as D2 does not have any ports of its own, only ports within
+# its references
+top_level_ports = D2.get_ports(depth = 0)
+
+# This gets the ports from the refrences we added to D2 (mwg1 and mwg2)
+first_level_ports = D2.get_ports(depth = 1)
+
+# This gets all the ports from every level
+all_ports = D2.get_ports(depth = None)
+
+# We can then filter to find the locations of all ports we defined as "useful":
+for p in all_ports:
+    if 'is_useful' in p.info and p.info['is_useful'] is True:
+        print(str(p) + ' is useful')
 
 #==============================================================================
 # Using Layers
