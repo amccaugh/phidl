@@ -363,7 +363,7 @@ class Viewer(QGraphicsView):
             self.set_subport_visibility(not self.subports_visible)
 
 
-def quickplot2(item_list):
+def quickplot2(item_list, *args, **kwargs):
     global app
     if QCoreApplication.instance() is None:
         app = QApplication(sys.argv)
@@ -406,9 +406,11 @@ def _get_layerprop(layer, datatype):
     if l is not None:
         color = l.color
         alpha = l.alpha
+        if color is None:
+            color = layer_colors[np.mod(layer, len(layer_colors))]
     else:
         color = layer_colors[np.mod(layer, len(layer_colors))]
-        alpha = 0.8
+        alpha = 0.6
     return {'color':color, 'alpha':alpha}
 
 
