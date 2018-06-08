@@ -381,12 +381,12 @@ def quickplot2(item_list, *args, **kwargs):
                 polygons = polygons_spec[key]
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
-            for name, port in element.ports.items():
-                viewer.add_port(port)
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
                     for name, port in ref.ports.items():
                         viewer.add_port(port, is_subport = True)
+            for name, port in element.ports.items():
+                viewer.add_port(port)
                 viewer.add_aliases(element.aliases)
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layer, datatype = element.datatype)
