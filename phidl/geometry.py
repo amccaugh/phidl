@@ -360,11 +360,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     return D
     
     
-
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
-
     D = Device()
-    a = 2*float(width)
+    a = 2*width
     dl = 0.1
     v = 0.1
 
@@ -374,7 +372,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     xpts = list(np.real(xi)); ypts = list(np.imag(xi))
     
     # Add points for the rest of curve
-    d = round(2*xpts[0],-2) # Farthest point out * 2, rounded to nearest 100
+    d = 2*xpts[0] # Farthest point out * 2, rounded to nearest 100
     xpts.append(width); ypts.append(d)
     xpts.append(0); ypts.append(d)
     xpts.append(0); ypts.append(0)
@@ -387,7 +385,6 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     D.add_port(name = 1, midpoint = [a/4,d], width = a/2, orientation = 90)
     D.add_port(name = 2, midpoint = [d,a/4], width = a/2, orientation = 0)
     return D
-
 
     
     
