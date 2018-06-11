@@ -362,11 +362,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     D = Device()
-    a = 2*width
-    dl = 0.1
-    v = 0.1
 
     # Get points of ideal curve
+    a = 2*width
     v = np.logspace(-length_adjust,length_adjust,num_pts)
     xi = a/2.0*((1+2/np.pi*np.arcsinh(1/v)) + 1j*(1+2/np.pi*np.arcsinh(v)))
     xpts = list(np.real(xi)); ypts = list(np.imag(xi))
