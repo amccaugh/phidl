@@ -11,10 +11,11 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 ## About PHIDL
 
 PHIDL is an open-source GDS-based CAD tool for Python 2 and 3, based on the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions.
+It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
 
-The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate code just to draw a simple ring. 
+The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate/overhead code just to draw a simple ring. 
 
-The goal to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
+The goal is to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a geometry you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
 
 `ellipse1.xmin = ellipse2.xmax + 5`
 
@@ -39,7 +40,9 @@ It also allows you to do things like add text and create smooth or straight rout
 ![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
     
 
-Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  One of the predefined commands can outline a complex meander structure (blue color) attached to a contact pad, very useful when using positive-tone electron-beam lithography resists.  A whole complicated layout can be outlined directly in the GDS without requiring you to use Beamer:
+Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  With a single line function, you can outline a complex meander structure (blue color) attached to a contact pad, very useful when using positive-tone electron-beam lithography resists.  A whole complicated layout can be outlined directly in the GDS without requiring you to use Beamer:
+
+`pg.outline(D, distance = 0.7, layer = 4)`
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
  
@@ -48,7 +51,6 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_6.png)
 
-The PHIDL module has a [thorough tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
 
 
 # Changelog
