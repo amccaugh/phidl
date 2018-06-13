@@ -1,4 +1,7 @@
 import operator
+from collections import defaultdict
+from xml.etree import cElementTree
+
 
 def write_lyp(filename, layerset):
     """ Creates a KLayout .lyp Layer Properties file from a set of 
@@ -84,6 +87,29 @@ def write_lyp(filename, layerset):
         f.write('</layer-properties>\n')
 
 
+def read_lyp(filename):
+    from .device_layout import LayerSet
+    if filename[-4:] != '.lyp': filename = filename + '.lyp'
+    with open(filename, 'r') as fx:
+        lyp_list = xml_to_dict(fx.read())['layer-properties']['properties']
+    lys = LayerSet()
+    for entry in lyp_list:
+        phidl_LayerArgs = dict()
+        layerInfo = entry['source'].split('@')[0]
+        phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
+        phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
+        phidl_LayerArgs['color'] = entry['fill-color']
+        name_components = entry['name'].split(' - ')
+        if len(name_components) == 1:
+            phidl_LayerArgs['name'] = name_components[0].strip()
+        else:
+            phidl_LayerArgs['name'] = name_components[1].strip()
+        if len(name_components) == 3:
+            phidl_LayerArgs['description'] = name_components[2].strip()[1:-1]
+        lys.add_layer(**phidl_LayerArgs)
+    return lys
+
+
 def in_ipynb():
     ''' Detects if running in an ipython-notebook frontend
     '''
@@ -95,3 +121,33 @@ def in_ipynb():
             return False
     except NameError:
         return False
+
+
+def etree_to_dict(t):
+    ''' Used recursively '''
+    d = {t.tag: {} if t.attrib else None}
+    children = list(t)
+    if children:
+        dd = defaultdict(list)
+        for dc in map(etree_to_dict, children):
+            for k, v in dc.items():
+                dd[k].append(v)
+        d = {t.tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}
+    if t.attrib:
+        d[t.tag].update(('@' + k, v) for k, v in t.attrib.items())
+    if t.text:
+        text = t.text.strip()
+        if children or t.attrib:
+            if text:
+                d[t.tag]['#text'] = text
+        else:
+            d[t.tag] = text
+    return d
+
+
+def xml_to_dict(t):
+    try:
+        e = cElementTree.XML(t)
+    except:
+        raise IOError("Error in the XML string.")
+    return etree_to_dict(e)
