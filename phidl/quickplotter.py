@@ -13,6 +13,7 @@ Created on Mon Jan 16 16:18:40 2017
 
 
 from __future__ import division, print_function, absolute_import
+import numpy as np
 import sys
 import warnings
 
