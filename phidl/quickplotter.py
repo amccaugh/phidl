@@ -13,7 +13,6 @@ Created on Mon Jan 16 16:18:40 2017
 
 
 from __future__ import division, print_function, absolute_import
-import numpy as np
 import sys
 import warnings
 
@@ -25,14 +24,17 @@ try:
     from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
     from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
+
+    PORT_COLOR = QColor(190,0,0)
+    SUBPORT_COLOR = QColor(0,135,135)
+    OUTLINE_PEN = QColor(200,200,200)
 except:
+    QMainWindow = object
+    QGraphicsView = object
     warnings.warn("""PHIDL tried to import PyQt5 but it failed. PHIDL will'
                      still work but quickplot2() may not.  Try using
                      quickplot() instead (based on matplotlib) """)
 
-PORT_COLOR = QColor(190,0,0)
-SUBPORT_COLOR = QColor(0,135,135)
-OUTLINE_PEN = QColor(200,200,200)
 
 class ViewerWindow(QMainWindow):
     def __init__(self):
