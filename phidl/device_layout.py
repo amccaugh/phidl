@@ -36,7 +36,7 @@ except:
                      still work but quickplot() may not.  Try using
                      quickplot2() instead (see note in tutorial) """)
 
-__version__ = '0.8.4'
+__version__ = '0.8.5'
 
 
 
