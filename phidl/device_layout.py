@@ -104,7 +104,7 @@ class LayerSet(object):
 
 
     def __repr__(self):
-        return str(list(self._layers.values()))
+        return ('LayerSet (%s layers total)' % (len(self._layers)))
 
 
 
