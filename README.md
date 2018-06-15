@@ -61,6 +61,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### Bugfixes
 - `quickplot2` visual improvement: Ports now show up on top of subports
+- Visual improvement: Port colors now colorblind-friendly
 - Fixed very rare `make_device()` error
 
 ## 0.8.4
