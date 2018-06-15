@@ -15,14 +15,26 @@ Created on Mon Jan 16 16:18:40 2017
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import sys
+import warnings
 
 import phidl
 from phidl.device_layout import Device, DeviceReference, Port, Layer
 
-from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
-from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
-from PyQt5.QtGui import QColor, QPolygonF, QPen
+try:
+    from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
+    from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
+    from PyQt5.QtGui import QColor, QPolygonF, QPen
+
+    PORT_COLOR = QColor(190,0,0)
+    SUBPORT_COLOR = QColor(0,135,135)
+    OUTLINE_PEN = QColor(200,200,200)
+except:
+    QMainWindow = object
+    QGraphicsView = object
+    warnings.warn("""PHIDL tried to import PyQt5 but it failed. PHIDL will'
+                     still work but quickplot2() may not.  Try using
+                     quickplot() instead (based on matplotlib) """)
 
 
 class ViewerWindow(QMainWindow):
@@ -54,14 +66,14 @@ class Viewer(QGraphicsView):
 #        self.setViewport(QtOpenGL.QGLWidget())
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self.pen = QPen(QtCore.Qt.black, 0)
-        self.portpen = QPen(QtCore.Qt.red, 3)
+        self.portpen = QPen(PORT_COLOR, 3)
         self.portpen.setCosmetic(True) # Makes constant width
         self.portfont = QtGui.QFont('Arial', pointSize = 14)
-        self.portfontcolor = QtCore.Qt.red
-        self.subportpen = QPen(QtCore.Qt.darkGreen, 3)
+        self.portfontcolor = PORT_COLOR
+        self.subportpen = QPen(SUBPORT_COLOR, 3)
         self.subportpen.setCosmetic(True) # Makes constant width
         self.subportfont = QtGui.QFont('Arial', pointSize = 14)
-        self.subportfontcolor = QtCore.Qt.darkGreen
+        self.subportfontcolor = SUBPORT_COLOR
         
         # Tracking ports
 
@@ -381,12 +393,12 @@ def quickplot2(item_list, *args, **kwargs):
                 polygons = polygons_spec[key]
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
-            for name, port in element.ports.items():
-                viewer.add_port(port)
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
                     for name, port in ref.ports.items():
                         viewer.add_port(port, is_subport = True)
+            for name, port in element.ports.items():
+                viewer.add_port(port)
                 viewer.add_aliases(element.aliases)
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layer, datatype = element.datatype)
