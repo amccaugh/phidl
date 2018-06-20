@@ -2188,3 +2188,53 @@ def test_res(pad_size = [50,50],
     gnd2.movex(2.5)
     
     return P
+
+def resolution_steps(
+        line_widths = [1,2,4,8,16],
+        line_spacing = 10,
+        height = 100):
+    
+    height = int(height / 2)
+    D = Device('resolution_steps')
+    T1 = text(text = '%s' % str(line_widths[-1]), size = height, justify = 'center')
+    t1 = D.add_ref(T1).rotate(90).movex(-10)
+    R1 = rectangle(size = (line_spacing, height))
+    r1 = D.add_ref(R1).movey(-height)
+    count = 0
+    for i in reversed(line_widths):
+        count += line_spacing + i
+        R2 = rectangle(size = (i, height))
+        r1 = D.add_ref(R1).movex(count).movey(-height)
+        r2 = D.add_ref(R2).movex(count - i)
+    return(D)
+    
+def resolution_star(
+        num_lines = 20,
+        line_width = 2,
+        diameter = 200):
+    
+    degree = 180 / num_lines
+    D = Device('resolution_star')
+    R1 = rectangle(size = (line_width, diameter))
+    for i in range(num_lines):
+        r1 = D.add_ref(R1).rotate(degree * i)
+        r1.center = (0,0)
+    return(D)
+
+def resolution_calipers(
+        notch_size = [10,50],
+        notch_spacing = 10,
+        row_spacing = 5,
+        num_notches = 12,
+        layer1 = 1,
+        layer2 = 2):
+    
+    new_spacing = (notch_size[0] + notch_spacing * (num_notches - 1)) / 10
+    D = Device('resolution_calipers')
+    R1 = rectangle(size = (notch_size), layer = layer1)
+    R2 = rectangle(size = (notch_size), layer = layer2)
+    for i in range(num_notches):
+        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
+    for i in range(num_notches - 1):
+        r2 = D.add_ref(R2).movex(i * (notch_size[0] + new_spacing)).movey(-notch_size[1] - row_spacing)
+    return(D)
