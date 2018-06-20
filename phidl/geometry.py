@@ -2194,7 +2194,7 @@ def resolution_steps(
         line_spacing = 10,
         height = 100):
     
-    height = int(height / 2)
+    height = height / 2
     D = Device('resolution_steps')
     T1 = text(text = '%s' % str(line_widths[-1]), size = height, justify = 'center')
     t1 = D.add_ref(T1).rotate(90).movex(-10)
