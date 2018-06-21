@@ -2269,12 +2269,13 @@ def litho_calipers(
     D = Device('litho_calipers')
 
     centre_notch = round(num_notches / 2) - 1
-    R1 = pg.rectangle(size = (notch_size), layer = layer1)
-    R2 = pg.rectangle(size = (notch_size), layer = layer2)
+    R1 = rectangle(size = (notch_size), layer = layer1)
+    R2 = rectangle(size = (notch_size), layer = layer2)
     for i in range(num_notches):
+        if i == centre_notch:
+            r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing)).movey(notch_size[1])
+            r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-2 * notch_size[1] - row_spacing)
         r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
-        r2 = D.add_ref(R2)
-        r2.movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i))
-        r2.movey(-notch_size[1] - row_spacing)
+        r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-notch_size[1] - row_spacing)
 
     return(D)
