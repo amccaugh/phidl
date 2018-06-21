@@ -36,7 +36,7 @@ except:
                      still work but quickplot() may not.  Try using
                      quickplot2() instead (see note in tutorial) """)
 
-__version__ = '0.8.4'
+__version__ = '0.8.5'
 
 
 
@@ -390,7 +390,7 @@ def make_device(fun, config = None, **kwargs):
         with open(config) as f:
             config_dict = yaml.load(f) # Load arguments from config file
     elif type(config) is dict:
-        config_dict = deepcopy(config)
+        config_dict = dict(config)
     elif config is None:
         pass
     else:

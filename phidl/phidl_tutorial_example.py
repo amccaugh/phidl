@@ -9,7 +9,7 @@ import phidl.routing as pr
 import phidl.utilities as pu
 
 #==============================================================================
-# Helpful but not necessary notes about plotting:
+# Helpful (but not necessary) notes about plotting. (Can be skipped)
 #==============================================================================
 # Note: If you have Qt + PyQt installed, you may be able to use the much
 # faster quickplot2() function, which acts like KLayout (try zooming with

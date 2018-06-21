@@ -55,6 +55,15 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 0.8.5
+### New features
+- Added `pg.optimal_90deg()`, the optimal 90-degree turn for superconducting nanowires from Clem & Berggren
+
+### Bugfixes
+- `quickplot2` visual improvement: Ports now show up on top of subports
+- `quickplot2` visual improvement: Port colors now colorblind-friendly
+- Fixed very rare `make_device()` error
+
 ## 0.8.4
 ### New features
 - Added `<<` operator to add references.  `r = D.add_ref(Rect)` can now be (optionally) written as `r = D << Rect`.
