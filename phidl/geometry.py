@@ -2159,7 +2159,7 @@ def test_res(pad_size = [50,50],
     col.move([length_row - width, -width])
     
     # Creating entire waveguide net
-    N = Device('Net')
+    N = Device('net')
     n = 1
     for i in range(num_rows):
         if i != num_rows - 1: 
@@ -2174,7 +2174,7 @@ def test_res(pad_size = [50,50],
     d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
     
     # Creating pads
-    P = Device('Pads')
+    P = Device('pads')
     Pad1 = rectangle(size = (x,z), layer = pad_layer)
     Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
     Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
@@ -2189,13 +2189,15 @@ def test_res(pad_size = [50,50],
     
     return P
 
-def resolution_steps(
+def litho_steps(
         line_widths = [1,2,4,8,16],
         line_spacing = 10,
         height = 100):
+    """ Produces a positive + negative tone linewidth test, used for 
+    lithography resolution test patterning """
+    D = Device('litho_steps')
     
     height = height / 2
-    D = Device('resolution_steps')
     T1 = text(text = '%s' % str(line_widths[-1]), size = height, justify = 'center')
     t1 = D.add_ref(T1).rotate(90).movex(-10)
     R1 = rectangle(size = (line_spacing, height))
@@ -2206,40 +2208,28 @@ def resolution_steps(
         R2 = rectangle(size = (i, height))
         r1 = D.add_ref(R1).movex(count).movey(-height)
         r2 = D.add_ref(R2).movex(count - i)
+
     return(D)
     
-def resolution_star(
+
+def litho_star(
         num_lines = 20,
         line_width = 2,
         diameter = 200):
+    """ Creates a circular-star shape from lines, used as a lithographic  
+    resolution test pattern """
+    D = Device('litho_star')
     
     degree = 180 / num_lines
-    D = Device('resolution_star')
     R1 = rectangle(size = (line_width, diameter))
     for i in range(num_lines):
         r1 = D.add_ref(R1).rotate(degree * i)
         r1.center = (0,0)
+
     return(D)
 
-def resolution_calipers(
-        notch_size = [10,50],
-        notch_spacing = 10,
-        row_spacing = 5,
-        num_notches = 12,
-        layer1 = 1,
-        layer2 = 2):
-    
-    new_spacing = (notch_size[0] + notch_spacing * (num_notches - 1)) / 10
-    D = Device('resolution_calipers')
-    R1 = rectangle(size = (notch_size), layer = layer1)
-    R2 = rectangle(size = (notch_size), layer = layer2)
-    for i in range(num_notches):
-        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
-    for i in range(num_notches - 1):
-        r2 = D.add_ref(R2).movex(i * (notch_size[0] + new_spacing)).movey(-notch_size[1] - row_spacing)
-    return(D)
-    
-def test_litho_calipers(
+
+def litho_calipers(
         notch_size = [2,5],
         notch_spacing = 2,
         num_notches = 12,
@@ -2247,8 +2237,11 @@ def test_litho_calipers(
         row_spacing = 0,
         layer1 = 1,
         layer2 = 2):
+    """ Creates a vernier caliper structure for lithography alignment
+    tests.  Vernier structure is made horizontally. """
     
     D = Device('litho_calipers')
+
     centre_notch = round(num_notches / 2) - 1
     R1 = pg.rectangle(size = (notch_size), layer = layer1)
     R2 = pg.rectangle(size = (notch_size), layer = layer2)
@@ -2257,4 +2250,5 @@ def test_litho_calipers(
         r2 = D.add_ref(R2)
         r2.movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i))
         r2.movey(-notch_size[1] - row_spacing)
+
     return(D)
