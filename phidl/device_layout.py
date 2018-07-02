@@ -697,6 +697,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     
     def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
         for e in self.elements:
             if isinstance(e, Polygon):
                 e.rotate(angle = angle, center = center)
@@ -887,6 +888,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         
     def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
