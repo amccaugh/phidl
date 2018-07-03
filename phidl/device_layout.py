@@ -646,6 +646,20 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
 
+    def absorb(self, reference):
+        """ Flattens and absorbs polygons from an underlying
+        DeviceReference into the Device, destroying the reference
+        in the process but keeping the polygon geometry """
+        if reference not in self.references:
+            raise ValueError("""[PHIDL] Device.absorb() failed - 
+                the reference it was asked to absorb does not 
+                exist in this Device. """)
+        ref_polygons = reference.get_polygons(by_spec = True)
+        for (layer, polys) in ref_polygons.items():
+            [self.add_polygon(points = p, layer = layer) for p in polys]
+        self.remove(reference)
+        return self
+
 
     def get_ports(self, depth = None):
         """ Returns copies of all the ports of the Device"""
