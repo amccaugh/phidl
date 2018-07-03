@@ -4,7 +4,6 @@
 
 # TODO Add support for gdspy.CellArray
 # TODO Auto-generate PHIDL geometry documentation
-# TODO Allow caching of bbox
 
 #==============================================================================
 # Minor TODO
@@ -487,14 +486,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
-    
-    # # IMPROVEMENT: This is a hack to get around gdspy caching issues
-    # @property
-    # def _bb_valid(self):
-    #     return False
-    # @_bb_valid.setter
-    # def _bb_valid(self, value):
-    #     pass
 
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
