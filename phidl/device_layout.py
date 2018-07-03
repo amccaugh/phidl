@@ -496,6 +496,16 @@ class Device(gdspy.Cell, _GeometryHelper):
     # def _bb_valid(self, value):
     #     pass
 
+    def _add(*args, **kwargs):
+        """ Prevents users from inadvertantly using the add() function
+        in PHIDL """
+        return super(Device, self).add(*args, **kwargs)
+
+    def add(*args, **kwargs):
+        raise ValueError("""[PHIDL] `add()` should not be used, please
+            use add_polygon(), add_ref(), or add_port().  If trying to
+            add gdspy-specific elements, use `_add()` instead. """)
+
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
@@ -505,7 +515,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
         d = DeviceReference(D)   # Create a DeviceReference (CellReference)
-        self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
+        self._add(d)             # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
             self.aliases[alias] = d
@@ -556,7 +566,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         #     points = np.vstack((points, points[0]))
         polygon = Polygon(points = points, gds_layer = gds_layer,
             gds_datatype = gds_datatype, parent = self)
-        self.add(polygon)
+        self._add(polygon)
         return polygon
         
         
@@ -601,7 +611,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o',
+        self._add(gdspy.Label(text = text, position = position, anchor = 'o',
                                  layer = gds_layer, texttype = gds_datatype))
         return self
         
@@ -614,8 +624,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         if filename[-4:] != '.gds':  filename += '.gds'
         tempname = self.name
         self.name = 'toplevel'
-        referenced_cells = list(self.get_dependencies(recursive=True))
-        all_cells = [self] + referenced_cells
+        referenced_cells = set(self.get_dependencies(recursive=True))
+        all_cells = list(set([self]) | referenced_cells)
         gdspy.write_gds(filename, cells=all_cells, name='library', unit=unit, precision=precision)
         self.name = tempname
 
