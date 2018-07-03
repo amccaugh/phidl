@@ -525,7 +525,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
             if layer is None:   layers = points.layers
-            layers = [layer]*len(points.polygons)
+            else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
         # Check if layer is actually a list of Layer objects
