@@ -589,16 +589,16 @@ D.write_gds('D_ellipses_flattened_singlelayer.gds')
 #==============================================================================
 # Say you had a Device "D" which contains several references named 
 # "ref1", "ref2", "ref_cluttered".  Suppose the reference "ref_cluttered" is 
-# cluttering up your cell heirarchy when you're viewing it in your favorite
+# cluttering up your cell hierarchy when you're viewing it in your favorite
 # GDS viewer.  The D.absorb() function can eliminate the "ref_cluttered"
-# heirarchy while maintaining the geometry -- it strips out all the polygons
+# hierarchy while maintaining the geometry -- it strips out all the polygons
 # from "ref_cluttered" and adds them directly to "D", then removes
 # the reference "ref_cluttered" from D entirely
 
 D = Device()
 E1 = pg.ellipse(layer = 1)
 E2 = pg.ellipse(layer = 2)
- # The SNSPD has a lot of underlying heirarchy
+ # The SNSPD has a lot of underlying hierarchy
 S1 = pg.snspd(layer = 3)
 ref1 = D.add_ref(E1)
 ref2 = D.add_ref(E2).movex(50)
