@@ -1360,7 +1360,7 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     route_path.parametric(curve_fun, number_of_evaluations=99,\
             max_points=199,  final_distance=None, layer=layer)
     D = Device('racetrack')
-    D._add(route_path)
+    D.add(route_path)
     return D
     
 
@@ -1597,7 +1597,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
         for s in sub_rasters:
             if s[0] == 0:
                 x,y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
-                F._add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
+                F.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
             j += len(s)
     
     return F
