@@ -646,14 +646,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         else:
             gds_layer, gds_datatype = _parse_layer(single_layer)
             super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
-        # Dtemp = Device()
-        # [Dtemp.add_polygon(poly) for poly in self.elements]
-        # new_elements = [self.add_polygon(poly) for poly in self.elements]
+
         temp = self.elements
         self.elements = []
         [self.add_polygon(poly) for poly in temp]
-
-        self._bb_valid = False
         return self
 
     def absorb(self, reference):
