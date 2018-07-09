@@ -55,7 +55,20 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
-## 0.8.5
+## 0.8.6
+### New features
+- `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the tutorial for more details
+- Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).  
+
+### Changes
+- Made `write_gds()` autofix names to guarantee no duplicates cell names ever appear
+
+### Bugfixes
+- The gdspy bounding box caching has been reallowed
+- Single-layer flatten fix for `D.flatten()`
+- `quickplot` and `quickplot2` now fail gracefully if the user does not have matlplotlib or Qt respectively.
+
+## 0.8.5 (June 15, 2018)
 ### New features
 - Added `pg.optimal_90deg()`, the optimal 90-degree turn for superconducting nanowires from Clem & Berggren
 
@@ -64,7 +77,7 @@ You can also do things like create a backing fill to make sure the resist develo
 - `quickplot2` visual improvement: Port colors now colorblind-friendly
 - Fixed very rare `make_device()` error
 
-## 0.8.4
+## 0.8.4 (June 6, 2018)
 ### New features
 - Added `<<` operator to add references.  `r = D.add_ref(Rect)` can now be (optionally) written as `r = D << Rect`.
 - Added `D.get_ports()` which allows you to gather the locations and information about all ports in Device.
@@ -84,7 +97,7 @@ You can also do things like create a backing fill to make sure the resist develo
 - Minor bugfix to guarantee quickplot() shows up from the Python/IPython console.
 - Minor bugfix in tutorial example file
 
-## 0.8.2
+## 0.8.2 (Apr 19, 2018)
 
 ### New features
 - Added the LayerSet class.  See the tutorial, but essentially this class makes a convenient container to stores layers
@@ -100,7 +113,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 
-## 0.8.1
+## 0.8.1 (Feb 7, 2018)
 
 ### New features
  - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Device with those polygons in them. See tutorial for details
@@ -118,7 +131,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Some internal changes to make working with Device.uid easier
 
 
-## 0.8.0
+## 0.8.0 (Dec 6, 2017)
 
 ### New features
  - `pg.import_gds()` can now import without flattening all the polygons to a single layer
@@ -136,7 +149,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Made compatible with gdspy >= 1.2
  - Specified names for phidl.geometry objects
 
-## 0.7.1
+## 0.7.1 (August 28, 2017)
 
 ### New features
  - Updated tutorial text
@@ -148,7 +161,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Many small ones under the hood
 
 
-## 0.7.0
+## 0.7.0 (May 26, 2017)
 
 ### New features
  - Updated tutorial text significantly
@@ -162,7 +175,7 @@ You can also do things like create a backing fill to make sure the resist develo
 ### Bugfixes
  - Many small ones under the hood
 
-## 0.6.5
+## 0.6.5 (Apr 3, 2017)
 
 ### New features
  - Added pg.boolean() to perform AND/NOT/OR/XOR operations on shapes
@@ -178,7 +191,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Compatibility fixes to make compatible with gdspy>=1.1.2
 
 
-## 0.6.4
+## 0.6.4 (Feb 21, 2017)
 
 ### New features
  - Added "quickplot2", a more robust/easier to use viewer which instead of being based on matplotlib is based Qt.
@@ -187,13 +200,13 @@ You can also do things like create a backing fill to make sure the resist develo
    - Reset view with Escape key
 
 
-## 0.6.3
+## 0.6.3 (Jan 23, 2017)
 
 ### Bugfixes
  -  Under the hood
  
 
-## 0.6.2
+## 0.6.2 (Jan 13, 2017)
 
 ### New features
  - Added label_aliases=False default option to quickplot.  Do quickplot(D, label_aliases = True) to draw text with aliases on it
@@ -209,7 +222,7 @@ You can also do things like create a backing fill to make sure the resist develo
  -  Fixed SNSPD squares calculation and added num_squares constraints
 
 
-## 0.6.1
+## 0.6.1 (Jan 9, 2017)
 
 ### New features
  - Added ability to make "alias" for DeviceReference.  See the tutorial
@@ -226,7 +239,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Fixed pg.snspd layer = 0 by default
  - Fixed Port.endpoints
 
-## 0.6.0
+## 0.6.0 (Dec 13, 2016)
 
 ### Changes
  - phidl.geometry.route() works still but is being deprecated, will now be in phid.routing.route_basic().  pg.route() will be deleted in the near future
@@ -238,7 +251,7 @@ You can also do things like create a backing fill to make sure the resist develo
 ### Bugfixes
  - Very likely we added more bugs than we fixed in this version!
 
-## 0.5.6
+## 0.5.6 (Dec 12, 2016)
 ### Bugfixes
  - Fixes to phidl.geometry.hecken_taper()
 
@@ -253,21 +266,15 @@ You can also do things like create a backing fill to make sure the resist develo
 ### Bugfixes
  - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
 
-## 0.5.4
-### Changes
- - A few under-the-hood optimizations
-## 0.5.5
-### Bugfixes
- - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
-
-## 0.5.4
+## 0.5.4 (Dec 5, 2016)
 ### Changes
  - A few under-the-hood optimizations
  
 ### Bugfixes
  - Fixed error with quickplot where the last edge of a polygon was not rendered
+ - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
 
-## 0.5.3
+## 0.5.3 (Nov 22, 2016)
 ### New features
  - Layers() are now implemented.  See tutorial_example.py "Using Layers" section for a demonstration
  - You can now construct a Device using a set of parameters.  See "Constructing a Device from set of parameters" in tutorial_example.py
@@ -276,3 +283,9 @@ You can also do things like create a backing fill to make sure the resist develo
  
 ### Changes
  - pg.rectangle() now takes "size" as a parameter rather than "point1" and "point2"
+
+## 0.4.1 (Nov 3, 2016)
+- Large number of upgrades
+
+## 0.3.0 (Sep 12, 2016)
+- Initial release!
