@@ -706,6 +706,12 @@ def C(width = 1, size = (10,20) , layer = 0):
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         num_squares = None, turn_ratio = 4, 
         terminals_same_side = False, layer = 0):
+    # Convenience tests to auto-shape the size based
+    # on the number of squares
+    if num_squares is not None and ((size is None) or ((size[0] is None) and (size[1]) is None)):
+        xy = np.sqrt(num_squares*wire_pitch*wire_width)
+        size = [xy,xy]
+        num_squares = None
     if ([size[0], size[1], num_squares].count(None) != 1):
         raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
                          ' the arguments ``num_squares`` and ``size`` be None'+
