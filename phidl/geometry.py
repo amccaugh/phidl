@@ -2224,20 +2224,23 @@ def test_res(pad_size = [50,50],
 def litho_steps(
         line_widths = [1,2,4,8,16],
         line_spacing = 10,
-        height = 100):
+        height = 100,
+        layer = 0
+        ):
     """ Produces a positive + negative tone linewidth test, used for 
     lithography resolution test patterning """
     D = Device('litho_steps')
     
     height = height / 2
-    T1 = text(text = '%s' % str(line_widths[-1]), size = height, justify = 'center')
+    T1 = text(text = '%s' % str(line_widths[-1]),
+        size = height, justify = 'center', layer = layer)
     t1 = D.add_ref(T1).rotate(90).movex(-10)
-    R1 = rectangle(size = (line_spacing, height))
+    R1 = rectangle(size = (line_spacing, height), layer = layer)
     r1 = D.add_ref(R1).movey(-height)
     count = 0
     for i in reversed(line_widths):
         count += line_spacing + i
-        R2 = rectangle(size = (i, height))
+        R2 = rectangle(size = (i, height), layer = layer)
         r1 = D.add_ref(R1).movex(count).movey(-height)
         r2 = D.add_ref(R2).movex(count - i)
 
