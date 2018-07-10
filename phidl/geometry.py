@@ -2234,7 +2234,7 @@ def litho_steps(
     height = height / 2
     T1 = text(text = '%s' % str(line_widths[-1]),
         size = height, justify = 'center', layer = layer)
-    t1 = D.add_ref(T1).rotate(90).movex(-10)
+    t1 = D.add_ref(T1).rotate(90).movex(-height/10)
     R1 = rectangle(size = (line_spacing, height), layer = layer)
     r1 = D.add_ref(R1).movey(-height)
     count = 0
@@ -2250,13 +2250,15 @@ def litho_steps(
 def litho_star(
         num_lines = 20,
         line_width = 2,
-        diameter = 200):
+        diameter = 200,
+        layer = 0
+        ):
     """ Creates a circular-star shape from lines, used as a lithographic  
     resolution test pattern """
     D = Device('litho_star')
     
     degree = 180 / num_lines
-    R1 = rectangle(size = (line_width, diameter))
+    R1 = rectangle(size = (line_width, diameter), layer = layer)
     for i in range(num_lines):
         r1 = D.add_ref(R1).rotate(degree * i)
         r1.center = (0,0)
