@@ -59,7 +59,11 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
-## 0.8.6 (July 11, 2018)
+## 0.8.7 (July 11, 2018)
+### Bugfixes
+- Minor bugfixes to `pg.litho_calipers()` and `pg.litho_star()`
+
+## 0.8.6 (July 9, 2018)
 ### New features
 - `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the tutorial for more details
 - Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).  
