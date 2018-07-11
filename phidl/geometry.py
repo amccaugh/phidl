@@ -2269,7 +2269,7 @@ def litho_star(
 def litho_calipers(
         notch_size = [2,5],
         notch_spacing = 2,
-        num_notches = 12,
+        num_notches = 11,
         offset_per_notch = 0.1,
         row_spacing = 0,
         layer1 = 1,
@@ -2278,11 +2278,11 @@ def litho_calipers(
     tests.  Vernier structure is made horizontally. """
     
     D = Device('litho_calipers')
-
-    centre_notch = round(num_notches / 2) - 1
+    num_notches_total = num_notches*2+1
+    centre_notch = num_notches
     R1 = rectangle(size = (notch_size), layer = layer1)
     R2 = rectangle(size = (notch_size), layer = layer2)
-    for i in range(num_notches):
+    for i in range(num_notches_total):
         if i == centre_notch:
             r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing)).movey(notch_size[1])
             r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-2 * notch_size[1] - row_spacing)
