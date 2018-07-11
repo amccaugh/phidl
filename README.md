@@ -1,14 +1,18 @@
 # PHIDL
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
-## Installation / requirements
+- [Installation / requirements](#installation--requirements)
+- [About PHIDL](#about-phidl)
+- [Changelog](#changelog)
+
+# Installation / requirements
 - Install or upgrade with `pip install -U phidl`
 - Python 2 >=2.6 or Python 3 >=3.5
 - If you are on Windows and don't already have `gdspy` installed, you will need a C++ compiler
     - For Python 3, install the [MS C++ Build Tools for VS 2017](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
     - For Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
 
-## About PHIDL
+# About PHIDL
 
 PHIDL is an open-source GDS-based CAD tool for Python 2 and 3, based on the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions.
 It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
@@ -55,7 +59,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
-## 0.8.6
+## 0.8.6 (July 11, 2018)
 ### New features
 - `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the tutorial for more details
 - Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).  
