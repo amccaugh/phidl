@@ -177,27 +177,28 @@ def _translate_cell(c, layer_remapping):
 
 
     
-def preview_layerset(ls):
+def preview_layerset(ls, size = 100):
     """ Generates a preview Device with representations of all the layers,
     used for previewing LayerSet color schemes in quickplot or saved .gds 
     files """
     D = Device()
+    scale = size/100
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
     sorted_layers = sorted(ls._layers.values(), key = lambda x: (x.gds_layer, x.gds_datatype))
     for n, layer in enumerate(sorted_layers):
-        R = rectangle(size = (100, 100), layer = layer)
+        R = rectangle(size = (100*scale, 100*scale), layer = layer)
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
-                size = 20,
-                position=(50,-20),
+                size = 20*scale,
+                position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
                 
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
-        D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
-        D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
+        D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
+        D.add_ref(T).movex(200 * xloc *scale).movey(-200 * yloc*scale)
     return D
 
 #==============================================================================
