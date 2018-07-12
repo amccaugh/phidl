@@ -73,12 +73,13 @@ help:
 	@echo "  pip-freeze        drops all leaf pip packages into dev-requirements.txt (Use with caution)"
 	@echo "  clean             clean all build files"
 	@echo "  purge             clean and delete virtual environment"
+	@echo "  dynamic-install   have pip dynamically link phidl to this source code, everywhere on your computer"
 	@echo "--- development ---"
 	@echo "  devbuild          install dev dependencies, build phidl, and install inside venv"
 	@echo "--- testing ---"
 	@echo "--- documentation ---"
+	@echo "  docbuild          install doc dependencies, rebuild phidl, and install in venv"
 	@echo "  docs              build documentation"
-	@echo "  dochost           build documentation and start local http server"
 
 
-.PHONY: help docs clean purge dochost pip-freeze jupyter
+.PHONY: help docs clean purge pip-freeze dynamic-install
