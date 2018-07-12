@@ -15,14 +15,26 @@ Created on Mon Jan 16 16:18:40 2017
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import sys
+import warnings
 
 import phidl
 from phidl.device_layout import Device, DeviceReference, Port, Layer
 
-from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
-from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
-from PyQt5.QtGui import QColor, QPolygonF, QPen
+try:
+    from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
+    from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
+    from PyQt5.QtGui import QColor, QPolygonF, QPen
+
+    PORT_COLOR = QColor(190,0,0)
+    SUBPORT_COLOR = QColor(0,135,135)
+    OUTLINE_PEN = QColor(200,200,200)
+except:
+    QMainWindow = object
+    QGraphicsView = object
+    warnings.warn("""PHIDL tried to import PyQt5 but it failed. PHIDL will'
+                     still work but quickplot2() may not.  Try using
+                     quickplot() instead (based on matplotlib) """)
 
 
 class ViewerWindow(QMainWindow):
@@ -54,14 +66,14 @@ class Viewer(QGraphicsView):
 #        self.setViewport(QtOpenGL.QGLWidget())
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
         self.pen = QPen(QtCore.Qt.black, 0)
-        self.portpen = QPen(QtCore.Qt.red, 3)
+        self.portpen = QPen(PORT_COLOR, 3)
         self.portpen.setCosmetic(True) # Makes constant width
         self.portfont = QtGui.QFont('Arial', pointSize = 14)
-        self.portfontcolor = QtCore.Qt.red
-        self.subportpen = QPen(QtCore.Qt.darkGreen, 3)
+        self.portfontcolor = PORT_COLOR
+        self.subportpen = QPen(SUBPORT_COLOR, 3)
         self.subportpen.setCosmetic(True) # Makes constant width
         self.subportfont = QtGui.QFont('Arial', pointSize = 14)
-        self.subportfontcolor = QtCore.Qt.darkGreen
+        self.subportfontcolor = SUBPORT_COLOR
         
         # Tracking ports
 
@@ -111,16 +123,29 @@ class Viewer(QGraphicsView):
         self.update_grid()
         
     def add_port(self, port, is_subport = False):
-        point1, point2 = port.endpoints
-        point1 = QPointF(point1[0], point1[1])
-        point2 = QPointF(point2[0], point2[1])
-        qline = self.scene.addLine(QLineF(point1, point2))
-        arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
-        arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
-        arrow_scene_poly = self.scene.addPolygon(arrow_qpoly)
-        arrow_scene_poly.setRotation(port.orientation)
-        arrow_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
+        if (port.width is None) or (port.width == 0):
+            x,y = port.midpoint
+            cs = 1 # cross size
+            pn = QPointF(x, y+cs)
+            ps = QPointF(x, y-cs)
+            pe = QPointF(x+cs, y)
+            pw = QPointF(x-cs, y)
+            qline1 = self.scene.addLine(QLineF(pn, ps))
+            qline2 = self.scene.addLine(QLineF(pw, pe))
+            port_shapes = [qline1,qline2]
+        else:
+            point1, point2 = port.endpoints
+            point1 = QPointF(point1[0], point1[1])
+            point2 = QPointF(point2[0], point2[1])
+            qline = self.scene.addLine(QLineF(point1, point2))
+            arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
+            arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
+            port_scene_poly = self.scene.addPolygon(arrow_qpoly)
+            port_scene_poly.setRotation(port.orientation)
+            port_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
+            port_shapes = [qline,port_scene_poly]
         qtext = self.scene.addText(str(port.name), self.portfont)
+        port_items = port_shapes + [qtext]
         rad = port.orientation*np.pi/180
         x,y = port.endpoints[0]*1/4 +  port.endpoints[1]*3/4 + np.array([np.cos(rad), np.sin(rad)])*port.width/8
 #        x,y = port.midpoint[0], port.midpoint[1]
@@ -129,15 +154,13 @@ class Viewer(QGraphicsView):
         qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         
         if not is_subport:
-            arrow_scene_poly.setPen(self.portpen)
-            qline.setPen(self.portpen)
+            [shape.setPen(self.portpen) for shape in port_shapes]
             qtext.setDefaultTextColor(self.portfontcolor)
-            self.portitems += [arrow_scene_poly, qline, qtext]
+            self.portitems += port_items
         else:
-            arrow_scene_poly.setPen(self.subportpen)
-            qline.setPen(self.subportpen)
+            [shape.setPen(self.subportpen) for shape in port_shapes]
             qtext.setDefaultTextColor(self.subportfontcolor)
-            self.subportitems += [arrow_scene_poly, qline, qtext]
+            self.subportitems += port_items
 #        self.portlabels.append(qtext)
         
     def add_aliases(self, aliases):
@@ -352,7 +375,7 @@ class Viewer(QGraphicsView):
             self.set_subport_visibility(not self.subports_visible)
 
 
-def quickplot2(item_list):
+def quickplot2(item_list, *args, **kwargs):
     global app
     if QCoreApplication.instance() is None:
         app = QApplication(sys.argv)
@@ -370,12 +393,12 @@ def quickplot2(item_list):
                 polygons = polygons_spec[key]
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
-            for name, port in element.ports.items():
-                viewer.add_port(port)
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
                     for name, port in ref.ports.items():
                         viewer.add_port(port, is_subport = True)
+            for name, port in element.ports.items():
+                viewer.add_port(port)
                 viewer.add_aliases(element.aliases)
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layer, datatype = element.datatype)
@@ -395,9 +418,11 @@ def _get_layerprop(layer, datatype):
     if l is not None:
         color = l.color
         alpha = l.alpha
+        if color is None:
+            color = layer_colors[np.mod(layer, len(layer_colors))]
     else:
         color = layer_colors[np.mod(layer, len(layer_colors))]
-        alpha = 0.8
+        alpha = 0.6
     return {'color':color, 'alpha':alpha}
 
 
