@@ -5,7 +5,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 from scipy.special import iv as besseli
 from scipy.optimize import fmin, fminbound
 from scipy import integrate
-from scipy.interpolate import interp1d
+# from scipy.interpolate import interp1d
 
 import gdspy
 from phidl.device_layout import Device, Port
@@ -174,6 +174,30 @@ def _translate_cell(c, layer_remapping):
     D.labels = c.labels
     return D
 
+
+    
+def preview_layerset(ls):
+    """ Generates a preview Device with representations of all the layers,
+    used for previewing LayerSet color schemes in quickplot or saved .gds 
+    files """
+    D = Device()
+    num_layers = len(ls._layers)
+    matrix_size = int(np.ceil(np.sqrt(num_layers)))
+    for n, layer in enumerate(ls._layers.values()):
+        R = rectangle(size = (100, 100), layer = layer)
+        T = text(
+                text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
+                size = 20,
+                position=(50,-20),
+                justify = 'center',
+                layer = layer)
+                
+        xloc = n % matrix_size
+        yloc = int(n // matrix_size)
+        D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
+        D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
+    return D
+
 #==============================================================================
 #
 # Connectors
@@ -196,7 +220,8 @@ def connector(midpoint = (0,0), width = 1, orientation = 0):
 #==============================================================================
 
 @device_lru_cache
-def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer = 0):
+def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
+    turn_ratio = 4, num_pts = 50, layer = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -224,7 +249,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, num_pts = 50, layer =
     ypts = ypts[::-ds_factor]; ypts = ypts[::-1]    # so the last point is guaranteed to be included when downsampled
 
     # Add points for the rest of meander
-    xpts.append(xpts[-1] + 4*width); ypts.append(0)
+    xpts.append(xpts[-1] + turn_ratio*width); ypts.append(0)
     xpts.append(xpts[-1]); ypts.append(-a)
     xpts.append(xpts[0]); ypts.append(-a)
     xpts.append(max(xpts)-length); ypts.append(-a)
@@ -335,7 +360,30 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     return D
     
     
+def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
+    D = Device()
+
+    # Get points of ideal curve
+    a = 2*width
+    v = np.logspace(-length_adjust,length_adjust,num_pts)
+    xi = a/2.0*((1+2/np.pi*np.arcsinh(1/v)) + 1j*(1+2/np.pi*np.arcsinh(v)))
+    xpts = list(np.real(xi)); ypts = list(np.imag(xi))
     
+    # Add points for the rest of curve
+    d = 2*xpts[0] # Farthest point out * 2, rounded to nearest 100
+    xpts.append(width); ypts.append(d)
+    xpts.append(0); ypts.append(d)
+    xpts.append(0); ypts.append(0)
+    xpts.append(d); ypts.append(0)
+    xpts.append(d); ypts.append(width)
+    xpts.append(xpts[0]); ypts.append(ypts[0])
+    
+    D.add_polygon([xpts, ypts], layer = layer)
+    
+    D.add_port(name = 1, midpoint = [a/4,d], width = a/2, orientation = 90)
+    D.add_port(name = 2, midpoint = [d,a/4], width = a/2, orientation = 0)
+    return D
+
     
     
 #==============================================================================
@@ -349,6 +397,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 #step = optimal_step(start_width = 5, end_width = 1, num_pts = 80, width_tol = 1e-3)
 #quickplot(step)
 
+
+#turn = optimal_90deg(width = 90, length_adjust = 1)
+#quickplot(turn)
 
 
 
@@ -653,8 +704,15 @@ def C(width = 1, size = (10,20) , layer = 0):
 
 @device_lru_cache
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-          num_squares = None, terminals_same_side = False, layer = 0):
-    if [size[0], size[1], num_squares].count(None) != 1:
+        num_squares = None, turn_ratio = 4, 
+        terminals_same_side = False, layer = 0):
+    # Convenience tests to auto-shape the size based
+    # on the number of squares
+    if num_squares is not None and ((size is None) or ((size[0] is None) and (size[1]) is None)):
+        xy = np.sqrt(num_squares*wire_pitch*wire_width)
+        size = [xy,xy]
+        num_squares = None
+    if ([size[0], size[1], num_squares].count(None) != 1):
         raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
                          ' the arguments ``num_squares`` and ``size`` be None'+
                          ' to prevent overconstraining, for example:\n' +
@@ -672,7 +730,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     num_meanders = int(np.ceil(ysize/wire_pitch))
     
     D = Device(name = 'snspd')
-    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch, length = xsize/2, num_pts = 20, layer = layer)
+    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch,
+        turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
     
     
     if (terminals_same_side is False) and (num_meanders % 2) == 0:
@@ -708,12 +767,12 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
     
 def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
-           num_squares = None, connector_width = 1,
+           num_squares = None, connector_width = 1, turn_ratio = 4, 
            terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
     s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch,
-                        size = size, num_squares = num_squares,
+                        size = size, num_squares = num_squares, turn_ratio = turn_ratio, 
                         terminals_same_side = terminals_same_side, layer = layer))
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
                             num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
@@ -1674,7 +1733,7 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
 #==============================================================================
 
 
-def polygon(xpts=[-1,-1, 0, 0],
+def polygon_ports(xpts=[-1,-1, 0, 0],
             ypts = [0, 1, 1, 0],
             layer = 0):
     # returns a polygon with ports on all edges
@@ -1683,7 +1742,7 @@ def polygon(xpts=[-1,-1, 0, 0],
     n = len(xpts)
     xpts.append(xpts[0])
     ypts.append(ypts[0]) 
- #determine if clockwise or counterclockwise
+    #determine if clockwise or counterclockwise
     cc = 0     
     for i in range(0,n):
         cc += ((xpts[i+1]-xpts[i])*(ypts[i+1]+ypts[i]))
@@ -1746,482 +1805,6 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
 
 
 
-def pad(width = 100, height = 300, po_offset = 20, pad_layer = 2, po_layer = 3):
-    D = Device('pad')
-    pad = D.add_ref(compass(size = [width, height], layer = pad_layer))
-    pad_opening = D.add_ref(compass(size = [width-2*po_offset, height-2*po_offset], layer = po_layer))
-    D.add_port(port=pad.ports['S'], name = 1)
-    return D
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# P = pad()
-# quickplot(P)
-
-
-    
-def dblpad(gap = 10, pad_device = None):
-    D = Device('dblpad')
-#    Pad = pad()
-    pad1 = D.add_ref(pad_device)
-    pad2 = D.add_ref(pad_device)
-    pad1.center = pad2.center
-    pad1.xmax = pad2.xmin-gap
-    D.add_port(port=pad1.ports[1], name = 1)
-    D.add_port(port=pad2.ports[1], name = 2)
-    return D
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# D = dblpad(gap = 10, pad_device = pad())
-# quickplot(D)
-
-
-
-
-def cc_rings(radius = 10, gaps = [0.1, 0.2, 0.3], width_ring = 0.5, width = 0.4, dR = 0.15, period = 30, grating_device = None, layer = 0):
-# number of rings defined by the length of the gaps vector    
-    nrings = len(gaps)
-    length_wg = (nrings + 1)*period
-    
-    D = Device('critically coupled rings')
-# make the main bus
-    wg = D.add_ref(compass(size=[length_wg, width]))
-    R = Device();
- # make the rings with different gaps and radii   
-    for i, g in enumerate(gaps):
-        r = R.add_ref(ring(radius = radius + dR*i, width = width_ring, angle_resolution = 1, layer = layer)) 
-        r.move([period*i,0])
-        r.ymax = wg.ymin - g
-# put the rings in the main device    
-    R.x = D.x
-    D.add_ref(R)
-# add the gratings    
-    g = D.add_ref(grating_device)
-    g2 = D.add_ref(grating_device)
-# define port connections   
-    g.connect(port = 1, destination = wg.ports['W'])
-    g.xmax = wg.xmin
-    g2.connect(port = 1, destination = wg.ports['E'])
-    g2.xin = wg.xmax
-    
-# route between connected ports with tapers  
-    D.add_ref(route(port1 = g.ports[1], port2 = wg.ports['W']))
-    D.add_ref(route(port1 = g2.ports[1], port2 = wg.ports['E']))
-    
-    return D
-
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# quickplot(cc_rings(grating_device = grating()))
-
-
-
-def loss_rings(radius = 10, min_radius = 5, gaps = [0.1, 0.2, 0.3], width_ring = 0.5, width_wg = 0.4, period_vary = 0,
-              dR = 0.15, length_beamdump = 10, width_beamdump = 0.2, grating_device = None, layer = 0):
-    
-    period = length_beamdump + radius + min_radius + grating_device.xmax-grating_device.xmin + min_radius + period_vary
-    D = Device("loss rings")
-    nrings = len(gaps)
-    length_wg = (nrings + 1)*period
-    
-    wg = D.add_ref(compass(size=[length_wg, width_wg], layer = layer))
-    
-    g = D.add_ref(grating_device)
-    g2 = D.add_ref(grating_device)
-    
-    g.connect(port = 1, destination = wg.ports['W'])
-    g.xmax = wg.xmin
-    g2.connect(port = 1, destination = wg.ports['E'])
-    g2.xmin = wg.xmax
-    
-    D.add_ref(route(port1 = g.ports[1], port2 = wg.ports['W']))
-    D.add_ref(route(port1 = g2.ports[1], port2 = wg.ports['E']))
-    
-    R = Device()
-    
-    for i, g in enumerate(gaps):
-        r = R.add_ref(ring(radius = radius + dR*i, width = width_ring, angle_resolution = 1, layer = layer)) 
-        r.move([period*i,0])
-        r.ymax = wg.ymin - g
-        rwg = R.add_ref(compass(size=[radius, width_wg], layer = layer))
-        rwg.move([period*i, 0])
-        rwg.ymax = r.ymin-g
-        
-        rtap = R.add_ref(taper(length = length_beamdump, width1 = width_wg, width2 = 0.1, port = None, layer = layer))
-        rtap.xmin = rwg.xmax
-        rtap.ymax = rwg.ymax
-        
-        g3 = R.add_ref(grating_device)
-        g3.reflect(g3.ports[1].midpoint, g3.ports[1].midpoint + [0, g3.ports[1].width])
-        bendRadius = np.maximum(min_radius, (grating_device.ymax-grating_device.ymin)/4+1)
-        g3.y = rwg.y - 2*bendRadius
-        g3.xmin = rwg.xmax
-        R.add_ref(pr.routeManhattan(port1 = g3.ports[1], port2 = rwg.ports['W'],radius = bendRadius, layer = layer))
-          
-    R.x = D.x
-    D.add_ref(R)
-    
-    return D
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# L =  loss_rings(grating_device = grating(), layer = 3)
-# quickplot(L)
-
-
-def adiabatic_beamsplitter(interaction_length = 10, gap1 = 1, gap2 = 0.1, 
-                          port_widths = (0.4, 0.5, 0.4, 0.4),
-                          height_sines = 3, min_radius = 10, 
-                          port_devices = (None,None,None,None)):
-
-    length_sines = np.sqrt((np.pi**2)*height_sines*min_radius/2)
-    #
-    D = Device("adiabatic beam splitter")
-    #
-    # start with the actual beamsplitter part
-    xpts_upper = [0, 0, interaction_length, interaction_length]
-    ypts_upper = [0, port_widths[0], port_widths[2], 0]
-    
-    wg_upper = D.add_ref(polygon(xpts = xpts_upper, ypts = ypts_upper, layer = 0))
-    #
-    xpts_lower = [0, 0, interaction_length, interaction_length]
-    ypts_lower = [-gap1, -gap1-port_widths[1], -gap2-port_widths[3], -gap2]
-    wg_lower = D.add_ref(polygon(xpts = xpts_lower, ypts = ypts_lower, layer = 0))
-    
-    #locate the straight sections after the sine bends
-    P = Device('ports')
-    P.add_port(name = 1, midpoint = [wg_upper.xmin-length_sines, wg_upper.center[1]+height_sines], width = port_widths[0], orientation = 0)
-    P.add_port(name = 2, midpoint = [wg_lower.xmin-length_sines, wg_lower.center[1]-height_sines], width = port_widths[1], orientation = 0)
-    P.add_port(name = 3, midpoint = [wg_upper.xmax+length_sines, wg_upper.center[1]+height_sines], width = port_widths[2], orientation = 180)
-    P.add_port(name = 4, midpoint = [wg_lower.xmax+length_sines, wg_lower.center[1]-height_sines], width = port_widths[3], orientation = 180)
-    route1 = D.add_ref(route(port1 = P.ports[1], port2 = wg_upper.ports['1'], path_type = 'sine'))
-    route2 = D.add_ref(route(port1 = P.ports[2], port2 = wg_lower.ports['1'], path_type = 'sine'))
-    route3 = D.add_ref(route(port1 = P.ports[3], port2 = wg_upper.ports['3'], path_type = 'sine'))
-    route4 = D.add_ref(route(port1 = P.ports[4], port2 = wg_lower.ports['3'], path_type = 'sine'))
-
-    # now we put either devices or ports on the 4 outputs
-    dest_ports = [route1.ports[1], route2.ports[1], route3.ports[1], route4.ports[1]]
-
-    for i, PD in enumerate(port_devices):
-        if PD is None:
-            D.add_port(port = dest_ports[i], name = i+1)
-        else:
-            pd = D.add_ref(PD)
-            pd.connect(port = pd.ports[1], destination = dest_ports[i])
-        
-    return D
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# A = adiabatic_beamsplitter(interaction_length = 10, gap1 = 1, gap2 = 0.1, port_widths = (0.4, 0.5, 0.4, 0.4), height_sines = 3, min_radius = 10)
-# quickplot(A)
-
-
-
-def beamtap(interaction_length = 10, height_sines = 5, min_radius = 10, gap = 0.5, width = 0.4, port_devices = (None,None,None,None)): 
-                                   
-    length_sines = np.sqrt(height_sines*np.pi**2*min_radius/2)    
-    D = Device('beamtap')
-    
-    WG = compass(size=[interaction_length, width])
-    wg1 = D.add_ref(WG)
-    wg2 = D.add_ref(WG)
-    
-    wg1.center = wg2.center
-    wg1.ymin = wg1.ymax + gap
-    
-    P = Device()
-    port1 = P.add_port(name = 1, midpoint = wg1.ports['W'].midpoint+[-1*length_sines, height_sines], width = width, orientation = 0)
-    port2 = P.add_port(name = 2, midpoint = wg2.ports['W'].midpoint+[-1*length_sines, 0], width = width, orientation = 0)
-    port3 = P.add_port(name = 3, midpoint = wg1.ports['E'].midpoint+[length_sines,height_sines], width = width, orientation = 180)
-    port4 = P.add_port(name = 4, midpoint = wg2.ports['E'].midpoint+[length_sines, 0], width = width, orientation = 180)
-    
-    route1 = D.add_ref(route(port1 = port1, port2 = wg1.ports['W']))
-    route2 = D.add_ref(route(port1 = port2, port2 = wg2.ports['W']))
-    route3 = D.add_ref(route(port1 = port3, port2 = wg1.ports['E']))
-    route4 = D.add_ref(route(port1 = port4, port2 = wg2.ports['E']))
-    D.add_ref(P)
-    
-    # now we put either devices or ports on the 4 outputs
-    dest_ports = [route1.ports[1], route2.ports[1], route3.ports[1], route4.ports[1]]
-
-    for i, PD in enumerate(port_devices):
-        if PD is None:
-            D.add_port(port = dest_ports[i], name = i+1)
-        else:
-            pd = D.add_ref(PD)
-            pd.connect(port = pd.ports[1], destination = dest_ports[i])
-
-    return D 
-
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# quickplot(beamtap(port_devices = [None, grating(), None, None]))
-
-
-
-# Interpolation points for MZI sine height factors
-_MZI_factors = np.array(
-[[1.00000000e-02, 6.28473520e+00], [5.06122449e-02, 6.32270847e+00],
-[9.12244898e-02, 6.41026850e+00], [1.31836735e-01, 6.54452249e+00],
-[1.72448980e-01, 6.72150108e+00], [2.13061224e-01, 6.93669682e+00],
-[2.53673469e-01, 7.18552226e+00], [2.94285714e-01, 7.46362417e+00],
-[3.34897959e-01, 7.76705683e+00], [3.75510204e-01, 8.09234892e+00],
-[4.16122449e-01, 8.43650338e+00], [4.56734694e-01, 8.79696150e+00],
-[4.97346939e-01, 9.17155183e+00], [5.37959184e-01, 9.55843601e+00],
-[5.78571429e-01, 9.95605762e+00], [6.19183673e-01, 1.03630968e+01],
-[6.59795918e-01, 1.07784312e+01], [7.00408163e-01, 1.12011031e+01],
-[7.41020408e-01, 1.16302926e+01], [7.81632653e-01, 1.20652941e+01],
-[8.22244898e-01, 1.25054988e+01], [8.62857143e-01, 1.29503786e+01],
-[9.03469388e-01, 1.33994738e+01], [9.44081633e-01, 1.38523824e+01],
-[9.84693878e-01, 1.43087520e+01], [1.02530612e+00, 1.47682721e+01], 
-[1.06591837e+00, 1.52306680e+01], [1.10653061e+00, 1.56956963e+01], 
-[1.14714286e+00, 1.61631404e+01], [1.18775510e+00, 1.66328068e+01], 
-[1.22836735e+00, 1.71045224e+01], [1.26897959e+00, 1.75781315e+01], 
-[1.30959184e+00, 1.80534942e+01], [1.35020408e+00, 1.85304839e+01], 
-[1.39081633e+00, 1.90089862e+01], [1.43142857e+00, 1.94888972e+01], 
-[1.47204082e+00, 1.99701224e+01], [1.51265306e+00, 2.04525757e+01], 
-[1.55326531e+00, 2.09361784e+01], [1.59387755e+00, 2.14208586e+01], 
-[1.63448980e+00, 2.19065500e+01], [1.67510204e+00, 2.23931922e+01], 
-[1.71571429e+00, 2.28807293e+01], [1.75632653e+00, 2.33691096e+01], 
-[1.79693878e+00, 2.38582857e+01], [1.83755102e+00, 2.43482136e+01], 
-[1.87816327e+00, 2.48388525e+01], [1.91877551e+00, 2.53301646e+01], 
-[1.95938776e+00, 2.58221146e+01], [2.00000000e+00, 2.63146699e+01]])
-
-# Create a function with interp1d to perform the interpolation on demand
-_get_const_MZI = interp1d(_MZI_factors[:,0], _MZI_factors[:,1], kind='cubic')
-
-
-
-def mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = None, port_devices = (None,None,None,None)):
-    # MZI. input the FSR and ng and it calculates the largest height_sines for a given minimum radius of curvature.
-# optionally you can input devices for the four ports of the MZI. If you leave them empty it will just put ports on.
-
-
-    # for a given ratio of height_sines and length_sines we can analytically estimate the FSR based 
-    #on the length of a sine from 2*pi to 0 = 7.64. For some reason here we have a scale factor to 6.66
-    dL = wavelength**2/ng/fsr
-    # ok, but we still have to make our best initial guess at length_sines
-    length_sines_approx = dL/(9/2/np.pi-1)
-    # based on that guess + the min_radius we calculate the ratio of height_sines/length_sines
-    r = 2*length_sines_approx/np.pi**2/min_radius
-    # now using that ratio we actually calculate the factor F, which is an elliptic integral
-    F = _get_const_MZI(r)
-    # now we can recalculate length_sines and height_sines
-    length_sines = dL/(F/(2*np.pi)-1)
-    height_sines = r*length_sines
-    
-    # build the device
-    D = Device('mzi')
-    bs1 = D.add_ref(beamsplitter)
-    bs2 = D.add_ref(beamsplitter)
-    bs1.reflect(p1 = bs1.ports[3], p2 = bs1.ports[4])
-    P = Device()
-    P.add_port(name = 1, midpoint = bs1.ports[3].midpoint+[length_sines/2,height_sines], width = bs1.ports[3].width, orientation = 180)
-    P.add_port(name = 2, midpoint = bs1.ports[3].midpoint+[length_sines/2,height_sines], width = bs1.ports[3].width, orientation = 0)
-    D.add_ref(P)
-    bs1.movex(length_sines)
-    route1 = D.add_ref(route(port1 = P.ports[1], port2 = bs2.ports[3], path_type = 'sine'))
-    route2 = D.add_ref(route(port1 = P.ports[2], port2 = bs1.ports[3], path_type = 'sine'))
-    route3 = D.add_ref(route(port1 = bs1.ports[4], port2 = bs2.ports[4]))
-    calc_length = route1.info['length']+route2.info['length']-route3.info['length']
-    calc_fsr = wavelength**2/ng/calc_length
-    D.info['Calculated fsr'] = calc_fsr
-
-    # now we put either devices or ports on the 4 outputs
-    dest_ports = [bs2.ports[1], bs2.ports[2], bs1.ports[1], bs1.ports[2]]
-
-    for i, PD in enumerate(port_devices):
-        if PD is None:
-            D.add_port(port = dest_ports[i], name = i+1)
-        else:
-            pd = D.add_ref(PD)
-            pd.connect(port = pd.ports[1], destination = dest_ports[i])
-
-    return D
-
-#==============================================================================
-# Example code
-#==============================================================================
-
-# M = mzi(fsr = 0.05, ng = 4, min_radius = 10, wavelength = 1.55, beamsplitter = None, port_devices = (None,grating(),grating(),None))
-
-
-def wg_snspd(meander_width = 0.4, meander_pitch = 0.8, num_squares = 1000, 
-            wg_nw_width = 0.1, wg_nw_pitch = 0.3, wg_nw_length = 100, 
-            pad_distance = 500, landing_pad_offset = 10, 
-            nw_layer = 6, wg_layer = 1, metal_layer = 2, dblpad_device = None):
-    
-    # the length and width of the meander are chosen so that it is approximately 
-    # square
-    
-    D = Device('wg_snspd')
-    meanderLength = np.sqrt(num_squares)*meander_width*2
-    num_squares_per_turn = (meanderLength/2-(meander_width+meander_pitch))/meander_width + 1
-    
-    # the number of turns that we will actually make. Must be an odd number if the leads need to come out the same side
-    nturns = np.floor(num_squares/num_squares_per_turn)-1
-    
-    meanderWidth = nturns*meander_pitch
-    meanderOffset = 4*meander_pitch
-    SNSPD = snspd(wire_width = meander_width, wire_pitch = meander_pitch, size = (meanderLength,meanderWidth),
-              terminals_same_side = True, layer = nw_layer)
-    SNSPD.add_port(name = 3, midpoint = [SNSPD.xmin+meander_width/2, SNSPD.ymin], width = meander_width, orientation = -90)
-    SNSPD.add_port(name = 4, midpoint = [SNSPD.xmin+meander_width/2, SNSPD.ymax], width = meander_width, orientation = 90)
-    meander = D.add_ref(SNSPD)
-    wgNw = D.add_ref(optimal_hairpin(width = wg_nw_width, pitch = wg_nw_pitch, length = wg_nw_length, layer = nw_layer))
-    wgNw.reflect(p1 = wgNw.ports[1].midpoint, p2 = wgNw.ports[2].midpoint)
-    wgNw.xmax = meander.xmin - meander_width
-    wgNw.ymax = meander.ymin-meanderOffset
-    
-    # connector between the hairpin and the meander
-    Hairpin2meander = rectangle(size = [meander_width, meanderOffset-meander_width+wg_nw_width], layer = nw_layer)
-    Hairpin2meander.add_port(name = 1, midpoint = [meander_width/2, Hairpin2meander.ymin], width = meander_width, orientation = -90)
-    Hairpin2meander.add_port(name = 2, midpoint = [meander_width, Hairpin2meander.ymax-wg_nw_width/2], width = wg_nw_width, orientation = 0)
-    hairpin2meander = D.add_ref(Hairpin2meander)
-    hairpin2meander.connect(port = hairpin2meander.ports[1], destination = SNSPD.ports[3])
-    wgNw.connect(port = wgNw.ports[1], destination = hairpin2meander.ports[2])
-    
-    # vertical fill rectangles
-    meander_size = [meander.bbox[1][0]-meander.bbox[0][1], meander.bbox[0][1]-meander.bbox[1][1]]
-    R1 = rectangle(size = [meander_width, np.abs(meander_size[1])+ 6*meander_pitch], layer = nw_layer)
-    
-    for i in range(0, 3):
-        fill = D.add_ref(R1)
-        fill2 = D.add_ref(R1)
-        fill.xmin = meander.xmin - (i+1)*meander_pitch
-        fill.y = meander.y
-        fill2.xmax = meander.xmax + (i+1)*meander_pitch
-        fill2.y = meander.y
-        
-    # horizontal fill rectangles
-    meander_size = [meander.xmax-meander.xmin, meander.bbox[0][1]-meander.bbox[1][1]]
-    R2 = rectangle(size = [np.abs(meander_size[0]) - meander_pitch, meander_width], layer = nw_layer)
-    
-    for i in range(0, 3):
-        fill = D.add_ref(R2)
-        fill2 = D.add_ref(R2)
-        fill.ymin = meander.ymin - (i+1)*meander_pitch
-        fill.x = meander.x +meander_pitch-meander_width
-        fill2.ymax = meander.ymax + (i+1)*meander_pitch
-        fill2.x = meander.x+meander_pitch-meander_width
-    
-    # connectors between nw and pad and meander and pad
-    
-    R3 = rectangle(size = [meander_width, meander_pitch*4-meander_width + 5])
-    R4 = rectangle(size = [meander_width, 5])
-    R3.add_port(name = 1, midpoint = [meander_width/2, 0], width = meander_width, orientation = -90)
-    R3.add_port(name = 2, midpoint = [meander_width, R3.ymax-5/2], width = 5, orientation = 0)
-    R4.add_port(name = 1, midpoint = [0, R4.ymax - wg_nw_width/2], width = wg_nw_width, orientation = 180)  
-    R4.add_port(name = 2, midpoint = [meander_width, 5/2], width = 5, orientation = 0)
-    hairpin2pads = D.add_ref(R4)
-    meander2pads = D.add_ref(R3)
-    hairpin2pads.connect(port = 1, destination = wgNw.ports[2])
-    meander2pads.connect(port = 1, destination = meander.ports[4])
-    
-    # nw layer pads
-    
-    R4 = compass(size = [np.abs(meander_size[0])/2, 5], layer = nw_layer)
-    nwPad1 = D.add_ref(R4)
-    nwPad2= D.add_ref(R4)
-    nwPad1.connect(port = 'W', destination = meander2pads.ports[2])
-    nwPad2.connect(port = 'W', destination = hairpin2pads.ports[2])
-    
-    # metal layer pads
-    M1 = compass(size = [np.abs(meander_size[0])/2, 5], layer = metal_layer)
-    metalWire1 = D.add_ref(M1)
-    metalWire2= D.add_ref(M1)
-    metalWire1.center = nwPad1.center
-    metalWire2.center = nwPad2.center
-    
-    pads = D.add_ref(dblpad_device)
-    pads.rotate(angle = -90)
-    pads.xmin = meander.xmax + pad_distance
-    pads.y = meander.y
-    Route1 = route(port1 = pads.ports[1], port2 = metalWire1.ports['E'], path_type = 'straight', layer = metal_layer)
-    Route2 = route(port1 = pads.ports[2], port2 = metalWire2.ports['E'], path_type = 'straight', layer = metal_layer)
-    D.add_ref(Route1)
-    D.add_ref(Route2)
-    
-    # wg layer
-    
-    # wg layer wg
-    
-    wg = D.add_ref(compass(size = [wg_nw_length + wg_nw_pitch, wg_nw_pitch*2], layer = wg_layer)) 
-    wg.xmax = wgNw.xmax
-    wg.y = wgNw.y
-    D.add_port(name = 1, port = wg.ports['W'])
-    
-    # wg layer landing pad
-    # padside
-    size = [pads.xmax - pads.xmin + landing_pad_offset, pads.ymax - pads.ymin + landing_pad_offset] 
-    landingPad1 = D.add_ref(compass(size = size, layer = wg_layer))   
-    landingPad1.center = pads.center
-    
-    # nw side
-    size = [nwPad1.xmax - hairpin2pads.xmin + 1, nwPad1.ymax - nwPad2.ymin + 1]
-    landingPad2 = D.add_ref(compass(size = size, layer = wg_layer))   
-    landingPad2.y = meander.y
-    landingPad2.xmin = nwPad1.xmin - 1
-    Route3 = route(port1 = landingPad1.ports['W'], port2 = landingPad2.ports['E'], layer = wg_layer)
-    D.add_ref(Route3)
-    D.info['num_squares'] = meander.info['num_squares']
-    return D
-
-
-
-def led(width=1, length_wg=10, width_dope_offset=0.2, width_dope=5, wE=1, width_taper = 0.4, length_taper = 10, 
-        metal_inset = 0.2, pad_device_distance = [50,0], pad_wire_width = 0.5,
-        wg_layer = 0, p_layer = 1, n_layer = 2, w_layer = 3, padtaper_layer = 4, dblpad_device = None):
-
-    D = Device("LED")
-    
-    wg = D.add_ref(compass(size=[length_wg,width],layer=wg_layer))
-    wRegion = D.add_ref(compass(size=[length_wg,wE],layer=w_layer))
-    pRegion = D.add_ref(compass(size=[length_wg,width_dope],layer=p_layer))
-    nRegion = D.add_ref(compass(size=[length_wg,width_dope],layer=n_layer))
-    mytaper = D.add_ref(taper(length = length_taper, width1 = width, width2 = width_taper))
-    PW = compass(size = [length_wg, pad_wire_width], layer = padtaper_layer)
-    padWire1 = D.add_ref(PW)
-    padWire2 = D.add_ref(PW)
-    pads = D.add_ref(dblpad_device)
-    pads.rotate(angle = 90)
-    
-    mytaper.xmin = wg.xmax
-    wg.connect(port = 'W', destination = mytaper.ports[1])
-    wg.center = wRegion.center
-    pRegion.ymin = wRegion.ymax + width_dope_offset
-    pRegion.center[0] = wRegion.center[0]
-    nRegion.ymax = wRegion.ymin - width_dope_offset
-    nRegion.center[0] = wRegion.center[0]
-    
-    padWire1.ymax = pRegion.ymax - metal_inset
-    padWire2.ymax = nRegion.ymin + metal_inset
-    pads.center = wg.center
-    pads.xmax = wg.xmin - pad_device_distance[0]
-    pads.movey = pad_device_distance[1]
-    D.add_ref(route(port1 = padWire1.ports['W'], port2 =pads.ports[2], layer = padtaper_layer,path_type = 'straight'))
-    D.add_ref(route(port1 = padWire2.ports['W'], port2 =pads.ports[1], layer = padtaper_layer,path_type = 'straight'))
-    
-    D.add_port(port = mytaper.ports[2], name = 'LED')
-    return D
-
-
 
 #==============================================================================
 #
@@ -2253,9 +1836,12 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
     Usage:
         Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
         if you do not specifiy a value for a parameter it will just use the default value
-        Ex:
+        Ex::
+            
             via_route_test_structure(num_vias=54)
-            -or-
+            
+        - or -::
+        
             via_route_test_structure(num_vias=12, pad_size=(100,100),wire_width=8)
             
         total requested vias (num_vias) -> this needs to be even
@@ -2360,9 +1946,12 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     only need to supply the parameters which you intend on
     changing You can alternatively call it with no parameters
     and it will take all the default alues shown below.
-    Ex:
+    Ex::
+        
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
-        - or -
+    
+    - or -::
+
         comb_insulation_test_structure()
     """ 
     CI = Device("test_comb")
@@ -2371,6 +1960,8 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     if comb_gnd_layer is None:  comb_gnd_layer = comb_layer
     if overlap_pad_layer is None:  overlap_pad_layer = overlap_zigzag_layer
     wire_spacing = wire_width + wire_gap*2 
+    
+
 
     #%% pad overlays
     overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=overlap_pad_layer))
@@ -2518,9 +2109,12 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     thinnest parts of each wire. Alternatively, specify a list of widths for the thinnest part of each wire and ignore the
     wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
     part of the wire will be larger than the thin part. 
-    Ex:
+    Ex::
+    
         ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
-        - or -
+    
+    - or -::
+
         ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
     """
     ICS = Device('test_ic')
@@ -2532,22 +2126,176 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     padb_overlay.center = padb.center
     padb_overlay.ymin = padb.ymin
     for i, x in enumerate(wire_widths_wide):
-        padt = ICS.add_ref(rectangle(pad_size, wire_layer), alias = f'padt{i}')
+        padt = ICS.add_ref(rectangle(pad_size, wire_layer))
         padt.xmin = padb.xmin + translation
         padt.ymin = padb.ymax + pad_gap
-        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=pad_layer), alias = f'padt_overlay{i}')
+        padt_overlay = ICS.add_ref(rectangle(size=(pad_size[0]*9/10, pad_size[1]*9/10), layer=pad_layer))
         padt_overlay.center = padt.center
         padt_overlay.ymax = padt.ymax
         difference = padt.ymin-padb.ymax
-        wire_step = ICS.add_ref(_test_ic_wire_step(wire_widths_wide[i], wire_widths[i], wire_layer=wire_layer), alias = f'wire_step{i}')
+        wire_step = ICS.add_ref(_test_ic_wire_step(wire_widths_wide[i], wire_widths[i], wire_layer=wire_layer))
         wire_step.rotate(90)
         wire_step.center = (padt.center[0], padb.ymax + difference/2)
         translation = translation + pad_size[0]*12/10 
-        conn_wire_top = ICS.add_ref(rectangle(size=(wire_widths_wide[i], padt.ymin-wire_step.ymax), layer=wire_layer), alias = f'conn_wire_top{i}')
-        conn_wire_bottom = ICS.add_ref(rectangle(size=(wire_widths_wide[i], wire_step.ymin-padb.ymax), layer=wire_layer), alias = f'conn_wire_bottom{i}')
+        conn_wire_top = ICS.add_ref(rectangle(size=(wire_widths_wide[i], padt.ymin-wire_step.ymax), layer=wire_layer))
+        conn_wire_bottom = ICS.add_ref(rectangle(size=(wire_widths_wide[i], wire_step.ymin-padb.ymax), layer=wire_layer))
         conn_wire_top.ymax = padt.ymin
         conn_wire_top.xmin = wire_step.xmin
         conn_wire_bottom.ymin = padb.ymax
         conn_wire_bottom.xmin = wire_step.xmin
     return ICS
   
+def test_res(pad_size = [50,50],
+                     num_squares = 1000,
+                     width = 1,
+                     res_layer = 0,
+                     pad_layer = None,
+                     gnd_layer = None):
+    
+    """ Creates an efficient resonator structure for a wafer layout.
+    
+    Keyword arguments:
+    pad_size    -- Size of the two matched impedance pads (microns)
+    num_squares -- Number of squares comprising the resonator wire
+    width       -- The width of the squares (microns)
+    """
+
+    x = pad_size[0]
+    z = pad_size[1]
+    
+    # Checking validity of input
+    if x <= 0 or z <= 0:
+        raise ValueError('Pad must have positive, real dimensions')
+    elif width > z:
+        raise ValueError('Width of cell cannot be greater than height of pad')
+    elif num_squares <= 0:
+        raise ValueError('Number of squares must be a positive real number')
+    elif width <= 0:
+        raise ValueError('Width of cell must be a positive real number')
+    
+    # Performing preliminary calculations
+    num_rows = int(np.floor(z / (2 * width)))
+    if num_rows % 2 == 0:
+        num_rows -= 1
+    num_columns = num_rows - 1
+    squares_in_row = (num_squares - num_columns - 2) / num_rows
+    
+    # Compensating for weird edge cases
+    if squares_in_row < 1:
+        num_rows = round(num_rows / 2) - 2   
+        squares_in_row = 1
+    if width * 2 > z:
+        num_rows = 1        
+        squares_in_row = num_squares - 2
+    
+    length_row = squares_in_row * width
+    
+    # Creating row/column corner combination structure
+    T = Device()
+    Row = rectangle(size = (length_row, width), layer = res_layer)
+    Col = rectangle(size = (width, width), layer = res_layer)
+    
+    row = T.add_ref(Row)
+    col = T.add_ref(Col)
+    col.move([length_row - width, -width])
+    
+    # Creating entire waveguide net
+    N = Device('net')
+    n = 1
+    for i in range(num_rows):
+        if i != num_rows - 1: 
+            d = N.add_ref(T)
+        else: 
+            d = N.add_ref(Row)
+        if n % 2 == 0:
+            d.reflect(p1 = (d.x, d.ymax), p2 = (d.x, d.ymin))
+        d.movey(-(n - 1) * T.ysize)
+        n += 1
+    d = N.add_ref(Col).movex(-width)
+    d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
+    
+    # Creating pads
+    P = Device('pads')
+    Pad1 = rectangle(size = (x,z), layer = pad_layer)
+    Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
+    Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
+    Gnd2 = offset(Pad2, distance = -5, layer = gnd_layer)
+    pad1 = P.add_ref(Pad1).movex(-x - width)
+    pad2 = P.add_ref(Pad1).movex(length_row + width)
+    gnd1 = P.add_ref(Gnd1).center = pad1.center
+    gnd2 = P.add_ref(Gnd2)
+    nets = P.add_ref(N).y = pad1.y
+    gnd2.center = pad2.center
+    gnd2.movex(2.5)
+    
+    return P
+
+def litho_steps(
+        line_widths = [1,2,4,8,16],
+        line_spacing = 10,
+        height = 100,
+        layer = 0
+        ):
+    """ Produces a positive + negative tone linewidth test, used for 
+    lithography resolution test patterning """
+    D = Device('litho_steps')
+    
+    height = height / 2
+    T1 = text(text = '%s' % str(line_widths[-1]),
+        size = height, justify = 'center', layer = layer)
+    t1 = D.add_ref(T1).rotate(90).movex(-height/10)
+    R1 = rectangle(size = (line_spacing, height), layer = layer)
+    r1 = D.add_ref(R1).movey(-height)
+    count = 0
+    for i in reversed(line_widths):
+        count += line_spacing + i
+        R2 = rectangle(size = (i, height), layer = layer)
+        r1 = D.add_ref(R1).movex(count).movey(-height)
+        r2 = D.add_ref(R2).movex(count - i)
+
+    return(D)
+    
+
+def litho_star(
+        num_lines = 20,
+        line_width = 2,
+        diameter = 200,
+        layer = 0
+        ):
+    """ Creates a circular-star shape from lines, used as a lithographic  
+    resolution test pattern """
+    D = Device('litho_star')
+    
+    degree = 180 / num_lines
+    R1 = rectangle(size = (line_width, diameter), layer = layer)
+    for i in range(num_lines):
+        r1 = D.add_ref(R1).rotate(degree * i)
+        r1.center = (0,0)
+
+    return(D)
+
+
+def litho_calipers(
+        notch_size = [2,5],
+        notch_spacing = 2,
+        num_notches = 11,
+        offset_per_notch = 0.1,
+        row_spacing = 0,
+        layer1 = 1,
+        layer2 = 2):
+    """ Creates a vernier caliper structure for lithography alignment
+    tests.  Vernier structure is made horizontally. """
+    
+    D = Device('litho_calipers')
+    num_notches_total = num_notches*2+1
+    centre_notch = num_notches
+    R1 = rectangle(size = (notch_size), layer = layer1)
+    R2 = rectangle(size = (notch_size), layer = layer2)
+    for i in range(num_notches_total):
+        if i == centre_notch:
+            r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing)).movey(notch_size[1])
+            r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-2 * notch_size[1] - row_spacing)
+        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
+        r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-notch_size[1] - row_spacing)
+
+    return(D)

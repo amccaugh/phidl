@@ -1,111 +1,6 @@
-# PHIDL
-PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
-
-- [Installation / requirements](#installation--requirements)
-- [About PHIDL](#about-phidl)
-- [Changelog](#changelog)
-
-# Installation / requirements
-- Install or upgrade with `pip install -U phidl`
-- Python 2 >=2.6 or Python 3 >=3.5
-- If you are on Windows and don't already have `gdspy` installed, you will need a C++ compiler
-    - For Python 3, install the [MS C++ Build Tools for VS 2017](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
-    - For Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
-
-# About PHIDL
-
-PHIDL is an open-source GDS-based CAD tool for Python 2 and 3, based on the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions.
-It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
-
-The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate/overhead code just to draw a simple ring. 
-
-The goal is to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a geometry you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
-
-`ellipse1.xmin = ellipse2.xmax + 5`
-
-or if you want to move then rotate one ellipse by 45 degrees you can do
-
-`ellipse2.move([1,7]).rotate(45)`
-
-There's a few dozen shortcuts like this that make life easier built into PHIDL--they're simple, but they make a world of difference when you just want to e.g. space a ring resonator some distance from a waveguide without having to track each and every coordinate of the shape.
-
-[](http://amccaugh.github.io/phidl)
-
-![phidl example image](https://amccaugh.github.io/phidl/readme_1.png)
-
-
-There's also a "port" functionality which allows you to snap together geometry like Legos without caring about where exactly the absolute coordinates of either geometry is.  For instance, connecting the above misaligned rectangles is a two-line command:
-
-![phidl example image](https://amccaugh.github.io/phidl/readme_2.png)
-
-It also allows you to do things like add text and create smooth or straight routing curves between "ports" of different devices, convenient for making electrical or optical connections:
-
-![phidl example image](https://amccaugh.github.io/phidl/readme_3.png)
-![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
-    
-
-Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  With a single line function, you can outline a complex meander structure (blue color) attached to a contact pad, very useful when using positive-tone electron-beam lithography resists.  A whole complicated layout can be outlined directly in the GDS without requiring you to use Beamer:
-
-`pg.outline(D, distance = 0.7, layer = 4)`
-
-![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
- 
-
-You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device which needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
-
-![phidl example image](https://amccaugh.github.io/phidl/readme_6.png)
-
-
-
 # Changelog
 
-## 0.8.7 (July 11, 2018)
-### Bugfixes
-- Minor bugfixes to `pg.litho_calipers()` and `pg.litho_star()`
-
-## 0.8.6 (July 9, 2018)
-### New features
-- `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the tutorial for more details
-- Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).  
-
-### Changes
-- Made `write_gds()` autofix names to guarantee no duplicates cell names ever appear
-
-### Bugfixes
-- The gdspy bounding box caching has been reallowed
-- Single-layer flatten fix for `D.flatten()`
-- `quickplot` and `quickplot2` now fail gracefully if the user does not have matlplotlib or Qt respectively.
-
-## 0.8.5 (June 15, 2018)
-### New features
-- Added `pg.optimal_90deg()`, the optimal 90-degree turn for superconducting nanowires from Clem & Berggren
-
-### Bugfixes
-- `quickplot2` visual improvement: Ports now show up on top of subports
-- `quickplot2` visual improvement: Port colors now colorblind-friendly
-- Fixed very rare `make_device()` error
-
-## 0.8.4 (June 6, 2018)
-### New features
-- Added `<<` operator to add references.  `r = D.add_ref(Rect)` can now be (optionally) written as `r = D << Rect`.
-- Added `D.get_ports()` which allows you to gather the locations and information about all ports in Device.
-- A `LayerSet` can now be previewed.  Running the geometry function `pg.preview_layerset()` will generate a `Device` which shows all of the layers, useful for previewing color schemes.
-- `quickplot()` now shows zero-width ports (e.g. a "pin") as a + sign.
-- `quickplot()` now defaults to redrawing within a single window, rather than creating a new window for every call
-- Added a `.info` dictionary to `Port`, useful for recording information about a port (e.g. `myport.info['wavelength'] = 1550`)
-- Updated tutorial
-
-### Changes
-- `pg.optimal_hairpin()`,  `pg.snspd()`,  and `pg.snspd_expanded()` now have the argument `turn_ratio` which defines how wide the turn is w.r.t. the argument `wire_width`
-- The `layer` argument in `D.add_polygon()` can now accept lists of `Layer`s. Use this if you want to a single polygon shape to multiple layers.
-- Rearranged an argument location: The `name` argument for the `Layer()` class is now the third argument to allow the ability to make `Layer`s like Layer(1,0)
-- Removed some deprecated old geometry
-
-### Bugfixes
-- Minor bugfix to guarantee quickplot() shows up from the Python/IPython console.
-- Minor bugfix in tutorial example file
-
-## 0.8.2 (Apr 19, 2018)
+## 0.8.2
 
 ### New features
 - Added the LayerSet class.  See the tutorial, but essentially this class makes a convenient container to stores layers
@@ -121,7 +16,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 
-## 0.8.1 (Feb 7, 2018)
+## 0.8.1
 
 ### New features
  - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Device with those polygons in them. See tutorial for details
@@ -139,7 +34,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Some internal changes to make working with Device.uid easier
 
 
-## 0.8.0 (Dec 6, 2017)
+## 0.8.0
 
 ### New features
  - `pg.import_gds()` can now import without flattening all the polygons to a single layer
@@ -157,7 +52,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Made compatible with gdspy >= 1.2
  - Specified names for phidl.geometry objects
 
-## 0.7.1 (August 28, 2017)
+## 0.7.1
 
 ### New features
  - Updated tutorial text
@@ -169,7 +64,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Many small ones under the hood
 
 
-## 0.7.0 (May 26, 2017)
+## 0.7.0
 
 ### New features
  - Updated tutorial text significantly
@@ -183,7 +78,7 @@ You can also do things like create a backing fill to make sure the resist develo
 ### Bugfixes
  - Many small ones under the hood
 
-## 0.6.5 (Apr 3, 2017)
+## 0.6.5
 
 ### New features
  - Added pg.boolean() to perform AND/NOT/OR/XOR operations on shapes
@@ -199,7 +94,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Compatibility fixes to make compatible with gdspy>=1.1.2
 
 
-## 0.6.4 (Feb 21, 2017)
+## 0.6.4
 
 ### New features
  - Added "quickplot2", a more robust/easier to use viewer which instead of being based on matplotlib is based Qt.
@@ -208,13 +103,13 @@ You can also do things like create a backing fill to make sure the resist develo
    - Reset view with Escape key
 
 
-## 0.6.3 (Jan 23, 2017)
+## 0.6.3
 
 ### Bugfixes
  -  Under the hood
  
 
-## 0.6.2 (Jan 13, 2017)
+## 0.6.2
 
 ### New features
  - Added label_aliases=False default option to quickplot.  Do quickplot(D, label_aliases = True) to draw text with aliases on it
@@ -230,7 +125,7 @@ You can also do things like create a backing fill to make sure the resist develo
  -  Fixed SNSPD squares calculation and added num_squares constraints
 
 
-## 0.6.1 (Jan 9, 2017)
+## 0.6.1
 
 ### New features
  - Added ability to make "alias" for DeviceReference.  See the tutorial
@@ -247,7 +142,7 @@ You can also do things like create a backing fill to make sure the resist develo
  - Fixed pg.snspd layer = 0 by default
  - Fixed Port.endpoints
 
-## 0.6.0 (Dec 13, 2016)
+## 0.6.0
 
 ### Changes
  - phidl.geometry.route() works still but is being deprecated, will now be in phid.routing.route_basic().  pg.route() will be deleted in the near future
@@ -259,7 +154,7 @@ You can also do things like create a backing fill to make sure the resist develo
 ### Bugfixes
  - Very likely we added more bugs than we fixed in this version!
 
-## 0.5.6 (Dec 12, 2016)
+## 0.5.6
 ### Bugfixes
  - Fixes to phidl.geometry.hecken_taper()
 
@@ -274,15 +169,21 @@ You can also do things like create a backing fill to make sure the resist develo
 ### Bugfixes
  - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
 
-## 0.5.4 (Dec 5, 2016)
+## 0.5.4
+### Changes
+ - A few under-the-hood optimizations
+## 0.5.5
+### Bugfixes
+ - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
+
+## 0.5.4
 ### Changes
  - A few under-the-hood optimizations
  
 ### Bugfixes
  - Fixed error with quickplot where the last edge of a polygon was not rendered
- - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
 
-## 0.5.3 (Nov 22, 2016)
+## 0.5.3
 ### New features
  - Layers() are now implemented.  See tutorial_example.py "Using Layers" section for a demonstration
  - You can now construct a Device using a set of parameters.  See "Constructing a Device from set of parameters" in tutorial_example.py
@@ -291,9 +192,3 @@ You can also do things like create a backing fill to make sure the resist develo
  
 ### Changes
  - pg.rectangle() now takes "size" as a parameter rather than "point1" and "point2"
-
-## 0.4.1 (Nov 3, 2016)
-- Large number of upgrades
-
-## 0.3.0 (Sep 12, 2016)
-- Initial release!

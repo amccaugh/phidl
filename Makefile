@@ -1,4 +1,16 @@
 SHELL := /usr/bin/env bash
+# Makefile has convenience targets for
+# 1. Creating virtual environment which has the source version of phidl installed
+# 2. Linking phidl user-wide to this source
+# 2. Making documentation
+# 3. Running tests
+
+# The environment is important if you have a stable version of phidl elsewhere and still want to develop on this source
+# Instead of a virtual environment, you can create a user-wide dynamic link to the source by running
+# `make dynamic-install`
+
+# DOCTYPE_DEFAULT can be html or latexpdf
+DOCTYPE_DEFAULT = html
 
 # General dependencies for devbuild, docbuild
 REINSTALL_DEPS = $(shell find phidl -type f) venv setup.py
@@ -26,6 +38,8 @@ clean:
 	rm -rf phidl.egg-info
 	rm -rf build
 	rm -rf venvinfo
+	rm -rf .pytest_cache
+	$(MAKE) -C docs clean
 
 purge: clean
 	rm -rf venv
@@ -36,6 +50,11 @@ pip-freeze: devbuild
 		pipdeptree -lf | grep -E '^\w+' | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U; \
 		pipdeptree -lf | grep -E '^\w+' | grep -v '^\-e' | grep -v '^#' > dev-requirements.txt; \
 	)
+
+# Does not go in virtualenv. Changes phidl installation user-wide
+dynamic-install:
+	pip uninstall phidl
+	pip install -e .
 
 testbuild: venvinfo/testreqs~
 venvinfo/testreqs~: $(REINSTALL_DEPS) test-requirements.txt
@@ -53,26 +72,19 @@ test-unit: testbuild
 		py.test $(TESTARGS) tests; \
 	)
 
-test-nb: testbuild
+docbuild: venvinfo/docreqs~
+venvinfo/docreqs~: $(REINSTALL_DEPS) doc-requirements.txt
 	( \
 		source venv/bin/activate; \
-		py.test $(TESTARGS) $(TESTARGSNB) notebooks/Tests; \
+		pip install -r doc-requirements.txt | grep -v 'Requirement already satisfied'; \
+		pip install -e . | grep -v 'Requirement already satisfied'; \
 	)
+	@mkdir -p venvinfo
+	@touch venvinfo/docreqs~
 
-test: test-unit test-nb
+docs: docbuild
+	source venv/bin/activate; $(MAKE) -C docs $(DOCTYPE_DEFAULT)
 
-jupyter: devbuild
-	( \
-		source venv/bin/activate; \
-		cd notebooks; \
-		jupyter notebook; \
-	)
-
-jupyter-password: venv
-	( \
-		source venv/bin/activate; \
-		jupyter notebook password; \
-	)
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -81,14 +93,15 @@ help:
 	@echo "  pip-freeze        drops all leaf pip packages into dev-requirements.txt (Use with caution)"
 	@echo "  clean             clean all build files"
 	@echo "  purge             clean and delete virtual environment"
+	@echo "  dynamic-install   have pip dynamically link phidl to this source code, everywhere on your computer"
 	@echo "--- development ---"
 	@echo "  devbuild          install dev dependencies, build phidl, and install inside venv"
-	@echo "  jupyter           start a jupyter notebook for development"
-	@echo "  jupyter-password  change your jupyter notebook user password"
 	@echo "--- testing ---"
 	@echo "  testbuild         install test dependencies, build phidl, and install inside venv"
 	@echo "  test-unit         perform basic unit tests"
 	@echo "--- documentation ---"
+	@echo "  docbuild          install doc dependencies, rebuild phidl, and install in venv"
+	@echo "  docs              build documentation"
 
 
-.PHONY: help clean purge pip-freeze jupyter test-unit
+.PHONY: help docs clean purge pip-freeze test-unit

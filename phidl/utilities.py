@@ -82,16 +82,3 @@ def write_lyp(filename, layerset):
     
         # Writing layer properties trailer
         f.write('</layer-properties>\n')
-
-
-def in_ipynb():
-    ''' Detects if running in an ipython-notebook frontend
-    '''
-    try:
-        ipy_str = str(type(get_ipython()))
-        if 'zmqshell' in ipy_str:
-            return True
-        if 'terminal' in ipy_str:
-            return False
-    except NameError:
-        return False
