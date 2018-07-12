@@ -3,9 +3,6 @@ SHELL := /usr/bin/env bash
 # DOCTYPE_DEFAULT can be html or latexpdf
 DOCTYPE_DEFAULT = html
 
-# Server ports for CI hosting. You can override by setting an environment variable DOCHOSTPORT
-DOCHOSTPORT ?= 8049
-
 # General dependencies for devbuild, docbuild
 REINSTALL_DEPS = $(shell find phidl -type f) venv setup.py
 
@@ -54,25 +51,6 @@ venvinfo/docreqs~: $(REINSTALL_DEPS) doc-requirements.txt
 docs: docbuild
 	source venv/bin/activate; $(MAKE) -C docs $(DOCTYPE_DEFAULT)
 
-dochost: docs
-	( \
-		source venv/bin/activate; \
-		cd docs/_build/$(DOCTYPE_DEFAULT); \
-		python3 -m http.server $(DOCHOSTPORT); \
-
-jupyter: devbuild
-	( \
-		source venv/bin/activate; \
-		cd notebooks; \
-		jupyter notebook; \
-	)
-
-jupyter-password: venv
-	( \
-		source venv/bin/activate; \
-		jupyter notebook password; \
-	)
-
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "--- environment ---"
@@ -82,8 +60,6 @@ help:
 	@echo "  purge             clean and delete virtual environment"
 	@echo "--- development ---"
 	@echo "  devbuild          install dev dependencies, build lightlab, and install inside venv"
-	@echo "  jupyter           start a jupyter notebook for development"
-	@echo "  jupyter-password  change your jupyter notebook user password"
 	@echo "--- testing ---"
 	@echo "--- documentation ---"
 	@echo "  docs              build documentation"
