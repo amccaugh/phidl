@@ -611,8 +611,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         for c in all_cells_sorted:
             if c._internal_name not in used_names:
                 used_names[c._internal_name] = 1
-            c.name = c._internal_name[:20] + ('%0.3i' % used_names[c._internal_name])
-            used_names[c._internal_name] += 1
+                c.name = c._internal_name[:20]
+            else:
+                c.name = c._internal_name[:20] + ('%0.3i' % used_names[c._internal_name])
+                used_names[c._internal_name] += 1
         self.name = 'toplevel'
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
