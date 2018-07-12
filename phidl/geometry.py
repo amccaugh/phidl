@@ -184,7 +184,8 @@ def preview_layerset(ls):
     D = Device()
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
-    for n, layer in enumerate(ls._layers.values()):
+    sorted_layers = sorted(ls._layers.values(), key = lambda x: (x.gds_layer, x.gds_datatype))
+    for n, layer in enumerate(sorted_layers):
         R = rectangle(size = (100, 100), layer = layer)
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
