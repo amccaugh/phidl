@@ -69,7 +69,13 @@ venvinfo/testreqs~: $(REINSTALL_DEPS) test-requirements.txt
 test-unit: testbuild
 	( \
 		source venv/bin/activate; \
-		py.test $(TESTARGS) tests; \
+		py.test $(TESTARGS) tests/*.py; \
+	)
+
+test-nb: testbuild
+	( \
+		source venv/bin/activate; \
+		py.test $(TESTARGS) $(TESTARGSNB) tests/*.ipynb; \
 	)
 
 docbuild: venvinfo/docreqs~
