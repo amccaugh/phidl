@@ -706,6 +706,12 @@ def C(width = 1, size = (10,20) , layer = 0):
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         num_squares = None, turn_ratio = 4, 
         terminals_same_side = False, layer = 0):
+    # Convenience tests to auto-shape the size based
+    # on the number of squares
+    if num_squares is not None and ((size is None) or ((size[0] is None) and (size[1]) is None)):
+        xy = np.sqrt(num_squares*wire_pitch*wire_width)
+        size = [xy,xy]
+        num_squares = None
     if ([size[0], size[1], num_squares].count(None) != 1):
         raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
                          ' the arguments ``num_squares`` and ``size`` be None'+
@@ -2194,7 +2200,7 @@ def test_res(pad_size = [50,50],
     col.move([length_row - width, -width])
     
     # Creating entire waveguide net
-    N = Device('Net')
+    N = Device('net')
     n = 1
     for i in range(num_rows):
         if i != num_rows - 1: 
@@ -2209,7 +2215,7 @@ def test_res(pad_size = [50,50],
     d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
     
     # Creating pads
-    P = Device('Pads')
+    P = Device('pads')
     Pad1 = rectangle(size = (x,z), layer = pad_layer)
     Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
     Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
@@ -2223,3 +2229,73 @@ def test_res(pad_size = [50,50],
     gnd2.movex(2.5)
     
     return P
+
+def litho_steps(
+        line_widths = [1,2,4,8,16],
+        line_spacing = 10,
+        height = 100,
+        layer = 0
+        ):
+    """ Produces a positive + negative tone linewidth test, used for 
+    lithography resolution test patterning """
+    D = Device('litho_steps')
+    
+    height = height / 2
+    T1 = text(text = '%s' % str(line_widths[-1]),
+        size = height, justify = 'center', layer = layer)
+    t1 = D.add_ref(T1).rotate(90).movex(-height/10)
+    R1 = rectangle(size = (line_spacing, height), layer = layer)
+    r1 = D.add_ref(R1).movey(-height)
+    count = 0
+    for i in reversed(line_widths):
+        count += line_spacing + i
+        R2 = rectangle(size = (i, height), layer = layer)
+        r1 = D.add_ref(R1).movex(count).movey(-height)
+        r2 = D.add_ref(R2).movex(count - i)
+
+    return(D)
+    
+
+def litho_star(
+        num_lines = 20,
+        line_width = 2,
+        diameter = 200,
+        layer = 0
+        ):
+    """ Creates a circular-star shape from lines, used as a lithographic  
+    resolution test pattern """
+    D = Device('litho_star')
+    
+    degree = 180 / num_lines
+    R1 = rectangle(size = (line_width, diameter), layer = layer)
+    for i in range(num_lines):
+        r1 = D.add_ref(R1).rotate(degree * i)
+        r1.center = (0,0)
+
+    return(D)
+
+
+def litho_calipers(
+        notch_size = [2,5],
+        notch_spacing = 2,
+        num_notches = 11,
+        offset_per_notch = 0.1,
+        row_spacing = 0,
+        layer1 = 1,
+        layer2 = 2):
+    """ Creates a vernier caliper structure for lithography alignment
+    tests.  Vernier structure is made horizontally. """
+    
+    D = Device('litho_calipers')
+    num_notches_total = num_notches*2+1
+    centre_notch = num_notches
+    R1 = rectangle(size = (notch_size), layer = layer1)
+    R2 = rectangle(size = (notch_size), layer = layer2)
+    for i in range(num_notches_total):
+        if i == centre_notch:
+            r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing)).movey(notch_size[1])
+            r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-2 * notch_size[1] - row_spacing)
+        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
+        r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-notch_size[1] - row_spacing)
+
+    return(D)
