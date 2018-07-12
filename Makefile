@@ -1,4 +1,13 @@
 SHELL := /usr/bin/env bash
+# Makefile has convenience targets for
+# 1. Creating virtual environment which has the source version of phidl installed
+# 2. Linking phidl user-wide to this source
+# 2. Making documentation
+# 3. Running tests
+
+# The environment is important if you have a stable version of phidl elsewhere and still want to develop on this source
+# Instead of a virtual environment, you can create a user-wide dynamic link to the source by running
+# `make dynamic-install`
 
 # DOCTYPE_DEFAULT can be html or latexpdf
 DOCTYPE_DEFAULT = html
@@ -38,6 +47,11 @@ pip-freeze: devbuild
 		pipdeptree -lf | grep -E '^\w+' | grep -v '^\-e' | grep -v '^#' > dev-requirements.txt; \
 	)
 
+# Does not go in virtualenv. Changes phidl installation user-wide
+dynamic-install:
+	pip uninstall phidl
+	pip install -e .
+
 docbuild: venvinfo/docreqs~
 venvinfo/docreqs~: $(REINSTALL_DEPS) doc-requirements.txt
 	( \
@@ -51,6 +65,7 @@ venvinfo/docreqs~: $(REINSTALL_DEPS) doc-requirements.txt
 docs: docbuild
 	source venv/bin/activate; $(MAKE) -C docs $(DOCTYPE_DEFAULT)
 
+
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "--- environment ---"
@@ -59,7 +74,7 @@ help:
 	@echo "  clean             clean all build files"
 	@echo "  purge             clean and delete virtual environment"
 	@echo "--- development ---"
-	@echo "  devbuild          install dev dependencies, build lightlab, and install inside venv"
+	@echo "  devbuild          install dev dependencies, build phidl, and install inside venv"
 	@echo "--- testing ---"
 	@echo "--- documentation ---"
 	@echo "  docs              build documentation"
