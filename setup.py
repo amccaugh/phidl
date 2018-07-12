@@ -9,7 +9,6 @@ install_requires=[
    'pyyaml',
    'scikit-image>=0.11',
    'webcolors',
-   'PyQt5',
 ]
 
 setup(name='phidl',
