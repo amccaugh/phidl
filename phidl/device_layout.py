@@ -35,7 +35,7 @@ except:
                      still work but quickplot() may not.  Try using
                      quickplot2() instead (see note in tutorial) """)
 
-__version__ = '0.8.7'
+__version__ = '0.8.8'
 
 
 
@@ -331,12 +331,13 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
-        super(Polygon, self).__init__(points = points, layer=gds_layer, datatype=gds_datatype, verbose=False)
+        super(Polygon, self).__init__(points = points, layer=gds_layer,
+            datatype=gds_datatype, verbose=False)
 
 
     @property
     def bbox(self):
-        return np.asarray( (np.min(self.points, axis = 0), np.max(self.points, axis = 0)))
+        return self.get_bounding_box()
 
     def rotate(self, angle = 45, center = (0,0)):
         super(Polygon, self).rotate(angle = angle*pi/180, center = center)
@@ -511,10 +512,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         except: pass # Verified points is not a list of polygons, continue on
 
         
-        if isinstance(points, gdspy.Polygon):
-            if layer is None: layer = (points.layer, points.datatype)
-            points = points.points
-        elif isinstance(points, gdspy.PolygonSet):
+        # if isinstance(points, gdspy.Polygon):
+        #     if layer is None: layer = (points.layer, points.datatype)
+        #     points = points.polygons[0]
+        if isinstance(points, gdspy.PolygonSet):
             if layer is None:   layers = points.layers
             else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
@@ -530,12 +531,6 @@ class Device(gdspy.Cell, _GeometryHelper):
                     `layer = [Layer(1,0), my_layer, Layer(4)]""")
         except: pass
 
-        # # If layer is None, return a Polygon but don't actually
-        # # add it to the geometry
-        # if layer is None:
-        #     return Polygon(points = [(0,0)], gds_layer = 0,
-        #     gds_datatype = 0, parent = None)
-        
 
         if len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
             # Convert to form [[1,2],[3,4],[5,6]]
@@ -545,6 +540,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         # # Close polygon manually
         # if not np.array_equal(points[0],points[-1]):
         #     points = np.vstack((points, points[0]))
+        # if isinstance(points, gdspy.PolygonSet):
+
+        # else:
         polygon = Polygon(points = points, gds_layer = gds_layer,
             gds_datatype = gds_datatype, parent = self)
         self.add(polygon)

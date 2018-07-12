@@ -159,12 +159,13 @@ def import_gds(filename, cellname = None, layers = None, flatten = False):
 def _translate_cell(c, layer_remapping):
     D = Device(name = c.name)
     for e in c.elements:
-        if isinstance(e, gdspy.Polygon):
-            polygon_layer = _parse_layer((e.layer, e.datatype))
-            if layer_remapping is None: 
-                D.add_polygon(points = e.points, layer = polygon_layer)
-            elif polygon_layer in layer_remapping.keys():
-                D.add_polygon(points = e.points, layer = layer_remapping[polygon_layer])
+        if isinstance(e, gdspy.PolygonSet):
+            for n, points in enumerate(e.polygons):
+                polygon_layer = _parse_layer((e.layers[n], e.datatypes[n]))
+                if layer_remapping is None: 
+                    D.add_polygon(points = points, layer = polygon_layer)
+                elif polygon_layer in layer_remapping.keys():
+                    D.add_polygon(points = points, layer = layer_remapping[polygon_layer])
         elif isinstance(e, gdspy.CellReference):
             dr = DeviceReference(device = _translate_cell(e.ref_cell, layer_remapping),
                             origin = e.origin,
