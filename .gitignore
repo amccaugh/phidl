@@ -1,6 +1,5 @@
 MANIFEST
 test.sh
-debug.py
 winbuild*
 docs/_build
 .*.swp
