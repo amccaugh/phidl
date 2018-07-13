@@ -377,7 +377,8 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        self.points = _reflect_points(self.points, p1, p2)
+        for n, points in enumerate(self.polygons):
+            self.polygons[n] = _reflect_points(points, p1, p2)
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
@@ -511,12 +512,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             return [self.add_polygon(p, layer) for p in points]
         except: pass # Verified points is not a list of polygons, continue on
 
-        
-        # if isinstance(points, gdspy.Polygon):
-        #     if layer is None: layer = (points.layer, points.datatype)
-        #     points = points.polygons[0]
         if isinstance(points, gdspy.PolygonSet):
-            if layer is None:   layers = points.layers
+            if layer is None:   layers = zip(points.layers, points.datatypes)
             else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
@@ -533,18 +530,12 @@ class Device(gdspy.Cell, _GeometryHelper):
                     `layer = [Layer(1,0), my_layer, Layer(4)]""")
         except: pass
 
-
-        if len(points[0]) > 2: # Then it has the form [[1,3,5],[2,4,6]]
+        # If in the form [[1,3,5],[2,4,6]]
+        if len(points[0]) > 2:
             # Convert to form [[1,2],[3,4],[5,6]]
             points = np.column_stack((points))
 
         gds_layer, gds_datatype = _parse_layer(layer)
-        # # Close polygon manually
-        # if not np.array_equal(points[0],points[-1]):
-        #     points = np.vstack((points, points[0]))
-        # if isinstance(points, gdspy.PolygonSet):
-
-        # else:
         polygon = Polygon(points = points, gds_layer = gds_layer,
             gds_datatype = gds_datatype, parent = self)
         self.add(polygon)
@@ -767,10 +758,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         for e in self.elements:
-            if isinstance(e, Polygon):
-                e.points = _reflect_points(e.points, p1, p2)
-            elif isinstance(e, DeviceReference):
-                e.reflect(p1, p2)
+            e.reflect(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
