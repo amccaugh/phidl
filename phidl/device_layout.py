@@ -476,7 +476,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def polygons(self):
-        return [e for e in self.elements if isinstance(e, Polygon)]
+        return [e for e in self.elements if isinstance(e, PolygonSet)]
 
     @property
     def meta(self):
@@ -705,8 +705,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         for e in self.elements:
             if isinstance(e, Polygon):
                 e.rotate(angle = angle, center = center)
-            elif isinstance(e, Polygon):
-                e.rotate(angle = angle*pi/180, center = center)
             elif isinstance(e, DeviceReference):
                 e.rotate(angle, center)
         for p in self.ports.values():
