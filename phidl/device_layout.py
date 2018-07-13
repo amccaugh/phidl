@@ -476,7 +476,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def polygons(self):
-        return [e for e in self.elements if isinstance(e, PolygonSet)]
+        return [e for e in self.elements if isinstance(e, Polygon)]
 
     @property
     def meta(self):
@@ -981,16 +981,11 @@ def quickplot(items, show_ports = True, show_subports = True,
                 for name, ref in item.aliases.items():
                     ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
                              weight = 'bold', size = 'large', ha = 'center')
-        elif isinstance(item, gdspy.Polygon):
-            polygons = [item.points]
-            layerprop = _get_layerprop(item.layer, item.datatype)
+        elif isinstance(item, Polygon):
+            polygons = item.polygons
+            layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
             _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
-        # elif isinstance(item, gdspy.PolygonSet):
-        #     polygons = item.polygons
-        #     layerprop = _get_layerprop(item.layer, item.datatype)
-        #     _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-        #                    edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
     plt.show(block = False)
     
