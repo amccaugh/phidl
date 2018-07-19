@@ -988,6 +988,7 @@ def quickplot(items, show_ports = True, show_subports = True,
                            edgecolor = 'k', alpha = layerprop['alpha'])
     plt.draw()
     plt.show(block = False)
+    
 
 
 def _get_layerprop(layer, datatype):

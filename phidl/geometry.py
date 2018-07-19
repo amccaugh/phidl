@@ -1840,13 +1840,13 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
         Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
         if you do not specifiy a value for a parameter it will just use the default value
         Ex::
-            
+
             via_route_test_structure(num_vias=54)
-            
+
         - or -::
-        
+
             via_route_test_structure(num_vias=12, pad_size=(100,100),wire_width=8)
-            
+
         total requested vias (num_vias) -> this needs to be even
         pad size (pad_size) -> given in a pair (width, height)
         wire_width -> how wide each wire should be
@@ -1950,13 +1950,13 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     changing You can alternatively call it with no parameters
     and it will take all the default alues shown below.
     Ex::
-        
+
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
-    
+
     - or -::
 
         comb_insulation_test_structure()
-    """ 
+    """
     CI = Device("test_comb")
 
     if comb_pad_layer is None:  comb_pad_layer = comb_layer
@@ -2113,9 +2113,9 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
     part of the wire will be larger than the thin part. 
     Ex::
-    
+
         ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
-    
+
     - or -::
 
         ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
