@@ -401,8 +401,8 @@ def quickplot2(item_list, *args, **kwargs):
                 viewer.add_port(port)
                 viewer.add_aliases(element.aliases)
         elif isinstance(element, (phidl.device_layout.Polygon)):
-                layerprop = _get_layerprop(layer = element.layer, datatype = element.datatype)
-                viewer.add_polygons([element.points], color = layerprop['color'], alpha = layerprop['alpha'])
+                layerprop = _get_layerprop(layer = element.layers[0], datatype = element.datatypes[0])
+                viewer.add_polygons(element.polygons, color = layerprop['color'], alpha = layerprop['alpha'])
     viewer.reset_view()
     viewer_window.setVisible(True)
     viewer_window.show()

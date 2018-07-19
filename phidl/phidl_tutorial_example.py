@@ -306,6 +306,7 @@ D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
              unit = 1e-3, precision = 1e-2)
 
 
+
 #==============================================================================
 # Advanced: Acquiring port information
 #==============================================================================
@@ -327,6 +328,40 @@ all_ports = D2.get_ports(depth = None)
 for p in all_ports:
     if 'is_useful' in p.info and p.info['is_useful'] is True:
         print(str(p) + ' is useful')
+
+
+
+#==============================================================================
+# Adding premade geometry with phidl.geometry
+#==============================================================================
+# Usually at the beginning of a phidl file we import the phidl.geometry module
+# as ``pg``, like this:
+import phidl.geometry as pg
+
+# The ``pg`` module contains dozens of premade shapes and structures, ranging
+# from simple ones like ellipses to complex photonic structures.  Let's create
+# a few simple structures and plot them
+D = Device()
+G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
+G3 = pg.rectangle(size = (10,5), layer = 3)
+g1 = D.add_ref(G1)
+g2 = D.add_ref(G2)
+g3 = D.add_ref(G3)
+g1.xmin = g2.xmax + 5
+g3.xmin = g1.xmax + 5
+qp(D)
+
+# There are dozens of these types of structures.  See the /phidl/geometry.py
+# file for a full geometry list.  Note some of the more complex shapes are 
+# experimental and may change with time.
+
+
+# Let's save this file so we can practice importing it in the next step
+D.write_gds('MyNewGDS.gds')
+
+
+
 
 #==============================================================================
 # Using Layers
@@ -364,16 +399,16 @@ DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 # look when using quickplot (has no effect on the written GDS file)
 
 ls = LayerSet() # Create a blank LayerSet
-ls.add_layer(name = 'ti', gds_layer = 4, gds_datatype = 0,  description = 'Titanium resistor', color = 'gray')
+ls.add_layer(name = 'au', gds_layer = 4, gds_datatype = 0,  description = 'Gold wiring', color = 'goldenrod')
 ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0,  description = 'Niobium liftoff', color = (0.4,0.1,0.1))
 ls.add_layer('nb_etch', 6, 0, color = 'lightblue', alpha = 0.2)
 
 
-ls['ti']
+ls['au']
 
 # Now that our layers are defined, we can call them from the LayerSet in the same way
 # we would from a dictionary, where the name becomes the key:
-text1 = DL.add_ref( pg.text('Titanium layer', size = 10, layer = ls['ti']) ).movey(-60)
+text1 = DL.add_ref( pg.text('Gold layer', size = 10, layer = ls['au']) ).movey(-60)
 text2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = ls['nb']) ).movey(-80)
 text3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = ls['nb_etch']) ).movey(-90).movex(5)
 
@@ -384,7 +419,7 @@ DL.write_gds('MultipleLayerText.gds')
 
 # If we want to examine any single layer, we can call them by their names,
 # for example
-titanium_layer = ls['ti']
+gold_layer = ls['au']
 print(ls['nb'])
 
 
@@ -400,36 +435,6 @@ import phidl.utilities as pu
 pu.write_lyp('MyLayerSetPreview.lyp', layerset = ls)
 
 
-#==============================================================================
-# Adding premade geometry with phidl.geometry
-#==============================================================================
-# Usually at the beginning of a phidl file we import the phidl.geometry module
-# as ``pg``, like this:
-import phidl.geometry as pg
-
-# The ``pg`` module contains dozens of premade shapes and structures, ranging
-# from simple ones like ellipses to complex photonic structures.  Let's create
-# a few simple structures and plot them
-D = Device()
-G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
-G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
-G3 = pg.rectangle(size = (10,5), layer = 3)
-g1 = D.add_ref(G1)
-g2 = D.add_ref(G2)
-g3 = D.add_ref(G3)
-g1.xmin = g2.xmax + 5
-g3.xmin = g1.xmax + 5
-qp(D)
-
-# There are dozens of these types of structures.  See the /phidl/geometry.py
-# file for a full geometry list.  Note some of the more complex shapes are 
-# experimental and may change with time.
-
-
-# Let's save this file so we can practice importing it in the next step
-D.write_gds('MyNewGDS.gds')
-
-
 
 #==============================================================================
 # Importing GDS files
@@ -442,25 +447,25 @@ D.write_gds('MyNewGDS.gds')
 # Let's import the GDS we just saved in the previous step.  Although generally
 # you must specify which cell in the GDS file you want to import using the 
 # argument `cellname`, if the GDS file has only one top-level cell (like our
-# MyNewGDS.gds file does), the cellname argument can be left out and 
+# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
 # import_gds() will import that top-level cell.
 
 # Let's first just import the entire GDS as-is
-E = pg.import_gds(filename = 'MyNewGDS.gds')
+E = pg.import_gds(filename = 'MyLayerSetPreview.gds')
 qp(E)
 
 # Now say we only wanted to get layers 2 and 3 from the file.  We can specify
 # a list of layers using the `layers` argument
-E2 = pg.import_gds(filename = 'MyNewGDS.gds',
-                   layers = [2, 3])
+E2 = pg.import_gds(filename = 'MyLayerSetPreview.gds',
+                   layers = [4, 5], flatten = True)
 qp(E2)
 
 # We can also use the `layers` argument to map layers arbitrarily. Say we
-# wanted to combine shapes on layer 1 with those on layer 3, but leave layer 2
-# on layer 2.  We can map layers 1->3, 3->3, 2->2  by passing a dict to the
-# `layers` argument
-E3 = pg.import_gds(filename = 'MyNewGDS.gds',
-                   layers = {1: 3,  3: 3,  2: 2})
+# wanted to move shapes on layer 4 to layer 5, but leave layer 6
+# on layer 6.  We can map layers 4->5, 6->6, and ignore layer 5  by passing a 
+# dict to the `layers` argument
+E3 = pg.import_gds(filename = 'MyLayerSetPreview.gds',
+                   layers = {4: 5, 6:6})
 qp(E3)
 
 
