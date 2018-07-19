@@ -412,8 +412,13 @@ text1 = DL.add_ref( pg.text('Gold layer', size = 10, layer = ls['au']) ).movey(-
 text2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = ls['nb']) ).movey(-80)
 text3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = ls['nb_etch']) ).movey(-90).movex(5)
 
-qp(DL)
 
+# We can additionally use a LayerSet to add the same structure to several
+# layers at once by passing the whole layerset to the layer argument
+text4 = DL.add_ref( pg.text('All layers', size = 10, layer = ls) ).movey(-120)
+
+
+qp(DL)
 DL.write_gds('MultipleLayerText.gds')
 
 
@@ -421,7 +426,6 @@ DL.write_gds('MultipleLayerText.gds')
 # for example
 gold_layer = ls['au']
 print(ls['nb'])
-
 
 # We can quickly preview our color scheme using the LayerSet.preview()
 # function as well.
