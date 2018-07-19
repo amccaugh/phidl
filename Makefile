@@ -20,16 +20,6 @@ venv/bin/activate:
 	test -d venv || virtualenv -p python3 --prompt "(phidl-venv) " --distribute venv
 	touch venv/bin/activate
 
-devbuild: venvinfo/devreqs~
-venvinfo/devreqs~: $(REINSTALL_DEPS) dev-requirements.txt
-	( \
-		source venv/bin/activate; \
-		pip install -r dev-requirements.txt | grep -v 'Requirement already satisfied'; \
-		pip install -e . | grep -v 'Requirement already satisfied'; \
-	)
-	@mkdir -p venvinfo
-	touch venvinfo/devreqs~
-
 clean:
 	rm -rf dist
 	rm -rf phidl.egg-info
@@ -39,13 +29,6 @@ clean:
 
 purge: clean
 	rm -rf venv
-
-pip-freeze: devbuild
-	( \
-		source venv/bin/activate; \
-		pipdeptree -lf | grep -E '^\w+' | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U; \
-		pipdeptree -lf | grep -E '^\w+' | grep -v '^\-e' | grep -v '^#' > dev-requirements.txt; \
-	)
 
 # Does not go in virtualenv. Changes phidl installation user-wide
 dynamic-install:
@@ -70,16 +53,13 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "--- environment ---"
 	@echo "  venv              creates a python virtualenv in venv/"
-	@echo "  pip-freeze        drops all leaf pip packages into dev-requirements.txt (Use with caution)"
 	@echo "  clean             clean all build files"
 	@echo "  purge             clean and delete virtual environment"
 	@echo "  dynamic-install   have pip dynamically link phidl to this source code, everywhere on your computer"
-	@echo "--- development ---"
-	@echo "  devbuild          install dev dependencies, build phidl, and install inside venv"
 	@echo "--- testing ---"
 	@echo "--- documentation ---"
 	@echo "  docbuild          install doc dependencies, rebuild phidl, and install in venv"
 	@echo "  docs              build documentation"
 
 
-.PHONY: help docs clean purge pip-freeze dynamic-install
+.PHONY: help docs clean purge dynamic-install
