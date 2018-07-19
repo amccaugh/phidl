@@ -4,7 +4,6 @@
 
 # TODO Add support for gdspy.CellArray
 # TODO Auto-generate PHIDL geometry documentation
-# TODO Allow caching of bbox
 
 #==============================================================================
 # Minor TODO
@@ -38,7 +37,7 @@ except:
                      still work but quickplot() may not.  Try using
                      quickplot2() instead (see note in tutorial) """)
 
-__version__ = '0.8.5'
+__version__ = '0.8.7'
 
 
 
@@ -106,7 +105,7 @@ class LayerSet(object):
 
 
     def __repr__(self):
-        return str(list(self._layers.values()))
+        return ('LayerSet (%s layers total)' % (len(self._layers)))
 
 
 
@@ -507,14 +506,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
-    
-    # # IMPROVEMENT: This is a hack to get around gdspy caching issues
-    # @property
-    # def _bb_valid(self):
-    #     return False
-    # @_bb_valid.setter
-    # def _bb_valid(self, value):
-    #     pass
 
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
@@ -545,7 +536,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             points = points.points
         elif isinstance(points, gdspy.PolygonSet):
             if layer is None:   layers = points.layers
-            layers = [layer]*len(points.polygons)
+            else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
                 
         # Check if layer is actually a list of Layer objects
@@ -633,10 +624,20 @@ class Device(gdspy.Cell, _GeometryHelper):
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9):
         if filename[-4:] != '.gds':  filename += '.gds'
         tempname = self.name
-        self.name = 'toplevel'
         referenced_cells = list(self.get_dependencies(recursive=True))
         all_cells = [self] + referenced_cells
-        gdspy.write_gds(filename, cells=all_cells, name='library', unit=unit, precision=precision)
+
+        # Autofix names so there are no duplicates
+        all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
+        used_names = {}
+        for c in all_cells_sorted:
+            if c._internal_name not in used_names:
+                used_names[c._internal_name] = 1
+            c.name = c._internal_name[:20] + ('%0.3i' % used_names[c._internal_name])
+            used_names[c._internal_name] += 1
+        self.name = 'toplevel'
+        gdspy.write_gds(filename, cells=all_cells, name='library',
+                        unit=unit, precision=precision)
         self.name = tempname
 
 
@@ -665,14 +666,24 @@ class Device(gdspy.Cell, _GeometryHelper):
         else:
             gds_layer, gds_datatype = _parse_layer(single_layer)
             super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
-        # Dtemp = Device()
-        # [Dtemp.add_polygon(poly) for poly in self.elements]
-        # new_elements = [self.add_polygon(poly) for poly in self.elements]
+
         temp = self.elements
         self.elements = []
         [self.add_polygon(poly) for poly in temp]
+        return self
 
-        self._bb_valid = False
+    def absorb(self, reference):
+        """ Flattens and absorbs polygons from an underlying
+        DeviceReference into the Device, destroying the reference
+        in the process but keeping the polygon geometry """
+        if reference not in self.references:
+            raise ValueError("""[PHIDL] Device.absorb() failed - 
+                the reference it was asked to absorb does not 
+                exist in this Device. """)
+        ref_polygons = reference.get_polygons(by_spec = True)
+        for (layer, polys) in ref_polygons.items():
+            [self.add_polygon(points = p, layer = layer) for p in polys]
+        self.remove(reference)
         return self
 
 
@@ -717,6 +728,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     
     def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
         for e in self.elements:
             if isinstance(e, Polygon):
                 e.rotate(angle = angle, center = center)
@@ -907,6 +919,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         
     def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
