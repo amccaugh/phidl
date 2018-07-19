@@ -59,6 +59,14 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 0.8.8 (July 19, 2018)
+### New features
+- You can now add any shape to multiple layers at once by passing a whole `LayerSet` to the `layer` argument.  See tutorial for details
+- Update to `D.write_gds()` which guarantees cell names within a Device will never overlap.  If you want to disable this feature for more control over cell names, change the `auto_rename` argument to `False` ( `D.write('myfile.gds', auto_rename = False)`)
+
+### Bugfixes
+- Modifications made to work with gdspy>=1.3.1
+
 ## 0.8.7 (July 11, 2018)
 ### Bugfixes
 - Minor bugfixes to `pg.litho_calipers()` and `pg.litho_star()`
