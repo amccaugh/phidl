@@ -1,2 +1,0 @@
-pipdeptree==0.12.1
-wheel==0.31.0

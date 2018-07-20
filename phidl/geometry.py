@@ -159,12 +159,13 @@ def import_gds(filename, cellname = None, layers = None, flatten = False):
 def _translate_cell(c, layer_remapping):
     D = Device(name = c.name)
     for e in c.elements:
-        if isinstance(e, gdspy.Polygon):
-            polygon_layer = _parse_layer((e.layer, e.datatype))
-            if layer_remapping is None: 
-                D.add_polygon(points = e.points, layer = polygon_layer)
-            elif polygon_layer in layer_remapping.keys():
-                D.add_polygon(points = e.points, layer = layer_remapping[polygon_layer])
+        if isinstance(e, gdspy.PolygonSet):
+            for n, points in enumerate(e.polygons):
+                polygon_layer = _parse_layer((e.layers[n], e.datatypes[n]))
+                if layer_remapping is None: 
+                    D.add_polygon(points = points, layer = polygon_layer)
+                elif polygon_layer in layer_remapping.keys():
+                    D.add_polygon(points = points, layer = layer_remapping[polygon_layer])
         elif isinstance(e, gdspy.CellReference):
             dr = DeviceReference(device = _translate_cell(e.ref_cell, layer_remapping),
                             origin = e.origin,
@@ -176,26 +177,28 @@ def _translate_cell(c, layer_remapping):
 
 
     
-def preview_layerset(ls):
+def preview_layerset(ls, size = 100):
     """ Generates a preview Device with representations of all the layers,
     used for previewing LayerSet color schemes in quickplot or saved .gds 
     files """
     D = Device()
+    scale = size/100
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
-    for n, layer in enumerate(ls._layers.values()):
-        R = rectangle(size = (100, 100), layer = layer)
+    sorted_layers = sorted(ls._layers.values(), key = lambda x: (x.gds_layer, x.gds_datatype))
+    for n, layer in enumerate(sorted_layers):
+        R = rectangle(size = (100*scale, 100*scale), layer = layer)
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
-                size = 20,
-                position=(50,-20),
+                size = 20*scale,
+                position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
                 
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
-        D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
-        D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
+        D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
+        D.add_ref(T).movex(200 * xloc *scale).movey(-200 * yloc*scale)
     return D
 
 #==============================================================================
@@ -1837,13 +1840,13 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
         Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
         if you do not specifiy a value for a parameter it will just use the default value
         Ex::
-            
+
             via_route_test_structure(num_vias=54)
-            
+
         - or -::
-        
+
             via_route_test_structure(num_vias=12, pad_size=(100,100),wire_width=8)
-            
+
         total requested vias (num_vias) -> this needs to be even
         pad size (pad_size) -> given in a pair (width, height)
         wire_width -> how wide each wire should be
@@ -1947,13 +1950,13 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     changing You can alternatively call it with no parameters
     and it will take all the default alues shown below.
     Ex::
-        
+
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
-    
+
     - or -::
 
         comb_insulation_test_structure()
-    """ 
+    """
     CI = Device("test_comb")
 
     if comb_pad_layer is None:  comb_pad_layer = comb_layer
@@ -2110,9 +2113,9 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
     part of the wire will be larger than the thin part. 
     Ex::
-    
+
         ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
-    
+
     - or -::
 
         ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
