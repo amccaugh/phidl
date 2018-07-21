@@ -62,6 +62,7 @@ You can also do things like create a backing fill to make sure the resist develo
 ## 0.8.9 (July 20, 2018)
 ### New features
 - The addition of the argument `max_cellname_length` added to `D.write_gds()`.  It is `28` by default, to guarantee maximum compatibility with other GDS software.
+- New documentation backend (contribution thanks to Alex Tait @atait)
 
 ### Bugfixes
 - Further fixes to `D.write_gds()` for rare edge cases
