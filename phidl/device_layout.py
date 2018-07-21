@@ -35,7 +35,7 @@ except:
                      still work but quickplot() may not.  Try using
                      quickplot2() instead (see note in tutorial) """)
 
-__version__ = '0.8.8'
+__version__ = '0.8.9'
 
 
 
@@ -593,7 +593,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
-                  auto_rename = True, crop_cellname_length = 28):
+                  auto_rename = True, max_cellname_length = 28):
         if filename[-4:] != '.gds':  filename += '.gds'
         tempname = self.name
         referenced_cells = list(self.get_dependencies(recursive=True))
@@ -604,8 +604,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
             used_names = {'toplevel':1}
             for c in all_cells_sorted:
-                if crop_cellname_length is not None:
-                    new_name = c._internal_name[:crop_cellname_length]
+                if max_cellname_length is not None:
+                    new_name = c._internal_name[:max_cellname_length]
                 else:
                     new_name = c._internal_name
                 if new_name not in used_names:

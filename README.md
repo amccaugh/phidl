@@ -59,6 +59,13 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 0.8.9 (July 20, 2018)
+### New features
+- The addition of the argument `max_cellname_length` added to `D.write_gds()`.  It is `28` by default, to guarantee maximum compatibility with other GDS software.
+
+### Bugfixes
+- Further fixes to `D.write_gds()` for rare edge cases
+
 ## 0.8.8 (July 19, 2018)
 ### New features
 - You can now add any shape to multiple layers at once by passing a whole `LayerSet` to the `layer` argument.  See tutorial for details
