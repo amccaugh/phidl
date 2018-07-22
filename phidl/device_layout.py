@@ -621,11 +621,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         return filename
 
 
-    def remap_layers(self, layermap = None, include_labels = True):
-        if layermap is None:
-            return self
-        if type(layermap) is dict:
-            layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
+    def remap_layers(self, layermap = {}, include_labels = True):
+        layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
 
         all_D = list(self.get_dependencies(True))
         all_D += [self]
@@ -646,6 +643,37 @@ class Device(gdspy.Cell, _GeometryHelper):
                         new_layer = layermap[original_layer]
                         l.layer = new_layer[0]
                         l.texttype = new_layer[1]
+        return self
+
+    def remove_layers(self, layers = (), include_labels = True):
+        layers = [_parse_layer(l) for l in layers]
+        all_D = list(self.get_dependencies(True))
+        all_D += [self]
+        for D in all_D:
+            for e in D.elements:
+                if isinstance(e, gdspy.PolygonSet):
+                    new_polygons = []
+                    new_layers = []
+                    new_datatypes = []
+                    for n, layer in enumerate(e.layers):
+                        original_layer = (e.layers[n], e.datatypes[n])
+                        original_layer = _parse_layer(original_layer)
+                        if original_layer not in layers:
+                            new_polygons += [e.polygons[n]]
+                            new_layers += [e.layers[n]]
+                            new_datatypes += [e.datatypes[n]]
+                    e.polygons = new_polygons
+                    e.layers = new_layers
+                    e.datatypes = new_datatypes
+
+            if include_labels == True:
+                new_labels = []
+                for l in D.labels:
+                    original_layer = (l.layer, l.texttype)
+                    original_layer = _parse_layer(original_layer)
+                    if original_layer not in layers:
+                        new_labels += [l]
+                D.labels = new_labels
         return self
 
         
