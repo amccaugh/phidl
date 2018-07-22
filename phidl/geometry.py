@@ -124,15 +124,41 @@ def import_gds(filename, cellname = None, layers = None, flatten = False):
     if cellname is not None:
         if cellname not in gdsii_lib.cell_dict:
             raise ValueError('[PHIDL] import_gds() The requested cell (named %s) is not present in file %s' % (cellname,filename))
-        cell = gdsii_lib.cell_dict[cellname]
+        topcell = gdsii_lib.cell_dict[cellname]
     elif cellname is None and len(top_level_cells) == 1:
-        cell = top_level_cells[0]
+        topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
         raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
 
     if flatten == False:
-        D = _translate_cell(cell)
-        return D
+        D_list = []
+        c2dmap = {}
+        for cell in gdsii_lib.cell_dict.values():
+            D = Device(name = cell.name)
+            D.elements = cell.elements
+            D.name = cell.name
+            D.labels = cell.labels
+            c2dmap.update({cell:D})
+            D_list += [D]
+            
+        for D in D_list:
+            new_elements = []
+            for e in D.elements:
+                if isinstance(e, gdspy.CellReference):
+                    ref_device = c2dmap[e.ref_cell]
+                    dr = DeviceReference(device = ref_device,
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    new_elements.append(dr)
+                else:
+                    new_elements.append(e)
+            D.elements = new_elements
+            
+        topdevice = c2dmap[topcell]
+        return topdevice
 
     elif flatten == True:
         D = Device('import_gds')
