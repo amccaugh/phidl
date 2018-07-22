@@ -476,7 +476,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def polygons(self):
-        return [e for e in self.elements if isinstance(e, Polygon)]
+        return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
 
     @property
     def meta(self):
@@ -619,6 +619,36 @@ class Device(gdspy.Cell, _GeometryHelper):
                         unit=unit, precision=precision)
         self.name = tempname
         return filename
+
+
+    def remap_layers(self, layermap = None, include_labels = True):
+        if layermap is None:
+            return self
+        if type(layermap) is dict:
+            layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
+
+        all_D = list(self.get_dependencies(True))
+        all_D += [self]
+        for D in all_D:
+            for p in D.polygons:
+                for n, layer in enumerate(p.layers):
+                    original_layer = (p.layers[n], p.datatypes[n])
+                    original_layer = _parse_layer(original_layer)
+                    if original_layer in layermap.keys():
+                        new_layer = layermap[original_layer]
+                        p.layers[n] = new_layer[0]
+                        p.datatypes[n] = new_layer[1]
+            if include_labels == True:
+                for l in D.labels:
+                    original_layer = (l.layer, l.texttype)
+                    original_layer = _parse_layer(original_layer)
+                    if original_layer in layermap.keys():
+                        new_layer = layermap[original_layer]
+                        l.layer = new_layer[0]
+                        l.texttype = new_layer[1]
+        return self
+
+        
 
 
     def distribute(self, elements, direction = 'x', spacing = 100, separation = True):
