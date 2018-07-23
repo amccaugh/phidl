@@ -162,7 +162,7 @@ def import_gds(filename, cellname = None, flatten = False):
 
     elif flatten == True:
         D = Device('import_gds')
-        polygons = cell.get_polygons(by_spec = True)
+        polygons = topcell.get_polygons(by_spec = True)
 
         for layer_in_gds, polys in polygons.items():
             D.add_polygon(polys, layer = layer_in_gds)
