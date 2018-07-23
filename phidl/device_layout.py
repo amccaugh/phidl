@@ -645,11 +645,12 @@ class Device(gdspy.Cell, _GeometryHelper):
                         l.texttype = new_layer[1]
         return self
 
-    def remove_layers(self, layers = (), include_labels = True):
+    def remove_layers(self, layers = (), include_labels = True, invert_selection = False):
         layers = [_parse_layer(l) for l in layers]
         all_D = list(self.get_dependencies(True))
         all_D += [self]
         for D in all_D:
+            new_elements = []
             for e in D.elements:
                 if isinstance(e, gdspy.PolygonSet):
                     new_polygons = []
@@ -658,20 +659,28 @@ class Device(gdspy.Cell, _GeometryHelper):
                     for n, layer in enumerate(e.layers):
                         original_layer = (e.layers[n], e.datatypes[n])
                         original_layer = _parse_layer(original_layer)
-                        if original_layer not in layers:
+                        if invert_selection: keep_layer = (original_layer in layers)
+                        else:                keep_layer = (original_layer not in layers)
+                        if keep_layer:
                             new_polygons += [e.polygons[n]]
                             new_layers += [e.layers[n]]
                             new_datatypes += [e.datatypes[n]]
-                    e.polygons = new_polygons
-                    e.layers = new_layers
-                    e.datatypes = new_datatypes
+                     # Don't re-add an empty polygon
+                    if len(new_polygons) > 0:
+                        e.polygons = new_polygons
+                        e.layers = new_layers
+                        e.datatypes = new_datatypes
+                        new_elements.append(e)
+            D.elements = new_elements
 
             if include_labels == True:
                 new_labels = []
                 for l in D.labels:
                     original_layer = (l.layer, l.texttype)
                     original_layer = _parse_layer(original_layer)
-                    if original_layer not in layers:
+                    if invert_selection: keep_layer = (original_layer in layers)
+                    else:                keep_layer = (original_layer not in layers)
+                    if keep_layer:
                         new_labels += [l]
                 D.labels = new_labels
         return self
