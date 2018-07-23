@@ -117,7 +117,7 @@ def copy_layer(D, layer = 1, new_layer = 2):
     return D_copied_layer
 
 
-def import_gds(filename, cellname = None, layers = None, flatten = False):
+def import_gds(filename, cellname = None, flatten = False):
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
