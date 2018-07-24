@@ -3,7 +3,6 @@
 #==============================================================================
 
 # TODO Add support for gdspy.CellArray
-# TODO Auto-generate PHIDL geometry documentation
 
 #==============================================================================
 # Minor TODO
@@ -1033,7 +1032,7 @@ def quickplot(items, show_ports = True, show_subports = True,
     np.random.seed(0)
     if type(items) is not list:  items = [items]
     for item in items:
-        if isinstance(item, (Device, DeviceReference)):
+        if isinstance(item, (Device, DeviceReference, gdspy.CellArray)):
             polygons_spec = item.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]

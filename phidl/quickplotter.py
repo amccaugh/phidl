@@ -19,10 +19,11 @@ import warnings
 
 import phidl
 from phidl.device_layout import Device, DeviceReference, Port, Layer
+import gdspy
 
 try:
-    from PyQt5 import QtCore, QtGui, QtWidgets, QtOpenGL
-    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsEllipseItem, QGraphicsItem, QRubberBand, QGraphicsLineItem, QMainWindow
+    from PyQt5 import QtCore, QtGui, QtOpenGL
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow
     from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
@@ -387,7 +388,7 @@ def quickplot2(item_list, *args, **kwargs):
     if type(item_list) not in (list, tuple):
         item_list = [item_list]
     for element in item_list:
-        if isinstance(element, (phidl.device_layout.Device, phidl.device_layout.DeviceReference)):
+        if isinstance(element, (phidl.device_layout.Device, phidl.device_layout.DeviceReference, gdspy.CellArray)):
             polygons_spec = element.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]
