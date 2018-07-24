@@ -362,6 +362,29 @@ D.write_gds('MyNewGDS.gds')
 
 
 
+#==============================================================================
+# Importing GDS files
+#==============================================================================
+# The phidl.geometry module is responsible for generating premade Devices.  
+# This includes imported geometry from other GDS files too.  When you import
+# a GDS, you specify which layers you want, and it will import those layers
+# as a new Device.  The new device can then be manipulated like any other.
+
+# Let's import the GDS we just saved in the previous step.  Although generally
+# you must specify which cell in the GDS file you want to import using the 
+# argument `cellname`, if the GDS file has only one top-level cell (like our
+# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
+# import_gds() will import that top-level cell.
+
+# Let's first just import the entire GDS as-is
+E = pg.import_gds(filename = 'MyNewGDS.gds')
+qp(E)
+
+
+# Similarly, we can import the same file but flatten the entire cell
+# heirarchy
+E2 = pg.import_gds(filename = 'MyNewGDS.gds', flatten = True)
+
 
 #==============================================================================
 # Using Layers
@@ -438,30 +461,6 @@ P.write_gds('MyLayerSetPreview.gds')
 import phidl.utilities as pu
 pu.write_lyp('MyLayerSetPreview.lyp', layerset = ls)
 
-
-
-#==============================================================================
-# Importing GDS files
-#==============================================================================
-# The phidl.geometry module is responsible for generating premade Devices.  
-# This includes imported geometry from other GDS files too.  When you import
-# a GDS, you specify which layers you want, and it will import those layers
-# as a new Device.  The new device can then be manipulated like any other.
-
-# Let's import the GDS we just saved in the previous step.  Although generally
-# you must specify which cell in the GDS file you want to import using the 
-# argument `cellname`, if the GDS file has only one top-level cell (like our
-# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
-# import_gds() will import that top-level cell.
-
-# Let's first just import the entire GDS as-is
-E = pg.import_gds(filename = 'MyLayerSetPreview.gds')
-qp(E)
-
-
-# Similarly, we can import the same file but flatten the entire cell
-# heirarchy
-E2 = pg.import_gds(filename = 'MyLayerSetPreview.gds', flatten = True)
 
 #==============================================================================
 # Removing  layers
