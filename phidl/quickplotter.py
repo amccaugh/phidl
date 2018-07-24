@@ -1,15 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 16 16:18:40 2017
-
-@author: amcc
-"""
-
-# TODO:
-# PHIDL Allow toggling of layers with 1-9 keypresses
-# PHIDL alias font should be slightly transparent
-# PHIDL Show annotations
-# PHIDL add adjustable depth of aliases by doing shift-F3
+# TODO: Allow toggling of layers with 1-9 keypresses
+# TODO: alias font should be slightly transparent
 
 
 from __future__ import division, print_function, absolute_import
@@ -18,11 +8,19 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, Port, Layer
+from phidl.device_layout import Device, DeviceReference, Port, Layer, Polygon
 import gdspy
 
+
 try:
-    from PyQt5 import QtCore, QtGui, QtOpenGL
+    from matplotlib import pyplot as plt
+except:
+    warnings.warn("""PHIDL tried to import matplotlib but it failed. PHIDL 
+                     will still work but quickplot() may not.  Try using
+                     quickplot2() instead (see note in tutorial) """)
+
+try:
+    from PyQt5 import QtCore, QtGui
     from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow
     from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
@@ -33,9 +31,106 @@ try:
 except:
     QMainWindow = object
     QGraphicsView = object
-    warnings.warn("""PHIDL tried to import PyQt5 but it failed. PHIDL will'
+    warnings.warn("""PHIDL tried to import PyQt5 but it failed. PHIDL will
                      still work but quickplot2() may not.  Try using
                      quickplot() instead (based on matplotlib) """)
+
+
+def quickplot(items, show_ports = True, show_subports = True,
+              label_ports = True, label_aliases = False, new_window = False):
+    """ Takes a list of devices/references/polygons or single one of those, and
+    plots them.  Also has the option to overlay their ports """
+    if new_window: fig, ax = plt.subplots(1)
+    else:
+        ax = plt.gca()  # Get current figure
+        ax.cla()        # Clears the axes of all previous polygons
+    ax.axis('equal')
+    ax.grid(True, which='both', alpha = 0.4)
+    ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
+    ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
+    
+    # Iterate through each each Device/DeviceReference/Polygon
+    np.random.seed(0)
+    if type(items) is not list:  items = [items]
+    for item in items:
+        if isinstance(item, (Device, DeviceReference, gdspy.CellArray)):
+            polygons_spec = item.get_polygons(by_spec=True, depth=None)
+            for key in sorted(polygons_spec):
+                polygons = polygons_spec[key]
+                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+                _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                               edgecolor = 'k', alpha = layerprop['alpha'])
+                for name, port in item.ports.items():
+                    if (port.width is None) or (port.width == 0):
+                        _draw_port_as_point(port)
+                    else:
+                        _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                    ax.text(port.midpoint[0], port.midpoint[1], name)
+            if isinstance(item, Device) and show_subports is True:
+                for sd in item.references:
+                    for name, port in sd.ports.items():
+                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                        ax.text(port.midpoint[0], port.midpoint[1], name)
+            if isinstance(item, Device) and label_aliases is True:
+                for name, ref in item.aliases.items():
+                    ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
+                             weight = 'bold', size = 'large', ha = 'center')
+        elif isinstance(item, Polygon):
+            polygons = item.polygons
+            layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
+            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                           edgecolor = 'k', alpha = layerprop['alpha'])
+    plt.draw()
+    plt.show(block = False)
+    
+
+
+def _get_layerprop(layer, datatype):
+    # Colors generated from here: http://phrogz.net/css/distinct-colors.html
+    layer_colors = ['#3dcc5c', '#2b0fff', '#cc3d3d', '#e5dd45', '#7b3dcc',
+    '#cc860c', '#73ff0f', '#2dccb4', '#ff0fa3', '#0ec2e6', '#3d87cc', '#e5520e']
+                     
+    l = Layer.layer_dict.get((layer, datatype))
+    if l is not None:
+        color = l.color
+        alpha = l.alpha
+        if color is None:
+            color = layer_colors[np.mod(layer, len(layer_colors))]
+    else:
+        color = layer_colors[np.mod(layer, len(layer_colors))]
+        alpha = 0.6
+    return {'color':color, 'alpha':alpha}
+    
+    
+def _draw_polygons(polygons, ax, **kwargs):
+    """ This function uses a trick where all polygon points are concatenated, 
+    separated only by NaN values.  This speeds up drawing considerably, see
+    http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
+    """
+    nan_pt = np.array([[np.nan, np.nan]])
+    polygons_with_nans = [np.concatenate((p, [p[0]], nan_pt), axis = 0) for p in polygons]
+    all_polygons = np.vstack(polygons_with_nans)
+    plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
+
+
+def _draw_port(port, arrow_scale = 1, **kwargs):
+    x = port.midpoint[0]
+    y = port.midpoint[1]
+    nv = port.normal
+    n = (nv[1]-nv[0])*arrow_scale
+    dx, dy = n[0], n[1]
+    xbound, ybound = np.column_stack(port.endpoints)
+    #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
+    plt.plot(xbound, ybound, 'r', alpha = 0.5, linewidth = 3) # Draw port edge
+    plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
+              head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
+
+
+def _draw_port_as_point(port, **kwargs):
+    x = port.midpoint[0]
+    y = port.midpoint[1]
+    plt.plot(x, y, 'r+', alpha = 0.5, markersize = 15, markeredgewidth = 2) # Draw port edge
+
 
 
 class ViewerWindow(QMainWindow):
@@ -410,24 +505,3 @@ def quickplot2(item_list, *args, **kwargs):
     viewer_window.raise_()
 
 
-def _get_layerprop(layer, datatype):
-    # Colors generated from here: http://phrogz.net/css/distinct-colors.html
-    layer_colors = ['#3dcc5c', '#2b0fff', '#cc3d3d', '#e5dd45', '#7b3dcc',
-    '#cc860c', '#73ff0f', '#2dccb4', '#ff0fa3', '#0ec2e6', '#3d87cc', '#e5520e']
-                     
-    l = Layer.layer_dict.get((layer, datatype))
-    if l is not None:
-        color = l.color
-        alpha = l.alpha
-        if color is None:
-            color = layer_colors[np.mod(layer, len(layer_colors))]
-    else:
-        color = layer_colors[np.mod(layer, len(layer_colors))]
-        alpha = 0.6
-    return {'color':color, 'alpha':alpha}
-
-
-
-
-
-# quickplot2(pg.snspd())
