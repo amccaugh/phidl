@@ -1,0 +1,8 @@
+better-apidoc==0.2.0
+mock==2.0.0
+Sphinx==1.7.5
+sphinx-autoapi==0.5.0
+sphinx-rtd-theme==0.2.4
+nbsphinx
+sphinxcontrib-napoleon==0.6.1
+recommonmark==0.4.0

@@ -2,7 +2,7 @@ MANIFEST
 test.sh
 debug.py
 winbuild*
-docs/_*
+docs/_build
 .*.swp
 
 # Byte-compiled / optimized / DLL files
@@ -11,6 +11,16 @@ __pycache__/
 
 # C extensions
 *.so
+
+# Developer
+venv
+venvinfo
+*.sublime-project
+*.sublime-workspace
+
+
+# IPython notebooks
+.ipynb_checkpoints
 
 # Distribution / packaging
 .Python

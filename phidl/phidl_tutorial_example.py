@@ -362,6 +362,29 @@ D.write_gds('MyNewGDS.gds')
 
 
 
+#==============================================================================
+# Importing GDS files
+#==============================================================================
+# The phidl.geometry module is responsible for generating premade Devices.  
+# This includes imported geometry from other GDS files too.  When you import
+# a GDS, you specify which layers you want, and it will import those layers
+# as a new Device.  The new device can then be manipulated like any other.
+
+# Let's import the GDS we just saved in the previous step.  Although generally
+# you must specify which cell in the GDS file you want to import using the 
+# argument `cellname`, if the GDS file has only one top-level cell (like our
+# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
+# import_gds() will import that top-level cell.
+
+# Let's first just import the entire GDS as-is
+E = pg.import_gds(filename = 'MyNewGDS.gds')
+qp(E)
+
+
+# Similarly, we can import the same file but flatten the entire cell
+# heirarchy
+E2 = pg.import_gds(filename = 'MyNewGDS.gds', flatten = True)
+
 
 #==============================================================================
 # Using Layers
@@ -439,40 +462,35 @@ import phidl.utilities as pu
 pu.write_lyp('MyLayerSetPreview.lyp', layerset = ls)
 
 
+#==============================================================================
+# Removing  layers
+#==============================================================================
+# Now say we only wanted to get layers 4 and 5 from an imported.  We can remove
+# the unwanted layers using the remove_layers() function
+D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
+
+# We set "invert_selection" to True so that all layers EXCEPT 4 and 5
+# are removed
+D.remove_layers(layers = [4,5], invert_selection = True)
+qp(D)
+
+# If we later decide that we actually don't want layer 4, as well, we
+# can leave the `invert_selection` argument blank
+D.remove_layers(layers = [4])
+qp(D)
 
 #==============================================================================
-# Importing GDS files
+# Remapping layers
 #==============================================================================
-# The phidl.geometry module is responsible for generating premade Devices.  
-# This includes imported geometry from other GDS files too.  When you import
-# a GDS, you specify which layers you want, and it will import those layers
-# as a new Device.  The new device can then be manipulated like any other.
+# Let's import our layerset preview again
+D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
 
-# Let's import the GDS we just saved in the previous step.  Although generally
-# you must specify which cell in the GDS file you want to import using the 
-# argument `cellname`, if the GDS file has only one top-level cell (like our
-# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
-# import_gds() will import that top-level cell.
-
-# Let's first just import the entire GDS as-is
-E = pg.import_gds(filename = 'MyLayerSetPreview.gds')
-qp(E)
-
-# Now say we only wanted to get layers 2 and 3 from the file.  We can specify
-# a list of layers using the `layers` argument
-E2 = pg.import_gds(filename = 'MyLayerSetPreview.gds',
-                   layers = [4, 5], flatten = True)
-qp(E2)
-
-# We can also use the `layers` argument to map layers arbitrarily. Say we
-# wanted to move shapes on layer 4 to layer 5, but leave layer 6
-# on layer 6.  We can map layers 4->5, 6->6, and ignore layer 5  by passing a 
-# dict to the `layers` argument
-E3 = pg.import_gds(filename = 'MyLayerSetPreview.gds',
-                   layers = {4: 5, 6:6})
-qp(E3)
-
-
+# We can use the remap_layers() function to map layers arbitrarily. Say we
+# wanted to move shapes on layer 5 to layer 99, and layer 6 to layer 77
+# but leave the other layers alone.  We can map layers 5->99, 6->77, and leave
+# any other layers alone by passing a dict to the `layermap` argument
+D.remap_layers(layermap = {5: 99, 6:77})
+qp(D)
 
 
 

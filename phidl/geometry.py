@@ -117,57 +117,67 @@ def copy_layer(D, layer = 1, new_layer = 2):
     return D_copied_layer
 
 
-def import_gds(filename, cellname = None, layers = None, flatten = False):
+def import_gds(filename, cellname = None, flatten = False):
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
         if cellname not in gdsii_lib.cell_dict:
             raise ValueError('[PHIDL] import_gds() The requested cell (named %s) is not present in file %s' % (cellname,filename))
-        cell = gdsii_lib.cell_dict[cellname]
+        topcell = gdsii_lib.cell_dict[cellname]
     elif cellname is None and len(top_level_cells) == 1:
-        cell = top_level_cells[0]
+        topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
         raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
 
-    if layers is None:
-        layer_remapping = None
-    elif type(layers) in (list, tuple):
-        layer_remapping = {_parse_layer(l):_parse_layer(l) for l in layers}
-    if type(layers) is dict:
-        layer_remapping = {_parse_layer(k):_parse_layer(v) for k,v in layers.items()}
-
     if flatten == False:
-        D = _translate_cell(cell, layer_remapping)
-        return D
+        D_list = []
+        c2dmap = {}
+        for cell in gdsii_lib.cell_dict.values():
+            D = Device(name = cell.name)
+            D.elements = cell.elements
+            D.name = cell.name
+            D.labels = cell.labels
+            c2dmap.update({cell:D})
+            D_list += [D]
+            
+        for D in D_list:
+            new_elements = []
+            for e in D.elements:
+                if isinstance(e, gdspy.CellReference):
+                    ref_device = c2dmap[e.ref_cell]
+                    dr = DeviceReference(device = ref_device,
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    new_elements.append(dr)
+                else:
+                    new_elements.append(e)
+            D.elements = new_elements
+            
+        topdevice = c2dmap[topcell]
+        return topdevice
 
     elif flatten == True:
         D = Device('import_gds')
-        polygons = cell.get_polygons(by_spec = True)
+        polygons = topcell.get_polygons(by_spec = True)
 
-        if layer_remapping is None:
-            for layer_in_gds, polys in polygons.items():
-                D.add_polygon(polys, layer = layer_in_gds)
-        else:
-            for layer_in_gds, polys in polygons.items():
-                parsed_layer_in_gds = _parse_layer(layer_in_gds)
-                if parsed_layer_in_gds in layer_remapping.keys():
-                    D.add_polygon(polys, layer = layer_remapping[parsed_layer_in_gds])
+        for layer_in_gds, polys in polygons.items():
+            D.add_polygon(polys, layer = layer_in_gds)
         return D
 
 
-def _translate_cell(c, layer_remapping):
+def _translate_cell(c):
     D = Device(name = c.name)
     for e in c.elements:
         if isinstance(e, gdspy.PolygonSet):
             for n, points in enumerate(e.polygons):
                 polygon_layer = _parse_layer((e.layers[n], e.datatypes[n]))
-                if layer_remapping is None: 
-                    D.add_polygon(points = points, layer = polygon_layer)
-                elif polygon_layer in layer_remapping.keys():
-                    D.add_polygon(points = points, layer = layer_remapping[polygon_layer])
+                D.add_polygon(points = points, layer = polygon_layer)
         elif isinstance(e, gdspy.CellReference):
-            dr = DeviceReference(device = _translate_cell(e.ref_cell, layer_remapping),
+            dr = DeviceReference(device = _translate_cell(e.ref_cell),
                             origin = e.origin,
                             rotation = e.rotation, magnification = None,
                             x_reflection = e.x_reflection)
@@ -1839,11 +1849,14 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
     Usage:
         Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
         if you do not specifiy a value for a parameter it will just use the default value
-        Ex:
+        Ex::
+
             via_route_test_structure(num_vias=54)
-            -or-
+
+        - or -::
+
             via_route_test_structure(num_vias=12, pad_size=(100,100),wire_width=8)
-            
+
         total requested vias (num_vias) -> this needs to be even
         pad size (pad_size) -> given in a pair (width, height)
         wire_width -> how wide each wire should be
@@ -1946,11 +1959,14 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     only need to supply the parameters which you intend on
     changing You can alternatively call it with no parameters
     and it will take all the default alues shown below.
-    Ex:
+    Ex::
+
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
-        - or -
+
+    - or -::
+
         comb_insulation_test_structure()
-    """ 
+    """
     CI = Device("test_comb")
 
     if comb_pad_layer is None:  comb_pad_layer = comb_layer
@@ -2106,9 +2122,12 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     thinnest parts of each wire. Alternatively, specify a list of widths for the thinnest part of each wire and ignore the
     wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
     part of the wire will be larger than the thin part. 
-    Ex:
+    Ex::
+
         ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
-        - or -
+
+    - or -::
+
         ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
     """
     ICS = Device('test_ic')

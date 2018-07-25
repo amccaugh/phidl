@@ -2,14 +2,10 @@
 # Major TODO
 #==============================================================================
 
-# TODO Add support for gdspy.CellArray
-# TODO Auto-generate PHIDL geometry documentation
-
 #==============================================================================
 # Minor TODO
 #==============================================================================
 # TODO Move quickplot to phidl.quickplotter
-# TODO PHIDL Make rotation and magnification _rotation and _magnification so they don't show up
 
 #==============================================================================
 # Imports
@@ -28,14 +24,8 @@ import webcolors
 import warnings
 import yaml
 
-try:
-    from matplotlib import pyplot as plt
-except:
-    warnings.warn("""PHIDL tried to import matplotlib but it failed. It will'
-                     still work but quickplot() may not.  Try using
-                     quickplot2() instead (see note in tutorial) """)
 
-__version__ = '0.8.8'
+__version__ = '0.8.9'
 
 
 
@@ -476,7 +466,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def polygons(self):
-        return [e for e in self.elements if isinstance(e, Polygon)]
+        return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
 
     @property
     def meta(self):
@@ -593,7 +583,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
-                  auto_rename = True):
+                  auto_rename = True, max_cellname_length = 28):
         if filename[-4:] != '.gds':  filename += '.gds'
         tempname = self.name
         referenced_cells = list(self.get_dependencies(recursive=True))
@@ -602,18 +592,90 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            used_names = {}
+            used_names = {'toplevel':1}
             for c in all_cells_sorted:
-                if c._internal_name not in used_names:
-                    used_names[c._internal_name] = 1
-                    c.name = c._internal_name[:20]
+                if max_cellname_length is not None:
+                    new_name = c._internal_name[:max_cellname_length]
                 else:
-                    c.name = c._internal_name[:20] + ('%0.3i' % used_names[c._internal_name])
-                    used_names[c._internal_name] += 1
+                    new_name = c._internal_name
+                if new_name not in used_names:
+                    used_names[new_name] = 1
+                    c.name = new_name
+                else:
+                    c.name = new_name + ('%0.3i' % used_names[new_name])
+                    used_names[new_name] += 1
             self.name = 'toplevel'
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
         self.name = tempname
+        return filename
+
+
+    def remap_layers(self, layermap = {}, include_labels = True):
+        layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
+
+        all_D = list(self.get_dependencies(True))
+        all_D += [self]
+        for D in all_D:
+            for p in D.polygons:
+                for n, layer in enumerate(p.layers):
+                    original_layer = (p.layers[n], p.datatypes[n])
+                    original_layer = _parse_layer(original_layer)
+                    if original_layer in layermap.keys():
+                        new_layer = layermap[original_layer]
+                        p.layers[n] = new_layer[0]
+                        p.datatypes[n] = new_layer[1]
+            if include_labels == True:
+                for l in D.labels:
+                    original_layer = (l.layer, l.texttype)
+                    original_layer = _parse_layer(original_layer)
+                    if original_layer in layermap.keys():
+                        new_layer = layermap[original_layer]
+                        l.layer = new_layer[0]
+                        l.texttype = new_layer[1]
+        return self
+
+    def remove_layers(self, layers = (), include_labels = True, invert_selection = False):
+        layers = [_parse_layer(l) for l in layers]
+        all_D = list(self.get_dependencies(True))
+        all_D += [self]
+        for D in all_D:
+            new_elements = []
+            for e in D.elements:
+                if isinstance(e, gdspy.PolygonSet):
+                    new_polygons = []
+                    new_layers = []
+                    new_datatypes = []
+                    for n, layer in enumerate(e.layers):
+                        original_layer = (e.layers[n], e.datatypes[n])
+                        original_layer = _parse_layer(original_layer)
+                        if invert_selection: keep_layer = (original_layer in layers)
+                        else:                keep_layer = (original_layer not in layers)
+                        if keep_layer:
+                            new_polygons += [e.polygons[n]]
+                            new_layers += [e.layers[n]]
+                            new_datatypes += [e.datatypes[n]]
+                     # Don't re-add an empty polygon
+                    if len(new_polygons) > 0:
+                        e.polygons = new_polygons
+                        e.layers = new_layers
+                        e.datatypes = new_datatypes
+                        new_elements.append(e)
+            D.elements = new_elements
+
+            if include_labels == True:
+                new_labels = []
+                for l in D.labels:
+                    original_layer = (l.layer, l.texttype)
+                    original_layer = _parse_layer(original_layer)
+                    if invert_selection: keep_layer = (original_layer in layers)
+                    else:                keep_layer = (original_layer not in layers)
+                    if keep_layer:
+                        new_labels += [l]
+                D.labels = new_labels
+        return self
+
+        
 
 
     def distribute(self, elements, direction = 'x', spacing = 100, separation = True):
@@ -939,100 +1001,5 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
 
-#==============================================================================
-# Plotting functions
-#==============================================================================
 
 
-def quickplot(items, show_ports = True, show_subports = True,
-              label_ports = True, label_aliases = False, new_window = False):
-    """ Takes a list of devices/references/polygons or single one of those, and
-    plots them.  Also has the option to overlay their ports """
-    if new_window: fig, ax = plt.subplots(1)
-    else:
-        ax = plt.gca()  # Get current figure
-        ax.cla()        # Clears the axes of all previous polygons
-    ax.axis('equal')
-    ax.grid(True, which='both', alpha = 0.4)
-    ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
-    ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
-    
-    # Iterate through each each Device/DeviceReference/Polygon
-    np.random.seed(0)
-    if type(items) is not list:  items = [items]
-    for item in items:
-        if isinstance(item, (Device, DeviceReference)):
-            polygons_spec = item.get_polygons(by_spec=True, depth=None)
-            for key in sorted(polygons_spec):
-                polygons = polygons_spec[key]
-                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
-                _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-                               edgecolor = 'k', alpha = layerprop['alpha'])
-                for name, port in item.ports.items():
-                    if (port.width is None) or (port.width == 0):
-                        _draw_port_as_point(port)
-                    else:
-                        _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                    ax.text(port.midpoint[0], port.midpoint[1], name)
-            if isinstance(item, Device) and show_subports is True:
-                for sd in item.references:
-                    for name, port in sd.ports.items():
-                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                        ax.text(port.midpoint[0], port.midpoint[1], name)
-            if isinstance(item, Device) and label_aliases is True:
-                for name, ref in item.aliases.items():
-                    ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
-                             weight = 'bold', size = 'large', ha = 'center')
-        elif isinstance(item, Polygon):
-            polygons = item.polygons
-            layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
-            _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-                           edgecolor = 'k', alpha = layerprop['alpha'])
-    plt.draw()
-    plt.show(block = False)
-    
-
-
-def _get_layerprop(layer, datatype):
-    # Colors generated from here: http://phrogz.net/css/distinct-colors.html
-    layer_colors = ['#3dcc5c', '#2b0fff', '#cc3d3d', '#e5dd45', '#7b3dcc',
-    '#cc860c', '#73ff0f', '#2dccb4', '#ff0fa3', '#0ec2e6', '#3d87cc', '#e5520e']
-                     
-    l = Layer.layer_dict.get((layer, datatype))
-    if l is not None:
-        color = l.color
-        alpha = l.alpha
-    else:
-        color = layer_colors[np.mod(layer, len(layer_colors))]
-        alpha = 0.8
-    return {'color':color, 'alpha':alpha}
-    
-    
-def _draw_polygons(polygons, ax, **kwargs):
-    """ This function uses a trick where all polygon points are concatenated, 
-    separated only by NaN values.  This speeds up drawing considerably, see
-    http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
-    """
-    nan_pt = np.array([[np.nan, np.nan]])
-    polygons_with_nans = [np.concatenate((p, [p[0]], nan_pt), axis = 0) for p in polygons]
-    all_polygons = np.vstack(polygons_with_nans)
-    plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
-
-
-def _draw_port(port, arrow_scale = 1, **kwargs):
-    x = port.midpoint[0]
-    y = port.midpoint[1]
-    nv = port.normal
-    n = (nv[1]-nv[0])*arrow_scale
-    dx, dy = n[0], n[1]
-    xbound, ybound = np.column_stack(port.endpoints)
-    #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
-    plt.plot(xbound, ybound, 'r', alpha = 0.5, linewidth = 3) # Draw port edge
-    plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
-              head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
-
-
-def _draw_port_as_point(port, **kwargs):
-    x = port.midpoint[0]
-    y = port.midpoint[1]
-    plt.plot(x, y, 'r+', alpha = 0.5, markersize = 15, markeredgewidth = 2) # Draw port edge

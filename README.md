@@ -59,6 +59,16 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 0.8.9 (July 24, 2018)
+### New features
+- The addition of the argument `max_cellname_length` added to `D.write_gds()`.  It is `28` by default, to guarantee maximum compatibility with GDS specifications (32 is generally the lower limit, and `write_gds()` applies a # afterwards to prevent duplicate cellnames).
+- New documentation backend (contribution thanks to Alex Tait @atait)
+- Added `D.remap_layers()` which allows you to to move all polygons contained on a layer within your Device to another layer. See tutorial for details
+- Added `D.remove_layers()` which lets you remove all polygon geometry (optionally including labels) from a Device on the specified layers. See tutorial for details
+ 
+### Bugfixes
+- Further fixes to `D.write_gds()` for rare edge cases
+
 ## 0.8.8 (July 19, 2018)
 ### New features
 - You can now add any shape to multiple layers at once by passing a whole `LayerSet` to the `layer` argument.  See tutorial for details
