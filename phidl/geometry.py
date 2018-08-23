@@ -624,7 +624,8 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ring')
     inner_radius = radius - width/2
     outer_radius = radius + width/2
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    n = int(np.round(360/angle_resolution))
+    t = np.linspace(0, 360, n+1)*pi/180
     inner_points_x = (inner_radius*cos(t)).tolist()
     inner_points_y = (inner_radius*sin(t)).tolist()
     outer_points_x = (outer_radius*cos(t)).tolist()
