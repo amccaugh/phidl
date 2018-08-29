@@ -732,6 +732,33 @@ D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
 qp(D2)
 
 
+#==============================================================================
+# Comparing two Devices
+#==============================================================================
+# Sometimes you want to be able to test whether two Devices are identical or
+# not (similar to the "diff" of a text file).  You can perform this comparison
+# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer  
+# XOR difference between the Devices A and B, and returns polygons representing 
+# the differences between A and B.
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().rotate(15)
+E3 = pg.ellipse()
+
+# Let's compare two slightly different Devices
+X1 = pg.xor_diff(A = E1, B = E2)
+# When we plot the result, we see only the differences between E1 and E2
+qp(X1) 
+
+# Now let's compare two identical Devices
+X2 = pg.xor_diff(A = E1, B = E3)
+qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
+
+# We can double-check this by computing the area of each device
+print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
+print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
+
 
 #==============================================================================
 # Creating outlines of shapes
@@ -743,8 +770,6 @@ qp(D2)
 D = pg.ellipse(layer = 1)
 D2 = pg.outline(D, distance = 1, layer = 2)
 qp([D, D2])
-
-
 
 
 #==============================================================================

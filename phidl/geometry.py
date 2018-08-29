@@ -1742,7 +1742,7 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
     return Outline
 
 
-def xor_diff(A,B):
+def xor_diff(A,B, precision = 0.001):
     """ Given two Devices A and B, performs the layer-by-layer XOR 
     difference between A and B, and returns polygons representing 
     the differences between A and B.
@@ -1758,13 +1758,14 @@ def xor_diff(A,B):
     for layer in all_layers:
         if (layer in A_layers) and (layer in B_layers):
             p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
-                                   operation = 'xor', precision=0.001,
+                                   operation = 'xor', precision=precision,
                                    max_points=4000, layer=layer[0], datatype=layer[1])
         elif (layer in A_layers):
             p = A_polys[layer]
         elif (layer in B_layers):
             p = B_polys[layer]
-        D.add_polygon(p, layer = layer)
+        if p is not None:
+            D.add_polygon(p, layer = layer)
     return D
 
 
