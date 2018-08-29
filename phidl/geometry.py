@@ -1727,6 +1727,9 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
 
 
 def outline(elements, distance = 1, precision = 0.001, layer = 0):
+    """ Creates an outline around all the polygons passed in the `elements`
+    argument.  `elements` may be a Device, Polygon, or list of Devices
+    """
     D = Device('outline')
     if type(elements) is not list: elements = [elements]
     for e in elements:
@@ -1738,6 +1741,31 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
     Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
     return Outline
 
+
+def xor_diff(A,B):
+    """ Given two Devices A and B, performs the layer-by-layer XOR 
+    difference between A and B, and returns polygons representing 
+    the differences between A and B.
+    """
+    D = Device()
+    A_polys = A.get_polygons(by_spec = True)
+    B_polys = B.get_polygons(by_spec = True)
+    A_layers = A_polys.keys() 
+    B_layers = B_polys.keys() 
+    all_layers = set()
+    all_layers.update(A_layers )
+    all_layers.update(B_layers)
+    for layer in all_layers:
+        if (layer in A_layers) and (layer in B_layers):
+            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
+                                   operation = 'xor', precision=0.001,
+                                   max_points=4000, layer=layer[0], datatype=layer[1])
+        elif (layer in A_layers):
+            p = A_polys[layer]
+        elif (layer in B_layers):
+            p = B_polys[layer]
+        D.add_polygon(p, layer = layer)
+    return D
 
 
 #==============================================================================
