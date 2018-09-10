@@ -85,7 +85,7 @@ def write_lyp(filename, layerset):
         f.write('</layer-properties>\n')
 
 
-def write_svg(D, filename, layerset = None):
+def write_svg(D, filename):
     xsize, ysize = D.size
     dcx, dcy = D.center
     dx, dy = dcx-xsize/2, dcy-ysize/2

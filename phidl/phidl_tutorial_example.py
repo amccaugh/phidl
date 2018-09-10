@@ -792,6 +792,20 @@ qp(D)
 
 
 #==============================================================================
+# Save / export to SVG
+#==============================================================================
+# For figure-quality publications sometimes you want to save your geometry
+# as a more convenient vector file format like SVG (for Inkscape, Illustrator, 
+# etc). For that purpose you can use the write_svg() command
+from phidl.utilities import write_svg
+
+D = Device()
+D << pg.snspd_expanded(layer = 1)
+D << pg.snspd_expanded(layer = 2).rotate(45)
+write_svg(D, filename = 'MyGeometryFigure.svg')
+
+
+#==============================================================================
 # Advanced: Using the LRU Cache decorator
 #==============================================================================
 # Let's assume you have a Device-making function which takes a long time,
