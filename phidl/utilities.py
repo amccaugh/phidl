@@ -1,4 +1,5 @@
 import operator
+from phidl.quickplotter import _get_layerprop
 
 def write_lyp(filename, layerset):
     """ Creates a KLayout .lyp Layer Properties file from a set of 
@@ -82,3 +83,36 @@ def write_lyp(filename, layerset):
     
         # Writing layer properties trailer
         f.write('</layer-properties>\n')
+
+
+def write_svg(D, filename, layerset = None):
+    xsize, ysize = D.size
+    dcx, dcy = D.center
+    dx, dy = dcx-xsize/2, dcy-ysize/2
+    group_num = 1
+    if filename[-4:] != '.svg':  filename += '.svg'
+    with open(filename, 'w+') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
+        f.write('<svg width="%0.6f" height="%0.6f">\n' % (xsize, ysize))
+        
+        all_polygons = D.get_polygons(by_spec = True)
+        for layer, polygons in all_polygons.items():
+        #    color = '#800000'
+            color = _get_layerprop(layer = layer[0] , datatype = layer[1])['color']
+            f.write('  <g id="layer%03i_datatype%03i">\n' % (layer[0], layer[1]))
+            group_num += 1
+            
+            for polygon in polygons:
+                poly_str = '    <path style="fill:%s"\n          d="' % color
+                n = 0
+                for p in polygon:
+                    if n == 0: poly_str+= 'M '
+                    else:      poly_str+= 'L '
+                    poly_str += '%0.6f %0.6f '  % (p[0]-dx,-(p[1]-dy)+ysize)
+                    n += 1
+                poly_str+= 'Z"/>\n'
+                f.write(poly_str)
+            f.write('  </g>\n')
+        
+        f.write('</svg>\n')
+    return filename
