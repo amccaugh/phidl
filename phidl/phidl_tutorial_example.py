@@ -772,6 +772,37 @@ D2 = pg.outline(D, distance = 1, layer = 2)
 qp([D, D2])
 
 
+
+#==============================================================================
+# Joining (Unioning) shapes together
+#==============================================================================
+# If you have several polygons which form a single compound shape and you want
+# to join (union) them all together, you can do it with the pg.union() command:
+# Note: Like all phidl.geometry functions, this will return NEW geometry! In
+# particular, this function will return a new *flattened* geometry
+
+D = Device()
+D << pg.ellipse(layer = 0)
+D << pg.ellipse(layer = 0).rotate(15*1)
+D << pg.ellipse(layer = 0).rotate(15*2)
+D << pg.ellipse(layer = 0).rotate(15*3)
+D << pg.ellipse(layer = 1).rotate(15*4)
+D << pg.ellipse(layer = 1).rotate(15*5)
+
+# We have two options to unioning - take all polygons, regardless of 
+# layer, and join them together (in this case on layer 5) like so:
+D_joined = pg.union(D, by_layer = False, layer = 5)
+
+# Or we can perform the union operate by-layer
+D_joined_by_layer = pg.union(D, by_layer = True)
+
+dj = D << D_joined
+djl = D << D_joined_by_layer
+dj.xmax += 25
+djl.xmax += 50
+
+qp(D)
+
 #==============================================================================
 # Removing geometry
 #==============================================================================
