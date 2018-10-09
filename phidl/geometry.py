@@ -186,7 +186,6 @@ def _translate_cell(c):
     return D
 
 
-    
 def preview_layerset(ls, size = 100):
     """ Generates a preview Device with representations of all the layers,
     used for previewing LayerSet color schemes in quickplot or saved .gds 
@@ -603,7 +602,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ellipse')
     a = radii[0]
     b = radii[1]
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
     r = a*b/(sqrt((b*cos(t))**2 + (a*sin(t))**2))
     xpts = r*cos(t)
     ypts = r*sin(t)
@@ -613,7 +612,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
 
 def circle(radius = 10, angle_resolution = 2.5, layer = 0):
     D = Device(name = 'circle')
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
     xpts = (radius*cos(t)).tolist()
     ypts = (radius*sin(t)).tolist()
     D.add_polygon(points = (xpts,ypts), layer = layer)
@@ -1378,7 +1377,7 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
-            max_points=199,  final_distance=None, layer=layer)
+            max_points=4000,  final_distance=None, layer=layer)
     D = Device('racetrack')
     D.add(route_path)
     return D
@@ -1632,7 +1631,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
+def offset(elements, distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -1645,10 +1644,10 @@ def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer
     # separate polygons which are nominally joined
     joined = gdspy.offset(polygons_to_offset, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
-                          max_points=199, layer=gds_layer, datatype = gds_datatype)
+                          max_points=4000, layer=gds_layer, datatype = gds_datatype)
     p = gdspy.offset(joined, distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
-                     max_points=199, layer=gds_layer, datatype = gds_datatype)
+                     max_points=4000, layer=gds_layer, datatype = gds_datatype)
     D = Device('offset')
     D.add_polygon(p, layer=layer)
     return D
@@ -1677,7 +1676,7 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     operandA = R.get_polygons()
     operandB = D.get_polygons()
     p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
-                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
         
     D = Device('invert')
     D.add_polygon(p, layer=layer)
@@ -1719,7 +1718,7 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
 
 
     p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
-                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
 
     D = Device('boolean')
     if p is not None: D.add_polygon(p, layer = layer)
@@ -1727,6 +1726,9 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
 
 
 def outline(elements, distance = 1, precision = 0.001, layer = 0):
+    """ Creates an outline around all the polygons passed in the `elements`
+    argument.  `elements` may be a Device, Polygon, or list of Devices
+    """
     D = Device('outline')
     if type(elements) is not list: elements = [elements]
     for e in elements:
@@ -1738,6 +1740,55 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
     Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
     return Outline
 
+
+def xor_diff(A,B, precision = 0.001):
+    """ Given two Devices A and B, performs the layer-by-layer XOR 
+    difference between A and B, and returns polygons representing 
+    the differences between A and B.
+    """
+    D = Device()
+    A_polys = A.get_polygons(by_spec = True)
+    B_polys = B.get_polygons(by_spec = True)
+    A_layers = A_polys.keys() 
+    B_layers = B_polys.keys() 
+    all_layers = set()
+    all_layers.update(A_layers )
+    all_layers.update(B_layers)
+    for layer in all_layers:
+        if (layer in A_layers) and (layer in B_layers):
+            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
+                                   operation = 'xor', precision=precision,
+                                   max_points=4000, layer=layer[0], datatype=layer[1])
+        elif (layer in A_layers):
+            p = A_polys[layer]
+        elif (layer in B_layers):
+            p = B_polys[layer]
+        if p is not None:
+            D.add_polygon(p, layer = layer)
+    return D
+
+
+def union(D, by_layer = False, layer = 0):
+    U = Device()
+    
+    if by_layer == True:
+        all_polygons = D.get_polygons(by_spec = True)
+        for layer, polygons in all_polygons.items():
+            unioned_polygons = _union_polygons(polygons)
+            U.add_polygon(unioned_polygons, layer = layer)
+    else:
+        all_polygons = D.get_polygons(by_spec = False)
+        unioned_polygons = _union_polygons(all_polygons)
+        U.add_polygon(unioned_polygons, layer = layer)
+    return U
+    
+def _union_polygons(polygons, precision=1e-6):
+    expanded = gdspy.offset(polygons, precision, join='miter', tolerance=2,
+                          precision=precision, join_first=False,
+                          max_points=1e9)
+    unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
+                                 precision=precision, max_points=1e9)
+    return unioned
 
 
 #==============================================================================

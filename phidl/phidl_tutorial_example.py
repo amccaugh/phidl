@@ -408,12 +408,33 @@ my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', descri
 my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
 DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 
+
+#==============================================================================
+# Advanced layers: Generating geometry on multiple layers at once
+#==============================================================================
+# Say we want to create the same ellipse on several different layers.  We can
+# do that by using a Python `set` of layers.  So if we want to add it to three
+# layers, say GDS layer 1 datatype 0, GDS layer 3 datatype 5, and GDS layer 7
+# datatype 8:
+
+# Note each element of the set must be a valid layer input by itself
+my_layers = {1, (3,5), (7,8)}
+# When you apply the set to add_polygon, you get a list of the returned polygons
+polygon_list = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)], layer = my_layers)
+print([(p.layers[0], p.datatypes[0]) for p in polygon_list])
+
+# However, when you use it on a phidl.geometry function, it does not produce
+# multiple Devices! It will only produce a single Device with geometry on all 
+# of your specified layers. This is because the `layer` argument is passed 
+# transparently to the add_polygon() function through the function
+E = pg.ellipse(layer = {4, 8, 19})
+print(E.layers)
+
+
 #==============================================================================
 # Advanced layers: Containing multiple Layers in a LayerSet object
 #==============================================================================
-
-
-# What you can also do is make a set of layers, which lets you
+# What you can also do is make a LayerSet, which lets you
 # conveniently call each Layer object just by its name.  You can also specify
 # the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
 # (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'
@@ -732,6 +753,33 @@ D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
 qp(D2)
 
 
+#==============================================================================
+# Comparing two Devices
+#==============================================================================
+# Sometimes you want to be able to test whether two Devices are identical or
+# not (similar to the "diff" of a text file).  You can perform this comparison
+# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer  
+# XOR difference between the Devices A and B, and returns polygons representing 
+# the differences between A and B.
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().rotate(15)
+E3 = pg.ellipse()
+
+# Let's compare two slightly different Devices
+X1 = pg.xor_diff(A = E1, B = E2)
+# When we plot the result, we see only the differences between E1 and E2
+qp(X1) 
+
+# Now let's compare two identical Devices
+X2 = pg.xor_diff(A = E1, B = E3)
+qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
+
+# We can double-check this by computing the area of each device
+print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
+print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
+
 
 #==============================================================================
 # Creating outlines of shapes
@@ -746,6 +794,35 @@ qp([D, D2])
 
 
 
+#==============================================================================
+# Joining (Unioning) shapes together
+#==============================================================================
+# If you have several polygons which form a single compound shape and you want
+# to join (union) them all together, you can do it with the pg.union() command:
+# Note: Like all phidl.geometry functions, this will return NEW geometry! In
+# particular, this function will return a new *flattened* geometry
+
+D = Device()
+D << pg.ellipse(layer = 0)
+D << pg.ellipse(layer = 0).rotate(15*1)
+D << pg.ellipse(layer = 0).rotate(15*2)
+D << pg.ellipse(layer = 0).rotate(15*3)
+D << pg.ellipse(layer = 1).rotate(15*4)
+D << pg.ellipse(layer = 1).rotate(15*5)
+
+# We have two options to unioning - take all polygons, regardless of 
+# layer, and join them together (in this case on layer 5) like so:
+D_joined = pg.union(D, by_layer = False, layer = 5)
+
+# Or we can perform the union operate by-layer
+D_joined_by_layer = pg.union(D, by_layer = True)
+
+dj = D << D_joined
+djl = D << D_joined_by_layer
+dj.xmax += 25
+djl.xmax += 50
+
+qp(D)
 
 #==============================================================================
 # Removing geometry
@@ -764,6 +841,20 @@ qp(D)
 D.remove(mytee2)
 D.remove(mypoly2)
 qp(D)
+
+
+#==============================================================================
+# Save / export to SVG
+#==============================================================================
+# For figure-quality publications sometimes you want to save your geometry
+# as a more convenient vector file format like SVG (for Inkscape, Illustrator, 
+# etc). For that purpose you can use the write_svg() command
+from phidl.utilities import write_svg
+
+D = Device()
+D << pg.snspd_expanded(layer = 1)
+D << pg.snspd_expanded(layer = 2).rotate(45)
+write_svg(D, filename = 'MyGeometryFigure.svg')
 
 
 #==============================================================================
