@@ -510,6 +510,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:    
             if isinstance(layer, LayerSet):
                 return [self.add_polygon(points, l) for l in layer._layers.values()]
+            elif isinstance(layer, set):
+                return [self.add_polygon(points, l) for l in layer]
             elif all([isinstance(l, (Layer)) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
             elif len(layer) > 2: # Someone wrote e.g. layer = [1,4,5]
