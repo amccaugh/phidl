@@ -408,12 +408,33 @@ my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', descri
 my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
 DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 
+
+#==============================================================================
+# Advanced layers: Generating geometry on multiple layers at once
+#==============================================================================
+# Say we want to create the same ellipse on several different layers.  We can
+# do that by using a Python `set` of layers.  So if we want to add it to three
+# layers, say GDS layer 1 datatype 0, GDS layer 3 datatype 5, and GDS layer 7
+# datatype 8:
+
+# Note each element of the set must be a valid layer input by itself
+my_layers = {1, (3,5), (7,8)}
+# When you apply the set to add_polygon, you get a list of the returned polygons
+polygon_list = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)], layer = my_layers)
+print([(p.layers[0], p.datatypes[0]) for p in polygon_list])
+
+# However, when you use it on a phidl.geometry function, it does not produce
+# multiple Devices! It will only produce a single Device with geometry on all 
+# of your specified layers. This is because the `layer` argument is passed 
+# transparently to the add_polygon() function through the function
+E = pg.ellipse(layer = {4, 8, 19})
+print(E.layers)
+
+
 #==============================================================================
 # Advanced layers: Containing multiple Layers in a LayerSet object
 #==============================================================================
-
-
-# What you can also do is make a set of layers, which lets you
+# What you can also do is make a LayerSet, which lets you
 # conveniently call each Layer object just by its name.  You can also specify
 # the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
 # (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'

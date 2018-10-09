@@ -64,9 +64,10 @@ You can also do things like create a backing fill to make sure the resist develo
 - Added pg.union() - a handy convenience function to join (union) polygons together, either by-layer or all together (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 - Added phidl.utilities.write_svg() - allows you to write your geometry directly to SVG for the sake of publishing figures easily (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 - Added pg.xor_diff(A,B) - Produces an XOR operation between Devices A and B, which can by used to compare differences between A and B (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+- Allow usage of a Python `set` (e.g. {3,5,6}) as an input to the `layer` argument of add_polygon (and thus all geometry-creation functions in phidl.geometry) to create the polygons on multiple layers.  (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 
-### Changes
-
+### Bugfixes
+- None
 
 
 ## 0.8.10 (August 23, 2018)
