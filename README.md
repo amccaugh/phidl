@@ -59,7 +59,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
-## 0.9.0 (Sept 11, 2018)
+## 0.9.0 (Oct 9, 2018)
 ### New features
 - Added pg.union() - a handy convenience function to join (union) polygons together, either by-layer or all together (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 - Added phidl.utilities.write_svg() - allows you to write your geometry directly to SVG for the sake of publishing figures easily (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
