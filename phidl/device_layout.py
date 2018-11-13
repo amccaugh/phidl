@@ -551,10 +551,9 @@ class Device(gdspy.Cell, _GeometryHelper):
                 orientation = orientation, parent = self)
         if name is not None: p.name = name
         if p.name in self.ports:
-            raise ValueError('[DEVICE] add_port() error: Port name already exists in this device') 
+            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (uid %s)' % (p.name, self.uid)) 
         self.ports[p.name] = p
         return p
-        
         
     def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
          # Check if ``device`` is actually a device-making function
