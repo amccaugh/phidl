@@ -24,12 +24,12 @@ import phidl.utilities as pu
 #
 # If that doesn't work and you're using IPython, try using the command
 # >>> %gui qt
-#==============================================================================
 
 # Uncomment this if you're using the original quickplot (not quickplot2)
 # and you'd like to see each result in a new window
 # import functools
 # qp = functools.partial(qp, new_window = True)
+#==============================================================================
 
 
 #==============================================================================
