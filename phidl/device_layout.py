@@ -24,6 +24,7 @@ from numpy.linalg import norm
 import webcolors
 import warnings
 import yaml
+import os
 
 
 __version__ = '0.9.0'
@@ -612,6 +613,27 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.name = tempname
         return filename
 
+    def write_oas(self, filename, **write_kwargs):
+        try:
+            import klayout.db as pya
+        except ImportError as err:
+            err.args = ('[PHIDL] klayout package needed to write OASIS. pip install klayout\n' + err.args[0], ) + err.args[1:]
+            raise
+        if filename[-4:] != '.oas':  filename += '.oas'
+        fileroot = os.path.splitext(filename)[0]
+        tempfilename = fileroot + '-tmp.gds'
+
+        self.write_gds(tempfilename, **write_kwargs)
+        layout = pya.Layout()
+        topcell = layout.create_cell('TOP')
+        layout.read(tempfilename)
+        gdscell2 = layout.cell('toplevel')
+        rot_DTrans = pya.DTrans.R0
+        origin = pya.DPoint(0, 0)
+        topcell.insert(pya.DCellInstArray(gdscell2.cell_index(), pya.DTrans(rot_DTrans, origin)))
+        layout.write(filename)
+        os.remove(tempfilename)
+        return filename
 
     def remap_layers(self, layermap = {}, include_labels = True):
         layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
