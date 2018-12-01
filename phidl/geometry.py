@@ -13,6 +13,7 @@ from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
 import pickle
+import os
 
 from skimage import draw, morphology
 
@@ -530,6 +531,28 @@ def import_gds(filename, cellname = None, flatten = False):
         for layer_in_gds, polys in polygons.items():
             D.add_polygon(polys, layer = layer_in_gds)
         return D
+
+def import_oas(filename, cellname = None, flatten = False):
+    try:
+        import klayout.db as pya
+    except ImportError as err:
+        err.args = ('[PHIDL] klayout package needed to import OASIS. pip install klayout\n' + err.args[0], ) + err.args[1:]
+        raise
+    fileroot = os.path.splitext(filename)[0]
+    tempfilename = fileroot + '-tmp.gds'
+
+    layout = pya.Layout()
+    topcell = layout.create_cell('TOP')
+    layout.read(filename)
+    gdscell2 = layout.cell('toplevel')
+    rot_DTrans = pya.DTrans.R0
+    origin = pya.DPoint(0, 0)
+    topcell.insert(pya.DCellInstArray(gdscell2.cell_index(), pya.DTrans(rot_DTrans, origin)))
+    topcell.write(tempfilename)
+    
+    retval = import_gds(tempfilename, cellname = cellname, flatten = flatten)
+    os.remove(tempfilename)
+    return retval
 
 
 def _translate_cell(c):
