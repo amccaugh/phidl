@@ -1,4 +1,5 @@
 import operator
+import xmltodict
 from phidl.quickplotter import _get_layerprop
 
 def write_lyp(filename, layerset):
@@ -83,6 +84,68 @@ def write_lyp(filename, layerset):
     
         # Writing layer properties trailer
         f.write('</layer-properties>\n')
+
+
+def load_lyp(filename):
+    from phidl.device_layout import LayerSet
+    if filename[-4:] != '.lyp': filename = filename + '.lyp'
+    with open(filename, 'r') as fx:
+        lyp_dict = xmltodict.parse(fx.read(), process_namespaces=True)
+    lyp_list = ['layer-properties']['properties']
+
+    lys = LayerSet()
+    def add_entry(entry):
+        layerInfo = entry['source'].split('@')[0]
+        phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
+        phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
+        phidl_LayerArgs['color'] = entry['fill-color']
+        phidl_LayerArgs['name'] = name2shortName(entry['name'])
+        phidl_LayerArgs['description'] = name2description(entry['name'])
+        lys.add_layer(**phidl_LayerArgs)
+
+    for entry in lyp_list:
+        if 'group-members' in entry:
+            continue
+        phidl_LayerArgs = dict()
+        try:
+            group_members = entry['group-members']
+        except KeyError:  # it is a real layer
+            add_entry(entry)
+        else:
+            if not isinstance(group_members, list):
+                group_members = [group_members]
+            for member in group_members:
+                add_entry(member)
+    return lys
+
+
+def name2shortName(name_str):
+    ''' Good to have this function separate because
+        it may differ for different naming conventions.
+
+        Reassign with::
+
+            soen.soen_utils.name2shortName = someOtherFunction
+    '''
+    if name_str is None:
+        raise IOError('This layer has no name')
+    components = name_str.split(' - ')
+    if len(components) > 1:
+        short_name = components[1]
+    else:
+        short_name = components[0]
+    return short_name
+
+
+def name2description(name_str):
+    ''' Not strictly necessary and only works with this naming convention '''
+    if name_str is None:
+        raise IOError('This layer has no name')
+    components = name_str.split(' - ')
+    description = None
+    if len(components) > 2:
+        description = components[2][1:-1]
+    return description
 
 
 def write_svg(D, filename):
