@@ -109,6 +109,7 @@ def load_lyp(filename):
         phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
         phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
         phidl_LayerArgs['color'] = entry['fill-color']
+        phidl_LayerArgs['dither'] = entry['dither-pattern']
         # These functions are customizable. See below
         phidl_LayerArgs['name'] = name2shortName(entry['name'])
         phidl_LayerArgs['description'] = name2description(entry['name'])
