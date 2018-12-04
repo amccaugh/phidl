@@ -87,18 +87,28 @@ def write_lyp(filename, layerset):
 
 
 def load_lyp(filename):
+    ''' Creates a LayerSet object from a lyp file that is XML '''
     from phidl.device_layout import LayerSet
     if filename[-4:] != '.lyp': filename = filename + '.lyp'
     with open(filename, 'r') as fx:
         lyp_dict = xmltodict.parse(fx.read(), process_namespaces=True)
-    lyp_list = ['layer-properties']['properties']
+    # lyp files have a top level that just has one dict: layer-properties
+    # That has multiple children 'properties', each for a layer. So it gives a list
+    lyp_list = lyp_dict['layer-properties']['properties']
+    if not isinstance(lyp_list, list):
+        lyp_list = [lyp_list]
 
     lys = LayerSet()
     def add_entry(entry):
+        ''' Entry is a dict of one element of 'properties'.
+            No return value. It adds it to the lys variable directly
+        '''
+        nonlocal lys
         layerInfo = entry['source'].split('@')[0]
         phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
         phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
         phidl_LayerArgs['color'] = entry['fill-color']
+        # These functions are customizable. See below
         phidl_LayerArgs['name'] = name2shortName(entry['name'])
         phidl_LayerArgs['description'] = name2description(entry['name'])
         lys.add_layer(**phidl_LayerArgs)
@@ -106,12 +116,11 @@ def load_lyp(filename):
     for entry in lyp_list:
         if 'group-members' in entry:
             continue
-        phidl_LayerArgs = dict()
         try:
             group_members = entry['group-members']
         except KeyError:  # it is a real layer
             add_entry(entry)
-        else:
+        else:  # it is a group of other entries
             if not isinstance(group_members, list):
                 group_members = [group_members]
             for member in group_members:
