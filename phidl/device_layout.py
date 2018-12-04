@@ -38,16 +38,32 @@ def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
+    # First check for common, easy values of angle
+    p_arr = np.asarray(points)
+    if angle == 0:
+        return p_arr
+
+    c0 = np.asarray(center)
+    displacement = p_arr - c0
+    if angle == 180:
+        return c0 - displacement
+
+    if p_arr.ndim == 2:
+        perpendicular = displacement[:, ::-1]
+    elif p_arr.ndim == 1:
+        perpendicular = displacement[::-1]
+    if angle == 90:
+        return c0 + perpendicular
+    elif angle == 270:
+        return c0 - perpendicular
+
+    # Fall back to trigonometry
     angle = angle*pi/180
     ca = cos(angle)
     sa = sin(angle)
     sa = np.array((-sa, sa))
-    c0 = np.array(center)
-    if np.asarray(points).ndim == 2: 
-        return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
-    if np.asarray(points).ndim == 1: 
-        return (points - c0) * ca + (points - c0)[::-1] * sa + c0
-    
+    return displacement * ca + perpendicular * sa + c0
+
 def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
