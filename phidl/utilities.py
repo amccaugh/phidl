@@ -105,6 +105,7 @@ def load_lyp(filename):
         '''
         nonlocal lys
         layerInfo = entry['source'].split('@')[0]
+        phidl_LayerArgs = dict()
         phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
         phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
         phidl_LayerArgs['color'] = entry['fill-color']
@@ -114,8 +115,6 @@ def load_lyp(filename):
         lys.add_layer(**phidl_LayerArgs)
 
     for entry in lyp_list:
-        if 'group-members' in entry:
-            continue
         try:
             group_members = entry['group-members']
         except KeyError:  # it is a real layer
