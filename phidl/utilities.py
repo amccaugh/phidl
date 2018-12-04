@@ -128,12 +128,16 @@ def load_lyp(filename):
 
 
 def name2shortName(name_str):
-    ''' Good to have this function separate because
-        it may differ for different naming conventions.
+    ''' Maps the name entry of the lyp element to a name of the phidl layer, 
+        i.e. the dictionary key used to access it.
+        Default format of the lyp name is
+            layer/datatype - phidl_key - description
+            or
+            phidl_key - description
 
-        Reassign with::
+        Reassign for different layer naming conventions with::
 
-            soen.soen_utils.name2shortName = someOtherFunction
+            phidl.utilities.name2shortName = someOtherFunction(string)
     '''
     if name_str is None:
         raise IOError('This layer has no name')
@@ -146,11 +150,22 @@ def name2shortName(name_str):
 
 
 def name2description(name_str):
-    ''' Not strictly necessary and only works with this naming convention '''
+    ''' Gets the description of the layer contained in the lyp name field.
+        It is not strictly necessary to have a description. If none there, it returns ''.
+
+        Default format of the lyp name is
+            layer/datatype - phidl_key - description
+            or
+            phidl_key - description
+
+        Reassign for different layer naming conventions with::
+
+            phidl.utilities.name2description = someOtherFunction(string)
+    '''
     if name_str is None:
         raise IOError('This layer has no name')
     components = name_str.split(' - ')
-    description = None
+    description = ''
     if len(components) > 2:
         description = components[2][1:-1]
     return description
