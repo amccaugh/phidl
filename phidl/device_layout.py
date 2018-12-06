@@ -7,6 +7,7 @@
 #==============================================================================
 # geometry: add packer, basic_wire
 # connect(): if width=0 then only move don't rotate orientation
+# Allow assignment of aliases by D['waveguide'] = D << WG
 
 #==============================================================================
 # Imports
