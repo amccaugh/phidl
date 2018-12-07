@@ -2243,7 +2243,9 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
     
     
-    if (terminals_same_side is False) and (num_meanders % 2) == 0:
+    if (terminals_same_side is False) and ((num_meanders % 2) == 0):
+        num_meanders += 1
+    elif (terminals_same_side is True) and ((num_meanders % 2) == 1):
         num_meanders += 1
     
     start_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
@@ -2280,9 +2282,10 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
            terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
-    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch,
+    S = snspd(wire_width = wire_width, wire_pitch = wire_pitch,
                         size = size, num_squares = num_squares, turn_ratio = turn_ratio, 
-                        terminals_same_side = terminals_same_side, layer = layer))
+                        terminals_same_side = terminals_same_side, layer = layer)
+    s = D.add_ref(S)
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
                             num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
                             layer = layer)
@@ -2293,7 +2296,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     D.add_port(name = 1, port = step1.ports[2])
     D.add_port(name = 2, port = step2.ports[2])
     
-    D.info = s.info
+    D.info = S.info
+    S.info = {}
     
     return D
     
