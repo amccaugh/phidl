@@ -27,7 +27,7 @@ import warnings
 import yaml
 
 
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 
 
 
@@ -280,10 +280,10 @@ class Port(object):
        
     @property
     def endpoints(self):
-        dx = self.width/2*np.cos((self.orientation - 90)*pi/180)
-        dy = self.width/2*np.sin((self.orientation - 90)*pi/180)
-        left_point = self.midpoint - np.array([dx,dy])
-        right_point = self.midpoint + np.array([dx,dy])
+        dxdy = np.array(self.width/2*np.cos((self.orientation - 90)*pi/180),
+            self.width/2*np.sin((self.orientation - 90)*pi/180))
+        left_point = self.midpoint - dxdy
+        right_point = self.midpoint + dxdy
         return np.array([left_point, right_point])
     
     @endpoints.setter
@@ -317,6 +317,10 @@ class Port(object):
             parent = self.parent)
         new_port.info = deepcopy(self.info)
         return new_port
+
+    def rotate(self, angle = 45):
+        self.orientation = mod(self.orientation + angle, 360)
+        return self
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
