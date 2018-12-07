@@ -318,8 +318,11 @@ class Port(object):
         new_port.info = deepcopy(self.info)
         return new_port
 
-    def rotate(self, angle = 45):
+    def rotate(self, angle = 45, center = None):
         self.orientation = mod(self.orientation + angle, 360)
+        if center is None:
+            center = self.midpoint
+        self.midpoint = _rotate_points(self.midpoint, angle = angle, center = center)
         return self
 
 
