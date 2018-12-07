@@ -40,16 +40,62 @@ from skimage import draw, morphology
 #==============================================================================
 
 
+def rectangle(size = (4,2), layer = 0):	
+	"""Generate rectangle geometry.
 
-def rectangle(size = (4,2), layer = 0):
+	Parameters
+	----------
+	size : tuple
+		Width and height of rectangle.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Rectangle parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> rect = pg.rectangle(size = (100,30), layer = 1)
+	>>> rect
+	Device (name "rectangle" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+	If both numbers in size are positive, the rectangle will extend away from the origin up and to the right. If the width is negative, for example, the rectangle will instead extend away from the origin up and to the left.
+	"""
+
     D = Device(name = 'rectangle')
     points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
     D.add_polygon(points, layer = layer)
     return D
 
 
-
 def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
+	""" Creates a bounding box rectangle from coordinates instead of dimensions.
+
+	Parameters
+	----------
+	bbox : list of tuples
+		Coordinates of the box [(x1,y1),(x2,y2)].
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Rectangle parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> bbox = pg.bbox()
+	>>> bbox
+	Device (name "bbox" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+	"""
+
     D = Device(name = 'bbox')
     (a,b),(c,d)  = bbox
     points = ((a,b), (c,b), (c,d), (a,d))
@@ -58,6 +104,30 @@ def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
 
 
 def cross(length = 10, width = 3, layer = 0):
+	"""Generate a right-angle cross (+ shape) from two rectangles of specified length and width.
+
+	Parameters
+	----------
+	length : float
+		Length of the two rectangles forming the cross.
+	width : float
+		Width of the two rectangles forming the cross.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Cross parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> cross = pg.cross()
+	>>> cross
+	Device (name "cross" (uid 0),  ports [], aliases [], 2 elements, 2 references)
+	"""
+
     D = Device(name = 'cross')
     R = rectangle(size = (width, length), layer = layer)
     r1 = D.add_ref(R).rotate(90)
@@ -68,6 +138,36 @@ def cross(length = 10, width = 3, layer = 0):
 
 
 def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
+	"""Generate an ellipse geometry.
+
+	Parameters
+	----------
+	radii : tuple
+		Semimajor and semiminor axis lengths of the ellipse.
+	angle_resolution : float
+		Resolution of the curve of the ellipse.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Ellipse parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> ellipse = pg.ellipse()
+	>>> ellipse
+	Device (name "ellipse" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+	The orientation of the ellipse is determined by the order of the radii variables; if the first element is larger, the ellipse will be horizontal and if the second element is larger, the ellipse will be vertical
+
+	The angle_resolution alters the precision of the curve of the ellipse. Larger values yield lower resolution.
+	"""
+
     D = Device(name = 'ellipse')
     a = radii[0]
     b = radii[1]
@@ -80,6 +180,34 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
 
 
 def circle(radius = 10, angle_resolution = 2.5, layer = 0):
+	"""Generate a circle geometry.
+
+	Parameters
+	----------
+	radius : float
+		Radius of the circle.
+	angle_resolution: float
+		Resolution of the curve of the circle.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Circle parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> circle = pg.circle()
+	>>> circle
+	Device (name "circle" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+	The angle_resolution alters the precision of the curve of the circle. Larger values yield lower resolution.
+	"""
+
     D = Device(name = 'circle')
     t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
     xpts = (radius*cos(t)).tolist()
@@ -89,6 +217,38 @@ def circle(radius = 10, angle_resolution = 2.5, layer = 0):
 
 
 def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
+	"""Generate a ring geometry.
+
+	Parameters
+	----------
+	radius : float
+		Middle radius of the ring.
+	width : float
+		Width of the ring.
+	angle_resolution : float
+		Resolution of the curve of the ring.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Ring parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> ring = pg.ring()
+	>>> ring
+	Device (name "ring" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+	The ring is formed by taking the radius out to the specified value, and then constructing the thickness by dividing the width in half and adding that value to either side of the radius.
+
+	The angle_resolution alters the precision of the curve of the ring. Larger values yield lower resolution.
+	"""
+
     D = Device(name = 'ring')
     inner_radius = radius - width/2
     outer_radius = radius + width/2
@@ -105,7 +265,47 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     
     
 def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
-    """ Creates an arc of arclength ``theta`` starting at angle ``start_angle`` """
+	""" Creates an arc of arclength ``theta`` starting at angle ``start_angle``
+
+	Parameters
+	----------
+	radius : float
+		Middle radius of the arc.
+	width : float
+		Width of the arc.
+	theta : float
+		Arclength.
+	start_angle : float
+		Starting angle.
+	angle_resolution : float
+		Resolution of the curve of the arc.
+	layer : int
+		Set layer geometry.
+
+	Returns
+	-------
+	D : class
+		Arc parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> arc = pg.arc()
+	>>> arc
+	Device (name "arc" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+	Theta = 0 is located along the positive x-axis relative to the centre of the arc.
+
+	The arc is formed by taking the radius out to the specified value, and then constructing the thickness by dividing the width in half and adding that value to either side of the radius. It is then extended to the correct arclength.
+
+	Ports are added to each end of the arc to facilitate connecting those ends to other geometries.
+
+	The angle_resolution alters the precision of the curve of the arc. Larger values yield lower resolution.
+
+	"""
+
     inner_radius = radius-width/2
     outer_radius = radius+width/2
     angle1 = (start_angle)*pi/180
@@ -127,7 +327,26 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
 
 
 def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
-    """ Starting form a port, create a arc which connects to the port """
+	""" Starting form a port, create a arc which connects to the port
+
+	Parameters
+	----------
+
+	Returns
+	-------
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> turn = pg.turn()
+	>>> turn
+	Device (name "turn" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+
+	"""
+
     D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
             angle_resolution = angle_resolution, layer = layer)
     D.rotate(angle =  180 + port.orientation - D.ports[1].orientation, center = D.ports[1].midpoint)
@@ -136,6 +355,32 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 
 
 def straight(size = (4,2), layer = 0):
+	"""Generates a rectangular wire geometry with ports on the length edges.
+
+	Parameters
+	----------
+	size : tuple
+		The length and width of the rectangle.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		Rectangle parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> straight = pg.straight()
+	>>> straight
+	Device (name "wire" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+
+	Notes
+	-----
+	Ports are included on both sides of the length edge (i.e. size[0]) of the geometry.
+	"""
+
     D = Device(name = 'wire')
     points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
     D.add_polygon(points, layer = layer)
@@ -145,6 +390,30 @@ def straight(size = (4,2), layer = 0):
 
 
 def L(width = 1, size = (10,20) , layer = 0):
+	"""Generates an "L" geometry with ports on both ends.
+
+	Parameters
+	----------
+	width : float
+		Width of the L.
+	size : tuple
+		Lengths of the base and height of the L, respectively.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D : class
+		L geometry parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> L = pg.L()
+	>>> L
+	Device (name "L" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+	"""
+
     D = Device(name = 'L')
     w = width/2
     s1, s2 = size
@@ -156,6 +425,30 @@ def L(width = 1, size = (10,20) , layer = 0):
 
 
 def C(width = 1, size = (10,20) , layer = 0):
+	"""Generates a "C" geometry with ports on both ends.
+
+	Parameters
+	----------
+	width : float
+		Width of the C.
+	size : tuple
+		Lengths of the base + top edges and the height of the C, respectively.
+	layer : int
+		Set geometry layer.
+
+	Returns
+	-------
+	D: class
+		C geometry parameters in a device.
+
+	Examples
+	--------
+	>>> import phidl.geometry as pg
+	>>> C = pg.C()
+	>>> C
+	Device (name "C" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+	"""
+
     D = Device(name = 'C')
     w = width/2
     s1, s2 = size
