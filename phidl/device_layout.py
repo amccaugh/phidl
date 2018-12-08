@@ -283,8 +283,10 @@ class Port(object):
        
     @property
     def endpoints(self):
-        dxdy = np.array(self.width/2*np.cos((self.orientation - 90)*pi/180),
-            self.width/2*np.sin((self.orientation - 90)*pi/180))
+        dxdy = np.array([
+            self.width/2*np.cos((self.orientation - 90)*pi/180),
+            self.width/2*np.sin((self.orientation - 90)*pi/180)
+            ])
         left_point = self.midpoint - dxdy
         right_point = self.midpoint + dxdy
         return np.array([left_point, right_point])
@@ -334,7 +336,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype, verbose=False)
+            datatype=gds_datatype)
 
 
     @property
@@ -847,7 +849,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
-        self.parent.ports = device.ports
+        # self.parent.ports = device.ports
         self._local_ports = {name:port._copy() for name, port in device.ports.items()}
 
 
