@@ -188,7 +188,6 @@ class Viewer(QGraphicsView):
 #        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
 #        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
         
-
         self.initialize()
             
     def itemsBoundingRect_nogrid(self):
@@ -333,10 +332,18 @@ class Viewer(QGraphicsView):
         for gl in self.gridlinesy:
             gl.setLine(-1e10, y, 1e10, y)
             y += grid_size_snapped
+
+        # x,y = ref.center
+        self.gridsize_text.setPos(QPointF(xmin+width/20,ymin+height/20))
+        self.gridsize_text.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        # self.grid_size_text = qtext
             
     def create_grid(self):
         self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
         self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
+
+        self.gridsize_text = self.scene.addText('hello!!!', QtGui.QFont('Arial', pointSize = 10))
+
         self.update_grid()
         
             
