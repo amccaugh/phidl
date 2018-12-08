@@ -8,6 +8,9 @@
 # geometry: add packer, basic_wire
 # connect(): if width=0 then only move don't rotate orientation
 # Allow assignment of aliases by D['waveguide'] = D << WG
+# PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
+# Add text in corner of quickplot which says "F1: Show/hide ports, F2: Show/hide
+# subports, F3: Show/hide alias name, F4: show/hide this text"
 
 #==============================================================================
 # Imports
@@ -476,11 +479,6 @@ class Device(gdspy.Cell, _GeometryHelper):
     @property
     def polygons(self):
         return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
-
-    @property
-    def meta(self):
-        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
-        return self.info
         
     @property
     def bbox(self):
@@ -800,12 +798,12 @@ class Device(gdspy.Cell, _GeometryHelper):
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
@@ -849,7 +847,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
-        self._parent_ports = device.ports
+        self.parent.ports = device.ports
         self._local_ports = {name:port._copy() for name, port in device.ports.items()}
 
 
@@ -884,24 +882,21 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     @property
     def ports(self):
-        """ This property allows you to access my_device_reference.ports, and receive a copy
+        """ This property allows you to access myref.ports, and receive a copy
         of the ports dict which is correctly rotated and translated"""
-        for key in self._parent_ports.keys():
-            port = self._parent_ports[key] 
+        for name, port in self.parent.ports.items():
+            port = self.parent.ports[name] 
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
-            self._local_ports[key].midpoint = new_midpoint
-            self._local_ports[key].orientation = mod(new_orientation,360)
-            self._local_ports[key].parent = self
+            if name not in self._local_ports:
+                self._local_ports[name] = port._copy()
+            self._local_ports[name].midpoint = new_midpoint
+            self._local_ports[name].orientation = mod(new_orientation,360)
+            self._local_ports[name].parent = self
         return self._local_ports
 
     @property
     def info(self):
-        return self.parent.info
-
-    @property
-    def meta(self):
-        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
         return self.parent.info
         
     @property
