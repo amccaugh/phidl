@@ -484,18 +484,24 @@ def quickplot2(item_list, *args, **kwargs):
         item_list = [item_list]
     for element in item_list:
         if isinstance(element, (phidl.device_layout.Device, phidl.device_layout.DeviceReference, gdspy.CellArray)):
+            # Draw polygons in the element
             polygons_spec = element.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
+            # If element is a Device, draw ports and aliases
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
                     for name, port in ref.ports.items():
                         viewer.add_port(port, is_subport = True)
-            for name, port in element.ports.items():
-                viewer.add_port(port)
-                viewer.add_aliases(element.aliases)
+                for name, port in element.ports.items():
+                    viewer.add_port(port)
+                    viewer.add_aliases(element.aliases)
+            # If element is a DeviceReference, draw ports as subports
+            if isinstance(element, phidl.device_layout.DeviceReference):
+                for name, port in element.ports.items():
+                    viewer.add_port(port, is_subport = True)
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layers[0], datatype = element.datatypes[0])
                 viewer.add_polygons(element.polygons, color = layerprop['color'], alpha = layerprop['alpha'])
