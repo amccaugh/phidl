@@ -685,10 +685,14 @@ class Device(gdspy.Cell, _GeometryHelper):
                 D.labels = new_labels
         return self
 
-        
 
+    def distribute(self, direction = 'x', elements = None, spacing = 100, separation = True):
+        if direction not in (['+x','-x','x','+y','-y','y']):
+            raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
 
-    def distribute(self, elements, direction = 'x', spacing = 100, separation = True):
+        if elements is None:
+            elements = self.elements
+            
         multiplier = 1
         if   direction[0] == '+':
             direction = direction[1:]
@@ -696,15 +700,25 @@ class Device(gdspy.Cell, _GeometryHelper):
             direction = direction[1:]
             multiplier = -1
 
-        xy = np.array([0,0])
+        xy = elements[0].center
         for e in elements:
-            e.center = xy
+            e.move(origin = e.center, destination = xy, axis = direction)
             if direction == 'x':
                 xy = xy + (np.array([spacing, 0]) + np.array([e.xsize, 0])*(separation==True))*multiplier
             elif direction == 'y':
                 xy = xy + (np.array([0, spacing]) + np.array([0, e.ysize])*(separation==True))*multiplier
-            else:
-                raise ValueError('[PHIDL] distribute() needs a direction of "x", "+y", "-x", etc')
+        return self
+
+
+    def align(self, alignment = 'ymax', elements = None):
+        if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
+            raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
+        if elements is None:
+            elements = self.elements
+        value = self.__getattribute__(alignment)
+        for e in elements:
+            e.__setattr__(alignment, value)
+        return self
 
 
     def flatten(self,  single_layer = None):
@@ -718,6 +732,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.elements = []
         [self.add_polygon(poly) for poly in temp]
         return self
+
 
     def absorb(self, reference):
         """ Flattens and absorbs polygons from an underlying
