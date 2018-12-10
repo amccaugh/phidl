@@ -229,12 +229,6 @@ class Viewer(QGraphicsView):
         
         self.initialize()
             
-    # def itemsBoundingRect_nogrid(self):
-    #     self.remove_grid()
-    #     r = self.scene.itemsBoundingRect()
-    #     print(str(r.width()))
-    #     self.create_grid()
-    #     return r
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         self.scene_polys = []
@@ -260,21 +254,6 @@ class Viewer(QGraphicsView):
                 self.scene_ymin = min(self.scene_ymin, sr.bottom())
                 self.scene_ymax = max(self.scene_ymax, sr.top())
 
-
-    # def calculate_scene_rect(self):
-    #     if len(self.scene_polys) > 0:
-    #         self.scene
-    #     for p in self.scene_polys:
-
-
-
-        
-        # sr = self.itemsBoundingRect_nogrid()
-        # ymax = sr.top()
-        # xmin = sr.left()
-        # width = sr.width()
-        # height = sr.height()
-        # self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
         
     def reset_view(self):
         # The SceneRect controls how far you can pan, make it larger than
@@ -381,16 +360,8 @@ class Viewer(QGraphicsView):
         
 
     def finalize(self):
-        # self.bbox = self.itemsBoundingRect_nogrid()
-        # self.scene_bounding_rect = QRectF()
-        # for scene_poly in self.scene_polys:
-        #     self.scene_bounding_rect = scene_poly.boundingRect()
-
         self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymax),
                                           QPointF(self.scene_xmax,self.scene_ymin))
-        #self.scene.sceneRect() # FIXME MISCALCULTAES - REPLACE WITH SOMETHING that calculates from self.scene_polys
-
-        # scene_bounding_rect = self.scene_bounding_rect
         self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
         self.scene_size = [self.scene_bounding_rect.width(), self.scene_bounding_rect.height()]
 
@@ -421,9 +392,7 @@ class Viewer(QGraphicsView):
         # Starting coordinates for gridlines
         x = round((xmin - 2*width )/grid_size_snapped) * grid_size_snapped
         y = round((ymin - 2*height)/grid_size_snapped) * grid_size_snapped
-#        print('\n xmin = %s, xmax = %s, ymin = %s, ymax = %s' % (xmin, xmax, ymin, ymax))
-#        print('Starting at x = %s' % x)
-#        print('Starting at y = %s' % y)
+
         for gl in self.gridlinesx:
             gl.setLine(x, -1e10, x, 1e10)
             x += grid_size_snapped
@@ -437,16 +406,6 @@ class Viewer(QGraphicsView):
     def update_gridsize_label(self):
         self.gridsize_label.setText('grid size = ' + str(self.grid_size_snapped))
         self.gridsize_label.move(QPoint(0, self.height()-30))
-        # x,y = ref.center
-        # self.gridsize_text.setPos(QPointF(xmin+width/20,ymin+height/20))
-        # self.gridsize_text.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        # self.grid_size_text = qtext
-
-        # self.parent_window.gridsize_label = QLabel('ABCDEF', self)
-        # self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
-        # self.gridsize_label.move(0, 200)
-        # self.gridsize_label.setAlignment(Qt.AlignCenter)
-
 
     def update_mouse_position_label(self):
         self.position_label.setText('X = %0.3f Y = %0.3f' % (self.mouse_position[0],self.mouse_position[1]))
@@ -461,14 +420,6 @@ class Viewer(QGraphicsView):
 
         self.update_grid()
         
-            
-    # def remove_grid(self):
-    #     for gl in self.gridlinesx + self.gridlinesy:
-    #         self.scene.removeItem(gl)
-    #     self.gridlinesx == []
-    #     self.gridlinesy == []
-        
-            
 #==============================================================================
 #  Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
 #==============================================================================
@@ -490,12 +441,6 @@ class Viewer(QGraphicsView):
 
         
         # Check to make sure we're not overzoomed
-        # actual_rect = self.mapToScene(self.rect())
-        # bbox_size = actual_rect[0] - actual_rect[2]
-        # actual_width = abs(bbox_size.x())
-        # actual_height = abs(bbox_size.y())
-        # max_width = abs(self.scene.sceneRect().x()*3)
-        # max_height = abs(self.scene.sceneRect().y()*3)
         min_width = 0.01
         min_height = 0.01
 
