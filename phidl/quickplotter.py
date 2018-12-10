@@ -277,9 +277,20 @@ class Viewer(QGraphicsView):
         # self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
         
     def reset_view(self):
-        self.setSceneRect(self.scene_bounding_rect)
+        # The SceneRect controls how far you can pan, make it larger than
+        # just the bounding box so middle-click panning works
+        panning_rect = QRectF(self.scene_bounding_rect)
+        panning_rect_center = panning_rect.center()
+        panning_rect.setSize(panning_rect.size()*5)
+        panning_rect.moveCenter(panning_rect_center)
+        # view_rect = QRectF(self.scene_bounding_rect)
+        # view_rect_center = view_rect.center()
+        # view_rect.setSize(view_rect.size()*1.5)
+        # view_rect.moveCenter(view_rect_center)
+        self.setSceneRect(panning_rect)
         self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
-        self.zoom_view(0.6)
+        self.zoom_view(0.5)
+
         self.update_grid()
         
     def add_port(self, port, is_subport = False):
@@ -364,6 +375,7 @@ class Viewer(QGraphicsView):
         self.mouse_position = [0,0]
         self.grid_size_snapped = 0
         self.setMouseTracking(True)
+        self.scene_bounding_rect = None
         # self.scene.setSceneRect(QRectF())
         
         
@@ -374,8 +386,8 @@ class Viewer(QGraphicsView):
         # for scene_poly in self.scene_polys:
         #     self.scene_bounding_rect = scene_poly.boundingRect()
 
-        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
-                                          QPointF(self.scene_xmax,self.scene_ymax))
+        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymax),
+                                          QPointF(self.scene_xmax,self.scene_ymin))
         #self.scene.sceneRect() # FIXME MISCALCULTAES - REPLACE WITH SOMETHING that calculates from self.scene_polys
 
         # scene_bounding_rect = self.scene_bounding_rect
@@ -516,11 +528,15 @@ class Viewer(QGraphicsView):
         
         
     def zoom_view(self, zoom_factor):
+        old_center = self.mapToScene(self.rect().center())
         self.scale(zoom_factor, zoom_factor)
+        self.centerOn(old_center)
         self.zoom_factor_total *= zoom_factor
         
     def resizeEvent(self, event):
         super(QGraphicsView, self).resizeEvent(event)
+        if self.scene_bounding_rect is not None:
+            self.reset_view()
         self.update_gridsize_label()
         self.update_mouse_position_label()
 
