@@ -424,8 +424,8 @@ class Viewer(QGraphicsView):
         self.help_label.move(QPoint(self.width() - 175, 0))
             
     def create_grid(self):
-        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
-        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
+        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(300)]
+        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(300)]
 
         # self.gridsize_text = self.scene.addText('hello!!!', QtGui.QFont('Arial', pointSize = 10))
         # window = self.parent_window
@@ -592,11 +592,16 @@ class Viewer(QGraphicsView):
 
         if event.key() == Qt.Key_Question:
             help_str = """
+            Mouse control:
+              Mousewheel: Zoom in and out
+              Right-click & drag: Zoom to rectangle
+              Middle-click & drag: Pan
+
             Keyboard shortcuts:
-            Esc: Reset view
-            F1: Show/hide alias names
-            F2: Show/hide ports
-            F3: Show/hide subports (ports in underlying references)
+              Esc: Reset view
+              F1: Show/hide alias names
+              F2: Show/hide ports
+              F3: Show/hide subports (ports in underlying references)
             """
             msg = QMessageBox.about(self, 'PHIDL Help', help_str)
             msg.raise_()
