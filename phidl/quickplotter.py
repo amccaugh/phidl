@@ -1,9 +1,6 @@
 # TODO: Allow toggling of layers with 1-9 keypresses
 # TODO: alias font should be slightly transparent
 
-# TODO: mouse_position label has text cutoff for some reason
-# TODO: gridsize_label needs to stay in bottom left corner when window resized
-
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
@@ -24,7 +21,7 @@ except:
 
 try:
     from PyQt5 import QtCore, QtGui
-    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow, QLabel
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow, QLabel, QMessageBox
     from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
@@ -140,6 +137,9 @@ class ViewerWindow(QMainWindow):
     def __init__(self):
         super(ViewerWindow,self).__init__()
 
+        self.setGeometry(QRect(100, 100, 800, 600))
+        self.setWindowTitle("PHIDL quickplot");
+
         # Create "grid size = 40.0" label
         self.gridsize_label = QLabel('ABCDEF', self)
         self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
@@ -158,9 +158,18 @@ class ViewerWindow(QMainWindow):
         self.position_label.setFixedWidth(200)
         self.position_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
 
+        # Create "Press ? for help" label
+        self.help_label = QLabel('ABCDEF', self)
+        self.help_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.help_label.move(50, 200)
+        self.help_label.setAlignment(Qt.AlignCenter)
+        self.help_label.setStyleSheet('color: gray')
+        self.help_label.setFixedWidth(200)
+        self.help_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
 
         # Create label useful for debugging
-        self.debug_label = QLabel('DEBUG', self)
+        self.debug_label = QLabel('', self)
         self.debug_label.setFont(QtGui.QFont('SansSerif', 10))
         self.debug_label.move(200, 200)
         self.debug_label.setAlignment(Qt.AlignCenter)
@@ -171,25 +180,25 @@ class ViewerWindow(QMainWindow):
 
         # Create QGraphicsView
         self.viewer = Viewer(gridsize_label = self.gridsize_label,
-                             position_label = self.position_label)
+                             position_label = self.position_label,
+                             help_label = self.help_label)
         self.setCentralWidget(self.viewer)
 
         # Reorder widgets
         self.gridsize_label.raise_()
         self.position_label.raise_()
         self.debug_label.raise_()
+        self.help_label.raise_()
         self.show()
     
 
 class Viewer(QGraphicsView):
-    def __init__(self, gridsize_label, position_label):
+    def __init__(self, gridsize_label, position_label, help_label):
         QGraphicsView.__init__(self)
-        
-        self.setGeometry(QRect(100, 100, 800, 600))
-        self.setWindowTitle("PIHDL Graphics Window");
 
         self.gridsize_label = gridsize_label
         self.position_label = position_label
+        self.help_label = help_label
         
         # Create a QGraphicsScene which this view looks at
         self.scene = QGraphicsScene(self)
@@ -267,10 +276,6 @@ class Viewer(QGraphicsView):
         panning_rect_center = panning_rect.center()
         panning_rect.setSize(panning_rect.size()*5)
         panning_rect.moveCenter(panning_rect_center)
-        # view_rect = QRectF(self.scene_bounding_rect)
-        # view_rect_center = view_rect.center()
-        # view_rect.setSize(view_rect.size()*1.5)
-        # view_rect.moveCenter(view_rect_center)
         self.setSceneRect(panning_rect)
         self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
         self.zoom_view(0.5)
@@ -360,8 +365,6 @@ class Viewer(QGraphicsView):
         self.grid_size_snapped = 0
         self.setMouseTracking(True)
         self.scene_bounding_rect = None
-        # self.scene.setSceneRect(QRectF())
-        
         
 
     def finalize(self):
@@ -413,8 +416,12 @@ class Viewer(QGraphicsView):
         self.gridsize_label.move(QPoint(0, self.height()-30))
 
     def update_mouse_position_label(self):
-        self.position_label.setText('X = %0.3f Y = %0.3f' % (self.mouse_position[0],self.mouse_position[1]))
-        self.position_label.move(QPoint(200, self.height()-30))
+        self.position_label.setText('X = %0.4f / Y = %0.4f' % (self.mouse_position[0],self.mouse_position[1]))
+        self.position_label.move(QPoint(self.width() - 200, self.height()-30))
+
+    def update_help_label(self):
+        self.help_label.setText('Press "?" key for help')
+        self.help_label.move(QPoint(self.width() - 175, 0))
             
     def create_grid(self):
         self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
@@ -489,6 +496,7 @@ class Viewer(QGraphicsView):
             self.reset_view()
         self.update_gridsize_label()
         self.update_mouse_position_label()
+        self.update_help_label()
 
 
         
@@ -580,6 +588,18 @@ class Viewer(QGraphicsView):
                 
         if event.key() == Qt.Key_F3:
             self.set_subport_visibility(not self.subports_visible)
+
+
+        if event.key() == Qt.Key_Question:
+            help_str = """
+            Keyboard shortcuts:
+            Esc: Reset view
+            F1: Show/hide alias names
+            F2: Show/hide ports
+            F3: Show/hide subports (ports in underlying references)
+            """
+            msg = QMessageBox.about(self, 'PHIDL Help', help_str)
+            msg.raise_()
 
 
 def quickplot2(item_list, *args, **kwargs):
