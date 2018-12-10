@@ -242,10 +242,9 @@ class Viewer(QGraphicsView):
         self.scene_polys = []
         
         self.initialize()
-            
+    
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
-        self.scene_polys = []
         qcolor = QColor()
         qcolor.setNamedColor(color)
         qcolor.setAlphaF(alpha)
@@ -365,6 +364,7 @@ class Viewer(QGraphicsView):
         self.grid_size_snapped = 0
         self.setMouseTracking(True)
         self.scene_bounding_rect = None
+        self.scene_polys = []
         
 
     def finalize(self):
