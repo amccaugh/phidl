@@ -144,18 +144,18 @@ class ViewerWindow(QMainWindow):
         self.gridsize_label = QLabel('ABCDEF', self)
         self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
         self.gridsize_label.move(0, 200)
-        self.gridsize_label.setAlignment(Qt.AlignCenter)
+        self.gridsize_label.setAlignment(Qt.AlignLeft)
         self.gridsize_label.setStyleSheet('color: gray')
-        self.gridsize_label.setFixedWidth(100)
+        self.gridsize_label.setFixedWidth(120)
         self.gridsize_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
 
         # Create "X=40.001, Y = 70.183" label
         self.position_label = QLabel('ABCDEF', self)
         self.position_label.setFont(QtGui.QFont('SansSerif', 10))
         self.position_label.move(50, 200)
-        self.position_label.setAlignment(Qt.AlignCenter)
+        self.position_label.setAlignment(Qt.AlignRight)
         self.position_label.setStyleSheet('color: gray')
-        self.position_label.setFixedWidth(200)
+        self.position_label.setFixedWidth(240)
         self.position_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
 
         # Create "Press ? for help" label
@@ -242,7 +242,7 @@ class Viewer(QGraphicsView):
         self.scene_polys = []
         
         self.initialize()
-    
+
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         qcolor = QColor()
@@ -413,11 +413,11 @@ class Viewer(QGraphicsView):
 
     def update_gridsize_label(self):
         self.gridsize_label.setText('grid size = ' + str(self.grid_size_snapped))
-        self.gridsize_label.move(QPoint(0, self.height()-30))
+        self.gridsize_label.move(QPoint(5, self.height()-25))
 
     def update_mouse_position_label(self):
         self.position_label.setText('X = %0.4f / Y = %0.4f' % (self.mouse_position[0],self.mouse_position[1]))
-        self.position_label.move(QPoint(self.width() - 200, self.height()-30))
+        self.position_label.move(QPoint(self.width() - 250, self.height()-25))
 
     def update_help_label(self):
         self.help_label.setText('Press "?" key for help')
@@ -641,6 +641,6 @@ def quickplot2(item_list, *args, **kwargs):
     viewer_window.setVisible(True)
     viewer_window.show()
     viewer_window.raise_()
-    return viewer
+    # return viewer
 
 
