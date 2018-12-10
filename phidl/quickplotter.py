@@ -21,7 +21,7 @@ except:
 
 try:
     from PyQt5 import QtCore, QtGui
-    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow, QLabel
     from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
@@ -136,15 +136,28 @@ def _draw_port_as_point(port, **kwargs):
 class ViewerWindow(QMainWindow):
     def __init__(self):
         super(ViewerWindow,self).__init__()
-        self.viewer = Viewer()
+
+        # Create "grid size = 40.0" label
+        self.gridsize_label = QLabel('ABCDEF', self)
+        self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.gridsize_label.move(0, 200)
+        self.gridsize_label.setAlignment(Qt.AlignCenter)
+        self.gridsize_label.setStyleSheet('color: gray')
+
+        # Create QGraphicsView
+        self.viewer = Viewer(gridsize_label = self.gridsize_label)
         self.setCentralWidget(self.viewer)
+
+        # Reorder widgets
+        self.gridsize_label.raise_()
         self.show()
     
 
 class Viewer(QGraphicsView):
-    def __init__(self):
+    def __init__(self, gridsize_label):
         QGraphicsView.__init__(self)
-
+        self.gridsize_label = gridsize_label
+        
         self.setGeometry(QRect(100, 100, 800, 600))
         self.setWindowTitle("PIHDL Graphics Window");
         
@@ -206,12 +219,12 @@ class Viewer(QGraphicsView):
             scene_poly.setBrush(qcolor)
             scene_poly.setPen(self.pen)
         
-        sr = self.itemsBoundingRect_nogrid()
-        ymax = sr.top()
-        xmin = sr.left()
-        width = sr.width()
-        height = sr.height()
-        self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
+        # sr = self.itemsBoundingRect_nogrid()
+        # ymax = sr.top()
+        # xmin = sr.left()
+        # width = sr.width()
+        # height = sr.height()
+        # self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
         
     def reset_view(self):
         self.fitInView(self.itemsBoundingRect_nogrid(), Qt.KeepAspectRatio)
@@ -300,6 +313,14 @@ class Viewer(QGraphicsView):
         self.create_grid()        
         self.update_grid()
         
+
+    def finalize(self):
+        # self.bbox = self.itemsBoundingRect_nogrid()
+        geometry_rect = self.itemsBoundingRect_nogrid()
+        self.geometry_center = [geometry_rect.center().x(), geometry_rect.center().y()]
+        self.geometry_size = [geometry_rect.width(), geometry_rect.height()]
+
+
 #==============================================================================
 #   Grid creation
 #==============================================================================
@@ -333,16 +354,26 @@ class Viewer(QGraphicsView):
             gl.setLine(-1e10, y, 1e10, y)
             y += grid_size_snapped
 
+        self.gridsize_label.setText('grid size = ' + str(grid_size_snapped))
+        self.gridsize_label.move(QPoint(0, self.height()-30))
         # x,y = ref.center
-        self.gridsize_text.setPos(QPointF(xmin+width/20,ymin+height/20))
-        self.gridsize_text.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        # self.gridsize_text.setPos(QPointF(xmin+width/20,ymin+height/20))
+        # self.gridsize_text.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         # self.grid_size_text = qtext
+
+        # self.parent_window.gridsize_label = QLabel('ABCDEF', self)
+        # self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
+        # # self.gridsize_label.setFixedWidth(162)
+        # self.gridsize_label.move(0, 200)
+        # self.gridsize_label.setAlignment(Qt.AlignCenter)
+
             
     def create_grid(self):
         self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
         self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
 
-        self.gridsize_text = self.scene.addText('hello!!!', QtGui.QFont('Arial', pointSize = 10))
+        # self.gridsize_text = self.scene.addText('hello!!!', QtGui.QFont('Arial', pointSize = 10))
+        # window = self.parent_window
 
         self.update_grid()
         
@@ -375,17 +406,28 @@ class Viewer(QGraphicsView):
 
         
         # Check to make sure we're not overzoomed
-        actual_rect = self.mapToScene(self.rect())
-        bbox_size = actual_rect[0] - actual_rect[2]
-        actual_width = abs(bbox_size.x())
-        actual_height = abs(bbox_size.y())
-        max_width = abs(self.scene.sceneRect().x()*3)
-        max_height = abs(self.scene.sceneRect().y()*3)
-        min_width = 1
-        min_height = 1
-        if ((actual_width > max_width) or (actual_height > max_height)) and (zoom_factor < 1):
+        # actual_rect = self.mapToScene(self.rect())
+        # bbox_size = actual_rect[0] - actual_rect[2]
+        # actual_width = abs(bbox_size.x())
+        # actual_height = abs(bbox_size.y())
+        # max_width = abs(self.scene.sceneRect().x()*3)
+        # max_height = abs(self.scene.sceneRect().y()*3)
+        min_width = 0.01
+        min_height = 0.01
+
+        window_width = self.rect().width()
+        window_height = self.rect().height()
+        scene_upper_left_corner = self.mapToScene(QPoint(0,0))
+        scene_bottom_right_corner = self.mapToScene(QPoint(window_width,window_height))
+        scene_width = (scene_bottom_right_corner - scene_upper_left_corner).x()
+        scene_height = (scene_upper_left_corner - scene_bottom_right_corner).y()
+
+        max_width = self.geometry_size[0]*3
+        max_height = self.geometry_size[1]*3
+
+        if ((scene_width > max_width) or (scene_height > max_height)) and (zoom_factor < 1):
             pass
-        elif ((actual_width < min_width) or (actual_height < min_height)) and (zoom_factor > 1):
+        elif ((scene_width < min_width) or (scene_height < min_height)) and (zoom_factor > 1):
             pass
         else:
             self.zoom_view(zoom_factor)
@@ -512,9 +554,11 @@ def quickplot2(item_list, *args, **kwargs):
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layers[0], datatype = element.datatypes[0])
                 viewer.add_polygons(element.polygons, color = layerprop['color'], alpha = layerprop['alpha'])
+    viewer.finalize()
     viewer.reset_view()
     viewer_window.setVisible(True)
     viewer_window.show()
     viewer_window.raise_()
+    return viewer
 
 
