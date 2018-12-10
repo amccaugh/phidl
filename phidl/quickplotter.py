@@ -179,11 +179,12 @@ class ViewerWindow(QMainWindow):
 class Viewer(QGraphicsView):
     def __init__(self, gridsize_label, position_label):
         QGraphicsView.__init__(self)
-        self.gridsize_label = gridsize_label
-        self.position_label = position_label
         
         self.setGeometry(QRect(100, 100, 800, 600))
         self.setWindowTitle("PIHDL Graphics Window");
+
+        self.gridsize_label = gridsize_label
+        self.position_label = position_label
         
         # Create a QGraphicsScene which this view looks at
         self.scene = QGraphicsScene(self)
@@ -276,6 +277,7 @@ class Viewer(QGraphicsView):
         # self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
         
     def reset_view(self):
+        self.setSceneRect(self.scene_bounding_rect)
         self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
         self.zoom_view(0.6)
         self.update_grid()
@@ -360,6 +362,7 @@ class Viewer(QGraphicsView):
         self.ports_visible = True
         self.subports_visible = True
         self.mouse_position = [0,0]
+        self.grid_size_snapped = 0
         self.setMouseTracking(True)
         # self.scene.setSceneRect(QRectF())
         
@@ -371,15 +374,15 @@ class Viewer(QGraphicsView):
         # for scene_poly in self.scene_polys:
         #     self.scene_bounding_rect = scene_poly.boundingRect()
 
-        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
-                                          QPointF(self.scene_xmax,self.scene_ymax))
+        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymax),
+                                          QPointF(self.scene_xmax,self.scene_ymin))
         #self.scene.sceneRect() # FIXME MISCALCULTAES - REPLACE WITH SOMETHING that calculates from self.scene_polys
 
         # scene_bounding_rect = self.scene_bounding_rect
         self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
         self.scene_size = [self.scene_bounding_rect.width(), self.scene_bounding_rect.height()]
 
-        self.setGeometry(QRect(100, 100, 800, 600))
+        # self.setGeometry(QRect(100, 100, 800, 600))
         self.create_grid()        
         self.update_grid()
 
