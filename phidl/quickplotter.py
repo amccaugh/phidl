@@ -374,8 +374,8 @@ class Viewer(QGraphicsView):
         # for scene_poly in self.scene_polys:
         #     self.scene_bounding_rect = scene_poly.boundingRect()
 
-        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymax),
-                                          QPointF(self.scene_xmax,self.scene_ymin))
+        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
+                                          QPointF(self.scene_xmax,self.scene_ymax))
         #self.scene.sceneRect() # FIXME MISCALCULTAES - REPLACE WITH SOMETHING that calculates from self.scene_polys
 
         # scene_bounding_rect = self.scene_bounding_rect
