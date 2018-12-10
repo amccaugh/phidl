@@ -144,19 +144,29 @@ class ViewerWindow(QMainWindow):
         self.gridsize_label.setAlignment(Qt.AlignCenter)
         self.gridsize_label.setStyleSheet('color: gray')
 
+        # Create "X=40.001, Y = 70.183" label
+        self.position_label = QLabel('ABCDEF', self)
+        self.position_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.position_label.move(50, 200)
+        self.position_label.setAlignment(Qt.AlignCenter)
+        self.position_label.setStyleSheet('color: gray')
+
         # Create QGraphicsView
-        self.viewer = Viewer(gridsize_label = self.gridsize_label)
+        self.viewer = Viewer(gridsize_label = self.gridsize_label,
+                             position_label = self.position_label)
         self.setCentralWidget(self.viewer)
 
         # Reorder widgets
         self.gridsize_label.raise_()
+        self.position_label.raise_()
         self.show()
     
 
 class Viewer(QGraphicsView):
-    def __init__(self, gridsize_label):
+    def __init__(self, gridsize_label, position_label):
         QGraphicsView.__init__(self)
         self.gridsize_label = gridsize_label
+        self.position_label = position_label
         
         self.setGeometry(QRect(100, 100, 800, 600))
         self.setWindowTitle("PIHDL Graphics Window");
@@ -309,6 +319,8 @@ class Viewer(QGraphicsView):
         self.aliases_visible = True
         self.ports_visible = True
         self.subports_visible = True
+        self.mouse_position = [0,0]
+        self.setMouseTracking(True)
         
         self.create_grid()        
         self.update_grid()
@@ -356,6 +368,7 @@ class Viewer(QGraphicsView):
 
         self.gridsize_label.setText('grid size = ' + str(grid_size_snapped))
         self.gridsize_label.move(QPoint(0, self.height()-30))
+        self.position_label.setText('X = %0.3f Y = %0.3f' % (self.mouse_position[0],self.mouse_position[1]))
         # x,y = ref.center
         # self.gridsize_text.setPos(QPointF(xmin+width/20,ymin+height/20))
         # self.gridsize_text.setFlag(QGraphicsItem.ItemIgnoresTransformations)
@@ -430,6 +443,11 @@ class Viewer(QGraphicsView):
         elif ((scene_width < min_width) or (scene_height < min_height)) and (zoom_factor > 1):
             pass
         else:
+            post_zoom_width = scene_width/zoom_factor
+            zoom_factor = scene_width/np.clip(post_zoom_width, min_width, max_width)
+            # print()
+            # print(post_zoom_width)
+            # print(zoom_factor)
             self.zoom_view(zoom_factor)
     
         # Get the new position and move scene to old position
@@ -447,6 +465,7 @@ class Viewer(QGraphicsView):
         
         
     def mousePressEvent(self, event):
+        super(QGraphicsView, self).mousePressEvent(event)
         #==============================================================================
         #  Zoom to rectangle, from
         #  https://wiki.python.org/moin/PyQt/Selecting%20a%20region%20of%20a%20widget
@@ -468,6 +487,8 @@ class Viewer(QGraphicsView):
 
 
     def mouseMoveEvent(self, event):
+        super(QGraphicsView, self).mouseMoveEvent(event)
+
         if not self._rb_origin.isNull() and self._mousePressed == Qt.RightButton:
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
                 
@@ -478,6 +499,9 @@ class Viewer(QGraphicsView):
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - diff.x())
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
 #            event.accept()
+            print('whatup')
+
+        self.mouse_position = [event.pos().x(), event.pos().y()]
             
 
     def mouseReleaseEvent(self, event):
