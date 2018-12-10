@@ -246,13 +246,13 @@ class Viewer(QGraphicsView):
             if len(self.scene_polys) == 1:
                 self.scene_xmin = sr.left()
                 self.scene_xmax = sr.right()
-                self.scene_ymin = sr.bottom()
-                self.scene_ymax = sr.top()
+                self.scene_ymin = sr.top()
+                self.scene_ymax = sr.bottom()
             else:
                 self.scene_xmin = min(self.scene_xmin, sr.left())
                 self.scene_xmax = max(self.scene_xmax, sr.right())
-                self.scene_ymin = min(self.scene_ymin, sr.bottom())
-                self.scene_ymax = max(self.scene_ymax, sr.top())
+                self.scene_ymin = min(self.scene_ymin, sr.top())
+                self.scene_ymax = max(self.scene_ymax, sr.bottom())
 
         
     def reset_view(self):
@@ -360,8 +360,8 @@ class Viewer(QGraphicsView):
         
 
     def finalize(self):
-        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymax),
-                                          QPointF(self.scene_xmax,self.scene_ymin))
+        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
+                                          QPointF(self.scene_xmax,self.scene_ymax))
         self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
         self.scene_size = [self.scene_bounding_rect.width(), self.scene_bounding_rect.height()]
 
@@ -482,6 +482,7 @@ class Viewer(QGraphicsView):
         super(QGraphicsView, self).resizeEvent(event)
         if self.scene_bounding_rect is not None:
             self.reset_view()
+        self.create_grid()
         self.update_gridsize_label()
         self.update_mouse_position_label()
 
