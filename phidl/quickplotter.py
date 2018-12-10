@@ -147,6 +147,7 @@ class ViewerWindow(QMainWindow):
         self.gridsize_label.setAlignment(Qt.AlignCenter)
         self.gridsize_label.setStyleSheet('color: gray')
         self.gridsize_label.setFixedWidth(100)
+        self.gridsize_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
 
         # Create "X=40.001, Y = 70.183" label
         self.position_label = QLabel('ABCDEF', self)
@@ -155,6 +156,8 @@ class ViewerWindow(QMainWindow):
         self.position_label.setAlignment(Qt.AlignCenter)
         self.position_label.setStyleSheet('color: gray')
         self.position_label.setFixedWidth(200)
+        self.position_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
 
         # Create label useful for debugging
         self.debug_label = QLabel('DEBUG', self)
@@ -162,6 +165,8 @@ class ViewerWindow(QMainWindow):
         self.debug_label.move(200, 200)
         self.debug_label.setAlignment(Qt.AlignCenter)
         self.debug_label.setStyleSheet('color: gray')
+        self.debug_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
 
 
         # Create QGraphicsView
@@ -482,7 +487,6 @@ class Viewer(QGraphicsView):
         super(QGraphicsView, self).resizeEvent(event)
         if self.scene_bounding_rect is not None:
             self.reset_view()
-        self.create_grid()
         self.update_gridsize_label()
         self.update_mouse_position_label()
 
