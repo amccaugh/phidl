@@ -1,6 +1,9 @@
 # TODO: Allow toggling of layers with 1-9 keypresses
 # TODO: alias font should be slightly transparent
 
+# TODO: mouse_position label has text cutoff for some reason
+# TODO: gridsize_label needs to stay in bottom left corner when window resized
+
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
@@ -143,6 +146,7 @@ class ViewerWindow(QMainWindow):
         self.gridsize_label.move(0, 200)
         self.gridsize_label.setAlignment(Qt.AlignCenter)
         self.gridsize_label.setStyleSheet('color: gray')
+        self.gridsize_label.setFixedWidth(100)
 
         # Create "X=40.001, Y = 70.183" label
         self.position_label = QLabel('ABCDEF', self)
@@ -150,6 +154,15 @@ class ViewerWindow(QMainWindow):
         self.position_label.move(50, 200)
         self.position_label.setAlignment(Qt.AlignCenter)
         self.position_label.setStyleSheet('color: gray')
+        self.position_label.setFixedWidth(200)
+
+        # Create label useful for debugging
+        self.debug_label = QLabel('DEBUG', self)
+        self.debug_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.debug_label.move(200, 200)
+        self.debug_label.setAlignment(Qt.AlignCenter)
+        self.debug_label.setStyleSheet('color: gray')
+
 
         # Create QGraphicsView
         self.viewer = Viewer(gridsize_label = self.gridsize_label,
@@ -159,6 +172,7 @@ class ViewerWindow(QMainWindow):
         # Reorder widgets
         self.gridsize_label.raise_()
         self.position_label.raise_()
+        self.debug_label.raise_()
         self.show()
     
 
@@ -208,18 +222,21 @@ class Viewer(QGraphicsView):
         self.gridpen.setColor(QtGui.QColor(0, 0, 0, 125))
 #        self.gridpen = QPen(QtCore.Qt.black, 1)
 #        self.gridpen.setCosmetic(True) # Makes constant width
-#        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-#        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        # self.gridlinesx = []
+        # self.gridlinesy = []
+        self.scene_polys = []
         
         self.initialize()
             
-    def itemsBoundingRect_nogrid(self):
-        self.remove_grid()
-        r = self.scene.itemsBoundingRect()
-        self.create_grid()
-        return r
+    # def itemsBoundingRect_nogrid(self):
+    #     self.remove_grid()
+    #     r = self.scene.itemsBoundingRect()
+    #     print(str(r.width()))
+    #     self.create_grid()
+    #     return r
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
+        self.scene_polys = []
         qcolor = QColor()
         qcolor.setNamedColor(color)
         qcolor.setAlphaF(alpha)
@@ -228,6 +245,28 @@ class Viewer(QGraphicsView):
             scene_poly = self.scene.addPolygon(qpoly)
             scene_poly.setBrush(qcolor)
             scene_poly.setPen(self.pen)
+            self.scene_polys.append(scene_poly)
+            # Update custom bounding box
+            sr = scene_poly.sceneBoundingRect()
+            if len(self.scene_polys) == 1:
+                self.scene_xmin = sr.left()
+                self.scene_xmax = sr.right()
+                self.scene_ymin = sr.bottom()
+                self.scene_ymax = sr.top()
+            else:
+                self.scene_xmin = min(self.scene_xmin, sr.left())
+                self.scene_xmax = max(self.scene_xmax, sr.right())
+                self.scene_ymin = min(self.scene_ymin, sr.bottom())
+                self.scene_ymax = max(self.scene_ymax, sr.top())
+
+
+    # def calculate_scene_rect(self):
+    #     if len(self.scene_polys) > 0:
+    #         self.scene
+    #     for p in self.scene_polys:
+
+
+
         
         # sr = self.itemsBoundingRect_nogrid()
         # ymax = sr.top()
@@ -237,7 +276,8 @@ class Viewer(QGraphicsView):
         # self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
         
     def reset_view(self):
-        self.fitInView(self.itemsBoundingRect_nogrid(), Qt.KeepAspectRatio)
+        self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
+        self.zoom_view(0.6)
         self.update_grid()
         
     def add_port(self, port, is_subport = False):
@@ -321,17 +361,27 @@ class Viewer(QGraphicsView):
         self.subports_visible = True
         self.mouse_position = [0,0]
         self.setMouseTracking(True)
+        # self.scene.setSceneRect(QRectF())
         
-        self.create_grid()        
-        self.update_grid()
         
 
     def finalize(self):
         # self.bbox = self.itemsBoundingRect_nogrid()
-        geometry_rect = self.itemsBoundingRect_nogrid()
-        self.geometry_center = [geometry_rect.center().x(), geometry_rect.center().y()]
-        self.geometry_size = [geometry_rect.width(), geometry_rect.height()]
+        # self.scene_bounding_rect = QRectF()
+        # for scene_poly in self.scene_polys:
+        #     self.scene_bounding_rect = scene_poly.boundingRect()
 
+        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
+                                          QPointF(self.scene_xmax,self.scene_ymax))
+        #self.scene.sceneRect() # FIXME MISCALCULTAES - REPLACE WITH SOMETHING that calculates from self.scene_polys
+
+        # scene_bounding_rect = self.scene_bounding_rect
+        self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
+        self.scene_size = [self.scene_bounding_rect.width(), self.scene_bounding_rect.height()]
+
+        self.setGeometry(QRect(100, 100, 800, 600))
+        self.create_grid()        
+        self.update_grid()
 
 #==============================================================================
 #   Grid creation
@@ -365,10 +415,13 @@ class Viewer(QGraphicsView):
         for gl in self.gridlinesy:
             gl.setLine(-1e10, y, 1e10, y)
             y += grid_size_snapped
+        self.grid_size_snapped = grid_size_snapped
+        self.update_gridsize_label()
 
-        self.gridsize_label.setText('grid size = ' + str(grid_size_snapped))
+
+    def update_gridsize_label(self):
+        self.gridsize_label.setText('grid size = ' + str(self.grid_size_snapped))
         self.gridsize_label.move(QPoint(0, self.height()-30))
-        self.position_label.setText('X = %0.3f Y = %0.3f' % (self.mouse_position[0],self.mouse_position[1]))
         # x,y = ref.center
         # self.gridsize_text.setPos(QPointF(xmin+width/20,ymin+height/20))
         # self.gridsize_text.setFlag(QGraphicsItem.ItemIgnoresTransformations)
@@ -376,10 +429,13 @@ class Viewer(QGraphicsView):
 
         # self.parent_window.gridsize_label = QLabel('ABCDEF', self)
         # self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
-        # # self.gridsize_label.setFixedWidth(162)
         # self.gridsize_label.move(0, 200)
         # self.gridsize_label.setAlignment(Qt.AlignCenter)
 
+
+    def update_mouse_position_label(self):
+        self.position_label.setText('X = %0.3f Y = %0.3f' % (self.mouse_position[0],self.mouse_position[1]))
+        self.position_label.move(QPoint(200, self.height()-30))
             
     def create_grid(self):
         self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
@@ -391,11 +447,11 @@ class Viewer(QGraphicsView):
         self.update_grid()
         
             
-    def remove_grid(self):
-        for gl in self.gridlinesx + self.gridlinesy:
-            self.scene.removeItem(gl)
-        self.gridlinesx == []
-        self.gridlinesy == []
+    # def remove_grid(self):
+    #     for gl in self.gridlinesx + self.gridlinesy:
+    #         self.scene.removeItem(gl)
+    #     self.gridlinesx == []
+    #     self.gridlinesy == []
         
             
 #==============================================================================
@@ -435,8 +491,8 @@ class Viewer(QGraphicsView):
         scene_width = (scene_bottom_right_corner - scene_upper_left_corner).x()
         scene_height = (scene_upper_left_corner - scene_bottom_right_corner).y()
 
-        max_width = self.geometry_size[0]*3
-        max_height = self.geometry_size[1]*3
+        max_width = self.scene_size[0]*3
+        max_height = self.scene_size[1]*3
 
         if ((scene_width > max_width) or (scene_height > max_height)) and (zoom_factor < 1):
             pass
@@ -445,9 +501,6 @@ class Viewer(QGraphicsView):
         else:
             post_zoom_width = scene_width/zoom_factor
             zoom_factor = scene_width/np.clip(post_zoom_width, min_width, max_width)
-            # print()
-            # print(post_zoom_width)
-            # print(zoom_factor)
             self.zoom_view(zoom_factor)
     
         # Get the new position and move scene to old position
@@ -463,6 +516,12 @@ class Viewer(QGraphicsView):
         self.scale(zoom_factor, zoom_factor)
         self.zoom_factor_total *= zoom_factor
         
+    def resizeEvent(self, event):
+        super(QGraphicsView, self).resizeEvent(event)
+        self.update_gridsize_label()
+        self.update_mouse_position_label()
+
+
         
     def mousePressEvent(self, event):
         super(QGraphicsView, self).mousePressEvent(event)
@@ -489,9 +548,21 @@ class Viewer(QGraphicsView):
     def mouseMoveEvent(self, event):
         super(QGraphicsView, self).mouseMoveEvent(event)
 
+        # # Useful debug
+        # try:
+        #     self.debug_label.setText(str(itemsBoundingRect_nogrid().width()))
+        # except:
+        #     print('Debug statement failed')
+
+        # Update the X,Y label indicating where the mouse is on the geometry
+        mouse_position = self.mapToScene(event.pos())
+        self.mouse_position = [mouse_position.x(), mouse_position.y()]
+        self.update_mouse_position_label()
+
         if not self._rb_origin.isNull() and self._mousePressed == Qt.RightButton:
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
                 
+        # Middle-click-to-pan
         if self._mousePressed == Qt.MidButton:
             newPos = event.pos()
             diff = newPos - self._dragPos
@@ -499,9 +570,7 @@ class Viewer(QGraphicsView):
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - diff.x())
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
 #            event.accept()
-            print('whatup')
 
-        self.mouse_position = [event.pos().x(), event.pos().y()]
             
 
     def mouseReleaseEvent(self, event):
