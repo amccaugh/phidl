@@ -237,8 +237,6 @@ class Viewer(QGraphicsView):
         self.gridpen.setColor(QtGui.QColor(0, 0, 0, 125))
 #        self.gridpen = QPen(QtCore.Qt.black, 1)
 #        self.gridpen.setCosmetic(True) # Makes constant width
-        # self.gridlinesx = []
-        # self.gridlinesy = []
         self.scene_polys = []
         
         self.initialize()
@@ -329,9 +327,6 @@ class Viewer(QGraphicsView):
             qtext.setPos(QPointF(x,y))
             qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
             self.aliasitems += [qtext]
-            
-#        x,y = port.midpoint[0], port.midpoint[1]
-#        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
 
     def set_port_visibility(self, visible = True):
         for item in self.portitems:
@@ -370,10 +365,8 @@ class Viewer(QGraphicsView):
     def finalize(self):
         self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
                                           QPointF(self.scene_xmax,self.scene_ymax))
-        self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
+        # self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
         self.scene_size = [self.scene_bounding_rect.width(), self.scene_bounding_rect.height()]
-
-        # self.setGeometry(QRect(100, 100, 800, 600))
         self.create_grid()        
         self.update_grid()
 
@@ -426,10 +419,6 @@ class Viewer(QGraphicsView):
     def create_grid(self):
         self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(300)]
         self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(300)]
-
-        # self.gridsize_text = self.scene.addText('hello!!!', QtGui.QFont('Arial', pointSize = 10))
-        # window = self.parent_window
-
         self.update_grid()
         
 #==============================================================================
@@ -466,10 +455,11 @@ class Viewer(QGraphicsView):
         max_width = self.scene_size[0]*3
         max_height = self.scene_size[1]*3
 
-        if ((scene_width > max_width) or (scene_height > max_height)) and (zoom_factor < 1):
+        if ((scene_width > max_width) and (scene_height > max_height)) and (zoom_factor < 1):
             pass
-        # elif ((scene_width < min_width) or (scene_height < min_height)) and (zoom_factor > 1):
-        #     pass
+        if ((scene_width < min_width) and (scene_height < min_height)) and (zoom_factor > 1):
+            pass
+        # else:
         else:
             post_zoom_width = scene_width/zoom_factor
             zoom_factor = scene_width/np.clip(post_zoom_width, min_width, max_width)
