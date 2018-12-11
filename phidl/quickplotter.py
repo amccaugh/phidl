@@ -22,7 +22,7 @@ except:
 try:
     from PyQt5 import QtCore, QtGui
     from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow, QLabel, QMessageBox
-    from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
+    from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,QSizeF,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
     PORT_COLOR = QColor(190,0,0)
@@ -271,7 +271,8 @@ class Viewer(QGraphicsView):
         # just the bounding box so middle-click panning works
         panning_rect = QRectF(self.scene_bounding_rect)
         panning_rect_center = panning_rect.center()
-        panning_rect.setSize(panning_rect.size()*3)
+        panning_rect_size = max(panning_rect.width(), panning_rect.height())*3
+        panning_rect.setSize(QSizeF(panning_rect_size, panning_rect_size))
         panning_rect.moveCenter(panning_rect_center)
         self.setSceneRect(panning_rect)
         self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
@@ -452,17 +453,14 @@ class Viewer(QGraphicsView):
         scene_width = (scene_bottom_right_corner - scene_upper_left_corner).x()
         scene_height = (scene_upper_left_corner - scene_bottom_right_corner).y()
 
-        max_width = self.scene_size[0]*3
-        max_height = self.scene_size[1]*3
+        max_width =  self.scene_bounding_rect.width()*3
+        max_height = self.scene_bounding_rect.height()*3
 
         if ((scene_width > max_width) and (scene_height > max_height)) and (zoom_factor < 1):
             pass
-        if ((scene_width < min_width) and (scene_height < min_height)) and (zoom_factor > 1):
+        elif ((scene_width < min_width) and (scene_height < min_height)) and (zoom_factor > 1):
             pass
-        # else:
         else:
-            post_zoom_width = scene_width/zoom_factor
-            zoom_factor = scene_width/np.clip(post_zoom_width, min_width, max_width)
             self.zoom_view(zoom_factor)
     
         # Get the new position and move scene to old position
@@ -636,6 +634,6 @@ def quickplot2(item_list, *args, **kwargs):
     viewer_window.setVisible(True)
     viewer_window.show()
     viewer_window.raise_()
-    # return viewer
+    return viewer
 
 
