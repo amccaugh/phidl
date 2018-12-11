@@ -268,6 +268,8 @@ class _GeometryHelper(object):
 
 
 class Port(object):
+    _next_uid = 0
+
     def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
@@ -275,7 +277,9 @@ class Port(object):
         self.orientation = mod(orientation,360)
         self.parent = parent
         self.info = {}
+        self.uid = Port._next_uid
         if self.width < 0: raise ValueError('[PHIDL] Port creation error: width must be >=0')
+        Port._next_uid += 1
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
@@ -316,11 +320,14 @@ class Port(object):
     # Use this function instead of copy() (which will not create a new numpy array
     # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
     # DeviceReference recursively, causing performance issues)
-    def _copy(self):
+    def _copy(self, new_uid = True):
         new_port = Port(name = self.name, midpoint = self.midpoint,
             width = self.width, orientation = self.orientation,
             parent = self.parent)
         new_port.info = deepcopy(self.info)
+        if new_uid == False:
+            new_port.uid = self.uid
+            Port._next_uid -= 1
         return new_port
 
     def rotate(self, angle = 45, center = None):
@@ -750,8 +757,12 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def get_ports(self, depth = None):
-        """ Returns copies of all the ports of the Device"""
-        port_list = [p._copy() for p in self.ports.values()]
+        """ Returns copies of all the ports of the Device, rotated 
+        and translated so that they're in their top-level position.
+        The Ports returned are copies of the originals, but each copy
+        has the same ``uid'' as the original so that they can be
+        traced back to the original if needed"""
+        port_list = [p._copy(new_uid = False) for p in self.ports.values()]
         
         if depth is None or depth > 0:
             for r in self.references:
@@ -762,7 +773,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 # Transform ports that came from a reference
                 ref_ports_transformed = []
                 for rp in ref_ports:
-                    new_port = rp._copy()
+                    new_port = rp._copy(new_uid = False)
                     new_midpoint, new_orientation = r._transform_port(rp.midpoint, \
                     rp.orientation, r.origin, r.rotation, r.x_reflection)
                     new_port.midpoint = new_midpoint
