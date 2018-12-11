@@ -273,11 +273,11 @@ class Viewer(QGraphicsView):
         # just the bounding box so middle-click panning works
         panning_rect = QRectF(self.scene_bounding_rect)
         panning_rect_center = panning_rect.center()
-        panning_rect.setSize(panning_rect.size()*5)
+        panning_rect.setSize(panning_rect.size()*3)
         panning_rect.moveCenter(panning_rect_center)
         self.setSceneRect(panning_rect)
         self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
-        self.zoom_view(0.5)
+        self.zoom_view(0.8)
 
         self.update_grid()
         
@@ -468,8 +468,8 @@ class Viewer(QGraphicsView):
 
         if ((scene_width > max_width) or (scene_height > max_height)) and (zoom_factor < 1):
             pass
-        elif ((scene_width < min_width) or (scene_height < min_height)) and (zoom_factor > 1):
-            pass
+        # elif ((scene_width < min_width) or (scene_height < min_height)) and (zoom_factor > 1):
+        #     pass
         else:
             post_zoom_width = scene_width/zoom_factor
             zoom_factor = scene_width/np.clip(post_zoom_width, min_width, max_width)
