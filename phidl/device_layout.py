@@ -557,10 +557,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         if port is not None:
             if not isinstance(port, Port):
                 raise ValueError('[PHIDL] add_port() error: Argument `port` must be a Port for copying')
-            p = port._copy()
+            p = port._copy(new_uid = True)
             p.parent = self
         elif isinstance(name, Port):
-            p = name._copy()
+            p = name._copy(new_uid = True)
             p.parent = self
             name = p.name
         else:
@@ -875,8 +875,10 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
-        # self.parent.ports = device.ports
-        self._local_ports = {name:port._copy() for name, port in device.ports.items()}
+        # The ports of a DeviceReference have their own unique id (uid),
+        # since two DeviceReferences of the same parent Device can be
+        # in different locations and thus do not represent the same port
+        self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
 
 
     def __repr__(self):
@@ -917,7 +919,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
             if name not in self._local_ports:
-                self._local_ports[name] = port._copy()
+                self._local_ports[name] = port._copy(new_uid = True)
             self._local_ports[name].midpoint = new_midpoint
             self._local_ports[name].orientation = mod(new_orientation,360)
             self._local_ports[name].parent = self
