@@ -921,6 +921,11 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             self._local_ports[name].midpoint = new_midpoint
             self._local_ports[name].orientation = mod(new_orientation,360)
             self._local_ports[name].parent = self
+        # Remove any ports that no longer exist in the reference's parent
+        parent_names = self.parent.ports.keys()
+        local_names = self._local_ports.keys()
+        for name in local_names:
+            if name not in parent_names: self._local_ports.pop(name)
         return self._local_ports
 
     @property
