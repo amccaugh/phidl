@@ -21,7 +21,6 @@ from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
 import warnings
-import yaml
 
 
 __version__ = '0.9.0'
@@ -376,18 +375,15 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
 def make_device(fun, config = None, **kwargs):
     config_dict = {}
-    if type(config) is str:
-        with open(config) as f:
-            config_dict = yaml.load(f) # Load arguments from config file
-    elif type(config) is dict:
+    if type(config) is dict:
         config_dict = dict(config)
     elif config is None:
         pass
     else:
         raise TypeError("""[PHIDL] When creating Device() from a function, the
-        second argument should be a ``config`` argument which is either a
-        filename or a dictionary containing arguments for the function.
-        e.g. make_device(ellipse, config = 'myconfig.yaml') """)
+        second argument should be a ``config`` argument which is a
+        dictionary containing arguments for the function.
+        e.g. make_device(ellipse, config = my_config_dict) """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
