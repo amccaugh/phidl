@@ -47,24 +47,12 @@ def rectangle(size = (4,2), layer = 0):
 	----------
 	size : tuple
 		Width and height of rectangle.
-	layer : int
-		Set geometry layer.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Rectangle parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> rect = pg.rectangle(size = (100,30), layer = 1)
-	>>> rect
-	Device (name "rectangle" (uid 0),  ports [], aliases [], 1 elements, 0 references)
-
-	Notes
-	-----
-	If both numbers in size are positive, the rectangle will extend away from the origin up and to the right. If the width is negative, for example, the rectangle will instead extend away from the origin up and to the left.
+	A Device with a single rectangle in it
 	"""
 
     D = Device(name = 'rectangle')
@@ -74,26 +62,23 @@ def rectangle(size = (4,2), layer = 0):
 
 
 def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
-	""" Creates a bounding box rectangle from coordinates instead of dimensions.
+	""" Creates a bounding box rectangle from coordinates, to allow
+    creation of a rectangle bounding box directly form another shape.
 
 	Parameters
 	----------
 	bbox : list of tuples
 		Coordinates of the box [(x1,y1),(x2,y2)].
-	layer : int
-		Set geometry layer.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Rectangle parameters in a device.
+    A Device with a single rectangle in it
 
 	Examples
 	--------
-	>>> import phidl.geometry as pg
-	>>> bbox = pg.bbox()
-	>>> bbox
-	Device (name "bbox" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+	>>> D = pg.bbox(anothershape.bbox)
 	"""
 
     D = Device(name = 'bbox')
@@ -104,28 +89,21 @@ def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
 
 
 def cross(length = 10, width = 3, layer = 0):
-	"""Generate a right-angle cross (+ shape) from two rectangles of specified length and width.
+	"""Generates a right-angle cross (+ shape, symmetric) from two 
+    rectangles of specified length and width.
 
 	Parameters
 	----------
 	length : float
-		Length of the two rectangles forming the cross.
+		Length of the cross from one end to the other.
 	width : float
-		Width of the two rectangles forming the cross.
-	layer : int
-		Set geometry layer.
+		Width of the arms of the cross.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Cross parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> cross = pg.cross()
-	>>> cross
-	Device (name "cross" (uid 0),  ports [], aliases [], 2 elements, 2 references)
+    A Device with a cross in it
 	"""
 
     D = Device(name = 'cross')
@@ -145,27 +123,19 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
 	radii : tuple
 		Semimajor and semiminor axis lengths of the ellipse.
 	angle_resolution : float
-		Resolution of the curve of the ellipse.
-	layer : int
-		Set geometry layer.
+		Resolution of the curve of the ellipse (lower number = fewer points).
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Ellipse parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> ellipse = pg.ellipse()
-	>>> ellipse
-	Device (name "ellipse" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+    A Device with an ellipse polygon in it
 
 	Notes
 	-----
-	The orientation of the ellipse is determined by the order of the radii variables; if the first element is larger, the ellipse will be horizontal and if the second element is larger, the ellipse will be vertical
-
-	The angle_resolution alters the precision of the curve of the ellipse. Larger values yield lower resolution.
+	The orientation of the ellipse is determined by the order of the radii variables;
+    if the first element is larger, the ellipse will be horizontal and if the second
+    element is larger, the ellipse will be vertical.
 	"""
 
     D = Device(name = 'ellipse')
@@ -186,26 +156,15 @@ def circle(radius = 10, angle_resolution = 2.5, layer = 0):
 	----------
 	radius : float
 		Radius of the circle.
-	angle_resolution: float
-		Resolution of the curve of the circle.
-	layer : int
-		Set geometry layer.
+    angle_resolution : float
+        Number of degrees per point (angle_resolution = 30 -> 360/30 = 12 points in the circle).
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Circle parameters in a device.
+    A Device with an circle polygon in it
 
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> circle = pg.circle()
-	>>> circle
-	Device (name "circle" (uid 0),  ports [], aliases [], 1 elements, 0 references)
-
-	Notes
-	-----
-	The angle_resolution alters the precision of the curve of the circle. Larger values yield lower resolution.
 	"""
 
     D = Device(name = 'circle')
@@ -227,20 +186,12 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
 		Width of the ring.
 	angle_resolution : float
 		Resolution of the curve of the ring.
-	layer : int
-		Set geometry layer.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Ring parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> ring = pg.ring()
-	>>> ring
-	Device (name "ring" (uid 0),  ports [], aliases [], 1 elements, 0 references)
+    A Device with an ring polygon in it
 
 	Notes
 	-----
