@@ -32,9 +32,9 @@ install:
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION dep1 dep2 ...
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION matplotlib numpy
   - source activate test-environment
-  - conda install matplotlib
+  # - conda install matplotlib
   - python setup.py install
 
 script:
