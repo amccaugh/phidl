@@ -16,6 +16,7 @@ matrix:
 
 install:
   - pip install -r requirements.txt
+  - pip install matplotlib==2.0.2
   - python setup.py install
 
 script:
