@@ -10,21 +10,18 @@ matrix:
     - python: "3.7"
       dist: xenial
       sudo: required
-    - os: osx
-      language: generic
-      python: "3.6"
 
 before_install:
     # Tricks to avoid matplotlib error about X11:
     # 'no display name and no $DISPLAY environment variable'
     # http://docs.travis-ci.com/user/gui-and-headless-browsers/#Starting-a-Web-Server
     - "export DISPLAY=:99.0"
-    # - "sh -e /etc/init.d/xvfb start"
-    
+    - "sh -e /etc/init.d/xvfb start"
+
 install:
   - pip install --upgrade pip
-  - pip install -U matplotlib==2.2.3
-  - pip install -U scipy==1.1.0
+  - pip install -U matplotlib==2.2.3 # Needed because Travis CI pulls 3.0.2 even though it doesn't work with Pyhton 2.7
+  - pip install -U scipy==1.1.0 # Needed because 1.2.0 has UTF-8 issues
   - pip install -r requirements.txt
   - python setup.py install
 
