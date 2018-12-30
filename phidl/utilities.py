@@ -1,5 +1,4 @@
 import operator
-import xmltodict
 from phidl.quickplotter import _get_layerprop
 
 def write_lyp(filename, layerset):
@@ -88,6 +87,13 @@ def write_lyp(filename, layerset):
 
 def load_lyp(filename):
     ''' Creates a LayerSet object from a lyp file that is XML '''
+    try:
+        import xmltodict
+    except:
+        raise ImportError("""This function is in development, and currently requires
+            the module "xmltodict" to operate.  Please retry after installing xmltodict
+            $ pip install xmltodict """)
+
     from phidl.device_layout import LayerSet
     if filename[-4:] != '.lyp': filename = filename + '.lyp'
     with open(filename, 'r') as fx:
