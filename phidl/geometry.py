@@ -123,7 +123,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
 	radii : tuple
 		Semimajor and semiminor axis lengths of the ellipse.
 	angle_resolution : float
-		Resolution of the curve of the ellipse (lower number = fewer points).
+        Resolution of the curve of the ring (# of degrees per point).
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -157,7 +157,7 @@ def circle(radius = 10, angle_resolution = 2.5, layer = 0):
 	radius : float
 		Radius of the circle.
     angle_resolution : float
-        Number of degrees per point (angle_resolution = 30 -> 360/30 = 12 points in the circle).
+        Resolution of the curve of the ring (# of degrees per point).
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -185,7 +185,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
 	width : float
 		Width of the ring.
 	angle_resolution : float
-		Resolution of the curve of the ring.
+		Resolution of the curve of the ring (# of degrees per point).
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -221,40 +221,27 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
 	Parameters
 	----------
 	radius : float
-		Middle radius of the arc.
+		Radius of the arc centerline.
 	width : float
 		Width of the arc.
 	theta : float
-		Arclength.
+		Total angle coverage of the arc.
 	start_angle : float
 		Starting angle.
 	angle_resolution : float
 		Resolution of the curve of the arc.
-	layer : int
-		Set layer geometry.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Arc parameters in a device.
+    A Device with an arc polygon in it, and two ports (`1` and `2`) on either end
 
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> arc = pg.arc()
-	>>> arc
-	Device (name "arc" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
 
 	Notes
 	-----
 	Theta = 0 is located along the positive x-axis relative to the centre of the arc.
-
-	The arc is formed by taking the radius out to the specified value, and then constructing the thickness by dividing the width in half and adding that value to either side of the radius. It is then extended to the correct arclength.
-
 	Ports are added to each end of the arc to facilitate connecting those ends to other geometries.
-
-	The angle_resolution alters the precision of the curve of the arc. Larger values yield lower resolution.
-
 	"""
 
     inner_radius = radius-width/2
@@ -279,23 +266,6 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
 
 def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 	""" Starting form a port, create a arc which connects to the port
-
-	Parameters
-	----------
-
-	Returns
-	-------
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> turn = pg.turn()
-	>>> turn
-	Device (name "turn" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
-
-	Notes
-	-----
-
 	"""
 
     D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
@@ -312,20 +282,12 @@ def straight(size = (4,2), layer = 0):
 	----------
 	size : tuple
 		The length and width of the rectangle.
-	layer : int
-		Set geometry layer.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		Rectangle parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> straight = pg.straight()
-	>>> straight
-	Device (name "wire" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+    A Device with an rectangle polygon in it, and two ports (`1` and `2`) on either end
 
 	Notes
 	-----
@@ -349,20 +311,13 @@ def L(width = 1, size = (10,20) , layer = 0):
 		Width of the L.
 	size : tuple
 		Lengths of the base and height of the L, respectively.
-	layer : int
-		Set geometry layer.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D : class
-		L geometry parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> L = pg.L()
-	>>> L
-	Device (name "L" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+    A Device with an L-shaped polygon in it, and two ports (`1` and `2`) on
+    either end of the L
 	"""
 
     D = Device(name = 'L')
@@ -384,20 +339,13 @@ def C(width = 1, size = (10,20) , layer = 0):
 		Width of the C.
 	size : tuple
 		Lengths of the base + top edges and the height of the C, respectively.
-	layer : int
-		Set geometry layer.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 	Returns
 	-------
-	D: class
-		C geometry parameters in a device.
-
-	Examples
-	--------
-	>>> import phidl.geometry as pg
-	>>> C = pg.C()
-	>>> C
-	Device (name "C" (uid 0),  ports [1, 2], aliases [], 1 elements, 0 references)
+    A Device with an [-bracket-shaped polygon in it, and two ports (`1` and `2`) on
+    either end of the [ shape
 	"""
 
     D = Device(name = 'C')
@@ -408,16 +356,6 @@ def C(width = 1, size = (10,20) , layer = 0):
     D.add_port(name = 1, midpoint = (s1,s2),  width = width, orientation = 0)
     D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
     return D
-
-
-
-#==============================================================================
-# Example code
-#==============================================================================
-    
-#R = rectangle(size = (4,2), layer = 0)
-#quickplot(R)
-
 
 
 
