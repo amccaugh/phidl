@@ -105,11 +105,10 @@ def load_lyp(filename):
         lyp_list = [lyp_list]
 
     lys = LayerSet()
-    def add_entry(entry):
+    def add_entry(entry, lys):
         ''' Entry is a dict of one element of 'properties'.
             No return value. It adds it to the lys variable directly
         '''
-        nonlocal lys
         layerInfo = entry['source'].split('@')[0]
         phidl_LayerArgs = dict()
         phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
@@ -120,17 +119,18 @@ def load_lyp(filename):
         phidl_LayerArgs['name'] = name2shortName(entry['name'])
         phidl_LayerArgs['description'] = name2description(entry['name'])
         lys.add_layer(**phidl_LayerArgs)
+        return lys
 
     for entry in lyp_list:
         try:
             group_members = entry['group-members']
         except KeyError:  # it is a real layer
-            add_entry(entry)
+            add_entry(entry, lys)
         else:  # it is a group of other entries
             if not isinstance(group_members, list):
                 group_members = [group_members]
             for member in group_members:
-                add_entry(member)
+                add_entry(member, lys)
     return lys
 
 
