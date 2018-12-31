@@ -900,7 +900,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         layers = np.array(list(polygons_by_spec.keys()))
         sorted_layers = layers[np.lexsort((layers[:,0], layers[:,1]))]
         
-    #    hash_list = []
         final_hash = hashlib.sha1()
         for layer in sorted_layers:
             layer_hash = hashlib.sha1(layer).digest()
@@ -909,11 +908,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             final_hash.update(layer_hash)
             for ph in polygon_hashes:
                 final_hash.update(ph)
-    #        hash_list.append(layer_hash)
-    #        hash_list.extend(polygon_hashes)
-        
-    #    print(hashlib.sha1(b''.join(hash_list)).hexdigest())
-    #    print(final_hash.hexdigest())
+
         return final_hash.hexdigest()
 
 
