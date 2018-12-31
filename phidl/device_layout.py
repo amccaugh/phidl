@@ -879,23 +879,23 @@ class Device(gdspy.Cell, _GeometryHelper):
     
 
     def hash_geometry(self):
-    """
-    Algorithm:
-    hash(
-        hash(First layer information: [layer1, datatype1]),
-        hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-        hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
-        hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-        hash(Second layer information: [layer2, datatype2]),
-        hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
-        hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-    )
-    ...
-    Note: For each layer, each polygon is individually hashed and then 
-          the polygon hashes are sorted, to ensure the hash stays constant
-          regardless of the ordering the polygons.  Similarly, the layers
-          are sorted by (layer, datatype)
-    """
+        """
+        Algorithm:
+        hash(
+            hash(First layer information: [layer1, datatype1]),
+            hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+            hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            hash(Second layer information: [layer2, datatype2]),
+            hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+            hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+        )
+        ...
+        Note: For each layer, each polygon is individually hashed and then 
+              the polygon hashes are sorted, to ensure the hash stays constant
+              regardless of the ordering the polygons.  Similarly, the layers
+              are sorted by (layer, datatype)
+        """
         polygons_by_spec = self.get_polygons(by_spec = True)
         layers = np.array(list(polygons_by_spec.keys()))
         sorted_layers = layers[np.lexsort((layers[:,0], layers[:,1]))]
