@@ -27,6 +27,7 @@ from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
 import warnings
+import hashlib
 
 
 __version__ = '0.9.1'
@@ -876,6 +877,46 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
     
+
+    def hash_geometry(self):
+    """
+    Algorithm:
+    hash(
+        hash(First layer information: [layer1, datatype1]),
+        hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+        hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+        hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+        hash(Second layer information: [layer2, datatype2]),
+        hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+        hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+    )
+    ...
+    Note: For each layer, each polygon is individually hashed and then 
+          the polygon hashes are sorted, to ensure the hash stays constant
+          regardless of the ordering the polygons.  Similarly, the layers
+          are sorted by (layer, datatype)
+    """
+        polygons_by_spec = self.get_polygons(by_spec = True)
+        layers = np.array(list(polygons_by_spec.keys()))
+        sorted_layers = layers[np.lexsort((layers[:,0], layers[:,1]))]
+        
+    #    hash_list = []
+        final_hash = hashlib.sha1()
+        for layer in sorted_layers:
+            layer_hash = hashlib.sha1(layer).digest()
+            polygons = polygons_by_spec[tuple(layer)]
+            polygon_hashes = np.sort([hashlib.sha1(p).digest() for p in polygons])
+            final_hash.update(layer_hash)
+            for ph in polygon_hashes:
+                final_hash.update(ph)
+    #        hash_list.append(layer_hash)
+    #        hash_list.extend(polygon_hashes)
+        
+    #    print(hashlib.sha1(b''.join(hash_list)).hexdigest())
+    #    print(final_hash.hexdigest())
+        return final_hash.hexdigest()
+
+
     
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
@@ -1051,7 +1092,5 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.move(-overlap*np.array([cos(destination.orientation*pi/180),
                                      sin(destination.orientation*pi/180)]))
         return self
-
-
 
 
