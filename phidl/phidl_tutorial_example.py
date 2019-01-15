@@ -908,14 +908,14 @@ print('Function with new arguments took %s seconds to run' % (time.time()-time_s
 D = Device()
 e = D << pg.ellipse(radii = [10,15], layer = 2)
 D2 = pg.ellipse(radii = [10,15], layer = 2)
-print(D.hash_geometry())  # Output: fa6227f5a826b960c3281f8d1595aaaf05b7e801
-print(D2.hash_geometry()) # Output: fa6227f5a826b960c3281f8d1595aaaf05b7e801
+print(D.hash_geometry())  # Output: 143f7faa8558feb3036487c155083bd53fad4913
+print(D2.hash_geometry()) # Output: 143f7faa8558feb3036487c155083bd53fad4913
 
 # Create two Devices with the same polygons, but different layers
 D = pg.ellipse(radii = [10,15], layer = 2)
 D2 = pg.ellipse(radii = [10,15], layer = 77)
-print(D.hash_geometry())  # fa6227f5a826b960c3281f8d1595aaaf05b7e801
-print(D2.hash_geometry()) # d72d4c6174a2c1e1013e380bf0e645b0c6c9a0b6 <-- Different!
+print(D.hash_geometry())  # 143f7faa8558feb3036487c155083bd53fad4913
+print(D2.hash_geometry()) # cd36f7c5da226f8bb6c29b64acb8c442dcb379c4 <-- Different!
 
 
 # Create two Devices with the same polygons, but added in different orders
@@ -923,8 +923,8 @@ D = pg.ellipse(radii = [10,15], layer = 2)
 D << pg.rectangle(size = [7.5,8.6], layer = 99)
 D2 =  pg.rectangle(size = [7.5,8.6], layer = 99)
 D2 << pg.ellipse(radii = [10,15], layer = 2)
-print(D.hash_geometry()) # 54ee14040d98a3c4218265364f9935f1ce8212e9
-print(D2.hash_geometry())# 54ee14040d98a3c4218265364f9935f1ce8212e9 <-- Same! Order ignored
+print(D.hash_geometry()) # f4d11e73389a1a1578a181c269f79424392482d6
+print(D2.hash_geometry())# f4d11e73389a1a1578a181c269f79424392482d6 <-- Same! Order ignored
 
 
 # Show manipulation-invariance
@@ -932,8 +932,8 @@ print(D2.hash_geometry())# 54ee14040d98a3c4218265364f9935f1ce8212e9 <-- Same! Or
 # producing rounding errors, but the algorithm should be very robust
 # (~10^-7 errors/point likelihood measured @ precision of 1e-4)
 D = pg.ellipse(radii = [10,15], layer = 2)
-print(D.hash_geometry(precision = 1e-4)) # c520258e9a14a66fd4e6c28c08f8e33acaa0e0f3
+print(D.hash_geometry(precision = 1e-4)) # 143f7faa8558feb3036487c155083bd53fad4913
 D.move([1.751,0]).rotate(37.9).rotate(-37.9).move([-1.751,0])
-print(D.hash_geometry(precision = 1e-4)) # c520258e9a14a66fd4e6c28c08f8e33acaa0e0f3
+print(D.hash_geometry(precision = 1e-4)) # 143f7faa8558feb3036487c155083bd53fad4913
 D.movex(1e-7) # Moving points by << precision should yield the same result
-print(D.hash_geometry(precision = 1e-4)) # c520258e9a14a66fd4e6c28c08f8e33acaa0e0f3
+print(D.hash_geometry(precision = 1e-4)) # 143f7faa8558feb3036487c155083bd53fad4913
