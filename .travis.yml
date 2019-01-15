@@ -16,6 +16,8 @@ before_install:
     # 'no display name and no $DISPLAY environment variable'
     # http://docs.travis-ci.com/user/gui-and-headless-browsers/#Starting-a-Web-Server
     - "export DISPLAY=:99.0"
+    - sudo apt-get update
+    - sudo apt-get install -y xvfb
     - "sh -e /etc/init.d/xvfb start"
 
 install:
