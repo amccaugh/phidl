@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/amccaugh/phidl)
+
 # PHIDL
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
