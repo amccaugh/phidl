@@ -60,16 +60,17 @@ You can also do things like create a backing fill to make sure the resist develo
 # Changelog
 
 ## 1.0.0 (Jan 14, 2019)
-- 1.0 release!  The core functionality of phidl has been stable for over 18 months, with only the occasional minor bug reported/fixed.  Time to reflect that in the version number!
+- 1.0 release!  The core functionality of phidl has been stable for over 18 months, and all major planned features have been implemented.  Time to reflect that in the version number!
 
 ### New features
-- `quickplot2` now has coordinates shown, a help message box (press ?), and a scale notation
+- Significant upgrades to `quickplot2`: now shows coordinates, a help message box (press ?), and a scale notation (along with several under-the-hood optimizations)
 - Added `D.hash_geometry()` -- use to generate a SHA1-based hash of the polygons in a Device
 - Added `phidl.utilities.load_lyp()`, which loads a KLayout layer properties (.lyp) file and converts it into a LayerSet (contribution thanks to Alex Tait @atait)
 
 ### Changes
 - Optimized rotation so 90-degree rotations (contribution thanks to Alex Tait @atait)
 - Function documentation for geometry module (contribution thanks to Jimmy Gammell @jgammell and Dylan Oh @dmwo)
+- `pytest` implementation for internal consistency checking
 
 
 ## 0.9.0 (Oct 9, 2018)
