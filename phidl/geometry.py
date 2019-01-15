@@ -10,7 +10,6 @@ from scipy import integrate
 import gdspy
 from phidl.device_layout import Device, Port
 from phidl.device_layout import _parse_layer, DeviceReference
-import phidl.routing as pr
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -19,52 +18,598 @@ from skimage import draw, morphology
 
 
 ##### Categories:
-# Utility functions (copying, importing, extracting)
 # Polygons / shapes
-# Optimal (current-crowding) curves
+# Boolean functions
+# Lithography test structures
+# Utility functions (copying, importing, extracting)
 # Pads
-# SNSPD
 # Taper
 # Text
 # Wafer / Die
 # Waveguide
-# yTron
 # Fill tool
-# Routing
-# Boolean functions
 # Photonics
+# Optimal (current-crowding) curves
+# Superconducting devices
 
+
+#==============================================================================
+#
+# Polygons / Shapes
+#
+#==============================================================================
+
+
+def rectangle(size = (4,2), layer = 0): 
+    """Generate rectangle geometry.
+
+    Parameters
+    ----------
+    size : tuple
+        Width and height of rectangle.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with a single rectangle in it
+    """
+
+    D = Device(name = 'rectangle')
+    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
+    D.add_polygon(points, layer = layer)
+    return D
+
+
+def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
+    """ Creates a bounding box rectangle from coordinates, to allow
+    creation of a rectangle bounding box directly form another shape.
+
+    Parameters
+    ----------
+    bbox : list of tuples
+        Coordinates of the box [(x1,y1),(x2,y2)].
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with a single rectangle in it
+
+    Examples
+    --------
+    >>> D = pg.bbox(anothershape.bbox)
+    """
+
+    D = Device(name = 'bbox')
+    (a,b),(c,d)  = bbox
+    points = ((a,b), (c,b), (c,d), (a,d))
+    D.add_polygon(points, layer = layer)
+    return D
+
+
+def cross(length = 10, width = 3, layer = 0):
+    """Generates a right-angle cross (+ shape, symmetric) from two 
+    rectangles of specified length and width.
+
+    Parameters
+    ----------
+    length : float
+        Length of the cross from one end to the other.
+    width : float
+        Width of the arms of the cross.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with a cross in it
+    """
+
+    D = Device(name = 'cross')
+    R = rectangle(size = (width, length), layer = layer)
+    r1 = D.add_ref(R).rotate(90)
+    r2 = D.add_ref(R)
+    r1.center = (0,0)
+    r2.center = (0,0)
+    return D
+
+
+def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
+    """Generate an ellipse geometry.
+
+    Parameters
+    ----------
+    radii : tuple
+        Semimajor and semiminor axis lengths of the ellipse.
+    angle_resolution : float
+        Resolution of the curve of the ring (# of degrees per point).
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an ellipse polygon in it
+
+    Notes
+    -----
+    The orientation of the ellipse is determined by the order of the radii variables;
+    if the first element is larger, the ellipse will be horizontal and if the second
+    element is larger, the ellipse will be vertical.
+    """
+
+    D = Device(name = 'ellipse')
+    a = radii[0]
+    b = radii[1]
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
+    r = a*b/(sqrt((b*cos(t))**2 + (a*sin(t))**2))
+    xpts = r*cos(t)
+    ypts = r*sin(t)
+    D.add_polygon(points = (xpts,ypts), layer = layer)
+    return D
+
+
+def circle(radius = 10, angle_resolution = 2.5, layer = 0):
+    """Generate a circle geometry.
+
+    Parameters
+    ----------
+    radius : float
+        Radius of the circle.
+    angle_resolution : float
+        Resolution of the curve of the ring (# of degrees per point).
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an circle polygon in it
+
+    """
+
+    D = Device(name = 'circle')
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
+    xpts = (radius*cos(t)).tolist()
+    ypts = (radius*sin(t)).tolist()
+    D.add_polygon(points = (xpts,ypts), layer = layer)
+    return D
+
+
+def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
+    """Generate a ring geometry.
+
+    Parameters
+    ----------
+    radius : float
+        Middle radius of the ring.
+    width : float
+        Width of the ring.
+    angle_resolution : float
+        Resolution of the curve of the ring (# of degrees per point).
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an ring polygon in it
+
+    Notes
+    -----
+    The ring is formed by taking the radius out to the specified value, and then constructing the thickness by dividing the width in half and adding that value to either side of the radius.
+
+    The angle_resolution alters the precision of the curve of the ring. Larger values yield lower resolution.
+    """
+
+    D = Device(name = 'ring')
+    inner_radius = radius - width/2
+    outer_radius = radius + width/2
+    n = int(np.round(360/angle_resolution))
+    t = np.linspace(0, 360, n+1)*pi/180
+    inner_points_x = (inner_radius*cos(t)).tolist()
+    inner_points_y = (inner_radius*sin(t)).tolist()
+    outer_points_x = (outer_radius*cos(t)).tolist()
+    outer_points_y = (outer_radius*sin(t)).tolist()
+    xpts = inner_points_x + outer_points_x[::-1]
+    ypts = inner_points_y + outer_points_y[::-1]
+    D.add_polygon(points = (xpts,ypts), layer = layer)
+    return D
+    
+    
+def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
+    """ Creates an arc of arclength ``theta`` starting at angle ``start_angle``
+
+    Parameters
+    ----------
+    radius : float
+        Radius of the arc centerline.
+    width : float
+        Width of the arc.
+    theta : float
+        Total angle coverage of the arc.
+    start_angle : float
+        Starting angle.
+    angle_resolution : float
+        Resolution of the curve of the arc.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an arc polygon in it, and two ports (`1` and `2`) on either end
+
+
+    Notes
+    -----
+    Theta = 0 is located along the positive x-axis relative to the centre of the arc.
+    Ports are added to each end of the arc to facilitate connecting those ends to other geometries.
+    """
+
+    inner_radius = radius-width/2
+    outer_radius = radius+width/2
+    angle1 = (start_angle)*pi/180
+    angle2 = (start_angle + theta)*pi/180
+    t = np.linspace(angle1, angle2, np.ceil(abs(theta)/angle_resolution))
+    inner_points_x = (inner_radius*cos(t)).tolist()
+    inner_points_y = (inner_radius*sin(t)).tolist()
+    outer_points_x = (outer_radius*cos(t)).tolist()
+    outer_points_y = (outer_radius*sin(t)).tolist()
+    xpts = inner_points_x + outer_points_x[::-1]
+    ypts = inner_points_y + outer_points_y[::-1]
+    
+    D = Device('arc')
+    D.add_polygon(points = (xpts,ypts), layer = layer)
+    D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
+    D.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
+    D.info['length'] = (abs(theta)*pi/180)*radius
+    return D
+
+
+def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
+    """ Starting form a port, create a arc which connects to the port
+    """
+
+    D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
+            angle_resolution = angle_resolution, layer = layer)
+    D.rotate(angle =  180 + port.orientation - D.ports[1].orientation, center = D.ports[1].midpoint)
+    D.move(origin = D.ports[1], destination = port)
+    return D
+
+
+def straight(size = (4,2), layer = 0):
+    """Generates a rectangular wire geometry with ports on the length edges.
+
+    Parameters
+    ----------
+    size : tuple
+        The length and width of the rectangle.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an rectangle polygon in it, and two ports (`1` and `2`) on either end
+
+    Notes
+    -----
+    Ports are included on both sides of the length edge (i.e. size[0]) of the geometry.
+    """
+
+    D = Device(name = 'wire')
+    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
+    D.add_polygon(points, layer = layer)
+    D.add_port(name = 1, midpoint = (size[0]/2, size[1]),  width = size[0], orientation = 90)
+    D.add_port(name = 2, midpoint = (size[0]/2, 0),  width = size[0], orientation = -90)
+    return D
+
+
+def L(width = 1, size = (10,20) , layer = 0):
+    """Generates an "L" geometry with ports on both ends.
+
+    Parameters
+    ----------
+    width : float
+        Width of the L.
+    size : tuple
+        Lengths of the base and height of the L, respectively.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an L-shaped polygon in it, and two ports (`1` and `2`) on
+    either end of the L
+    """
+
+    D = Device(name = 'L')
+    w = width/2
+    s1, s2 = size
+    points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2), (-w,s2), (-w,-w)]
+    D.add_polygon(points, layer = layer)
+    D.add_port(name = 1, midpoint = (0,s2),  width = width, orientation = 90)
+    D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
+    return D
+
+
+def C(width = 1, size = (10,20) , layer = 0):
+    """Generates a "C" geometry with ports on both ends.
+
+    Parameters
+    ----------
+    width : float
+        Width of the C.
+    size : tuple
+        Lengths of the base + top edges and the height of the C, respectively.
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    A Device with an [-bracket-shaped polygon in it, and two ports (`1` and `2`) on
+    either end of the [ shape
+    """
+
+    D = Device(name = 'C')
+    w = width/2
+    s1, s2 = size
+    points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2-w), (s1,s2-w), (s1,s2+w), (-w, s2+w), (-w,-w)]
+    D.add_polygon(points, layer = layer)
+    D.add_port(name = 1, midpoint = (s1,s2),  width = width, orientation = 0)
+    D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
+    return D
+
+
+
+#==============================================================================
+#
+# Boolean functions
+#
+#==============================================================================
+
+def offset(elements, distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 0):
+    if type(elements) is not list: elements = [elements]
+    polygons_to_offset = []
+    for e in elements:
+        if isinstance(e, Device): polygons_to_offset += e.get_polygons()
+        else: polygons_to_offset.append(e)
         
+    gds_layer, gds_datatype = _parse_layer(layer)
+    # This pre-joining (by expanding by precision) makes this take twice as
+    # long but is necessary because of floating point errors which otherwise
+    # separate polygons which are nominally joined
+    joined = gdspy.offset(polygons_to_offset, precision, join='miter', tolerance=2,
+                          precision=precision, join_first=join_first,
+                          max_points=4000, layer=gds_layer, datatype = gds_datatype)
+    p = gdspy.offset(joined, distance, join='miter', tolerance=2,
+                     precision=precision, join_first=join_first,
+                     max_points=4000, layer=gds_layer, datatype = gds_datatype)
+    D = Device('offset')
+    D.add_polygon(p, layer=layer)
+    return D
+
+
+def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
+    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
+    return offset(elements = elements, distance = -distance, join_first = join_first,
+                 precision = precision, layer = layer)
+    
+    
+def invert(elements, border = 10, precision = 0.001, layer = 0):
+    """ Creates an inverted version of the input shapes with an additional
+    border around the edges """
+    D = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): D.add_ref(e)
+        else: D.elements.append(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+    
+    # Build the rectangle around the device D
+    R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
+    R.center = D.center
+    
+    operandA = R.get_polygons()
+    operandB = D.get_polygons()
+    p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
+                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
+        
+    D = Device('invert')
+    D.add_polygon(p, layer=layer)
+    return D
+
+
+def boolean(A, B, operation, precision = 0.001, layer = 0):
+    """ 
+    Performs boolean operations between 2 Device/DeviceReference objects,
+    or lists of Devices/DeviceReferences.
+
+    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note 
+    that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    'B-A' is equivalent to 'not' with the operands switched
+    """
+    A_polys = []
+    B_polys = []
+    if type(A) is not list: A = [A]
+    if type(B) is not list: B = [B]
+    for e in A:
+        if isinstance(e, Device): A_polys += e.get_polygons()
+        elif isinstance(e, DeviceReference): A_polys += e.get_polygons()
+    for e in B:
+        if isinstance(e, Device): B_polys += e.get_polygons()
+        elif isinstance(e, DeviceReference): B_polys += e.get_polygons()
+
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    operation = operation.lower().replace(' ','')
+    if operation == 'a-b':
+        operation = 'not'
+    elif operation == 'b-a':
+        operation = 'not'
+        A_polys, B_polys = B_polys, A_polys
+    elif operation == 'a+b':
+        operation = 'or'
+    elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
+        raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
+
+
+    p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
+                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
+
+    D = Device('boolean')
+    if p is not None: D.add_polygon(p, layer = layer)
+    return D
+
+
+def outline(elements, distance = 1, precision = 0.001, layer = 0):
+    """ Creates an outline around all the polygons passed in the `elements`
+    argument.  `elements` may be a Device, Polygon, or list of Devices
+    """
+    D = Device('outline')
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): D.add_ref(e)
+        else: D.elements.append(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    D_bloated = offset(D, distance = distance, join_first = True, precision = 0.001, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
+    return Outline
+
+
+def xor_diff(A,B, precision = 0.001):
+    """ Given two Devices A and B, performs the layer-by-layer XOR 
+    difference between A and B, and returns polygons representing 
+    the differences between A and B.
+    """
+    D = Device()
+    A_polys = A.get_polygons(by_spec = True)
+    B_polys = B.get_polygons(by_spec = True)
+    A_layers = A_polys.keys() 
+    B_layers = B_polys.keys() 
+    all_layers = set()
+    all_layers.update(A_layers )
+    all_layers.update(B_layers)
+    for layer in all_layers:
+        if (layer in A_layers) and (layer in B_layers):
+            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
+                                   operation = 'xor', precision=precision,
+                                   max_points=4000, layer=layer[0], datatype=layer[1])
+        elif (layer in A_layers):
+            p = A_polys[layer]
+        elif (layer in B_layers):
+            p = B_polys[layer]
+        if p is not None:
+            D.add_polygon(p, layer = layer)
+    return D
+
+
+def union(D, by_layer = False, layer = 0):
+    U = Device()
+    
+    if by_layer == True:
+        all_polygons = D.get_polygons(by_spec = True)
+        for layer, polygons in all_polygons.items():
+            unioned_polygons = _union_polygons(polygons)
+            U.add_polygon(unioned_polygons, layer = layer)
+    else:
+        all_polygons = D.get_polygons(by_spec = False)
+        unioned_polygons = _union_polygons(all_polygons)
+        U.add_polygon(unioned_polygons, layer = layer)
+    return U
+    
+def _union_polygons(polygons, precision=1e-6):
+    expanded = gdspy.offset(polygons, precision, join='miter', tolerance=2,
+                          precision=precision, join_first=False,
+                          max_points=1e9)
+    unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
+                                 precision=precision, max_points=1e9)
+    return unioned
+
+
+#==============================================================================
+#
+# Lithography test structures
+#
+#==============================================================================
+
+
+
+def litho_steps(
+        line_widths = [1,2,4,8,16],
+        line_spacing = 10,
+        height = 100,
+        layer = 0
+        ):
+    """ Produces a positive + negative tone linewidth test, used for 
+    lithography resolution test patterning """
+    D = Device('litho_steps')
+    
+    height = height / 2
+    T1 = text(text = '%s' % str(line_widths[-1]),
+        size = height, justify = 'center', layer = layer)
+    t1 = D.add_ref(T1).rotate(90).movex(-height/10)
+    R1 = rectangle(size = (line_spacing, height), layer = layer)
+    r1 = D.add_ref(R1).movey(-height)
+    count = 0
+    for i in reversed(line_widths):
+        count += line_spacing + i
+        R2 = rectangle(size = (i, height), layer = layer)
+        r1 = D.add_ref(R1).movex(count).movey(-height)
+        r2 = D.add_ref(R2).movex(count - i)
+
+    return(D)
+    
+
+def litho_star(
+        num_lines = 20,
+        line_width = 2,
+        diameter = 200,
+        layer = 0
+        ):
+    """ Creates a circular-star shape from lines, used as a lithographic  
+    resolution test pattern """
+    D = Device('litho_star')
+    
+    degree = 180 / num_lines
+    R1 = rectangle(size = (line_width, diameter), layer = layer)
+    for i in range(num_lines):
+        r1 = D.add_ref(R1).rotate(degree * i)
+        r1.center = (0,0)
+
+    return(D)
+
+
+def litho_calipers(
+        notch_size = [2,5],
+        notch_spacing = 2,
+        num_notches = 11,
+        offset_per_notch = 0.1,
+        row_spacing = 0,
+        layer1 = 1,
+        layer2 = 2):
+    """ Creates a vernier caliper structure for lithography alignment
+    tests.  Vernier structure is made horizontally. """
+    
+    D = Device('litho_calipers')
+    num_notches_total = num_notches*2+1
+    centre_notch = num_notches
+    R1 = rectangle(size = (notch_size), layer = layer1)
+    R2 = rectangle(size = (notch_size), layer = layer2)
+    for i in range(num_notches_total):
+        if i == centre_notch:
+            r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing)).movey(notch_size[1])
+            r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-2 * notch_size[1] - row_spacing)
+        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
+        r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-notch_size[1] - row_spacing)
+
+    return(D)
+
+
+
 #==============================================================================
 #
 # Utility functions
 #
 #==============================================================================
-
-class device_lru_cache:
-    def __init__(self, fn):
-        self.maxsize = 32
-        self.fn = fn
-        self.memo = OrderedDict()
-    def __call__(self, *args, **kwargs):
-        pickle_str = pickle.dumps(args, 1) + pickle.dumps(kwargs, 1)
-        if pickle_str not in self.memo.keys():
-            new_cache_item = self.fn(*args, **kwargs)
-            if not isinstance(new_cache_item, Device):
-                raise ValueError('[PHIDL] @device_lru_cache can only be used on functions which return a Device')
-            if len(self.memo) > self.maxsize:
-                self.memo.popitem(last = False) # Remove oldest item from cache
-            # Add a deepcopy of new item to cache so that if we change the
-            # returned device, our stored cache item is not changed
-            self.memo[pickle_str] = python_copy.deepcopy(new_cache_item)
-            return new_cache_item
-        else: # if found in cache
-            # Pop cache item out and put it back on the top of the cache
-            cached_output = self.memo.pop(pickle_str)
-            self.memo[pickle_str] = cached_output
-            # Then return a copy of the cached Device
-            return deepcopy(cached_output)
-
 
 
 
@@ -210,6 +755,31 @@ def preview_layerset(ls, size = 100):
         D.add_ref(T).movex(200 * xloc *scale).movey(-200 * yloc*scale)
     return D
 
+class device_lru_cache:
+    def __init__(self, fn):
+        self.maxsize = 32
+        self.fn = fn
+        self.memo = OrderedDict()
+    def __call__(self, *args, **kwargs):
+        pickle_str = pickle.dumps(args, 1) + pickle.dumps(kwargs, 1)
+        if pickle_str not in self.memo.keys():
+            new_cache_item = self.fn(*args, **kwargs)
+            if not isinstance(new_cache_item, Device):
+                raise ValueError('[PHIDL] @device_lru_cache can only be used on functions which return a Device')
+            if len(self.memo) > self.maxsize:
+                self.memo.popitem(last = False) # Remove oldest item from cache
+            # Add a deepcopy of new item to cache so that if we change the
+            # returned device, our stored cache item is not changed
+            self.memo[pickle_str] = python_copy.deepcopy(new_cache_item)
+            return new_cache_item
+        else: # if found in cache
+            # Pop cache item out and put it back on the top of the cache
+            cached_output = self.memo.pop(pickle_str)
+            self.memo[pickle_str] = cached_output
+            # Then return a copy of the cached Device
+            return deepcopy(cached_output)
+
+
 #==============================================================================
 #
 # Connectors
@@ -222,197 +792,6 @@ def connector(midpoint = (0,0), width = 1, orientation = 0):
     D.add_port(name = 1, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation)
     D.add_port(name = 2, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation-180)
     return D
-
-
-
-#==============================================================================
-#
-# Optimal current-crowding superconducting structures
-#
-#==============================================================================
-
-@device_lru_cache
-def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
-    turn_ratio = 4, num_pts = 50, layer = 0):
-
-    #==========================================================================
-    #  Create the basic geometry
-    #==========================================================================
-    a = (pitch + width)/2
-    y = -(pitch - width)/2
-    x = -pitch
-    dl = width/(num_pts*2)
-    n = 0
-
-    # Get points of ideal curve from conformal mapping
-    # TODO This is an inefficient way of finding points that you need
-    xpts = [x]; ypts = [y]
-    while (y < 0) & (n<1e6):
-        s = x + 1j*y
-        w = np.sqrt(1 - np.exp(pi*s/a))
-        wx = np.real(w); wy = np.imag(w)
-        wx = wx/np.sqrt(wx**2+wy**2); wy = wy/np.sqrt(wx**2+wy**2)
-        x = x + wx*dl; y = y + wy*dl
-        xpts.append(x); ypts.append(y)
-        n = n+1
-    ypts[-1] = 0 # Set last point be on the x=0 axis for sake of cleanliness
-    ds_factor = int(len(xpts)/num_pts) # Downsample the total number of points
-    xpts = xpts[::-ds_factor]; xpts = xpts[::-1]    # This looks confusing, but it's just flipping the arrays around
-    ypts = ypts[::-ds_factor]; ypts = ypts[::-1]    # so the last point is guaranteed to be included when downsampled
-
-    # Add points for the rest of meander
-    xpts.append(xpts[-1] + turn_ratio*width); ypts.append(0)
-    xpts.append(xpts[-1]); ypts.append(-a)
-    xpts.append(xpts[0]); ypts.append(-a)
-    xpts.append(max(xpts)-length); ypts.append(-a)
-    xpts.append(xpts[-1]); ypts.append(-a + width)
-    xpts.append(xpts[0]); ypts.append(ypts[0])
-    
-    xpts = np.array(xpts)
-    ypts = np.array(ypts)
-
-    #==========================================================================
-    #  Create a blank device, add the geometry, and define the ports
-    #==========================================================================
-    D = Device(name = 'hairpin')
-    D.add_polygon([xpts,ypts], layer = layer)
-    D.add_polygon([xpts,-ypts], layer = layer)
-    
-    xports = min(xpts)
-    yports = -a + width/2
-    D.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
-    D.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
-    
-    return D
-    
-    
-# TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
-@device_lru_cache
-def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
-                 anticrowding_factor = 1.2, layer = 0):
-
-    #==========================================================================
-    #  Create the basic geometry
-    #==========================================================================
-    def step_points(eta, W, a):
-        # Returns points from a unit semicircle in the w (= u + iv) plane to 
-        # the optimal curve in the zeta (= x + iy) plane which transitions
-        # a wire from a width of 'W' to a width of 'a'
-        # eta takes value 0 to pi
-
-        W = np.complex(W)
-        a = np.complex(a)
-
-        gamma = (a*a + W*W)/(a*a - W*W)
-
-        w = np.exp(1j*eta)
-
-        zeta = 4*1j/pi*(W*np.arctan(np.sqrt((w-gamma)/(gamma+1))) \
-                           + a*np.arctan(np.sqrt((gamma-1)/(w-gamma))))
-
-        x = np.real(zeta)
-        y = np.imag(zeta)
-        return x,y
-
-
-    def invert_step_point(x_desired = -10, y_desired = None, W = 1, a = 2):
-        # Finds the eta associated with the value x_desired along the optimal curve
-        def fh(eta):
-            guessed_x, guessed_y = step_points(eta, W = W, a = a)
-            if y_desired is None:   return (guessed_x-x_desired)**2 # The error
-            else:                   return (guessed_y-y_desired)**2
-
-        found_eta = fminbound(fh, x1 = 0, x2 = pi, args=())
-        return step_points(found_eta, W = W, a = a)
-
-    if start_width > end_width:
-        reverse = True
-        start_width, end_width = end_width, start_width
-    else:
-        reverse = False
-    
-    if start_width == end_width: # Just return a square
-        ypts = [0, start_width, start_width,           0]
-        xpts = [0,           0, start_width, start_width]
-    else:
-        xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
-        xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
-        
-        xpts = np.linspace(xmin, xmax, num_pts).tolist()
-        ypts = []
-        for x in xpts:
-            x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
-            ypts.append(y)
-        
-        ypts[-1] = end_width
-        ypts[0] =  start_width
-        xpts.append(xpts[-1])
-        ypts.append(0)
-        xpts.append(xpts[0])
-        ypts.append(0)
-        
-        # anticrowding_factor stretches the wire out; a stretched wire is a gentler
-        # transition, so there's less chance of current crowding if the fabrication 
-        # isn't perfect but as a result, the wire isn't as short as it could be
-        xpts = (np.array(xpts)*anticrowding_factor).tolist()
-
-        if reverse is True:
-            xpts = (-np.array(xpts)).tolist()
-            start_width, end_width = end_width, start_width
-
-    #==========================================================================
-    #  Create a blank device, add the geometry, and define the ports
-    #==========================================================================
-    D = Device(name = 'step')
-    D.add_polygon([xpts,ypts], layer = layer)
-    
-    D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
-    D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
-    
-    return D
-    
-    
-def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
-    D = Device()
-
-    # Get points of ideal curve
-    a = 2*width
-    v = np.logspace(-length_adjust,length_adjust,num_pts)
-    xi = a/2.0*((1+2/np.pi*np.arcsinh(1/v)) + 1j*(1+2/np.pi*np.arcsinh(v)))
-    xpts = list(np.real(xi)); ypts = list(np.imag(xi))
-    
-    # Add points for the rest of curve
-    d = 2*xpts[0] # Farthest point out * 2, rounded to nearest 100
-    xpts.append(width); ypts.append(d)
-    xpts.append(0); ypts.append(d)
-    xpts.append(0); ypts.append(0)
-    xpts.append(d); ypts.append(0)
-    xpts.append(d); ypts.append(width)
-    xpts.append(xpts[0]); ypts.append(ypts[0])
-    
-    D.add_polygon([xpts, ypts], layer = layer)
-    
-    D.add_port(name = 1, midpoint = [a/4,d], width = a/2, orientation = 90)
-    D.add_port(name = 2, midpoint = [d,a/4], width = a/2, orientation = 0)
-    return D
-
-    
-    
-#==============================================================================
-# Example code
-#==============================================================================
-    
-#hairpin = optimal_hairpin(width = 1, pitch = 3, length = 30, num_pts = 20)
-#quickplot(hairpin)
-
-
-#step = optimal_step(start_width = 5, end_width = 1, num_pts = 80, width_tol = 1e-3)
-#quickplot(step)
-
-
-#turn = optimal_90deg(width = 90, length_adjust = 1)
-#quickplot(turn)
-
 
 
 
@@ -564,257 +943,6 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
 
 
 
-#==============================================================================
-#
-# Polygons / Shapes
-#
-#==============================================================================
-
-
-
-def rectangle(size = (4,2), layer = 0):
-    D = Device(name = 'rectangle')
-    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
-    D.add_polygon(points, layer = layer)
-    return D
-
-
-
-def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
-    D = Device(name = 'bbox')
-    (a,b),(c,d)  = bbox
-    points = ((a,b), (c,b), (c,d), (a,d))
-    D.add_polygon(points, layer = layer)
-    return D
-
-
-def cross(length = 10, width = 3, layer = 0):
-    D = Device(name = 'cross')
-    R = rectangle(size = (width, length), layer = layer)
-    r1 = D.add_ref(R).rotate(90)
-    r2 = D.add_ref(R)
-    r1.center = (0,0)
-    r2.center = (0,0)
-    return D
-
-
-def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
-    D = Device(name = 'ellipse')
-    a = radii[0]
-    b = radii[1]
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
-    r = a*b/(sqrt((b*cos(t))**2 + (a*sin(t))**2))
-    xpts = r*cos(t)
-    ypts = r*sin(t)
-    D.add_polygon(points = (xpts,ypts), layer = layer)
-    return D
-
-
-def circle(radius = 10, angle_resolution = 2.5, layer = 0):
-    D = Device(name = 'circle')
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
-    xpts = (radius*cos(t)).tolist()
-    ypts = (radius*sin(t)).tolist()
-    D.add_polygon(points = (xpts,ypts), layer = layer)
-    return D
-
-
-def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
-    D = Device(name = 'ring')
-    inner_radius = radius - width/2
-    outer_radius = radius + width/2
-    n = int(np.round(360/angle_resolution))
-    t = np.linspace(0, 360, n+1)*pi/180
-    inner_points_x = (inner_radius*cos(t)).tolist()
-    inner_points_y = (inner_radius*sin(t)).tolist()
-    outer_points_x = (outer_radius*cos(t)).tolist()
-    outer_points_y = (outer_radius*sin(t)).tolist()
-    xpts = inner_points_x + outer_points_x[::-1]
-    ypts = inner_points_y + outer_points_y[::-1]
-    D.add_polygon(points = (xpts,ypts), layer = layer)
-    return D
-    
-    
-def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
-    """ Creates an arc of arclength ``theta`` starting at angle ``start_angle`` """
-    inner_radius = radius-width/2
-    outer_radius = radius+width/2
-    angle1 = (start_angle)*pi/180
-    angle2 = (start_angle + theta)*pi/180
-    t = np.linspace(angle1, angle2, np.ceil(abs(theta)/angle_resolution))
-    inner_points_x = (inner_radius*cos(t)).tolist()
-    inner_points_y = (inner_radius*sin(t)).tolist()
-    outer_points_x = (outer_radius*cos(t)).tolist()
-    outer_points_y = (outer_radius*sin(t)).tolist()
-    xpts = inner_points_x + outer_points_x[::-1]
-    ypts = inner_points_y + outer_points_y[::-1]
-    
-    D = Device('arc')
-    D.add_polygon(points = (xpts,ypts), layer = layer)
-    D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
-    D.add_port(name = 2, midpoint = (radius*cos(angle2), radius*sin(angle2)),  width = width, orientation = start_angle + theta + 90 - 180*(theta<0))
-    D.info['length'] = (abs(theta)*pi/180)*radius
-    return D
-
-
-def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
-    """ Starting form a port, create a arc which connects to the port """
-    D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
-            angle_resolution = angle_resolution, layer = layer)
-    D.rotate(angle =  180 + port.orientation - D.ports[1].orientation, center = D.ports[1].midpoint)
-    D.move(origin = D.ports[1], destination = port)
-    return D
-
-
-def straight(size = (4,2), layer = 0):
-    D = Device(name = 'wire')
-    points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
-    D.add_polygon(points, layer = layer)
-    D.add_port(name = 1, midpoint = (size[0]/2, size[1]),  width = size[0], orientation = 90)
-    D.add_port(name = 2, midpoint = (size[0]/2, 0),  width = size[0], orientation = -90)
-    return D
-
-
-def L(width = 1, size = (10,20) , layer = 0):
-    D = Device(name = 'L')
-    w = width/2
-    s1, s2 = size
-    points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2), (-w,s2), (-w,-w)]
-    D.add_polygon(points, layer = layer)
-    D.add_port(name = 1, midpoint = (0,s2),  width = width, orientation = 90)
-    D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
-    return D
-
-
-def C(width = 1, size = (10,20) , layer = 0):
-    D = Device(name = 'C')
-    w = width/2
-    s1, s2 = size
-    points = [(-w,-w), (s1,-w), (s1,w), (w,w), (w,s2-w), (s1,s2-w), (s1,s2+w), (-w, s2+w), (-w,-w)]
-    D.add_polygon(points, layer = layer)
-    D.add_port(name = 1, midpoint = (s1,s2),  width = width, orientation = 0)
-    D.add_port(name = 2, midpoint = (s1, 0),  width = width, orientation = 0)
-    return D
-
-
-
-#==============================================================================
-# Example code
-#==============================================================================
-    
-#R = rectangle(size = (4,2), layer = 0)
-#quickplot(R)
-
-
-
-#==============================================================================
-#
-# SNSPD
-#
-#==============================================================================
-
-
-
-@device_lru_cache
-def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-        num_squares = None, turn_ratio = 4, 
-        terminals_same_side = False, layer = 0):
-    # Convenience tests to auto-shape the size based
-    # on the number of squares
-    if num_squares is not None and ((size is None) or ((size[0] is None) and (size[1]) is None)):
-        xy = np.sqrt(num_squares*wire_pitch*wire_width)
-        size = [xy,xy]
-        num_squares = None
-    if ([size[0], size[1], num_squares].count(None) != 1):
-        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
-                         ' the arguments ``num_squares`` and ``size`` be None'+
-                         ' to prevent overconstraining, for example:\n' +
-                         '>>> snspd(size = (3, None), num_squares = 2000)')
-    if size[0] is None:
-        ysize = size[1]
-        xsize = num_squares*wire_pitch*wire_width/ysize
-    elif size[1] is None:
-        xsize = size[0]
-        ysize = num_squares*wire_pitch*wire_width/xsize
-    else:
-        xsize = size[0]
-        ysize = size[1]
-        
-    num_meanders = int(np.ceil(ysize/wire_pitch))
-    
-    D = Device(name = 'snspd')
-    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch,
-        turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
-    
-    
-    if (terminals_same_side is False) and (num_meanders % 2) == 0:
-        num_meanders += 1
-    
-    start_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
-    
-    hp_prev = D.add_ref(hairpin)
-    hp_prev.connect(1, start_nw.ports['E'])
-    alternate = True
-    for n in range(2,num_meanders):
-        hp = D.add_ref(hairpin)
-        if alternate:
-            hp.connect(2, hp_prev.ports[2])
-            last_port = hp.ports[1]
-        else:
-            hp.connect(1, hp_prev.ports[1])
-            last_port = hp.ports[2]
-        hp_prev = hp
-        alternate = not alternate
-        
-    finish_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
-    finish_se.connect('E', last_port)
-    
-    D.add_port(port = start_nw.ports['W'], name = 1)
-    D.add_port(port = finish_se.ports['W'], name = 2)
-    
-    D.info['num_squares'] = num_meanders*(xsize/wire_width)
-    D.info['area'] = xsize*ysize
-    D.info['size'] = (xsize, ysize)
-    
-    return D
-
-    
-def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
-           num_squares = None, connector_width = 1, turn_ratio = 4, 
-           terminals_same_side = False, layer = 0):
-    """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
-    D = Device('snspd_expanded')
-    s = D.add_ref(snspd(wire_width = wire_width, wire_pitch = wire_pitch,
-                        size = size, num_squares = num_squares, turn_ratio = turn_ratio, 
-                        terminals_same_side = terminals_same_side, layer = layer))
-    step_device = optimal_step(start_width = wire_width, end_width = connector_width,
-                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
-                            layer = layer)
-    step1 = D.add_ref(step_device)
-    step2 = D.add_ref(step_device)
-    step1.connect(port = 1, destination = s.ports[1])
-    step2.connect(port = 1, destination = s.ports[2])
-    D.add_port(name = 1, port = step1.ports[2])
-    D.add_port(name = 2, port = step2.ports[2])
-    
-    D.info = s.info
-    
-    return D
-    
-    
-#==============================================================================
-# Example code
-#==============================================================================
-    
-#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], terminals_same_side = True)
-#quickplot(s)
-
-#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10, None],
-#          num_squares = 1000, terminals_same_side = True)
-#quickplot(s)
-
-#step = optimal_step(start_width = 10, end_width = 1, width_tol = 1e-3)
-#quickplot(step)
 
 
 
@@ -1419,70 +1547,6 @@ def _racetrack_gradual_parametric(t, R, N):
 
 
 
-#==============================================================================
-#
-# yTron
-#
-#==============================================================================
-
-
-def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
-                arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
-                layer = 0):
-    
-    #==========================================================================
-    #  Create the basic geometry
-    #==========================================================================
-    theta = theta*pi/180
-    theta_resolution = theta_resolution*pi/180
-    thetalist = np.linspace(-(pi-theta),-theta, int((pi-2*theta)/theta_resolution) + 2)
-    semicircle_x = rho*cos(thetalist)
-    semicircle_y = rho*sin(thetalist)+rho
-
-    # Rest of yTron
-    xc = rho*cos(theta) 
-    yc = rho*sin(theta) 
-    arm_x_left  = arm_lengths[0]*sin(theta) 
-    arm_y_left  = arm_lengths[0]*cos(theta) 
-    arm_x_right = arm_lengths[1]*sin(theta) 
-    arm_y_right = arm_lengths[1]*cos(theta) 
-
-    # Write out x and y coords for yTron polygon
-    xpts = semicircle_x.tolist() + [xc+arm_x_right, xc+arm_x_right+arm_widths[1], xc+arm_widths[1], \
-           xc+arm_widths[1], 0, -(xc+arm_widths[0]), -(xc+arm_widths[0]), -(xc+arm_x_left+arm_widths[0]), -(xc+arm_x_left)] 
-    ypts = semicircle_y.tolist() + [yc+arm_y_right,      yc+arm_y_right,      yc,   yc-source_length, yc-source_length,  \
-            yc-source_length,        yc,        yc+arm_y_left,    yc+arm_y_left] 
-    
-    #==========================================================================
-    #  Create a blank device, add the geometry, and define the ports
-    #==========================================================================
-    D = Device(name = 'ytron')
-    D.add_polygon([xpts,ypts], layer = layer)
-    D.add_port(name = 'left', midpoint = [-(xc+arm_x_left+arm_widths[0]/2), yc+arm_y_left],  width = arm_widths[0], orientation = 90)
-    D.add_port(name = 'right', midpoint = [xc+arm_x_right+arm_widths[1]/2, yc+arm_y_right],  width = arm_widths[1], orientation = 90)
-    D.add_port(name = 'source', midpoint = [0+(arm_widths[1]-arm_widths[0])/2, -source_length+yc],  width = arm_widths[0] + arm_widths[1] + 2*xc, orientation = -90)
-    
-    #==========================================================================
-    #  Record any parameters you may want to access later
-    #==========================================================================
-    D.info['rho'] = rho
-    D.info['left_width'] =   arm_widths[0]
-    D.info['right_width'] =  arm_widths[1]
-    D.info['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
-
-    return D
-    
-    
-#==============================================================================
-# Example code
-#==============================================================================
-
-#y = ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
-                # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
-                # layer = 0)
-#quickplot(y)
-
-
 
 
 
@@ -1623,172 +1687,6 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
 
 
 
-
-
-#==============================================================================
-#
-# Boolean functions
-#
-#==============================================================================
-
-def offset(elements, distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 0):
-    if type(elements) is not list: elements = [elements]
-    polygons_to_offset = []
-    for e in elements:
-        if isinstance(e, Device): polygons_to_offset += e.get_polygons()
-        else: polygons_to_offset.append(e)
-        
-    gds_layer, gds_datatype = _parse_layer(layer)
-    # This pre-joining (by expanding by precision) makes this take twice as
-    # long but is necessary because of floating point errors which otherwise
-    # separate polygons which are nominally joined
-    joined = gdspy.offset(polygons_to_offset, precision, join='miter', tolerance=2,
-                          precision=precision, join_first=join_first,
-                          max_points=4000, layer=gds_layer, datatype = gds_datatype)
-    p = gdspy.offset(joined, distance, join='miter', tolerance=2,
-                     precision=precision, join_first=join_first,
-                     max_points=4000, layer=gds_layer, datatype = gds_datatype)
-    D = Device('offset')
-    D.add_polygon(p, layer=layer)
-    return D
-
-
-def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
-    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
-    return offset(elements = elements, distance = -distance, join_first = join_first,
-                 precision = precision, layer = layer)
-    
-    
-def invert(elements, border = 10, precision = 0.001, layer = 0):
-    """ Creates an inverted version of the input shapes with an additional
-    border around the edges """
-    D = Device()
-    if type(elements) is not list: elements = [elements]
-    for e in elements:
-        if isinstance(e, Device): D.add_ref(e)
-        else: D.elements.append(e)
-    gds_layer, gds_datatype = _parse_layer(layer)
-    
-    # Build the rectangle around the device D
-    R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
-    R.center = D.center
-    
-    operandA = R.get_polygons()
-    operandB = D.get_polygons()
-    p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
-                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
-        
-    D = Device('invert')
-    D.add_polygon(p, layer=layer)
-    return D
-
-
-def boolean(A, B, operation, precision = 0.001, layer = 0):
-    """ 
-    Performs boolean operations between 2 Device/DeviceReference objects,
-    or lists of Devices/DeviceReferences.
-
-    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note 
-    that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
-    'B-A' is equivalent to 'not' with the operands switched
-    """
-    A_polys = []
-    B_polys = []
-    if type(A) is not list: A = [A]
-    if type(B) is not list: B = [B]
-    for e in A:
-        if isinstance(e, Device): A_polys += e.get_polygons()
-        elif isinstance(e, DeviceReference): A_polys += e.get_polygons()
-    for e in B:
-        if isinstance(e, Device): B_polys += e.get_polygons()
-        elif isinstance(e, DeviceReference): B_polys += e.get_polygons()
-
-    gds_layer, gds_datatype = _parse_layer(layer)
-
-    operation = operation.lower().replace(' ','')
-    if operation == 'a-b':
-        operation = 'not'
-    elif operation == 'b-a':
-        operation = 'not'
-        A_polys, B_polys = B_polys, A_polys
-    elif operation == 'a+b':
-        operation = 'or'
-    elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
-        raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
-
-
-    p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
-                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
-
-    D = Device('boolean')
-    if p is not None: D.add_polygon(p, layer = layer)
-    return D
-
-
-def outline(elements, distance = 1, precision = 0.001, layer = 0):
-    """ Creates an outline around all the polygons passed in the `elements`
-    argument.  `elements` may be a Device, Polygon, or list of Devices
-    """
-    D = Device('outline')
-    if type(elements) is not list: elements = [elements]
-    for e in elements:
-        if isinstance(e, Device): D.add_ref(e)
-        else: D.elements.append(e)
-    gds_layer, gds_datatype = _parse_layer(layer)
-
-    D_bloated = offset(D, distance = distance, join_first = True, precision = 0.001, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
-    return Outline
-
-
-def xor_diff(A,B, precision = 0.001):
-    """ Given two Devices A and B, performs the layer-by-layer XOR 
-    difference between A and B, and returns polygons representing 
-    the differences between A and B.
-    """
-    D = Device()
-    A_polys = A.get_polygons(by_spec = True)
-    B_polys = B.get_polygons(by_spec = True)
-    A_layers = A_polys.keys() 
-    B_layers = B_polys.keys() 
-    all_layers = set()
-    all_layers.update(A_layers )
-    all_layers.update(B_layers)
-    for layer in all_layers:
-        if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
-                                   operation = 'xor', precision=precision,
-                                   max_points=4000, layer=layer[0], datatype=layer[1])
-        elif (layer in A_layers):
-            p = A_polys[layer]
-        elif (layer in B_layers):
-            p = B_polys[layer]
-        if p is not None:
-            D.add_polygon(p, layer = layer)
-    return D
-
-
-def union(D, by_layer = False, layer = 0):
-    U = Device()
-    
-    if by_layer == True:
-        all_polygons = D.get_polygons(by_spec = True)
-        for layer, polygons in all_polygons.items():
-            unioned_polygons = _union_polygons(polygons)
-            U.add_polygon(unioned_polygons, layer = layer)
-    else:
-        all_polygons = D.get_polygons(by_spec = False)
-        unioned_polygons = _union_polygons(all_polygons)
-        U.add_polygon(unioned_polygons, layer = layer)
-    return U
-    
-def _union_polygons(polygons, precision=1e-6):
-    expanded = gdspy.offset(polygons, precision, join='miter', tolerance=2,
-                          precision=precision, join_first=False,
-                          max_points=1e9)
-    unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
-                                 precision=precision, max_points=1e9)
-    return unioned
 
 
 #==============================================================================
@@ -2295,72 +2193,360 @@ def test_res(pad_size = [50,50],
     
     return P
 
-def litho_steps(
-        line_widths = [1,2,4,8,16],
-        line_spacing = 10,
-        height = 100,
-        layer = 0
-        ):
-    """ Produces a positive + negative tone linewidth test, used for 
-    lithography resolution test patterning """
-    D = Device('litho_steps')
+
+#==============================================================================
+#
+# Optimal current-crowding superconducting structures
+#
+#==============================================================================
+
+@device_lru_cache
+def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
+    turn_ratio = 4, num_pts = 50, layer = 0):
+
+    #==========================================================================
+    #  Create the basic geometry
+    #==========================================================================
+    a = (pitch + width)/2
+    y = -(pitch - width)/2
+    x = -pitch
+    dl = width/(num_pts*2)
+    n = 0
+
+    # Get points of ideal curve from conformal mapping
+    # TODO This is an inefficient way of finding points that you need
+    xpts = [x]; ypts = [y]
+    while (y < 0) & (n<1e6):
+        s = x + 1j*y
+        w = np.sqrt(1 - np.exp(pi*s/a))
+        wx = np.real(w); wy = np.imag(w)
+        wx = wx/np.sqrt(wx**2+wy**2); wy = wy/np.sqrt(wx**2+wy**2)
+        x = x + wx*dl; y = y + wy*dl
+        xpts.append(x); ypts.append(y)
+        n = n+1
+    ypts[-1] = 0 # Set last point be on the x=0 axis for sake of cleanliness
+    ds_factor = int(len(xpts)/num_pts) # Downsample the total number of points
+    xpts = xpts[::-ds_factor]; xpts = xpts[::-1]    # This looks confusing, but it's just flipping the arrays around
+    ypts = ypts[::-ds_factor]; ypts = ypts[::-1]    # so the last point is guaranteed to be included when downsampled
+
+    # Add points for the rest of meander
+    xpts.append(xpts[-1] + turn_ratio*width); ypts.append(0)
+    xpts.append(xpts[-1]); ypts.append(-a)
+    xpts.append(xpts[0]); ypts.append(-a)
+    xpts.append(max(xpts)-length); ypts.append(-a)
+    xpts.append(xpts[-1]); ypts.append(-a + width)
+    xpts.append(xpts[0]); ypts.append(ypts[0])
     
-    height = height / 2
-    T1 = text(text = '%s' % str(line_widths[-1]),
-        size = height, justify = 'center', layer = layer)
-    t1 = D.add_ref(T1).rotate(90).movex(-height/10)
-    R1 = rectangle(size = (line_spacing, height), layer = layer)
-    r1 = D.add_ref(R1).movey(-height)
-    count = 0
-    for i in reversed(line_widths):
-        count += line_spacing + i
-        R2 = rectangle(size = (i, height), layer = layer)
-        r1 = D.add_ref(R1).movex(count).movey(-height)
-        r2 = D.add_ref(R2).movex(count - i)
+    xpts = np.array(xpts)
+    ypts = np.array(ypts)
 
-    return(D)
+    #==========================================================================
+    #  Create a blank device, add the geometry, and define the ports
+    #==========================================================================
+    D = Device(name = 'hairpin')
+    D.add_polygon([xpts,ypts], layer = layer)
+    D.add_polygon([xpts,-ypts], layer = layer)
     
-
-def litho_star(
-        num_lines = 20,
-        line_width = 2,
-        diameter = 200,
-        layer = 0
-        ):
-    """ Creates a circular-star shape from lines, used as a lithographic  
-    resolution test pattern """
-    D = Device('litho_star')
+    xports = min(xpts)
+    yports = -a + width/2
+    D.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
+    D.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
     
-    degree = 180 / num_lines
-    R1 = rectangle(size = (line_width, diameter), layer = layer)
-    for i in range(num_lines):
-        r1 = D.add_ref(R1).rotate(degree * i)
-        r1.center = (0,0)
-
-    return(D)
-
-
-def litho_calipers(
-        notch_size = [2,5],
-        notch_spacing = 2,
-        num_notches = 11,
-        offset_per_notch = 0.1,
-        row_spacing = 0,
-        layer1 = 1,
-        layer2 = 2):
-    """ Creates a vernier caliper structure for lithography alignment
-    tests.  Vernier structure is made horizontally. """
+    return D
     
-    D = Device('litho_calipers')
-    num_notches_total = num_notches*2+1
-    centre_notch = num_notches
-    R1 = rectangle(size = (notch_size), layer = layer1)
-    R2 = rectangle(size = (notch_size), layer = layer2)
-    for i in range(num_notches_total):
-        if i == centre_notch:
-            r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing)).movey(notch_size[1])
-            r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-2 * notch_size[1] - row_spacing)
-        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
-        r2 = D.add_ref(R2).movex(i * (notch_size[0] + notch_spacing) + offset_per_notch * (centre_notch - i)).movey(-notch_size[1] - row_spacing)
+    
+# TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
+@device_lru_cache
+def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
+                 anticrowding_factor = 1.2, layer = 0):
 
-    return(D)
+    #==========================================================================
+    #  Create the basic geometry
+    #==========================================================================
+    def step_points(eta, W, a):
+        # Returns points from a unit semicircle in the w (= u + iv) plane to 
+        # the optimal curve in the zeta (= x + iy) plane which transitions
+        # a wire from a width of 'W' to a width of 'a'
+        # eta takes value 0 to pi
+
+        W = np.complex(W)
+        a = np.complex(a)
+
+        gamma = (a*a + W*W)/(a*a - W*W)
+
+        w = np.exp(1j*eta)
+
+        zeta = 4*1j/pi*(W*np.arctan(np.sqrt((w-gamma)/(gamma+1))) \
+                           + a*np.arctan(np.sqrt((gamma-1)/(w-gamma))))
+
+        x = np.real(zeta)
+        y = np.imag(zeta)
+        return x,y
+
+
+    def invert_step_point(x_desired = -10, y_desired = None, W = 1, a = 2):
+        # Finds the eta associated with the value x_desired along the optimal curve
+        def fh(eta):
+            guessed_x, guessed_y = step_points(eta, W = W, a = a)
+            if y_desired is None:   return (guessed_x-x_desired)**2 # The error
+            else:                   return (guessed_y-y_desired)**2
+
+        found_eta = fminbound(fh, x1 = 0, x2 = pi, args=())
+        return step_points(found_eta, W = W, a = a)
+
+    if start_width > end_width:
+        reverse = True
+        start_width, end_width = end_width, start_width
+    else:
+        reverse = False
+    
+    if start_width == end_width: # Just return a square
+        ypts = [0, start_width, start_width,           0]
+        xpts = [0,           0, start_width, start_width]
+    else:
+        xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
+        xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
+        
+        xpts = np.linspace(xmin, xmax, num_pts).tolist()
+        ypts = []
+        for x in xpts:
+            x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
+            ypts.append(y)
+        
+        ypts[-1] = end_width
+        ypts[0] =  start_width
+        xpts.append(xpts[-1])
+        ypts.append(0)
+        xpts.append(xpts[0])
+        ypts.append(0)
+        
+        # anticrowding_factor stretches the wire out; a stretched wire is a gentler
+        # transition, so there's less chance of current crowding if the fabrication 
+        # isn't perfect but as a result, the wire isn't as short as it could be
+        xpts = (np.array(xpts)*anticrowding_factor).tolist()
+
+        if reverse is True:
+            xpts = (-np.array(xpts)).tolist()
+            start_width, end_width = end_width, start_width
+
+    #==========================================================================
+    #  Create a blank device, add the geometry, and define the ports
+    #==========================================================================
+    D = Device(name = 'step')
+    D.add_polygon([xpts,ypts], layer = layer)
+    
+    D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
+    D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+    
+    return D
+    
+    
+def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
+    D = Device()
+
+    # Get points of ideal curve
+    a = 2*width
+    v = np.logspace(-length_adjust,length_adjust,num_pts)
+    xi = a/2.0*((1+2/np.pi*np.arcsinh(1/v)) + 1j*(1+2/np.pi*np.arcsinh(v)))
+    xpts = list(np.real(xi)); ypts = list(np.imag(xi))
+    
+    # Add points for the rest of curve
+    d = 2*xpts[0] # Farthest point out * 2, rounded to nearest 100
+    xpts.append(width); ypts.append(d)
+    xpts.append(0); ypts.append(d)
+    xpts.append(0); ypts.append(0)
+    xpts.append(d); ypts.append(0)
+    xpts.append(d); ypts.append(width)
+    xpts.append(xpts[0]); ypts.append(ypts[0])
+    
+    D.add_polygon([xpts, ypts], layer = layer)
+    
+    D.add_port(name = 1, midpoint = [a/4,d], width = a/2, orientation = 90)
+    D.add_port(name = 2, midpoint = [d,a/4], width = a/2, orientation = 0)
+    return D
+
+    
+    
+#==============================================================================
+# Example code
+#==============================================================================
+    
+#hairpin = optimal_hairpin(width = 1, pitch = 3, length = 30, num_pts = 20)
+#quickplot(hairpin)
+
+
+#step = optimal_step(start_width = 5, end_width = 1, num_pts = 80, width_tol = 1e-3)
+#quickplot(step)
+
+
+#turn = optimal_90deg(width = 90, length_adjust = 1)
+#quickplot(turn)
+
+
+
+
+
+#==============================================================================
+#
+# Superconducting devices
+#
+#==============================================================================
+
+
+@device_lru_cache
+def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
+        num_squares = None, turn_ratio = 4, 
+        terminals_same_side = False, layer = 0):
+    # Convenience tests to auto-shape the size based
+    # on the number of squares
+    if num_squares is not None and ((size is None) or ((size[0] is None) and (size[1]) is None)):
+        xy = np.sqrt(num_squares*wire_pitch*wire_width)
+        size = [xy,xy]
+        num_squares = None
+    if ([size[0], size[1], num_squares].count(None) != 1):
+        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
+                         ' the arguments ``num_squares`` and ``size`` be None'+
+                         ' to prevent overconstraining, for example:\n' +
+                         '>>> snspd(size = (3, None), num_squares = 2000)')
+    if size[0] is None:
+        ysize = size[1]
+        xsize = num_squares*wire_pitch*wire_width/ysize
+    elif size[1] is None:
+        xsize = size[0]
+        ysize = num_squares*wire_pitch*wire_width/xsize
+    else:
+        xsize = size[0]
+        ysize = size[1]
+        
+    num_meanders = int(np.ceil(ysize/wire_pitch))
+    
+    D = Device(name = 'snspd')
+    hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch,
+        turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
+    
+    
+    if (terminals_same_side is False) and ((num_meanders % 2) == 0):
+        num_meanders += 1
+    elif (terminals_same_side is True) and ((num_meanders % 2) == 1):
+        num_meanders += 1
+    
+    start_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    
+    hp_prev = D.add_ref(hairpin)
+    hp_prev.connect(1, start_nw.ports['E'])
+    alternate = True
+    for n in range(2,num_meanders):
+        hp = D.add_ref(hairpin)
+        if alternate:
+            hp.connect(2, hp_prev.ports[2])
+            last_port = hp.ports[1]
+        else:
+            hp.connect(1, hp_prev.ports[1])
+            last_port = hp.ports[2]
+        hp_prev = hp
+        alternate = not alternate
+        
+    finish_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    finish_se.connect('E', last_port)
+    
+    D.add_port(port = start_nw.ports['W'], name = 1)
+    D.add_port(port = finish_se.ports['W'], name = 2)
+    
+    D.info['num_squares'] = num_meanders*(xsize/wire_width)
+    D.info['area'] = xsize*ysize
+    D.info['size'] = (xsize, ysize)
+    
+    return D
+
+    
+def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
+           num_squares = None, connector_width = 1, turn_ratio = 4, 
+           terminals_same_side = False, layer = 0):
+    """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
+    D = Device('snspd_expanded')
+    S = snspd(wire_width = wire_width, wire_pitch = wire_pitch,
+                        size = size, num_squares = num_squares, turn_ratio = turn_ratio, 
+                        terminals_same_side = terminals_same_side, layer = layer)
+    s = D.add_ref(S)
+    step_device = optimal_step(start_width = wire_width, end_width = connector_width,
+                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
+                            layer = layer)
+    step1 = D.add_ref(step_device)
+    step2 = D.add_ref(step_device)
+    step1.connect(port = 1, destination = s.ports[1])
+    step2.connect(port = 1, destination = s.ports[2])
+    D.add_port(name = 1, port = step1.ports[2])
+    D.add_port(name = 2, port = step2.ports[2])
+    
+    D.info = S.info
+    S.info = {}
+    
+    return D
+    
+    
+#==============================================================================
+# Example code
+#==============================================================================
+    
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], terminals_same_side = True)
+#quickplot(s)
+
+#s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10, None],
+#          num_squares = 1000, terminals_same_side = True)
+#quickplot(s)
+
+def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
+                arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                layer = 0):
+    
+    #==========================================================================
+    #  Create the basic geometry
+    #==========================================================================
+    theta = theta*pi/180
+    theta_resolution = theta_resolution*pi/180
+    thetalist = np.linspace(-(pi-theta),-theta, int((pi-2*theta)/theta_resolution) + 2)
+    semicircle_x = rho*cos(thetalist)
+    semicircle_y = rho*sin(thetalist)+rho
+
+    # Rest of yTron
+    xc = rho*cos(theta) 
+    yc = rho*sin(theta) 
+    arm_x_left  = arm_lengths[0]*sin(theta) 
+    arm_y_left  = arm_lengths[0]*cos(theta) 
+    arm_x_right = arm_lengths[1]*sin(theta) 
+    arm_y_right = arm_lengths[1]*cos(theta) 
+
+    # Write out x and y coords for yTron polygon
+    xpts = semicircle_x.tolist() + [xc+arm_x_right, xc+arm_x_right+arm_widths[1], xc+arm_widths[1], \
+           xc+arm_widths[1], 0, -(xc+arm_widths[0]), -(xc+arm_widths[0]), -(xc+arm_x_left+arm_widths[0]), -(xc+arm_x_left)] 
+    ypts = semicircle_y.tolist() + [yc+arm_y_right,      yc+arm_y_right,      yc,   yc-source_length, yc-source_length,  \
+            yc-source_length,        yc,        yc+arm_y_left,    yc+arm_y_left] 
+    
+    #==========================================================================
+    #  Create a blank device, add the geometry, and define the ports
+    #==========================================================================
+    D = Device(name = 'ytron')
+    D.add_polygon([xpts,ypts], layer = layer)
+    D.add_port(name = 'left', midpoint = [-(xc+arm_x_left+arm_widths[0]/2), yc+arm_y_left],  width = arm_widths[0], orientation = 90)
+    D.add_port(name = 'right', midpoint = [xc+arm_x_right+arm_widths[1]/2, yc+arm_y_right],  width = arm_widths[1], orientation = 90)
+    D.add_port(name = 'source', midpoint = [0+(arm_widths[1]-arm_widths[0])/2, -source_length+yc],  width = arm_widths[0] + arm_widths[1] + 2*xc, orientation = -90)
+    
+    #==========================================================================
+    #  Record any parameters you may want to access later
+    #==========================================================================
+    D.info['rho'] = rho
+    D.info['left_width'] =   arm_widths[0]
+    D.info['right_width'] =  arm_widths[1]
+    D.info['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
+
+    return D
+    
+    
+#==============================================================================
+# Example code
+#==============================================================================
+
+#y = ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
+                # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                # layer = 0)
+#quickplot(y)

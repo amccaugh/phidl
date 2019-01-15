@@ -24,12 +24,12 @@ import phidl.utilities as pu
 #
 # If that doesn't work and you're using IPython, try using the command
 # >>> %gui qt
-#==============================================================================
 
 # Uncomment this if you're using the original quickplot (not quickplot2)
 # and you'd like to see each result in a new window
 # import functools
 # qp = functools.partial(qp, new_window = True)
+#==============================================================================
 
 
 #==============================================================================
@@ -864,31 +864,76 @@ write_svg(D, filename = 'MyGeometryFigure.svg')
 # for instance because it requires extensive computations to calculate polygon
 # points.  PHIDL has a LRU cache decorator you can use, similar to the
 # built-in Python functools.lru_cache.  The cache can significantly speed up
-# 
 import time
 from phidl import device_lru_cache
 
 @device_lru_cache
-def computationally_intensive_device(width = 10, height = 1):
+def computationally_intensive_device(width = 10, unused_var = 1):
     D = Device()
-    time.sleep(1.5) # Pretend we're doing computations for 1.5 seconds here
+    time.sleep(0.1) # Pretend we're doing computations for 1.5 seconds here
     D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
     return D
 
 # When we first generate the Device, it takes the usual amount of time to
 # generate.
 time_start = time.time()
-DC1 = computationally_intensive_device(width = 10, height = 1)
+DC1 = computationally_intensive_device(width = 10, unused_var = 1)
 print('Function took %s seconds to run initially' % (time.time()-time_start))
 
 # However, if we use the same input arguments, since we already computed the
 # Device using those arguments the cache can return a copy much quicker
 time_start = time.time()
-DC2 = computationally_intensive_device(width = 10, height = 1)
+DC2 = computationally_intensive_device(width = 10, unused_var = 1)
 print('Function took %s seconds to run a second time' % (time.time()-time_start))
 
 # Note that if we change the input arguments, we still need to generate
 # the function again (even if that argument isn't used!)
 time_start = time.time()
-DC2 = computationally_intensive_device(width = 10, height = 2.7)
+DC2 = computationally_intensive_device(width = 10, unused_var = 2.7)
 print('Function with new arguments took %s seconds to run' % (time.time()-time_start))
+
+
+#==============================================================================
+# Advanced: Geometry hashing
+#==============================================================================
+# A D.hash_geometry() function produces a unique string (based on SHA1-hashing)
+# based on the underlying polygons which allows us to tell whether the polygons
+# in a Device are the same as another device.  This allows us to compare 
+# one device with another and check if they have the same geometry. GDS
+# structure is ignored -- only final geometry/polygon output is considered
+# Note:  Does not hash Ports or Labels!
+
+# Create two Devices and check that they have the same geometry hash - even 
+# though one has a reference and the other doesn't
+D = Device()
+e = D << pg.ellipse(radii = [10,15], layer = 2)
+D2 = pg.ellipse(radii = [10,15], layer = 2)
+print(D.hash_geometry())  # Output: 143f7faa8558feb3036487c155083bd53fad4913
+print(D2.hash_geometry()) # Output: 143f7faa8558feb3036487c155083bd53fad4913
+
+# Create two Devices with the same polygons, but different layers
+D = pg.ellipse(radii = [10,15], layer = 2)
+D2 = pg.ellipse(radii = [10,15], layer = 77)
+print(D.hash_geometry())  # 143f7faa8558feb3036487c155083bd53fad4913
+print(D2.hash_geometry()) # cd36f7c5da226f8bb6c29b64acb8c442dcb379c4 <-- Different!
+
+
+# Create two Devices with the same polygons, but added in different orders
+D = pg.ellipse(radii = [10,15], layer = 2)
+D << pg.rectangle(size = [7.5,8.6], layer = 99)
+D2 =  pg.rectangle(size = [7.5,8.6], layer = 99)
+D2 << pg.ellipse(radii = [10,15], layer = 2)
+print(D.hash_geometry()) # f4d11e73389a1a1578a181c269f79424392482d6
+print(D2.hash_geometry())# f4d11e73389a1a1578a181c269f79424392482d6 <-- Same! Order ignored
+
+
+# Show manipulation-invariance
+# WARNING: there is *always* an intrinsic risk of floating-point manipulations
+# producing rounding errors, but the algorithm should be very robust
+# (~10^-7 errors/point likelihood measured @ precision of 1e-4)
+D = pg.ellipse(radii = [10,15], layer = 2)
+print(D.hash_geometry(precision = 1e-4)) # 143f7faa8558feb3036487c155083bd53fad4913
+D.move([1.751,0]).rotate(37.9).rotate(-37.9).move([-1.751,0])
+print(D.hash_geometry(precision = 1e-4)) # 143f7faa8558feb3036487c155083bd53fad4913
+D.movex(1e-7) # Moving points by << precision should yield the same result
+print(D.hash_geometry(precision = 1e-4)) # 143f7faa8558feb3036487c155083bd53fad4913

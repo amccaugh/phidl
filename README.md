@@ -17,8 +17,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 
 # About PHIDL
 
-PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions.
-It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L40) as well which will walk you through the process of getting acquainted with PHIDL.
+PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify GDSII geometry creation by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L40) as well which will walk you through the process of getting acquainted with PHIDL.
 
 The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate/overhead code just to draw a simple ring. 
 
@@ -62,10 +61,24 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 1.0.0 (Jan 14, 2019)
+- 1.0 release!  The core functionality of phidl has been stable for over 18 months, and all major planned features have been implemented.  Time to reflect that in the version number!
+
+### New features
+- Significant upgrades to `quickplot2`: now shows coordinates, a help message box (press ?), and a scale notation (along with several under-the-hood optimizations)
+- Added `D.hash_geometry()` -- use to generate a SHA1-based hash of the polygons in a Device
+- Added `phidl.utilities.load_lyp()`, which loads a KLayout layer properties (.lyp) file and converts it into a LayerSet (contribution thanks to Alex Tait @atait)
+
+### Changes
+- Optimized rotation so 90-degree rotations (contribution thanks to Alex Tait @atait)
+- Function documentation for geometry module (contribution thanks to Jimmy Gammell @jgammell and Dylan Oh @dmwo)
+- `pytest` implementation for internal consistency checking
+
+
 ## 0.9.0 (Oct 9, 2018)
 ### New features
-- Added pg.union() - a handy convenience function to join (union) polygons together, either by-layer or all together (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
-- Added phidl.utilities.write_svg() - allows you to write your geometry directly to SVG for the sake of publishing figures easily (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+- Added `pg.union()` - a handy convenience function to join (union) polygons together, either by-layer or all together (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+- Added `phidl.utilities.write_svg()` - allows you to write your geometry directly to SVG for the sake of publishing figures easily (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 - Added pg.xor_diff(A,B) - Produces an XOR operation between Devices A and B, which can by used to compare differences between A and B (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 - Allow usage of a Python `set` (e.g. {3,5,6}) as an input to the `layer` argument of add_polygon (and thus all geometry-creation functions in phidl.geometry) to create the polygons on multiple layers.  (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
 
