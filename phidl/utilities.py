@@ -1,7 +1,5 @@
 import operator
-from collections import defaultdict
-from xml.etree import cElementTree
-
+from phidl.quickplotter import _get_layerprop
 
 def write_lyp(filename, layerset):
     """ Creates a KLayout .lyp Layer Properties file from a set of 
@@ -87,67 +85,34 @@ def write_lyp(filename, layerset):
         f.write('</layer-properties>\n')
 
 
-def read_lyp(filename):
-    from .device_layout import LayerSet
-    if filename[-4:] != '.lyp': filename = filename + '.lyp'
-    with open(filename, 'r') as fx:
-        lyp_list = xml_to_dict(fx.read())['layer-properties']['properties']
-    lys = LayerSet()
-    for entry in lyp_list:
-        phidl_LayerArgs = dict()
-        layerInfo = entry['source'].split('@')[0]
-        phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
-        phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
-        phidl_LayerArgs['color'] = entry['fill-color']
-        name_components = entry['name'].split(' - ')
-        if len(name_components) == 1:
-            phidl_LayerArgs['name'] = name_components[0].strip()
-        else:
-            phidl_LayerArgs['name'] = name_components[1].strip()
-        if len(name_components) == 3:
-            phidl_LayerArgs['description'] = name_components[2].strip()[1:-1]
-        lys.add_layer(**phidl_LayerArgs)
-    return lys
-
-
-def in_ipynb():
-    ''' Detects if running in an ipython-notebook frontend
-    '''
-    try:
-        ipy_str = str(type(get_ipython()))
-        if 'zmqshell' in ipy_str:
-            return True
-        if 'terminal' in ipy_str:
-            return False
-    except NameError:
-        return False
-
-
-def etree_to_dict(t):
-    ''' Used recursively '''
-    d = {t.tag: {} if t.attrib else None}
-    children = list(t)
-    if children:
-        dd = defaultdict(list)
-        for dc in map(etree_to_dict, children):
-            for k, v in dc.items():
-                dd[k].append(v)
-        d = {t.tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}
-    if t.attrib:
-        d[t.tag].update(('@' + k, v) for k, v in t.attrib.items())
-    if t.text:
-        text = t.text.strip()
-        if children or t.attrib:
-            if text:
-                d[t.tag]['#text'] = text
-        else:
-            d[t.tag] = text
-    return d
-
-
-def xml_to_dict(t):
-    try:
-        e = cElementTree.XML(t)
-    except:
-        raise IOError("Error in the XML string.")
-    return etree_to_dict(e)
+def write_svg(D, filename):
+    xsize, ysize = D.size
+    dcx, dcy = D.center
+    dx, dy = dcx-xsize/2, dcy-ysize/2
+    group_num = 1
+    if filename[-4:] != '.svg':  filename += '.svg'
+    with open(filename, 'w+') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
+        f.write('<svg width="%0.6f" height="%0.6f">\n' % (xsize, ysize))
+        
+        all_polygons = D.get_polygons(by_spec = True)
+        for layer, polygons in all_polygons.items():
+        #    color = '#800000'
+            color = _get_layerprop(layer = layer[0] , datatype = layer[1])['color']
+            f.write('  <g id="layer%03i_datatype%03i">\n' % (layer[0], layer[1]))
+            group_num += 1
+            
+            for polygon in polygons:
+                poly_str = '    <path style="fill:%s"\n          d="' % color
+                n = 0
+                for p in polygon:
+                    if n == 0: poly_str+= 'M '
+                    else:      poly_str+= 'L '
+                    poly_str += '%0.6f %0.6f '  % (p[0]-dx,-(p[1]-dy)+ysize)
+                    n += 1
+                poly_str+= 'Z"/>\n'
+                f.write(poly_str)
+            f.write('  </g>\n')
+        
+        f.write('</svg>\n')
+    return filename

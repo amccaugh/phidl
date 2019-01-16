@@ -117,56 +117,67 @@ def copy_layer(D, layer = 1, new_layer = 2):
     return D_copied_layer
 
 
-def import_gds(filename, cellname = None, layers = None, flatten = False):
+def import_gds(filename, cellname = None, flatten = False):
     gdsii_lib = gdspy.GdsLibrary()
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
         if cellname not in gdsii_lib.cell_dict:
             raise ValueError('[PHIDL] import_gds() The requested cell (named %s) is not present in file %s' % (cellname,filename))
-        cell = gdsii_lib.cell_dict[cellname]
+        topcell = gdsii_lib.cell_dict[cellname]
     elif cellname is None and len(top_level_cells) == 1:
-        cell = top_level_cells[0]
+        topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
         raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
 
-    if layers is None:
-        layer_remapping = None
-    elif type(layers) in (list, tuple):
-        layer_remapping = {_parse_layer(l):_parse_layer(l) for l in layers}
-    if type(layers) is dict:
-        layer_remapping = {_parse_layer(k):_parse_layer(v) for k,v in layers.items()}
-
     if flatten == False:
-        D = _translate_cell(cell, layer_remapping)
-        return D
+        D_list = []
+        c2dmap = {}
+        for cell in gdsii_lib.cell_dict.values():
+            D = Device(name = cell.name)
+            D.elements = cell.elements
+            D.name = cell.name
+            D.labels = cell.labels
+            c2dmap.update({cell:D})
+            D_list += [D]
+            
+        for D in D_list:
+            new_elements = []
+            for e in D.elements:
+                if isinstance(e, gdspy.CellReference):
+                    ref_device = c2dmap[e.ref_cell]
+                    dr = DeviceReference(device = ref_device,
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    new_elements.append(dr)
+                else:
+                    new_elements.append(e)
+            D.elements = new_elements
+            
+        topdevice = c2dmap[topcell]
+        return topdevice
 
     elif flatten == True:
         D = Device('import_gds')
-        polygons = cell.get_polygons(by_spec = True)
+        polygons = topcell.get_polygons(by_spec = True)
 
-        if layer_remapping is None:
-            for layer_in_gds, polys in polygons.items():
-                D.add_polygon(polys, layer = layer_in_gds)
-        else:
-            for layer_in_gds, polys in polygons.items():
-                parsed_layer_in_gds = _parse_layer(layer_in_gds)
-                if parsed_layer_in_gds in layer_remapping.keys():
-                    D.add_polygon(polys, layer = layer_remapping[parsed_layer_in_gds])
+        for layer_in_gds, polys in polygons.items():
+            D.add_polygon(polys, layer = layer_in_gds)
         return D
 
 
-def _translate_cell(c, layer_remapping):
+def _translate_cell(c):
     D = Device(name = c.name)
     for e in c.elements:
-        if isinstance(e, gdspy.Polygon):
-            polygon_layer = _parse_layer((e.layer, e.datatype))
-            if layer_remapping is None: 
-                D.add_polygon(points = e.points, layer = polygon_layer)
-            elif polygon_layer in layer_remapping.keys():
-                D.add_polygon(points = e.points, layer = layer_remapping[polygon_layer])
+        if isinstance(e, gdspy.PolygonSet):
+            for n, points in enumerate(e.polygons):
+                polygon_layer = _parse_layer((e.layers[n], e.datatypes[n]))
+                D.add_polygon(points = points, layer = polygon_layer)
         elif isinstance(e, gdspy.CellReference):
-            dr = DeviceReference(device = _translate_cell(e.ref_cell, layer_remapping),
+            dr = DeviceReference(device = _translate_cell(e.ref_cell),
                             origin = e.origin,
                             rotation = e.rotation, magnification = None,
                             x_reflection = e.x_reflection)
@@ -175,27 +186,28 @@ def _translate_cell(c, layer_remapping):
     return D
 
 
-    
-def preview_layerset(ls):
+def preview_layerset(ls, size = 100):
     """ Generates a preview Device with representations of all the layers,
     used for previewing LayerSet color schemes in quickplot or saved .gds 
     files """
     D = Device()
+    scale = size/100
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
-    for n, layer in enumerate(ls._layers.values()):
-        R = rectangle(size = (100, 100), layer = layer)
+    sorted_layers = sorted(ls._layers.values(), key = lambda x: (x.gds_layer, x.gds_datatype))
+    for n, layer in enumerate(sorted_layers):
+        R = rectangle(size = (100*scale, 100*scale), layer = layer)
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
-                size = 20,
-                position=(50,-20),
+                size = 20*scale,
+                position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
                 
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
-        D.add_ref(R).movex(200 * xloc).movey(-200 * yloc)
-        D.add_ref(T).movex(200 * xloc).movey(-200 * yloc)
+        D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
+        D.add_ref(T).movex(200 * xloc *scale).movey(-200 * yloc*scale)
     return D
 
 #==============================================================================
@@ -590,7 +602,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ellipse')
     a = radii[0]
     b = radii[1]
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
     r = a*b/(sqrt((b*cos(t))**2 + (a*sin(t))**2))
     xpts = r*cos(t)
     ypts = r*sin(t)
@@ -600,7 +612,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
 
 def circle(radius = 10, angle_resolution = 2.5, layer = 0):
     D = Device(name = 'circle')
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
     xpts = (radius*cos(t)).tolist()
     ypts = (radius*sin(t)).tolist()
     D.add_polygon(points = (xpts,ypts), layer = layer)
@@ -611,7 +623,8 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ring')
     inner_radius = radius - width/2
     outer_radius = radius + width/2
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution))*pi/180
+    n = int(np.round(360/angle_resolution))
+    t = np.linspace(0, 360, n+1)*pi/180
     inner_points_x = (inner_radius*cos(t)).tolist()
     inner_points_y = (inner_radius*sin(t)).tolist()
     outer_points_x = (outer_radius*cos(t)).tolist()
@@ -1364,7 +1377,7 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = width, initial_point = [0,0])
     route_path.parametric(curve_fun, number_of_evaluations=99,\
-            max_points=199,  final_distance=None, layer=layer)
+            max_points=4000,  final_distance=None, layer=layer)
     D = Device('racetrack')
     D.add(route_path)
     return D
@@ -1618,7 +1631,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
+def offset(elements, distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -1631,10 +1644,10 @@ def offset(elements, distance = 0.1, join_first = True, precision = 0.001, layer
     # separate polygons which are nominally joined
     joined = gdspy.offset(polygons_to_offset, precision, join='miter', tolerance=2,
                           precision=precision, join_first=join_first,
-                          max_points=199, layer=gds_layer, datatype = gds_datatype)
+                          max_points=4000, layer=gds_layer, datatype = gds_datatype)
     p = gdspy.offset(joined, distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
-                     max_points=199, layer=gds_layer, datatype = gds_datatype)
+                     max_points=4000, layer=gds_layer, datatype = gds_datatype)
     D = Device('offset')
     D.add_polygon(p, layer=layer)
     return D
@@ -1663,7 +1676,7 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     operandA = R.get_polygons()
     operandB = D.get_polygons()
     p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
-                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
         
     D = Device('invert')
     D.add_polygon(p, layer=layer)
@@ -1705,7 +1718,7 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
 
 
     p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
-                 max_points=199, layer=gds_layer, datatype=gds_datatype)
+                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
 
     D = Device('boolean')
     if p is not None: D.add_polygon(p, layer = layer)
@@ -1713,6 +1726,9 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
 
 
 def outline(elements, distance = 1, precision = 0.001, layer = 0):
+    """ Creates an outline around all the polygons passed in the `elements`
+    argument.  `elements` may be a Device, Polygon, or list of Devices
+    """
     D = Device('outline')
     if type(elements) is not list: elements = [elements]
     for e in elements:
@@ -1724,6 +1740,55 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
     Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
     return Outline
 
+
+def xor_diff(A,B, precision = 0.001):
+    """ Given two Devices A and B, performs the layer-by-layer XOR 
+    difference between A and B, and returns polygons representing 
+    the differences between A and B.
+    """
+    D = Device()
+    A_polys = A.get_polygons(by_spec = True)
+    B_polys = B.get_polygons(by_spec = True)
+    A_layers = A_polys.keys() 
+    B_layers = B_polys.keys() 
+    all_layers = set()
+    all_layers.update(A_layers )
+    all_layers.update(B_layers)
+    for layer in all_layers:
+        if (layer in A_layers) and (layer in B_layers):
+            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
+                                   operation = 'xor', precision=precision,
+                                   max_points=4000, layer=layer[0], datatype=layer[1])
+        elif (layer in A_layers):
+            p = A_polys[layer]
+        elif (layer in B_layers):
+            p = B_polys[layer]
+        if p is not None:
+            D.add_polygon(p, layer = layer)
+    return D
+
+
+def union(D, by_layer = False, layer = 0):
+    U = Device()
+    
+    if by_layer == True:
+        all_polygons = D.get_polygons(by_spec = True)
+        for layer, polygons in all_polygons.items():
+            unioned_polygons = _union_polygons(polygons)
+            U.add_polygon(unioned_polygons, layer = layer)
+    else:
+        all_polygons = D.get_polygons(by_spec = False)
+        unioned_polygons = _union_polygons(all_polygons)
+        U.add_polygon(unioned_polygons, layer = layer)
+    return U
+    
+def _union_polygons(polygons, precision=1e-6):
+    expanded = gdspy.offset(polygons, precision, join='miter', tolerance=2,
+                          precision=precision, join_first=False,
+                          max_points=1e9)
+    unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
+                                 precision=precision, max_points=1e9)
+    return unioned
 
 
 #==============================================================================
@@ -1837,13 +1902,13 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
         Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
         if you do not specifiy a value for a parameter it will just use the default value
         Ex::
-            
+
             via_route_test_structure(num_vias=54)
-            
+
         - or -::
-        
+
             via_route_test_structure(num_vias=12, pad_size=(100,100),wire_width=8)
-            
+
         total requested vias (num_vias) -> this needs to be even
         pad size (pad_size) -> given in a pair (width, height)
         wire_width -> how wide each wire should be
@@ -1947,13 +2012,13 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     changing You can alternatively call it with no parameters
     and it will take all the default alues shown below.
     Ex::
-        
+
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
-    
+
     - or -::
 
         comb_insulation_test_structure()
-    """ 
+    """
     CI = Device("test_comb")
 
     if comb_pad_layer is None:  comb_pad_layer = comb_layer
@@ -2110,9 +2175,9 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
     part of the wire will be larger than the thin part. 
     Ex::
-    
+
         ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
-    
+
     - or -::
 
         ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])

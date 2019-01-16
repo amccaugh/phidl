@@ -22,7 +22,6 @@ venvinfo
 
 # IPython notebooks
 .ipynb_checkpoints
-notebooks/sketchpad
 
 # Distribution / packaging
 .Python

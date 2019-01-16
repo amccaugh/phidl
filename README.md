@@ -1,9 +1,12 @@
+[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/amccaugh/phidl)
+
 # PHIDL
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
 - [Installation / requirements](#installation--requirements)
 - [About PHIDL](#about-phidl)
 - [Changelog](#changelog)
+- [Tutorial + examples](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L40)
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
@@ -14,8 +17,8 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 
 # About PHIDL
 
-PHIDL is an open-source GDS-based CAD tool for Python 2 and 3, based on the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions.
-It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) as well which will walk you through the process of getting acquainted with PHIDL.
+PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify the GDS design process by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions.
+It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L40) as well which will walk you through the process of getting acquainted with PHIDL.
 
 The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate/overhead code just to draw a simple ring. 
 
@@ -59,13 +62,47 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 0.9.0 (Oct 9, 2018)
+### New features
+- Added pg.union() - a handy convenience function to join (union) polygons together, either by-layer or all together (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+- Added phidl.utilities.write_svg() - allows you to write your geometry directly to SVG for the sake of publishing figures easily (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+- Added pg.xor_diff(A,B) - Produces an XOR operation between Devices A and B, which can by used to compare differences between A and B (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+- Allow usage of a Python `set` (e.g. {3,5,6}) as an input to the `layer` argument of add_polygon (and thus all geometry-creation functions in phidl.geometry) to create the polygons on multiple layers.  (see [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for full details)
+
+### Bugfixes
+- None
+
+
+## 0.8.10 (August 23, 2018)
+### Bugfixes
+- Minor upkeep bugfixes
+
+
+## 0.8.9 (July 24, 2018)
+### New features
+- The addition of the argument `max_cellname_length` added to `D.write_gds()`.  It is `28` by default, to guarantee maximum compatibility with GDS specifications (32 is generally the lower limit, and `write_gds()` applies a # afterwards to prevent duplicate cellnames).
+- New documentation backend (contribution thanks to Alex Tait @atait)
+- Added `D.remap_layers()` which allows you to to move all polygons contained on a layer within your Device to another layer. See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
+- Added `D.remove_layers()` which lets you remove all polygon geometry (optionally including labels) from a Device on the specified layers. See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
+ 
+### Bugfixes
+- Further fixes to `D.write_gds()` for rare edge cases
+
+## 0.8.8 (July 19, 2018)
+### New features
+- You can now add any shape to multiple layers at once by passing a whole `LayerSet` to the `layer` argument.  See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
+- Update to `D.write_gds()` which guarantees cell names within a Device will never overlap.  If you want to disable this feature for more control over cell names, change the `auto_rename` argument to `False` ( `D.write('myfile.gds', auto_rename = False)`)
+
+### Bugfixes
+- Modifications made to work with gdspy>=1.3.1
+
 ## 0.8.7 (July 11, 2018)
 ### Bugfixes
 - Minor bugfixes to `pg.litho_calipers()` and `pg.litho_star()`
 
 ## 0.8.6 (July 9, 2018)
 ### New features
-- `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the tutorial for more details
+- `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details
 - Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).  
 
 ### Changes
@@ -93,7 +130,7 @@ You can also do things like create a backing fill to make sure the resist develo
 - `quickplot()` now shows zero-width ports (e.g. a "pin") as a + sign.
 - `quickplot()` now defaults to redrawing within a single window, rather than creating a new window for every call
 - Added a `.info` dictionary to `Port`, useful for recording information about a port (e.g. `myport.info['wavelength'] = 1550`)
-- Updated tutorial
+- Updated [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py)
 
 ### Changes
 - `pg.optimal_hairpin()`,  `pg.snspd()`,  and `pg.snspd_expanded()` now have the argument `turn_ratio` which defines how wide the turn is w.r.t. the argument `wire_width`
@@ -103,12 +140,12 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### Bugfixes
 - Minor bugfix to guarantee quickplot() shows up from the Python/IPython console.
-- Minor bugfix in tutorial example file
+- Minor bugfix in [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) example file
 
 ## 0.8.2 (Apr 19, 2018)
 
 ### New features
-- Added the LayerSet class.  See the tutorial, but essentially this class makes a convenient container to stores layers
+- Added the LayerSet class.  See the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py), but essentially this class makes a convenient container to stores layers
 - Added `phidl.utilities.write_lyp()` (Contribution from Dylan Oh @dmwo).  Using a LayerSet, you can now create KLayout-compatible .lyp files.  This allows you to get the same coloring in the KLayout viewer as you have specified in PHIDL.
 - Several new electrical test structures (Contribution from Jacob Melonis @melonisj)  Specifically: via chain tests (`pg.test_via()`), inter- and intra-layer comb insulation tests (`pg.test_comb()`), and critical current test structures (`pg.test_ic`).
 - `add_ref()` can now take a list of input Devices and will return a list of the generated references, e.g. `ref_a,ref_b,ref_c = D.add_ref([A,B,C])` 
@@ -124,14 +161,14 @@ You can also do things like create a backing fill to make sure the resist develo
 ## 0.8.1 (Feb 7, 2018)
 
 ### New features
- - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Device with those polygons in them. See tutorial for details
- - New Device-copying functions `pg.copy()` and `pg.deepcopy()` which allows you to copy a Device wholesale (very useful if you want to flatten() a Device but not destroy the original).  `pg.copy` maintains the underlying connections & references to other Devices, while `pg.deepcopy` creates completely new copies of every underlying polygon and reference.  See tutorial for details
- - Introduced an LRU cache for computationally-intensive Device-making functions.  By using the `@device_lru_cache` decorator, any function which returns a Device can be memoized.  See tutorial for more details
+ - New function `pg.extract()` which extracts all the polygons from a set of specified layers from a Device, and creates a new Device with those polygons in them. See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
+ - New Device-copying functions `pg.copy()` and `pg.deepcopy()` which allows you to copy a Device wholesale (very useful if you want to flatten() a Device but not destroy the original).  `pg.copy` maintains the underlying connections & references to other Devices, while `pg.deepcopy` creates completely new copies of every underlying polygon and reference.  See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
+ - Introduced an LRU cache for computationally-intensive Device-making functions.  By using the `@device_lru_cache` decorator, any function which returns a Device can be memoized.  See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details
 
 ### Changes
 - Since the `extract()` process creates new geometry, `D.extract()` has been removed in favor of placing it in the geometry library `pg.extract()`
 - `pg.import_gds` default argument is now `flatten = False`
-- Updated tutorial text
+- Updated [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) text
 
 ### Bugfixes
  - Fixed port deepcopy bug, should result in large performance enhancement for Devices with lots of sub-references and ports
@@ -143,13 +180,13 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### New features
  - `pg.import_gds()` can now import without flattening all the polygons to a single layer
- - Added `Device.flatten()` function to flatten references into raw polygons.  See tutorial for details
- - Added `Device.remove()` function to remove geometry.  See tutorial for details
+ - Added `Device.flatten()` function to flatten references into raw polygons.  See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
+ - Added `Device.remove()` function to remove geometry.  See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
  - Added more informative error messages
  - `__repr__` and `__str__` implemented for Device & DeviceReference: You can now quickly get useful information about a Device by just typing the variable into the console.  For instance entering `D` or `print(D)` into the Python console will print `Device (name "Myshape003191", ports ['R_center', 'bottom', 'input'], aliases ['hello'], 13 elements, 13 references)`
 
 ### Changes
-- Using a config dictionary as a specification is no longer done with `Device(device_function, config = myconfig)`.  Now it is done with an explicit function, `make_device(device_function, config = myconfig)` (importable as `import phidl.make_device`).  See the tutorial for more info
+- Using a config dictionary as a specification is no longer done with `Device(device_function, config = myconfig)`.  Now it is done with an explicit function, `make_device(device_function, config = myconfig)` (importable as `import phidl.make_device`).  See the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more info
  - `Device.meta` is now being replaced with `Device.info` for clarity of nomenclature.  `Device.meta` will still work but will issue a warning.
  - `Device.annotate()` is now being replaced with `Device.label()` to be more consistent with GDS naming conventions.  `Device.annotate()` will still work but will issue a warning.
 
@@ -160,7 +197,7 @@ You can also do things like create a backing fill to make sure the resist develo
 ## 0.7.1 (August 28, 2017)
 
 ### New features
- - Updated tutorial text
+ - Updated [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) text
 
 ### Changes
  - Large changes to pg.import_gds().  If your GDS file only has one toplevel cell, you do not need to specify a cellname, pg.import_gds() will automatically grab that cell.  Also, it imports all layers by default now, although you can still choose which layers and even create a layer mapping based on whether you pass the `layers` argument a list or dict.  See tutorial for more information.

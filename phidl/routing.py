@@ -60,7 +60,7 @@ def _gradual_bend(
     
     #construct a series of sub-arcs with equal angles but gradually decreasing bend radius
     arcs = []
-    for x in xrange(num_steps):
+    for x in range(num_steps):
         A = _arc(radius=1/((x+1)*inc_rad),width=width,theta=np.rad2deg(angle_step),start_angle=x*np.rad2deg(angle_step),angle_resolution=angle_resolution,layer=layer)
         a = D.add_ref(A)
         arcs.append(a)
@@ -629,7 +629,7 @@ def route_manhattan_auto(
     and give it a series of ports to route to in a continuous list.
     accepts same parameters as ordinary route_manhattan to determine bending """
     Total=Device()
-    for x in xrange(int(np.floor(len(ports)/2))+1):
+    for x in range(int(np.floor(len(ports)/2))+1):
         R = route_manhattan(port1=ports[x],port2=ports[x+1],bendType=bendType,layer=layer,radius=radius)
         r = Total.add_ref(R)
 
@@ -655,9 +655,9 @@ def route_manhattan_auto(
 
 # xoff=0
 # yoff=0
-# for x in xrange(4):
-#     for y in xrange(4):
-#         for z in xrange(4):
+# for x in range(4):
+#     for y in range(4):
+#         for z in range(4):
 #             a = D.add_ref(A)
 #             b = D.add_ref(A)
 #             a.center=(xoff,yoff)

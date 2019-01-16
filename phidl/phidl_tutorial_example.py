@@ -306,6 +306,7 @@ D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
              unit = 1e-3, precision = 1e-2)
 
 
+
 #==============================================================================
 # Advanced: Acquiring port information
 #==============================================================================
@@ -328,76 +329,6 @@ for p in all_ports:
     if 'is_useful' in p.info and p.info['is_useful'] is True:
         print(str(p) + ' is useful')
 
-#==============================================================================
-# Using Layers
-#==============================================================================
-# Let's make a new blank device DL and add some text to it, but this time on
-# different layers
-DL = Device()
-
-# You can specify any layer in one of three ways:
-# 1) as a single number 0-255 representing the gds layer number, e.g. layer = 1
-# where the gds layer datatype will be automatically set to zero
-DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
-
-
-# 2) as a 2-element list [0,1] or tuple (0,1) representing the gds layer 
-# number (0-255) and gds layer datatype (0-255)  
-DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
-
-# 3) as a Layer object  
-my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', description = 'Gold pads liftoff')
-my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
-DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
-
-#==============================================================================
-# Advanced layers: Containing multiple Layers in a LayerSet object
-#==============================================================================
-
-
-# What you can also do is make a set of layers, which lets you
-# conveniently call each Layer object just by its name.  You can also specify
-# the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
-# (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'
-# see http://www.w3schools.com/colors/colors_names.asp )
-# The 'alpha' argument also lets you specify how transparent that layer should
-# look when using quickplot (has no effect on the written GDS file)
-
-ls = LayerSet() # Create a blank LayerSet
-ls.add_layer(name = 'ti', gds_layer = 4, gds_datatype = 0,  description = 'Titanium resistor', color = 'gray')
-ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0,  description = 'Niobium liftoff', color = (0.4,0.1,0.1))
-ls.add_layer('nb_etch', 6, 0, color = 'lightblue', alpha = 0.2)
-
-
-ls['ti']
-
-# Now that our layers are defined, we can call them from the LayerSet in the same way
-# we would from a dictionary, where the name becomes the key:
-text1 = DL.add_ref( pg.text('Titanium layer', size = 10, layer = ls['ti']) ).movey(-60)
-text2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = ls['nb']) ).movey(-80)
-text3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = ls['nb_etch']) ).movey(-90).movex(5)
-
-qp(DL)
-
-DL.write_gds('MultipleLayerText.gds')
-
-
-# If we want to examine any single layer, we can call them by their names,
-# for example
-titanium_layer = ls['ti']
-print(ls['nb'])
-
-
-# We can quickly preview our color scheme using the LayerSet.preview()
-# function as well.
-P = pg.preview_layerset(ls)
-qp(P)
-P.write_gds('MyLayerSetPreview.gds')
-
-# We can even save the LayerSet as a KLayout .lyp file ("layer properties" file)
-# useful for getting the color scheme in KLayout to match quickplot
-import phidl.utilities as pu
-pu.write_lyp('MyLayerSetPreview.lyp', layerset = ls)
 
 
 #==============================================================================
@@ -442,28 +373,145 @@ D.write_gds('MyNewGDS.gds')
 # Let's import the GDS we just saved in the previous step.  Although generally
 # you must specify which cell in the GDS file you want to import using the 
 # argument `cellname`, if the GDS file has only one top-level cell (like our
-# MyNewGDS.gds file does), the cellname argument can be left out and 
+# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
 # import_gds() will import that top-level cell.
 
 # Let's first just import the entire GDS as-is
 E = pg.import_gds(filename = 'MyNewGDS.gds')
 qp(E)
 
-# Now say we only wanted to get layers 2 and 3 from the file.  We can specify
-# a list of layers using the `layers` argument
-E2 = pg.import_gds(filename = 'MyNewGDS.gds',
-                   layers = [2, 3])
-qp(E2)
 
-# We can also use the `layers` argument to map layers arbitrarily. Say we
-# wanted to combine shapes on layer 1 with those on layer 3, but leave layer 2
-# on layer 2.  We can map layers 1->3, 3->3, 2->2  by passing a dict to the
-# `layers` argument
-E3 = pg.import_gds(filename = 'MyNewGDS.gds',
-                   layers = {1: 3,  3: 3,  2: 2})
-qp(E3)
+# Similarly, we can import the same file but flatten the entire cell
+# heirarchy
+E2 = pg.import_gds(filename = 'MyNewGDS.gds', flatten = True)
 
 
+#==============================================================================
+# Using Layers
+#==============================================================================
+# Let's make a new blank device DL and add some text to it, but this time on
+# different layers
+DL = Device()
+
+# You can specify any layer in one of three ways:
+# 1) as a single number 0-255 representing the gds layer number, e.g. layer = 1
+# where the gds layer datatype will be automatically set to zero
+DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
+
+
+# 2) as a 2-element list [0,1] or tuple (0,1) representing the gds layer 
+# number (0-255) and gds layer datatype (0-255)  
+DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
+
+# 3) as a Layer object  
+my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', description = 'Gold pads liftoff')
+my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
+DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
+
+
+#==============================================================================
+# Advanced layers: Generating geometry on multiple layers at once
+#==============================================================================
+# Say we want to create the same ellipse on several different layers.  We can
+# do that by using a Python `set` of layers.  So if we want to add it to three
+# layers, say GDS layer 1 datatype 0, GDS layer 3 datatype 5, and GDS layer 7
+# datatype 8:
+
+# Note each element of the set must be a valid layer input by itself
+my_layers = {1, (3,5), (7,8)}
+# When you apply the set to add_polygon, you get a list of the returned polygons
+polygon_list = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)], layer = my_layers)
+print([(p.layers[0], p.datatypes[0]) for p in polygon_list])
+
+# However, when you use it on a phidl.geometry function, it does not produce
+# multiple Devices! It will only produce a single Device with geometry on all 
+# of your specified layers. This is because the `layer` argument is passed 
+# transparently to the add_polygon() function through the function
+E = pg.ellipse(layer = {4, 8, 19})
+print(E.layers)
+
+
+#==============================================================================
+# Advanced layers: Containing multiple Layers in a LayerSet object
+#==============================================================================
+# What you can also do is make a LayerSet, which lets you
+# conveniently call each Layer object just by its name.  You can also specify
+# the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
+# (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'
+# see http://www.w3schools.com/colors/colors_names.asp )
+# The 'alpha' argument also lets you specify how transparent that layer should
+# look when using quickplot (has no effect on the written GDS file)
+
+ls = LayerSet() # Create a blank LayerSet
+ls.add_layer(name = 'au', gds_layer = 4, gds_datatype = 0,  description = 'Gold wiring', color = 'goldenrod')
+ls.add_layer(name = 'nb', gds_layer = 5, gds_datatype = 0,  description = 'Niobium liftoff', color = (0.4,0.1,0.1))
+ls.add_layer('nb_etch', 6, 0, color = 'lightblue', alpha = 0.2)
+
+
+ls['au']
+
+# Now that our layers are defined, we can call them from the LayerSet in the same way
+# we would from a dictionary, where the name becomes the key:
+text1 = DL.add_ref( pg.text('Gold layer', size = 10, layer = ls['au']) ).movey(-60)
+text2 = DL.add_ref( pg.text('Niobium layer', size = 10, layer = ls['nb']) ).movey(-80)
+text3 = DL.add_ref( pg.text('Nb Etch layer', size = 10, layer = ls['nb_etch']) ).movey(-90).movex(5)
+
+
+# We can additionally use a LayerSet to add the same structure to several
+# layers at once by passing the whole layerset to the layer argument
+text4 = DL.add_ref( pg.text('All layers', size = 10, layer = ls) ).movey(-120)
+
+
+qp(DL)
+DL.write_gds('MultipleLayerText.gds')
+
+
+# If we want to examine any single layer, we can call them by their names,
+# for example
+gold_layer = ls['au']
+print(ls['nb'])
+
+# We can quickly preview our color scheme using the LayerSet.preview()
+# function as well.
+P = pg.preview_layerset(ls)
+qp(P)
+P.write_gds('MyLayerSetPreview.gds')
+
+# We can even save the LayerSet as a KLayout .lyp file ("layer properties" file)
+# useful for getting the color scheme in KLayout to match quickplot
+import phidl.utilities as pu
+pu.write_lyp('MyLayerSetPreview.lyp', layerset = ls)
+
+
+#==============================================================================
+# Removing  layers
+#==============================================================================
+# Now say we only wanted to get layers 4 and 5 from an imported.  We can remove
+# the unwanted layers using the remove_layers() function
+D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
+
+# We set "invert_selection" to True so that all layers EXCEPT 4 and 5
+# are removed
+D.remove_layers(layers = [4,5], invert_selection = True)
+qp(D)
+
+# If we later decide that we actually don't want layer 4, as well, we
+# can leave the `invert_selection` argument blank
+D.remove_layers(layers = [4])
+qp(D)
+
+#==============================================================================
+# Remapping layers
+#==============================================================================
+# Let's import our layerset preview again
+D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
+
+# We can use the remap_layers() function to map layers arbitrarily. Say we
+# wanted to move shapes on layer 5 to layer 99, and layer 6 to layer 77
+# but leave the other layers alone.  We can map layers 5->99, 6->77, and leave
+# any other layers alone by passing a dict to the `layermap` argument
+D.remap_layers(layermap = {5: 99, 6:77})
+qp(D)
 
 
 
@@ -705,6 +753,33 @@ D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
 qp(D2)
 
 
+#==============================================================================
+# Comparing two Devices
+#==============================================================================
+# Sometimes you want to be able to test whether two Devices are identical or
+# not (similar to the "diff" of a text file).  You can perform this comparison
+# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer  
+# XOR difference between the Devices A and B, and returns polygons representing 
+# the differences between A and B.
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().rotate(15)
+E3 = pg.ellipse()
+
+# Let's compare two slightly different Devices
+X1 = pg.xor_diff(A = E1, B = E2)
+# When we plot the result, we see only the differences between E1 and E2
+qp(X1) 
+
+# Now let's compare two identical Devices
+X2 = pg.xor_diff(A = E1, B = E3)
+qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
+
+# We can double-check this by computing the area of each device
+print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
+print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
+
 
 #==============================================================================
 # Creating outlines of shapes
@@ -719,6 +794,35 @@ qp([D, D2])
 
 
 
+#==============================================================================
+# Joining (Unioning) shapes together
+#==============================================================================
+# If you have several polygons which form a single compound shape and you want
+# to join (union) them all together, you can do it with the pg.union() command:
+# Note: Like all phidl.geometry functions, this will return NEW geometry! In
+# particular, this function will return a new *flattened* geometry
+
+D = Device()
+D << pg.ellipse(layer = 0)
+D << pg.ellipse(layer = 0).rotate(15*1)
+D << pg.ellipse(layer = 0).rotate(15*2)
+D << pg.ellipse(layer = 0).rotate(15*3)
+D << pg.ellipse(layer = 1).rotate(15*4)
+D << pg.ellipse(layer = 1).rotate(15*5)
+
+# We have two options to unioning - take all polygons, regardless of 
+# layer, and join them together (in this case on layer 5) like so:
+D_joined = pg.union(D, by_layer = False, layer = 5)
+
+# Or we can perform the union operate by-layer
+D_joined_by_layer = pg.union(D, by_layer = True)
+
+dj = D << D_joined
+djl = D << D_joined_by_layer
+dj.xmax += 25
+djl.xmax += 50
+
+qp(D)
 
 #==============================================================================
 # Removing geometry
@@ -737,6 +841,20 @@ qp(D)
 D.remove(mytee2)
 D.remove(mypoly2)
 qp(D)
+
+
+#==============================================================================
+# Save / export to SVG
+#==============================================================================
+# For figure-quality publications sometimes you want to save your geometry
+# as a more convenient vector file format like SVG (for Inkscape, Illustrator, 
+# etc). For that purpose you can use the write_svg() command
+from phidl.utilities import write_svg
+
+D = Device()
+D << pg.snspd_expanded(layer = 1)
+D << pg.snspd_expanded(layer = 2).rotate(45)
+write_svg(D, filename = 'MyGeometryFigure.svg')
 
 
 #==============================================================================

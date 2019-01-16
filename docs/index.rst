@@ -1,13 +1,13 @@
-Welcome to PHIDL's documentation!
+Welcome to PHIDL's documentation
 ================================================
+Currently, this documentation is a wrapper for auto-api. Most of the real documentation is in the docstrings of the code. Nevertheless, Sphinx pages on more advanced topics could be written in here.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   _static/example
    _static/changelog
-   Notebook tutorial </ipynbs/phidl_tutorial_example.ipynb>
+   _static/dash
 
 
 API
