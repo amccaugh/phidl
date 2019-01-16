@@ -85,6 +85,99 @@ def write_lyp(filename, layerset):
         f.write('</layer-properties>\n')
 
 
+def load_lyp(filename):
+    ''' Creates a LayerSet object from a lyp file that is XML '''
+    try:
+        import xmltodict
+    except:
+        raise ImportError("""This function is in development, and currently requires
+            the module "xmltodict" to operate.  Please retry after installing xmltodict
+            $ pip install xmltodict """)
+
+    from phidl.device_layout import LayerSet
+    if filename[-4:] != '.lyp': filename = filename + '.lyp'
+    with open(filename, 'r') as fx:
+        lyp_dict = xmltodict.parse(fx.read(), process_namespaces=True)
+    # lyp files have a top level that just has one dict: layer-properties
+    # That has multiple children 'properties', each for a layer. So it gives a list
+    lyp_list = lyp_dict['layer-properties']['properties']
+    if not isinstance(lyp_list, list):
+        lyp_list = [lyp_list]
+
+    lys = LayerSet()
+    def add_entry(entry, lys):
+        ''' Entry is a dict of one element of 'properties'.
+            No return value. It adds it to the lys variable directly
+        '''
+        layerInfo = entry['source'].split('@')[0]
+        phidl_LayerArgs = dict()
+        phidl_LayerArgs['gds_layer'] = int(layerInfo.split('/')[0])
+        phidl_LayerArgs['gds_datatype'] = int(layerInfo.split('/')[1])
+        phidl_LayerArgs['color'] = entry['fill-color']
+        phidl_LayerArgs['dither'] = entry['dither-pattern']
+        # These functions are customizable. See below
+        phidl_LayerArgs['name'] = name2shortName(entry['name'])
+        phidl_LayerArgs['description'] = name2description(entry['name'])
+        lys.add_layer(**phidl_LayerArgs)
+        return lys
+
+    for entry in lyp_list:
+        try:
+            group_members = entry['group-members']
+        except KeyError:  # it is a real layer
+            add_entry(entry, lys)
+        else:  # it is a group of other entries
+            if not isinstance(group_members, list):
+                group_members = [group_members]
+            for member in group_members:
+                add_entry(member, lys)
+    return lys
+
+
+def name2shortName(name_str):
+    ''' Maps the name entry of the lyp element to a name of the phidl layer, 
+        i.e. the dictionary key used to access it.
+        Default format of the lyp name is
+            layer/datatype - phidl_key - description
+            or
+            phidl_key - description
+
+        Reassign for different layer naming conventions with::
+
+            phidl.utilities.name2shortName = someOtherFunction(string)
+    '''
+    if name_str is None:
+        raise IOError('This layer has no name')
+    components = name_str.split(' - ')
+    if len(components) > 1:
+        short_name = components[1]
+    else:
+        short_name = components[0]
+    return short_name
+
+
+def name2description(name_str):
+    ''' Gets the description of the layer contained in the lyp name field.
+        It is not strictly necessary to have a description. If none there, it returns ''.
+
+        Default format of the lyp name is
+            layer/datatype - phidl_key - description
+            or
+            phidl_key - description
+
+        Reassign for different layer naming conventions with::
+
+            phidl.utilities.name2description = someOtherFunction(string)
+    '''
+    if name_str is None:
+        raise IOError('This layer has no name')
+    components = name_str.split(' - ')
+    description = ''
+    if len(components) > 2:
+        description = components[2][1:-1]
+    return description
+
+
 def write_svg(D, filename):
     xsize, ysize = D.size
     dcx, dcy = D.center
