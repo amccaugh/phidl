@@ -614,12 +614,16 @@ class Device(gdspy.Cell, _GeometryHelper):
         return filename
 
     def write_oas(self, filename, **write_kwargs):
+        if filename.lower().endswith('.gds'):
+            # you are looking for write_gds
+            self.write_gds(filename, **write_kwargs)
+            return
         try:
             import klayout.db as pya
         except ImportError as err:
             err.args = ('[PHIDL] klayout package needed to write OASIS. pip install klayout\n' + err.args[0], ) + err.args[1:]
             raise
-        if filename[-4:] != '.oas':  filename += '.oas'
+        if not filename.lower().endswith('.oas'): filename += '.oas'
         fileroot = os.path.splitext(filename)[0]
         tempfilename = fileroot + '-tmp.gds'
 

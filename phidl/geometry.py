@@ -534,11 +534,16 @@ def import_gds(filename, cellname = None, flatten = False):
 
 
 def import_oas(filename, cellname = None, flatten = False):
+    if filename.lower().endswith('.gds'):
+        # you are looking for import_gds
+        retval = import_gds(tempfilename, cellname = cellname, flatten = flatten)
+        return retval
     try:
         import klayout.db as pya
     except ImportError as err:
         err.args = ('[PHIDL] klayout package needed to import OASIS. pip install klayout\n' + err.args[0], ) + err.args[1:]
         raise
+    if not filename.lower().endswith('.oas'): filename += '.oas'
     fileroot = os.path.splitext(filename)[0]
     tempfilename = fileroot + '-tmp.gds'
 
