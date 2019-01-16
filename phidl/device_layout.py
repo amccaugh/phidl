@@ -625,13 +625,10 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         self.write_gds(tempfilename, **write_kwargs)
         layout = pya.Layout()
-        topcell = layout.create_cell('TOP')
         layout.read(tempfilename)
-        gdscell2 = layout.cell('toplevel')
-        rot_DTrans = pya.DTrans.R0
-        origin = pya.DPoint(0, 0)
-        topcell.insert(pya.DCellInstArray(gdscell2.cell_index(), pya.DTrans(rot_DTrans, origin)))
-        layout.write(filename)
+        # there can only be one top_cell because we only wrote one device
+        topcell = layout.top_cell()
+        topcell.write(filename)
         os.remove(tempfilename)
         return filename
 

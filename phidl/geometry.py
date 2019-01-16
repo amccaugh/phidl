@@ -532,6 +532,7 @@ def import_gds(filename, cellname = None, flatten = False):
             D.add_polygon(polys, layer = layer_in_gds)
         return D
 
+
 def import_oas(filename, cellname = None, flatten = False):
     try:
         import klayout.db as pya
@@ -542,14 +543,20 @@ def import_oas(filename, cellname = None, flatten = False):
     tempfilename = fileroot + '-tmp.gds'
 
     layout = pya.Layout()
-    topcell = layout.create_cell('TOP')
     layout.read(filename)
-    gdscell2 = layout.cell('toplevel')
-    rot_DTrans = pya.DTrans.R0
-    origin = pya.DPoint(0, 0)
-    topcell.insert(pya.DCellInstArray(gdscell2.cell_index(), pya.DTrans(rot_DTrans, origin)))
+    # We want to end up with one Device. If the imported layout has multiple top cells,
+    # a new toplevel is created, and they go into the second level
+    if len(layout.top_cells()) > 1:
+        topcell = layout.create_cell('toplevel')
+        rot_DTrans = pya.DTrans.R0
+        origin = pya.DPoint(0, 0)
+        for childcell in layout.top_cells():
+            if childcell == topcell: continue
+            topcell.insert(pya.DCellInstArray(childcell.cell_index(), pya.DTrans(rot_DTrans, origin)))
+    else:
+        topcell = layout.top_cell()
     topcell.write(tempfilename)
-    
+
     retval = import_gds(tempfilename, cellname = cellname, flatten = flatten)
     os.remove(tempfilename)
     return retval
