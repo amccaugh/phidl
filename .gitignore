@@ -59,6 +59,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.pytest_cache
 
 # Translations
 *.mo
@@ -79,3 +80,6 @@ target/
 *.DS_Store
 *.gds
 *.bat
+*.lyp
+*.oas
+*.ipynb

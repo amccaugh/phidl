@@ -7,6 +7,10 @@
 #==============================================================================
 # geometry: add packer, basic_wire
 # connect(): if width=0 then only move don't rotate orientation
+# Allow assignment of aliases by D['waveguide'] = D << WG
+# PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
+# Add text in corner of quickplot which says "F1: Show/hide ports, F2: Show/hide
+# subports, F3: Show/hide alias name, F4: show/hide this text"
 
 #==============================================================================
 # Imports
@@ -25,9 +29,10 @@ import webcolors
 import warnings
 import yaml
 import os
+import hashlib
 
 
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 
 
 
@@ -39,16 +44,32 @@ def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
+    # First check for common, easy values of angle
+    p_arr = np.asarray(points)
+    if angle == 0:
+        return p_arr
+
+    c0 = np.asarray(center)
+    displacement = p_arr - c0
+    if angle == 180:
+        return c0 - displacement
+
+    if p_arr.ndim == 2:
+        perpendicular = displacement[:, ::-1]
+    elif p_arr.ndim == 1:
+        perpendicular = displacement[::-1]
+    if angle == 90:
+        return c0 + perpendicular
+    elif angle == 270:
+        return c0 - perpendicular
+
+    # Fall back to trigonometry
     angle = angle*pi/180
     ca = cos(angle)
     sa = sin(angle)
     sa = np.array((-sa, sa))
-    c0 = np.array(center)
-    if np.asarray(points).ndim == 2: 
-        return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
-    if np.asarray(points).ndim == 1: 
-        return (points - c0) * ca + (points - c0)[::-1] * sa + c0
-    
+    return displacement * ca + perpendicular * sa + c0
+
 def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
@@ -265,6 +286,8 @@ class _GeometryHelper(object):
 
 
 class Port(object):
+    _next_uid = 0
+
     def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
@@ -272,7 +295,9 @@ class Port(object):
         self.orientation = mod(orientation,360)
         self.parent = parent
         self.info = {}
+        self.uid = Port._next_uid
         if self.width < 0: raise ValueError('[PHIDL] Port creation error: width must be >=0')
+        Port._next_uid += 1
         
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
@@ -280,10 +305,12 @@ class Port(object):
        
     @property
     def endpoints(self):
-        dx = self.width/2*np.cos((self.orientation - 90)*pi/180)
-        dy = self.width/2*np.sin((self.orientation - 90)*pi/180)
-        left_point = self.midpoint - np.array([dx,dy])
-        right_point = self.midpoint + np.array([dx,dy])
+        dxdy = np.array([
+            self.width/2*np.cos((self.orientation - 90)*pi/180),
+            self.width/2*np.sin((self.orientation - 90)*pi/180)
+            ])
+        left_point = self.midpoint - dxdy
+        right_point = self.midpoint + dxdy
         return np.array([left_point, right_point])
     
     @endpoints.setter
@@ -311,12 +338,22 @@ class Port(object):
     # Use this function instead of copy() (which will not create a new numpy array
     # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
     # DeviceReference recursively, causing performance issues)
-    def _copy(self):
+    def _copy(self, new_uid = True):
         new_port = Port(name = self.name, midpoint = self.midpoint,
             width = self.width, orientation = self.orientation,
             parent = self.parent)
         new_port.info = deepcopy(self.info)
+        if new_uid == False:
+            new_port.uid = self.uid
+            Port._next_uid -= 1
         return new_port
+
+    def rotate(self, angle = 45, center = None):
+        self.orientation = mod(self.orientation + angle, 360)
+        if center is None:
+            center = self.midpoint
+        self.midpoint = _rotate_points(self.midpoint, angle = angle, center = center)
+        return self
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
@@ -324,7 +361,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype, verbose=False)
+            datatype=gds_datatype)
 
 
     @property
@@ -379,18 +416,15 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
 def make_device(fun, config = None, **kwargs):
     config_dict = {}
-    if type(config) is str:
-        with open(config) as f:
-            config_dict = yaml.load(f) # Load arguments from config file
-    elif type(config) is dict:
+    if type(config) is dict:
         config_dict = dict(config)
     elif config is None:
         pass
     else:
         raise TypeError("""[PHIDL] When creating Device() from a function, the
-        second argument should be a ``config`` argument which is either a
-        filename or a dictionary containing arguments for the function.
-        e.g. make_device(ellipse, config = 'myconfig.yaml') """)
+        second argument should be a ``config`` argument which is a
+        dictionary containing arguments for the function.
+        e.g. make_device(ellipse, config = my_config_dict) """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
@@ -469,11 +503,6 @@ class Device(gdspy.Cell, _GeometryHelper):
     @property
     def polygons(self):
         return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
-
-    @property
-    def meta(self):
-        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
-        return self.info
         
     @property
     def bbox(self):
@@ -543,10 +572,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         if port is not None:
             if not isinstance(port, Port):
                 raise ValueError('[PHIDL] add_port() error: Argument `port` must be a Port for copying')
-            p = port._copy()
+            p = port._copy(new_uid = True)
             p.parent = self
         elif isinstance(name, Port):
-            p = name._copy()
+            p = name._copy(new_uid = True)
             p.parent = self
             name = p.name
         else:
@@ -554,7 +583,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 orientation = orientation, parent = self)
         if name is not None: p.name = name
         if p.name in self.ports:
-            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (uid %s)' % (p.name, self.uid)) 
+            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid)) 
         self.ports[p.name] = p
         return p
         
@@ -700,10 +729,14 @@ class Device(gdspy.Cell, _GeometryHelper):
                 D.labels = new_labels
         return self
 
-        
 
+    def distribute(self, direction = 'x', elements = None, spacing = 100, separation = True):
+        if direction not in (['+x','-x','x','+y','-y','y']):
+            raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
 
-    def distribute(self, elements, direction = 'x', spacing = 100, separation = True):
+        if elements is None:
+            elements = self.elements
+            
         multiplier = 1
         if   direction[0] == '+':
             direction = direction[1:]
@@ -711,15 +744,25 @@ class Device(gdspy.Cell, _GeometryHelper):
             direction = direction[1:]
             multiplier = -1
 
-        xy = np.array([0,0])
+        xy = elements[0].center
         for e in elements:
-            e.center = xy
+            e.move(origin = e.center, destination = xy, axis = direction)
             if direction == 'x':
                 xy = xy + (np.array([spacing, 0]) + np.array([e.xsize, 0])*(separation==True))*multiplier
             elif direction == 'y':
                 xy = xy + (np.array([0, spacing]) + np.array([0, e.ysize])*(separation==True))*multiplier
-            else:
-                raise ValueError('[PHIDL] distribute() needs a direction of "x", "+y", "-x", etc')
+        return self
+
+
+    def align(self, alignment = 'ymax', elements = None):
+        if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
+            raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
+        if elements is None:
+            elements = self.elements
+        value = self.__getattribute__(alignment)
+        for e in elements:
+            e.__setattr__(alignment, value)
+        return self
 
 
     def flatten(self,  single_layer = None):
@@ -733,6 +776,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.elements = []
         [self.add_polygon(poly) for poly in temp]
         return self
+
 
     def absorb(self, reference):
         """ Flattens and absorbs polygons from an underlying
@@ -750,8 +794,12 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def get_ports(self, depth = None):
-        """ Returns copies of all the ports of the Device"""
-        port_list = [p._copy() for p in self.ports.values()]
+        """ Returns copies of all the ports of the Device, rotated 
+        and translated so that they're in their top-level position.
+        The Ports returned are copies of the originals, but each copy
+        has the same ``uid'' as the original so that they can be
+        traced back to the original if needed"""
+        port_list = [p._copy(new_uid = False) for p in self.ports.values()]
         
         if depth is None or depth > 0:
             for r in self.references:
@@ -762,7 +810,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 # Transform ports that came from a reference
                 ref_ports_transformed = []
                 for rp in ref_ports:
-                    new_port = rp._copy()
+                    new_port = rp._copy(new_uid = False)
                     new_midpoint, new_orientation = r._transform_port(rp.midpoint, \
                     rp.orientation, r.origin, r.rotation, r.x_reflection)
                     new_port.midpoint = new_midpoint
@@ -815,12 +863,12 @@ class Device(gdspy.Cell, _GeometryHelper):
         if isinstance(origin, Port):            o = origin.midpoint
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
             
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
 
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
@@ -853,6 +901,48 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
     
+
+    def hash_geometry(self, precision = 1e-4):
+        """
+        Algorithm:
+        hash(
+            hash(First layer information: [layer1, datatype1]),
+            hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+            hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            hash(Second layer information: [layer2, datatype2]),
+            hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+            hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+        )
+        ...
+        Note: For each layer, each polygon is individually hashed and then 
+              the polygon hashes are sorted, to ensure the hash stays constant
+              regardless of the ordering the polygons.  Similarly, the layers
+              are sorted by (layer, datatype)
+        """
+        polygons_by_spec = self.get_polygons(by_spec = True)
+        layers = np.array(list(polygons_by_spec.keys()))
+        sorted_layers = layers[np.lexsort((layers[:,0], layers[:,1]))]
+
+        # A random offset which fixes common rounding errors intrinsic
+        # to floating point math. Example: with a precision of 0.1, the
+        # floating points 7.049999 and 7.050001 round to different values
+        # (7.0 and 7.1), but offset values (7.220485 and 7.220487) don't
+        magic_offset = .17048614593375106857526844968
+
+        final_hash = hashlib.sha1()
+        for layer in sorted_layers:
+            layer_hash = hashlib.sha1(layer.astype(np.int64)).digest()
+            polygons = polygons_by_spec[tuple(layer)]
+            polygons = [((p/precision) + magic_offset).astype(np.int64) for p in polygons]
+            polygon_hashes = np.sort([hashlib.sha1(p).digest() for p in polygons])
+            final_hash.update(layer_hash)
+            for ph in polygon_hashes:
+                final_hash.update(ph)
+
+        return final_hash.hexdigest()
+
+
     
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
@@ -864,8 +954,10 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
-        self._parent_ports = device.ports
-        self._local_ports = {name:port._copy() for name, port in device.ports.items()}
+        # The ports of a DeviceReference have their own unique id (uid),
+        # since two DeviceReferences of the same parent Device can be
+        # in different locations and thus do not represent the same port
+        self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
 
 
     def __repr__(self):
@@ -899,24 +991,26 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     @property
     def ports(self):
-        """ This property allows you to access my_device_reference.ports, and receive a copy
+        """ This property allows you to access myref.ports, and receive a copy
         of the ports dict which is correctly rotated and translated"""
-        for key in self._parent_ports.keys():
-            port = self._parent_ports[key] 
+        for name, port in self.parent.ports.items():
+            port = self.parent.ports[name] 
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
-            self._local_ports[key].midpoint = new_midpoint
-            self._local_ports[key].orientation = mod(new_orientation,360)
-            self._local_ports[key].parent = self
+            if name not in self._local_ports:
+                self._local_ports[name] = port._copy(new_uid = True)
+            self._local_ports[name].midpoint = new_midpoint
+            self._local_ports[name].orientation = mod(new_orientation,360)
+            self._local_ports[name].parent = self
+        # Remove any ports that no longer exist in the reference's parent
+        parent_names = self.parent.ports.keys()
+        local_names = self._local_ports.keys()
+        for name in local_names:
+            if name not in parent_names: self._local_ports.pop(name)
         return self._local_ports
 
     @property
     def info(self):
-        return self.parent.info
-
-    @property
-    def meta(self):
-        warnings.warn('[PHIDL] WARNING: .meta is being deprecated, please use .info instead')
         return self.parent.info
         
     @property
@@ -1024,7 +1118,5 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.move(-overlap*np.array([cos(destination.orientation*pi/180),
                                      sin(destination.orientation*pi/180)]))
         return self
-
-
 
 

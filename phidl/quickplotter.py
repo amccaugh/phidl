@@ -21,8 +21,8 @@ except:
 
 try:
     from PyQt5 import QtCore, QtGui
-    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow
-    from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,  QCoreApplication, QLineF
+    from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QApplication, QGraphicsItem, QRubberBand, QMainWindow, QLabel, QMessageBox
+    from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,QSizeF,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
     PORT_COLOR = QColor(190,0,0)
@@ -136,17 +136,69 @@ def _draw_port_as_point(port, **kwargs):
 class ViewerWindow(QMainWindow):
     def __init__(self):
         super(ViewerWindow,self).__init__()
-        self.viewer = Viewer()
+
+        self.setGeometry(QRect(100, 100, 800, 600))
+        self.setWindowTitle("PHIDL quickplot");
+
+        # Create "grid size = 40.0" label
+        self.gridsize_label = QLabel('ABCDEF', self)
+        self.gridsize_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.gridsize_label.move(0, 200)
+        self.gridsize_label.setAlignment(Qt.AlignLeft)
+        self.gridsize_label.setStyleSheet('color: gray')
+        self.gridsize_label.setFixedWidth(120)
+        self.gridsize_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
+        # Create "X=40.001, Y = 70.183" label
+        self.position_label = QLabel('ABCDEF', self)
+        self.position_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.position_label.move(50, 200)
+        self.position_label.setAlignment(Qt.AlignRight)
+        self.position_label.setStyleSheet('color: gray')
+        self.position_label.setFixedWidth(240)
+        self.position_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
+        # Create "Press ? for help" label
+        self.help_label = QLabel('ABCDEF', self)
+        self.help_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.help_label.move(50, 200)
+        self.help_label.setAlignment(Qt.AlignCenter)
+        self.help_label.setStyleSheet('color: gray')
+        self.help_label.setFixedWidth(200)
+        self.help_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
+
+        # Create label useful for debugging
+        self.debug_label = QLabel('', self)
+        self.debug_label.setFont(QtGui.QFont('SansSerif', 10))
+        self.debug_label.move(200, 200)
+        self.debug_label.setAlignment(Qt.AlignCenter)
+        self.debug_label.setStyleSheet('color: gray')
+        self.debug_label.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+
+
+
+        # Create QGraphicsView
+        self.viewer = Viewer(gridsize_label = self.gridsize_label,
+                             position_label = self.position_label,
+                             help_label = self.help_label)
         self.setCentralWidget(self.viewer)
+
+        # Reorder widgets
+        self.gridsize_label.raise_()
+        self.position_label.raise_()
+        self.debug_label.raise_()
+        self.help_label.raise_()
         self.show()
     
 
 class Viewer(QGraphicsView):
-    def __init__(self):
+    def __init__(self, gridsize_label, position_label, help_label):
         QGraphicsView.__init__(self)
 
-        self.setGeometry(QRect(100, 100, 800, 600))
-        self.setWindowTitle("PIHDL Graphics Window");
+        self.gridsize_label = gridsize_label
+        self.position_label = position_label
+        self.help_label = help_label
         
         # Create a QGraphicsScene which this view looks at
         self.scene = QGraphicsScene(self)
@@ -185,17 +237,10 @@ class Viewer(QGraphicsView):
         self.gridpen.setColor(QtGui.QColor(0, 0, 0, 125))
 #        self.gridpen = QPen(QtCore.Qt.black, 1)
 #        self.gridpen.setCosmetic(True) # Makes constant width
-#        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
-#        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(100)]
+        self.scene_polys = []
         
-
         self.initialize()
-            
-    def itemsBoundingRect_nogrid(self):
-        self.remove_grid()
-        r = self.scene.itemsBoundingRect()
-        self.create_grid()
-        return r
+
     
     def add_polygons(self, polygons, color = '#A8F22A', alpha = 1):
         qcolor = QColor()
@@ -206,16 +251,33 @@ class Viewer(QGraphicsView):
             scene_poly = self.scene.addPolygon(qpoly)
             scene_poly.setBrush(qcolor)
             scene_poly.setPen(self.pen)
-        
-        sr = self.itemsBoundingRect_nogrid()
-        ymax = sr.top()
-        xmin = sr.left()
-        width = sr.width()
-        height = sr.height()
-        self.scene.setSceneRect(QRectF(xmin-2*width, ymax-2*height, width*5, height*5))
+            self.scene_polys.append(scene_poly)
+            # Update custom bounding box
+            sr = scene_poly.sceneBoundingRect()
+            if len(self.scene_polys) == 1:
+                self.scene_xmin = sr.left()
+                self.scene_xmax = sr.right()
+                self.scene_ymin = sr.top()
+                self.scene_ymax = sr.bottom()
+            else:
+                self.scene_xmin = min(self.scene_xmin, sr.left())
+                self.scene_xmax = max(self.scene_xmax, sr.right())
+                self.scene_ymin = min(self.scene_ymin, sr.top())
+                self.scene_ymax = max(self.scene_ymax, sr.bottom())
+
         
     def reset_view(self):
-        self.fitInView(self.itemsBoundingRect_nogrid(), Qt.KeepAspectRatio)
+        # The SceneRect controls how far you can pan, make it larger than
+        # just the bounding box so middle-click panning works
+        panning_rect = QRectF(self.scene_bounding_rect)
+        panning_rect_center = panning_rect.center()
+        panning_rect_size = max(panning_rect.width(), panning_rect.height())*3
+        panning_rect.setSize(QSizeF(panning_rect_size, panning_rect_size))
+        panning_rect.moveCenter(panning_rect_center)
+        self.setSceneRect(panning_rect)
+        self.fitInView(self.scene_bounding_rect, Qt.KeepAspectRatio)
+        self.zoom_view(0.8)
+
         self.update_grid()
         
     def add_port(self, port, is_subport = False):
@@ -266,9 +328,6 @@ class Viewer(QGraphicsView):
             qtext.setPos(QPointF(x,y))
             qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
             self.aliasitems += [qtext]
-            
-#        x,y = port.midpoint[0], port.midpoint[1]
-#        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
 
     def set_port_visibility(self, visible = True):
         for item in self.portitems:
@@ -297,10 +356,21 @@ class Viewer(QGraphicsView):
         self.aliases_visible = True
         self.ports_visible = True
         self.subports_visible = True
+        self.mouse_position = [0,0]
+        self.grid_size_snapped = 0
+        self.setMouseTracking(True)
+        self.scene_bounding_rect = None
+        self.scene_polys = []
         
+
+    def finalize(self):
+        self.scene_bounding_rect = QRectF(QPointF(self.scene_xmin,self.scene_ymin),
+                                          QPointF(self.scene_xmax,self.scene_ymax))
+        # self.scene_center = [self.scene_bounding_rect.center().x(), self.scene_bounding_rect.center().y()]
+        self.scene_size = [self.scene_bounding_rect.width(), self.scene_bounding_rect.height()]
         self.create_grid()        
         self.update_grid()
-        
+
 #==============================================================================
 #   Grid creation
 #==============================================================================
@@ -324,29 +394,34 @@ class Viewer(QGraphicsView):
         # Starting coordinates for gridlines
         x = round((xmin - 2*width )/grid_size_snapped) * grid_size_snapped
         y = round((ymin - 2*height)/grid_size_snapped) * grid_size_snapped
-#        print('\n xmin = %s, xmax = %s, ymin = %s, ymax = %s' % (xmin, xmax, ymin, ymax))
-#        print('Starting at x = %s' % x)
-#        print('Starting at y = %s' % y)
+
         for gl in self.gridlinesx:
             gl.setLine(x, -1e10, x, 1e10)
             x += grid_size_snapped
         for gl in self.gridlinesy:
             gl.setLine(-1e10, y, 1e10, y)
             y += grid_size_snapped
+        self.grid_size_snapped = grid_size_snapped
+        self.update_gridsize_label()
+
+
+    def update_gridsize_label(self):
+        self.gridsize_label.setText('grid size = ' + str(self.grid_size_snapped))
+        self.gridsize_label.move(QPoint(5, self.height()-25))
+
+    def update_mouse_position_label(self):
+        self.position_label.setText('X = %0.4f / Y = %0.4f' % (self.mouse_position[0],self.mouse_position[1]))
+        self.position_label.move(QPoint(self.width() - 250, self.height()-25))
+
+    def update_help_label(self):
+        self.help_label.setText('Press "?" key for help')
+        self.help_label.move(QPoint(self.width() - 175, 0))
             
     def create_grid(self):
-        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
-        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(200)]
+        self.gridlinesx = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(300)]
+        self.gridlinesy = [self.scene.addLine(-10,-10,10,10, self.gridpen) for n in range(300)]
         self.update_grid()
         
-            
-    def remove_grid(self):
-        for gl in self.gridlinesx + self.gridlinesy:
-            self.scene.removeItem(gl)
-        self.gridlinesx == []
-        self.gridlinesy == []
-        
-            
 #==============================================================================
 #  Mousewheel zoom, taken from http://stackoverflow.com/a/29026916
 #==============================================================================
@@ -368,17 +443,22 @@ class Viewer(QGraphicsView):
 
         
         # Check to make sure we're not overzoomed
-        actual_rect = self.mapToScene(self.rect())
-        bbox_size = actual_rect[0] - actual_rect[2]
-        actual_width = abs(bbox_size.x())
-        actual_height = abs(bbox_size.y())
-        max_width = abs(self.scene.sceneRect().x()*3)
-        max_height = abs(self.scene.sceneRect().y()*3)
-        min_width = 1
-        min_height = 1
-        if ((actual_width > max_width) or (actual_height > max_height)) and (zoom_factor < 1):
+        min_width = 0.01
+        min_height = 0.01
+
+        window_width = self.rect().width()
+        window_height = self.rect().height()
+        scene_upper_left_corner = self.mapToScene(QPoint(0,0))
+        scene_bottom_right_corner = self.mapToScene(QPoint(window_width,window_height))
+        scene_width = (scene_bottom_right_corner - scene_upper_left_corner).x()
+        scene_height = (scene_upper_left_corner - scene_bottom_right_corner).y()
+
+        max_width =  self.scene_bounding_rect.width()*3
+        max_height = self.scene_bounding_rect.height()*3
+
+        if ((scene_width > max_width) and (scene_height > max_height)) and (zoom_factor < 1):
             pass
-        elif ((actual_width < min_width) or (actual_height < min_height)) and (zoom_factor > 1):
+        elif ((scene_width < min_width) and (scene_height < min_height)) and (zoom_factor > 1):
             pass
         else:
             self.zoom_view(zoom_factor)
@@ -393,11 +473,23 @@ class Viewer(QGraphicsView):
         
         
     def zoom_view(self, zoom_factor):
+        old_center = self.mapToScene(self.rect().center())
         self.scale(zoom_factor, zoom_factor)
+        self.centerOn(old_center)
         self.zoom_factor_total *= zoom_factor
         
+    def resizeEvent(self, event):
+        super(QGraphicsView, self).resizeEvent(event)
+        if self.scene_bounding_rect is not None:
+            self.reset_view()
+        self.update_gridsize_label()
+        self.update_mouse_position_label()
+        self.update_help_label()
+
+
         
     def mousePressEvent(self, event):
+        super(QGraphicsView, self).mousePressEvent(event)
         #==============================================================================
         #  Zoom to rectangle, from
         #  https://wiki.python.org/moin/PyQt/Selecting%20a%20region%20of%20a%20widget
@@ -419,9 +511,23 @@ class Viewer(QGraphicsView):
 
 
     def mouseMoveEvent(self, event):
+        super(QGraphicsView, self).mouseMoveEvent(event)
+
+        # # Useful debug
+        # try:
+        #     self.debug_label.setText(str(itemsBoundingRect_nogrid().width()))
+        # except:
+        #     print('Debug statement failed')
+
+        # Update the X,Y label indicating where the mouse is on the geometry
+        mouse_position = self.mapToScene(event.pos())
+        self.mouse_position = [mouse_position.x(), mouse_position.y()]
+        self.update_mouse_position_label()
+
         if not self._rb_origin.isNull() and self._mousePressed == Qt.RightButton:
             self.rubberBand.setGeometry(QRect(self._rb_origin, event.pos()).normalized())
                 
+        # Middle-click-to-pan
         if self._mousePressed == Qt.MidButton:
             newPos = event.pos()
             diff = newPos - self._dragPos
@@ -429,6 +535,7 @@ class Viewer(QGraphicsView):
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - diff.x())
             self.verticalScrollBar().setValue(self.verticalScrollBar().value() - diff.y())
 #            event.accept()
+
             
 
     def mouseReleaseEvent(self, event):
@@ -471,6 +578,23 @@ class Viewer(QGraphicsView):
             self.set_subport_visibility(not self.subports_visible)
 
 
+        if event.key() == Qt.Key_Question:
+            help_str = """
+            Mouse control:
+              Mousewheel: Zoom in and out
+              Right-click & drag: Zoom to rectangle
+              Middle-click & drag: Pan
+
+            Keyboard shortcuts:
+              Esc: Reset view
+              F1: Show/hide alias names
+              F2: Show/hide ports
+              F3: Show/hide subports (ports in underlying references)
+            """
+            msg = QMessageBox.about(self, 'PHIDL Help', help_str)
+            msg.raise_()
+
+
 def quickplot2(item_list, *args, **kwargs):
     global app
     if QCoreApplication.instance() is None:
@@ -484,24 +608,32 @@ def quickplot2(item_list, *args, **kwargs):
         item_list = [item_list]
     for element in item_list:
         if isinstance(element, (phidl.device_layout.Device, phidl.device_layout.DeviceReference, gdspy.CellArray)):
+            # Draw polygons in the element
             polygons_spec = element.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 viewer.add_polygons(polygons, color = layerprop['color'], alpha = layerprop['alpha'])
+            # If element is a Device, draw ports and aliases
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
                     for name, port in ref.ports.items():
                         viewer.add_port(port, is_subport = True)
-            for name, port in element.ports.items():
-                viewer.add_port(port)
-                viewer.add_aliases(element.aliases)
+                for name, port in element.ports.items():
+                    viewer.add_port(port)
+                    viewer.add_aliases(element.aliases)
+            # If element is a DeviceReference, draw ports as subports
+            if isinstance(element, phidl.device_layout.DeviceReference):
+                for name, port in element.ports.items():
+                    viewer.add_port(port, is_subport = True)
         elif isinstance(element, (phidl.device_layout.Polygon)):
                 layerprop = _get_layerprop(layer = element.layers[0], datatype = element.datatypes[0])
                 viewer.add_polygons(element.polygons, color = layerprop['color'], alpha = layerprop['alpha'])
+    viewer.finalize()
     viewer.reset_view()
     viewer_window.setVisible(True)
     viewer_window.show()
     viewer_window.raise_()
+    return viewer
 
 
