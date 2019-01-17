@@ -4,7 +4,7 @@ from setuptools import setup
 
 install_requires=[
    'gdspy>=1.3.1',
-   'numpy==1.15.4',  # note: 1.16.0 exists, but there is a name change that breaks scikit-image
+   'numpy<=1.15.4',  # note: 1.16.0 exists, but there is a name change that breaks scikit-image
    'matplotlib',
    'pyyaml',
    'scikit-image>=0.11',
