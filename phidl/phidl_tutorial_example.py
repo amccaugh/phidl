@@ -12,10 +12,7 @@ import phidl.utilities as pu
 # Helpful (but not necessary) notes about plotting. (Can be skipped)
 #==============================================================================
 # Note: If you have Qt + PyQt installed, you may be able to use the much
-# faster quickplot2() function, which acts like KLayout (try zooming with
-# the mousewheel, and right-click-dragging to zoom). The F1/F2/F3 keys also
-# show/hide Ports, Subports, and Aliases respectively.  The Esc key resets
-# the view
+# faster quickplot2() function
 #
 # We recommend trying the following just to see if it works:
 # >>> from phidl import quickplot2 as qp
@@ -24,11 +21,6 @@ import phidl.utilities as pu
 #
 # If that doesn't work and you're using IPython, try using the command
 # >>> %gui qt
-
-# Uncomment this if you're using the original quickplot (not quickplot2)
-# and you'd like to see each result in a new window
-# import functools
-# qp = functools.partial(qp, new_window = True)
 #==============================================================================
 
 
