@@ -17,6 +17,8 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 
 # About PHIDL
 
+*fiddle - /ˈfidl/ - to make minor manual movements, especially to adjust something*
+
 PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify GDSII geometry creation by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) as well which will walk you through the process of getting acquainted with PHIDL.
 
 The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate/overhead code just to draw a simple ring. 
@@ -60,6 +62,15 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 # Changelog
+
+
+## 1.0.1 (Jan 21, 2019)
+
+### New features
+- `D.remove()` can now remove Ports as well as references/polygons
+
+### Bugfixes
+- Can't have a major release without at least one bug!  Fixed errors introduced by optimized-rotation algorithm.
 
 ## 1.0.0 (Jan 14, 2019)
 - 1.0 release!  The core functionality of phidl has been stable for over 18 months, and all major planned features have been implemented.  Time to reflect that in the version number!
