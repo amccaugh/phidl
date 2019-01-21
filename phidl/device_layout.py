@@ -804,7 +804,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 self.elements.remove(item)
             except:
                 raise ValueError("""[PHIDL] Device.remove() cannot find the item
-                                 it was asked to remove in the Device "%s".""" % (self.name))
+                                 it was asked to remove in the Device: "%s".""" % (item))
             if isinstance(item, DeviceReference):
                 # If appears in list of aliases, remove that alias
                 self.aliases = { k:v for k, v in self.aliases.items() if v != item}
@@ -980,7 +980,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             self._local_ports[name].parent = self
         # Remove any ports that no longer exist in the reference's parent
         parent_names = self.parent.ports.keys()
-        local_names = self._local_ports.keys()
+        local_names = list(self._local_ports.keys())
         for name in local_names:
             if name not in parent_names: self._local_ports.pop(name)
         return self._local_ports
