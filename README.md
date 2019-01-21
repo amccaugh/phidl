@@ -17,7 +17,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 
 # About PHIDL
 
-*fiddle - /ˈfidl/ - to make minor manual movements, especially to adjust something*
+*fiddle (verb) - /ˈfidl/ - to make minor manual movements, especially to adjust something*
 
 PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify GDSII geometry creation by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) as well which will walk you through the process of getting acquainted with PHIDL.
 
