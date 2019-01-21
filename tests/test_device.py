@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from phidl import Device#, Layer, LayerSet, make_device, Port
 # import phidl.geometry as pg
@@ -44,3 +45,36 @@ def test_reflect():
     p.reflect(p1 = (1.7,2.5), p2 = (4.5, 9.1))
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'bc6ae5308c2240e425cd503e0cdda30007bbfc4d')
+
+
+def test_port_add():
+    D = Device()
+    D.add_port(name = 'test123', midpoint = (5.7, 9.2), orientation = 37)
+    D.add_port(name = 'test456', midpoint = (1.5, 6.7), orientation = 99)
+    assert(len(D.ports) == 2)
+    assert(np.allclose(D.ports['test123'].midpoint, (5.7, 9.2)))
+    assert(np.allclose(D.ports['test456'].midpoint, (1.5, 6.7)))
+    assert(D.ports['test123'].orientation == 37)
+    assert(D.ports['test456'].orientation == 99)
+
+def test_port_reference_manipulate():
+    D = Device()
+    D.add_port(name = 'test123', midpoint = (5.7, 9.2), orientation = 37)
+    d = D.add_ref(D).move([1,1]).rotate(45)
+    assert(np.allclose(d.ports['test123'].midpoint,
+        (-2.474873734152916, 11.950104602052654)))
+    assert(d.ports['test123'].orientation == 37+45)
+
+
+def test_port_remove():
+    D = Device()
+    D.add_port(name = 'test123', midpoint = (5.7, 9.2), orientation = 37)
+    D.add_port(name = 'test456', midpoint = (1.5, 6.7), orientation = 99)
+    E = Device()
+    d = E << D
+    D.remove(D.ports['test123'])
+    assert(len(D.ports) == 1)
+    assert(len(d.ports) == 1)
+    assert(D.ports['test456'])
+    assert(d.ports['test456'])
+
