@@ -361,6 +361,10 @@ class Viewer(QGraphicsView):
         self.setMouseTracking(True)
         self.scene_bounding_rect = None
         self.scene_polys = []
+        self.scene_xmin = 0
+        self.scene_xmax = 1
+        self.scene_ymin = 0
+        self.scene_ymax = 1
         
 
     def finalize(self):
