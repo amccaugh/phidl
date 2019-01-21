@@ -786,14 +786,19 @@ class Device(gdspy.Cell, _GeometryHelper):
     def remove(self, items):
         if type(items) not in (list, tuple):  items = [items]
         for item in items:
-            try:
-                self.elements.remove(item)
-            except:
-                raise ValueError("""[PHIDL] Device.remove() cannot find the item
-                                 it was asked to remove in the Device: "%s".""" % (item))
-            if isinstance(item, DeviceReference):
-                # If appears in list of aliases, remove that alias
-                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+            if isinstance(item, Port):
+                try:
+                    self.ports = { k:v for k, v in self.ports.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the Port
+                                     it was asked to remove in the Device: "%s".""" % (item))
+            else:
+                try:
+                    self.elements.remove(item)
+                    self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                     it was asked to remove in the Device: "%s".""" % (item))
 
         self._bb_valid = False
         return self
