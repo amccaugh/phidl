@@ -30,7 +30,7 @@ import warnings
 import hashlib
 
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
 
@@ -42,6 +42,8 @@ def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
+    if angle == 0:
+         return points
     angle = angle*pi/180
     ca = cos(angle)
     sa = sin(angle)
