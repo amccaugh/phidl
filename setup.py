@@ -6,8 +6,6 @@ install_requires=[
    'gdspy>=1.3.1',
    'numpy',
    'matplotlib',
-   'pyyaml',
-   'scikit-image>=0.11',
    'webcolors',
 ]
 

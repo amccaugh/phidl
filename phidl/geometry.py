@@ -14,7 +14,6 @@ import copy as python_copy
 from collections import OrderedDict
 import pickle
 
-from skimage import draw, morphology
 
 
 ##### Categories:
@@ -1558,6 +1557,15 @@ def _racetrack_gradual_parametric(t, R, N):
 
 
 def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
+    try:
+        from skimage import draw
+    except:
+        raise ImportError("""
+            The fill function requires the module "scikit-image" 
+            to operate.  Please retry after installing scikit-image:
+            
+            $ pip install --upgrade scikit-image """)
+
     
     # Prepare polygon array by shifting all points into the first quadrant and 
     # separating points into x and y lists
@@ -1591,6 +1599,14 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, d
 
 
 def _expand_raster(raster, distance = (4,2)):
+    try:
+        from skimage import draw, morphology
+    except:
+        raise ImportError("""
+            The fill function requires the module "scikit-image" 
+            to operate.  Please retry after installing scikit-image:
+
+            $ pip install --upgrade scikit-image """)
     if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
         
     num_pixels = np.array(np.ceil(distance), dtype = int)
