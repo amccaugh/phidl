@@ -56,7 +56,7 @@ Other useful functionality available are standard operations like booleans:
 
 `pg.outline(D, distance = 0.7, layer = 4)`
 
-![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
+![phidl example image](https://amccaugh.github.io/phidl/readme_5.png)
  
 The geometry library also has useful resolution test-structures built into it, for instance
 
