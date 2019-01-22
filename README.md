@@ -48,12 +48,26 @@ It also allows you to do things like add text and create smooth or straight rout
 ![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
     
 
-Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  With a single line function, you can outline a complex meander structure (blue color) attached to a contact pad, very useful when using positive-tone electron-beam lithography resists.  A whole complicated layout can be outlined directly in the GDS without requiring you to use Beamer:
+Other useful functionality available are standard operations like booleans:
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_8.png)
+
+ and less standard ones like creating outlines. A whole layout can be outlined directly in the GDS without requiring you to use Beamer (useful for positive-tone resist structures):
 
 `pg.outline(D, distance = 0.7, layer = 4)`
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
  
+The geometry library also has useful resolution test-structures built into it, for instance
+
+```
+pg.litho_steps(line_widths = [1,2,4,8,16])
+pg.litho_star(num_lines = 16, line_width = 3)
+pg.litho_calipers(num_notches = 7, offset_per_notch = 0.1)
+```
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_7.png)
+
 
 You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device which needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
 
