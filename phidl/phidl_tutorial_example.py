@@ -353,6 +353,22 @@ qp(D)
 D.write_gds('MyNewGDS.gds')
 
 
+#==============================================================================
+# Premade geometry: Lithography shapes
+#==============================================================================
+# PHIDL comes with a set of handy functions for creating standard lithographic
+# test structures, such as calipers (for detecting fabrication-layer-offsets),
+# stars, and positive + negative-tone steps
+D = Device()
+d1 = D << pg.litho_calipers(notch_size = [3,10], notch_spacing = 2, num_notches = 7,
+        offset_per_notch = 0.2, row_spacing = 0, layer1 = 1, layer2 = 2).rotate(90)
+d2 = D << pg.litho_steps(line_widths = [1,2,4,8,16], line_spacing = 10, height = 80, layer = 0).movex(80)
+d3 = D << pg.litho_star(num_lines = 16, line_width = 3, diameter = 80, layer = 4).movex(240)
+d1.y = d2.y = d3.y
+qp(D)
+D.write_gds('LithographyTestStructuresMetrics.gds')
+
+
 
 #==============================================================================
 # Importing GDS files
