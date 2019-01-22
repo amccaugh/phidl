@@ -30,7 +30,7 @@ import warnings
 import hashlib
 
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
 
@@ -42,32 +42,18 @@ def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
-    # First check for common, easy values of angle
-    p_arr = np.asarray(points)
     if angle == 0:
-        return p_arr
-
-    c0 = np.asarray(center)
-    displacement = p_arr - c0
-    if angle == 180:
-        return c0 - displacement
-
-    if p_arr.ndim == 2:
-        perpendicular = displacement[:, ::-1]
-    elif p_arr.ndim == 1:
-        perpendicular = displacement[::-1]
-    if angle == 90:
-        return c0 + perpendicular
-    elif angle == 270:
-        return c0 - perpendicular
-
-    # Fall back to trigonometry
+         return points
     angle = angle*pi/180
     ca = cos(angle)
     sa = sin(angle)
     sa = np.array((-sa, sa))
-    return displacement * ca + perpendicular * sa + c0
-
+    c0 = np.array(center)
+    if np.asarray(points).ndim == 2: 
+        return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
+    if np.asarray(points).ndim == 1: 
+        return (points - c0) * ca + (points - c0)[::-1] * sa + c0
+    
 def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
@@ -800,14 +786,19 @@ class Device(gdspy.Cell, _GeometryHelper):
     def remove(self, items):
         if type(items) not in (list, tuple):  items = [items]
         for item in items:
-            try:
-                self.elements.remove(item)
-            except:
-                raise ValueError("""[PHIDL] Device.remove() cannot find the item
-                                 it was asked to remove in the Device "%s".""" % (self.name))
-            if isinstance(item, DeviceReference):
-                # If appears in list of aliases, remove that alias
-                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+            if isinstance(item, Port):
+                try:
+                    self.ports = { k:v for k, v in self.ports.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the Port
+                                     it was asked to remove in the Device: "%s".""" % (item))
+            else:
+                try:
+                    self.elements.remove(item)
+                    self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                     it was asked to remove in the Device: "%s".""" % (item))
 
         self._bb_valid = False
         return self
@@ -980,7 +971,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             self._local_ports[name].parent = self
         # Remove any ports that no longer exist in the reference's parent
         parent_names = self.parent.ports.keys()
-        local_names = self._local_ports.keys()
+        local_names = list(self._local_ports.keys())
         for name in local_names:
             if name not in parent_names: self._local_ports.pop(name)
         return self._local_ports

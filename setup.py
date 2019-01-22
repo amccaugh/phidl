@@ -4,15 +4,14 @@ from setuptools import setup
 
 install_requires=[
    'gdspy>=1.3.1',
-   'numpy<=1.15.4',  # note: 1.16.0 exists, but there is a name change that breaks scikit-image
+   'numpy',
    'matplotlib',
-   'pyyaml',
-   'scikit-image>=0.11',
+   'scipy',
    'webcolors',
 ]
 
 setup(name='phidl',
-      version='1.0.0',
+      version='1.0.1',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',
