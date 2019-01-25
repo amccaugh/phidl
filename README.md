@@ -61,9 +61,9 @@ Other useful functionality available are standard operations like booleans:
 The geometry library also has useful resolution test-structures built into it, for instance
 
 ```
+pg.litho_calipers(num_notches = 7, offset_per_notch = 0.1)
 pg.litho_steps(line_widths = [1,2,4,8,16])
 pg.litho_star(num_lines = 16, line_width = 3)
-pg.litho_calipers(num_notches = 7, offset_per_notch = 0.1)
 ```
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_7.png)
