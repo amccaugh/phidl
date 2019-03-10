@@ -270,6 +270,11 @@ class _GeometryHelper(object):
 
 
 class Port(object):
+    ''' This class now supports drawing ports in the GDS. To do so for all ports on layer 41::
+
+            Port.port_layer = 41
+    '''
+    port_layer = None
     _next_uid = 0
 
     def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
@@ -331,6 +336,23 @@ class Port(object):
             new_port.uid = self.uid
             Port._next_uid -= 1
         return new_port
+
+    def draw_gds(self, layer=None):
+        ''' Puts a triangle down in the actual geometry that will go to GDS.
+            Similar to what quickplot does
+        '''
+        if layer is None:
+            if self.port_layer is None:
+                raise ValueError('A port layer has not been specified or set before')
+            else:
+                layer = self.port_layer
+        if self.parent is None:
+            raise ValueError('Port {}: No port parent specified'.format(self.name))
+        triangle_points = np.zeros((3, 2))
+        triangle_points[0] = self.endpoints[0]
+        triangle_points[1] = self.endpoints[1]
+        triangle_points[2] = (self.midpoint + (self.normal - self.midpoint) * self.width / 2)[1]
+        self.parent.add_polygon(triangle_points, layer)
 
     def rotate(self, angle = 45, center = None):
         self.orientation = mod(self.orientation + angle, 360)
@@ -621,6 +643,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                     c.name = new_name + ('%0.3i' % used_names[new_name])
                     used_names[new_name] += 1
             self.name = 'toplevel'
+
+        # Insert GDS-visible ports
+        if Port.port_layer is not None:
+            for cell in all_cells:
+                for port in cell.ports.values():
+                    port.draw_gds()
+
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
         self.name = tempname
