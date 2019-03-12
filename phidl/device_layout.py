@@ -666,14 +666,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Insert GDS-visible ports
         if Port.port_layer is not None:
             for cell in all_cells:
-                print('port layer writing for ports', cell.ports.values())
                 for port in cell.ports.values():
-                    print('while writing, found', port)
                     port.draw_gds()
 
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
         self.name = tempname
+        # Take port geometry back out
         if Port.port_layer is not None:
             for cell in all_cells:
                 cell.remove_layers(layers=[Port.port_layer])

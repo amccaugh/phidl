@@ -702,18 +702,14 @@ def import_gds(filename, cellname = None, flatten = False):
             
             # Extract GDS-visible ports
             if Port.port_layer is not None:
-                print('mark 1')
                 for lab in D.labels:
                     if lab.layer == Port.port_layer:
-                        print('found a label with text', lab.text)
                         the_port = Port.from_label(lab.text)
                         the_port.midpoint = lab.position
                         D.add_port(port=the_port)
-                        print('accessed as', D.ports[the_port.name])
                 D.remove_layers(layers=[Port.port_layer])
             
         topdevice = c2dmap[topcell]
-        print('toppers', topdevice.ports)
         return topdevice
 
     elif flatten == True:
