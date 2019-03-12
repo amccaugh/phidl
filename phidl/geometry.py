@@ -13,7 +13,7 @@ from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
 import pickle
-
+import json
 
 
 ##### Categories:
@@ -793,7 +793,7 @@ def draw_port(port, layer = 0):
     '''
     if port.parent is None:
         raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
-    D = Device('Port: ' + port.name + ' of ' + port.parent.name)
+    D = Device('Port: {} of {}'.format(port.name, port.parent.name))
 
     # A visual marker
     triangle_points = [[0, 0]] * 3
@@ -812,7 +812,7 @@ def draw_port(port, layer = 0):
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    D.label(text=label_text, position=port.midpoint, layer=layer)
+    D.label(text=label_text, position=port.midpoint, magnification=.1, layer=layer)
 
     devref = port.parent << D
     port.parent.remove(port)
