@@ -674,6 +674,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
         self.name = tempname
+        if Port.port_layer is not None:
+            for cell in all_cells:
+                cell.remove_layers(layers=[Port.port_layer])
         return filename
 
 
