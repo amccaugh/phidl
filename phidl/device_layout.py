@@ -28,6 +28,7 @@ from numpy.linalg import norm
 import webcolors
 import warnings
 import hashlib
+import json
 
 
 __version__ = '1.0.1'
@@ -351,8 +352,26 @@ class Port(object):
         triangle_points = np.zeros((3, 2))
         triangle_points[0] = self.endpoints[0]
         triangle_points[1] = self.endpoints[1]
-        triangle_points[2] = (self.midpoint + (self.normal - self.midpoint) * self.width / 2)[1]
+        triangle_points[2] = (self.midpoint + (self.normal - self.midpoint) * self.width / 10)[1]
         self.parent.add_polygon(triangle_points, layer)
+        self.parent.label(text=self.to_label(), position=self.midpoint, layer=layer)
+
+    def to_label(self):
+        essential_info = (str(self.name),
+                          # self.midpoint,  # rather than put this in the text, use the label position
+                          float(self.width),
+                          float(self.orientation),
+                          # self.parent,  # this is definitely not serializable
+                          # self.info,  # would like to include, but it might go longer than 1024 characters
+                          # self.uid,  # not including because it is part of the build process, not the port state
+                         )
+        return json.dumps(essential_info)
+
+    @classmethod
+    def from_label(cls, label_text):
+        # You will have to set the midpoint elsewhere
+        name, width, orientation = json.loads(label_text)
+        return cls(name=name, width=width, orientation=orientation)
 
     def rotate(self, angle = 45, center = None):
         self.orientation = mod(self.orientation + angle, 360)
@@ -647,7 +666,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Insert GDS-visible ports
         if Port.port_layer is not None:
             for cell in all_cells:
+                print('port layer writing for ports', cell.ports.values())
                 for port in cell.ports.values():
+                    print('while writing, found', port)
                     port.draw_gds()
 
         gdspy.write_gds(filename, cells=all_cells, name='library',
