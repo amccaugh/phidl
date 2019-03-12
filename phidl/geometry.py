@@ -805,18 +805,25 @@ def draw_port(port, layer = 0):
     # Label carrying actual information that will be recovered
     label_contents = (str(port.name),
                       # port.midpoint,  # rather than put this in the text, use the label position
-                      float(port.width),
+                      float(np.round(port.width, decimals=3)),  # this can have rounding errors that are less than a nanometer
                       float(port.orientation),
                       # port.parent,  # this is definitely not serializable
                       # port.info,  # would like to include, but it might go longer than 1024 characters
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    D.label(text=label_text, position=port.midpoint, magnification=.1, layer=layer)
-
+    D.label(text=label_text, position=port.midpoint + calculate_label_offset(port), 
+            magnification=.04 * port.width, rotation=(90 + port.orientation) % 360, layer=layer)
     devref = port.parent << D
     port.parent.remove(port)
     return devref
+
+
+def calculate_label_offset(port):
+    offset_position = np.array((-np.cos(np.pi / 180 * port.orientation), 
+                                -np.sin(np.pi / 180 * port.orientation)))
+    offset_position *= port.width * .05
+    return offset_position
 
 
 def extract_port(label, layer = 0):
@@ -828,8 +835,9 @@ def extract_port(label, layer = 0):
 
     # You will have to set the midpoint elsewhere
     name, width, orientation = json.loads(label.text)
-    midpoint = label.position
-    return Port(name=name, width=width, orientation=orientation)
+    new_port = Port(name=name, width=width, orientation=orientation)
+    new_port.midpoint = label.position - calculate_label_offset(new_port)
+    return new_port
 
 
 def with_geometric_ports(device, layer = 0):
