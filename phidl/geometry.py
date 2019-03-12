@@ -39,7 +39,7 @@ import pickle
 #==============================================================================
 
 
-def rectangle(size = (4,2), layer = 0): 
+def rectangle(size = (4,2), layer = 0):
     """Generate rectangle geometry.
 
     Parameters
@@ -88,7 +88,7 @@ def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
 
 
 def cross(length = 10, width = 3, layer = 0):
-    """Generates a right-angle cross (+ shape, symmetric) from two 
+    """Generates a right-angle cross (+ shape, symmetric) from two
     rectangles of specified length and width.
 
     Parameters
@@ -212,8 +212,8 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     ypts = inner_points_y + outer_points_y[::-1]
     D.add_polygon(points = (xpts,ypts), layer = layer)
     return D
-    
-    
+
+
 def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
     """ Creates an arc of arclength ``theta`` starting at angle ``start_angle``
 
@@ -254,7 +254,7 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     outer_points_y = (outer_radius*sin(t)).tolist()
     xpts = inner_points_x + outer_points_x[::-1]
     ypts = inner_points_y + outer_points_y[::-1]
-    
+
     D = Device('arc')
     D.add_polygon(points = (xpts,ypts), layer = layer)
     D.add_port(name = 1, midpoint = (radius*cos(angle1), radius*sin(angle1)),  width = width, orientation = start_angle - 90 + 180*(theta<0))
@@ -267,7 +267,7 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
     """ Starting form a port, create a arc which connects to the port
     """
 
-    D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0, 
+    D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0,
             angle_resolution = angle_resolution, layer = layer)
     D.rotate(angle =  180 + port.orientation - D.ports[1].orientation, center = D.ports[1].midpoint)
     D.move(origin = D.ports[1], destination = port)
@@ -370,7 +370,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 0.001, max_p
     for e in elements:
         if isinstance(e, Device): polygons_to_offset += e.get_polygons()
         else: polygons_to_offset.append(e)
-        
+
     gds_layer, gds_datatype = _parse_layer(layer)
     # This pre-joining (by expanding by precision) makes this take twice as
     # long but is necessary because of floating point errors which otherwise
@@ -390,8 +390,8 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
     print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
     return offset(elements = elements, distance = -distance, join_first = join_first,
                  precision = precision, layer = layer)
-    
-    
+
+
 def invert(elements, border = 10, precision = 0.001, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
@@ -401,27 +401,27 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
         if isinstance(e, Device): D.add_ref(e)
         else: D.elements.append(e)
     gds_layer, gds_datatype = _parse_layer(layer)
-    
+
     # Build the rectangle around the device D
     R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
     R.center = D.center
-    
+
     operandA = R.get_polygons()
     operandB = D.get_polygons()
     p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
                  max_points=4000, layer=gds_layer, datatype=gds_datatype)
-        
+
     D = Device('invert')
     D.add_polygon(p, layer=layer)
     return D
 
 
 def boolean(A, B, operation, precision = 0.001, layer = 0):
-    """ 
+    """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
 
-    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note 
+    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note
     that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
@@ -475,15 +475,15 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
 
 
 def xor_diff(A,B, precision = 0.001):
-    """ Given two Devices A and B, performs the layer-by-layer XOR 
-    difference between A and B, and returns polygons representing 
+    """ Given two Devices A and B, performs the layer-by-layer XOR
+    difference between A and B, and returns polygons representing
     the differences between A and B.
     """
     D = Device()
     A_polys = A.get_polygons(by_spec = True)
     B_polys = B.get_polygons(by_spec = True)
-    A_layers = A_polys.keys() 
-    B_layers = B_polys.keys() 
+    A_layers = A_polys.keys()
+    B_layers = B_polys.keys()
     all_layers = set()
     all_layers.update(A_layers )
     all_layers.update(B_layers)
@@ -503,7 +503,7 @@ def xor_diff(A,B, precision = 0.001):
 
 def union(D, by_layer = False, layer = 0):
     U = Device()
-    
+
     if by_layer == True:
         all_polygons = D.get_polygons(by_spec = True)
         for layer, polygons in all_polygons.items():
@@ -514,7 +514,7 @@ def union(D, by_layer = False, layer = 0):
         unioned_polygons = _union_polygons(all_polygons)
         U.add_polygon(unioned_polygons, layer = layer)
     return U
-    
+
 def _union_polygons(polygons, precision=1e-6):
     expanded = gdspy.offset(polygons, precision, join='miter', tolerance=2,
                           precision=precision, join_first=False,
@@ -538,10 +538,10 @@ def litho_steps(
         height = 100,
         layer = 0
         ):
-    """ Produces a positive + negative tone linewidth test, used for 
+    """ Produces a positive + negative tone linewidth test, used for
     lithography resolution test patterning """
     D = Device('litho_steps')
-    
+
     height = height / 2
     T1 = text(text = '%s' % str(line_widths[-1]),
         size = height, justify = 'center', layer = layer)
@@ -556,7 +556,7 @@ def litho_steps(
         r2 = D.add_ref(R2).movex(count - i)
 
     return(D)
-    
+
 
 def litho_star(
         num_lines = 20,
@@ -564,10 +564,10 @@ def litho_star(
         diameter = 200,
         layer = 0
         ):
-    """ Creates a circular-star shape from lines, used as a lithographic  
+    """ Creates a circular-star shape from lines, used as a lithographic
     resolution test pattern """
     D = Device('litho_star')
-    
+
     degree = 180 / num_lines
     R1 = rectangle(size = (line_width, diameter), layer = layer)
     for i in range(num_lines):
@@ -587,7 +587,7 @@ def litho_calipers(
         layer2 = 2):
     """ Creates a vernier caliper structure for lithography alignment
     tests.  Vernier structure is made horizontally. """
-    
+
     D = Device('litho_calipers')
     num_notches_total = num_notches*2+1
     centre_notch = num_notches
@@ -699,7 +699,7 @@ def import_gds(filename, cellname = None, flatten = False):
                 else:
                     new_elements.append(e)
             D.elements = new_elements
-            
+
             # Extract GDS-visible ports
             if Port.port_layer is not None:
                 for lab in D.labels:
@@ -708,7 +708,7 @@ def import_gds(filename, cellname = None, flatten = False):
                         the_port.midpoint = lab.position
                         D.add_port(port=the_port)
                 D.remove_layers(layers=[Port.port_layer])
-            
+
         topdevice = c2dmap[topcell]
         return topdevice
 
@@ -740,7 +740,7 @@ def _translate_cell(c):
 
 def preview_layerset(ls, size = 100):
     """ Generates a preview Device with representations of all the layers,
-    used for previewing LayerSet color schemes in quickplot or saved .gds 
+    used for previewing LayerSet color schemes in quickplot or saved .gds
     files """
     D = Device()
     scale = size/100
@@ -755,7 +755,7 @@ def preview_layerset(ls, size = 100):
                 position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
-                
+
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
         D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
@@ -787,6 +787,78 @@ class device_lru_cache:
             return deepcopy(cached_output)
 
 
+def draw_port(port, layer = 0):
+    ''' Converts a Port to a label and a triangle Device that are then added to the parent.
+        The Port must start with a parent, and ends up removed from the parent.
+    '''
+    if port.parent is None:
+        raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
+    D = Device('Port: ' + port.name + ' of ' + port.parent.name)
+
+    # A visual marker
+    triangle_points = [[0, 0]] * 3
+    triangle_points[0] = port.endpoints[0]
+    triangle_points[1] = port.endpoints[1]
+    triangle_points[2] = (port.midpoint + (port.normal - port.midpoint) * port.width / 10)[1]
+    D.add_polygon(triangle_points, layer)
+
+    # Label carrying actual information that will be recovered
+    label_contents = (str(port.name),
+                      # port.midpoint,  # rather than put this in the text, use the label position
+                      float(port.width),
+                      float(port.orientation),
+                      # port.parent,  # this is definitely not serializable
+                      # port.info,  # would like to include, but it might go longer than 1024 characters
+                      # port.uid,  # not including because it is part of the build process, not the port state
+                     )
+    label_text = json.dumps(label_contents)
+    D.label(text=label_text, position=port.midpoint, layer=layer)
+
+    devref = port.parent << D
+    port.parent.remove(port)
+    return devref
+
+
+def extract_port(label, layer = 0):
+    ''' Converts a DeviceReference or Device of a label
+        Also removes that label from the parent.
+    '''
+    if isinstance(label, DeviceReference):
+        label = label.parent
+
+    # You will have to set the midpoint elsewhere
+    name, width, orientation = json.loads(label.text)
+    midpoint = label.position
+    return Port(name=name, width=width, orientation=orientation)
+
+
+def with_geometric_ports(device, layer = 0):
+    ''' Does not change the device used as argument. Returns a new one.
+    '''
+    temp_device = copy(device)
+    referenced_cells = list(temp_device.get_dependencies(recursive=True))
+    all_cells = [temp_device] + referenced_cells
+    # Insert GDS-visible ports
+    for subcell in all_cells:
+        for port in subcell.ports.values():
+            draw_port(port, layer=layer)
+    return temp_device
+
+
+def with_object_ports(device, layer = 0):
+    temp_device = copy(device)
+    referenced_cells = list(temp_device.get_dependencies(recursive=True))
+    all_cells = [temp_device] + referenced_cells
+    for subcell in all_cells: # Walk through cells
+        # Extract GDS-visible ports
+        for lab in subcell.labels:
+            if lab.layer == layer:
+                the_port = extract_port(lab)
+                subcell.add_port(port=the_port)
+        subcell.remove_layers(layers=[layer])
+    return temp_device
+
+
 #==============================================================================
 #
 # Connectors
@@ -813,33 +885,33 @@ def compass(size = (4,2), layer = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west)
     """
-    
+
     D = Device(name = 'compass')
     r = D.add_ref( rectangle(size, layer = layer) )
     r.center = (0,0)
-    
+
     dx = size[0]
     dy = size[1]
     D.add_port(name = 'N', midpoint = [0, dy/2],  width = dx, orientation = 90)
     D.add_port(name = 'S', midpoint = [0, -dy/2], width = dx, orientation = -90)
     D.add_port(name = 'E', midpoint = [dx/2, 0],  width = dy, orientation = 0)
     D.add_port(name = 'W', midpoint = [-dx/2, 0], width = dy, orientation = 180)
-    
+
     return D
-    
-    
+
+
 def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
     """
-    
+
     D = Device(name = 'compass_multi')
     r = D.add_ref( rectangle(size, layer = layer) )
     r.center = (0,0)
-    
+
     dx = size[0]/2
     dy = size[1]/2
-    
+
     if 'N' in ports:
         num_ports = ports['N']
         m = dx-dx/num_ports
@@ -860,10 +932,10 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0):
         m = dy-dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],  width = dy/num_ports*2, orientation = 180) for n,p in enumerate(p_list)]
-    
+
     return D
-    
-    
+
+
 
 # TODO: Fix the fillet here, right now only goes halfway down
 def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0):
@@ -873,7 +945,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
 
     assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or D'
     assert taper_type in ['straight','fillet'], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
-    
+
     if shape ==   'p':
         orientation = -90
     elif shape == 'q':
@@ -888,7 +960,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
         orientation = 90
     xpts = [0, 0, f[0], f[0], p[0], p[0], 0]
     ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
-    
+
     D = Device(name = 'flagpole')
     pad_poly = D.add_polygon([xpts,ypts], layer = layer)
     if taper_type == 'fillet':
@@ -896,7 +968,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
         pad_poly.fillet([0,0,0,0,taper_amount,0,0])
     elif taper_type == 'straight':
         D.add_polygon([xpts[3:6],ypts[3:6]], layer = layer)
-            
+
     D.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = abs(p[0]), orientation = orientation)
     D.add_port(name = 2, midpoint = [f[0]/2, f[1]],  width = abs(f[0]), orientation = orientation-180)
     return D
@@ -905,10 +977,10 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
 def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
     f = np.array(size)
     p = np.array(stub_size)
-    
+
     xpts = np.array([f[0], f[0], p[0], p[0], -p[0], -p[0], -f[0], -f[0]])/2
     ypts = [f[1], 0, 0, -p[1], -p[1], 0, 0, f[1]]
-    
+
     D = Device(name = 'tee')
     pad_poly = D.add_polygon([xpts,ypts], layer = layer)
     if taper_type == 'fillet':
@@ -917,12 +989,12 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
     elif taper_type == 'straight':
         taper_poly1 = D.add_polygon([xpts[1:4],ypts[1:4]], layer = layer)
         taper_poly2 = D.add_polygon([xpts[4:7],ypts[4:7]], layer = layer)
-        
+
     D.add_port(name = 1, midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
     D.add_port(name = 2, midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
     D.add_port(name = 3, midpoint = [0, -p[1]],  width = p[0], orientation = -90)
     return D
-    
+
 
 #==============================================================================
 # Example code
@@ -966,17 +1038,17 @@ def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
     ypts = [width1/2, width2/2, -width2/2, -width1/2]
-    
+
     D = Device('taper')
     D.add_polygon([xpts,ypts], layer = layer)
     D.add_port(name = 1, midpoint = [0, 0], width = width1, orientation = 180)
     D.add_port(name = 2, midpoint = [length, 0], width = width2, orientation = 0)
-    if type(port) is Port: 
+    if type(port) is Port:
         D.rotate(angle = port.orientation, center = [0,0])
         D.move(origin = [0,0], destination = port.midpoint)
     return D
-    
-    
+
+
 def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
@@ -986,7 +1058,7 @@ def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
     D.add_port(name = 1, midpoint = [0, width1/2], width = width1, orientation = 180)
     D.add_port(name = 2, midpoint = [length, width2/2], width = width2, orientation = 0)
     return D
-    
+
 
 # Equations taken from
 # Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
@@ -997,7 +1069,7 @@ def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
 
     u = wire_width/dielectric_thickness
     eta = 376.73 # Vacuum impedance
-    
+
     a = 1 + log((u**4 + (u/52)**2)/(u**4 + 0.432))/49 + log(1 + (u/18.1)**3)/18.7;
     b = 0.564*((eps_r-0.9)/(eps_r+3))**0.053;
     F = 6 + (2*pi-6)*exp(-(30.666/u)**0.7528);
@@ -1013,7 +1085,7 @@ def _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r):
     Z, eps_eff =  _microstrip_Z(wire_width, dielectric_thickness, eps_r)
     eps0 =  8.854e-12
     mu0 = 4*pi*1e-7
-    
+
     eps = eps_eff*eps0
     mu = mu0
     L_m = sqrt(eps*mu)*Z
@@ -1029,19 +1101,19 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     Lk_m = Lk_per_sq*(1.0/wire_width)
     Z = sqrt((L_m+Lk_m)/C_m)
     return Z
-    
+
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
     Lk_m = Lk_per_sq*(1.0/wire_width)
     v = 1/sqrt((L_m+Lk_m)*C_m)
     return v
-    
+
 def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq):
-    
+
     def error_fun(wire_width):
         Z_guessed = _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq)
         return (Z_guessed-Z_target)**2 # The error
-    
+
     x0 = dielectric_thickness
     w = fmin(error_fun, x0, args=(), disp=False)
     return w[0]
@@ -1063,15 +1135,15 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     Z = [np.exp( 0.5*log(Z1*Z2) + 0.5*log(Z2/Z1)*_G(xi, B) ) for xi in xi_list]
     widths = np.array([_find_microstrip_wire_width(z, dielectric_thickness*1e-6, eps_r, Lk_per_sq)*1e6 for z in Z])
     x = ((xi_list/2)*length)
-    
-    # Compensate for varying speed of light in the microstrip by shortening 
+
+    # Compensate for varying speed of light in the microstrip by shortening
     # and lengthening sections according to the speed of light in that section
     v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
     dx = np.diff(x)
     dx_compensated = dx/v[:-1]
     x_compensated = np.cumsum(dx_compensated)
     x = np.hstack([0,x_compensated])/max(x_compensated)*length
-    
+
     # Create blank device and add taper polygon
     D = Device('hecken')
     xpts = np.concatenate([x, x[::-1]])
@@ -1079,7 +1151,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.add_polygon((xpts,ypts), layer = layer)
     D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
     D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
-    
+
     # Add meta information about the taper
     D.info['num_squares'] = np.sum(np.diff(x)/widths[:-1])
     D.info['width1'] = widths[0]
@@ -1095,18 +1167,18 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     BetaLmin = np.sqrt(B**2 + 6.523)
     D.info['f_cutoff'] = BetaLmin*D.info['v/c'][0]*3e8/(2*pi*length*1e-6)
     D.info['length'] = length
-    
+
     return D
 
 
 @device_lru_cache
 def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
-    
+
     def taper_width(x):
         return np.interp(x, x_taper, w_taper)
-        
-        
+
+
     def taper_section(x_start, x_end, num_pts = 30, layer = 0):
         D = Device('tapersec')
         length =  x_end - x_start
@@ -1118,7 +1190,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
         D.add_port(name = 1, midpoint = (0,0), width = widths[0], orientation = 180)
         D.add_port(name = 2, midpoint = (length,0), width = widths[-1], orientation = 0)
         return D
-        
+
     def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0):
         D = Device('arctaper')
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
@@ -1127,7 +1199,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
         D.add_port(name = 1, midpoint = (0, 0), width = width1, orientation = 180)
         D.add_port(name = 2, midpoint = (path1.x, path1.y), width = width2, orientation = path1.direction*180/np.pi)
         return D
-        
+
     D = Device('meander-taper')
     xpos1 = min(x_taper)
     xpos2 = min(x_taper) + meander_length
@@ -1149,9 +1221,9 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
         t = D.add_ref( taper_section(x_start = xpos1, x_end = xpos2, num_pts = 30, layer = layer) )
         t.connect(port = 1, destination = a.ports[2])
     D.add_port(t.ports[2])
-        
+
     return D
-    
+
 #==============================================================================
 # Example code
 #==============================================================================
@@ -1181,7 +1253,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 
 # The DEPLOF font is made by David Elata, MEMS Lab, Technion, Haifa, Israel and
 # and is used with permission.  The raw polygon entries are sourced from
-# Ulf Griesmann's modified DEPLOF implementation used in the MATLAB gdsii 
+# Ulf Griesmann's modified DEPLOF implementation used in the MATLAB gdsii
 # toolbox https://github.com/ulfgri/gdsii-toolbox/ and are used with permission
 
 
@@ -1192,9 +1264,9 @@ indent = {}
 glyph[33] = [[[100,-100],[100,100],[300,100],[300,-100],[100,-100]], [[100,250],[100,1100],[ 300,1100],[300,250],[100,250]]]
 glyph[34] = [[[300,800],[300,1200],[500,1200],[500,1000],[300,800]], [[600,800],[600,1200],[ 800,1200],[800,1000],[600,800]]]
 glyph[35] = [[[150,0],[170,200],[50,200],[50,400],[190,400],[210,600],[100,600],[100,800],[230,800],[ 250,1000],[450,1000],[390,400],[530,400],[510,200],[370,200],[350,0],[150,0]],  [[550,0],[610,600],[470,600],[490,800],[630,800],[650,1000],[850,1000],[830,800],[950,800],[ 950,600],[810,600],[790,400],[900,400],[900,200],[770,200],[750,0],[550,0]]]
-glyph[36] = [[[400,1000],[400,1200],[600,1200],[600,1000],[800,1000],[900,900],[900,800],[300,800],[ 300,600],[400,600],[400,700],[600,700],[600,600],[800,600],[900,500],[900,100],[ 800,0],[600,0],[600,-200],[400,-200],[400,0],[200,0],[100,100],[100,200],[700,200],[ 700,400],[600,400],[600,300],[400,300],[400,400],[200,400],[100,500],[100,900],[ 200,1000],[400,1000]]] 
+glyph[36] = [[[400,1000],[400,1200],[600,1200],[600,1000],[800,1000],[900,900],[900,800],[300,800],[ 300,600],[400,600],[400,700],[600,700],[600,600],[800,600],[900,500],[900,100],[ 800,0],[600,0],[600,-200],[400,-200],[400,0],[200,0],[100,100],[100,200],[700,200],[ 700,400],[600,400],[600,300],[400,300],[400,400],[200,400],[100,500],[100,900],[ 200,1000],[400,1000]]]
 glyph[37] = [[[100,100],[800,1000],[900,900],[200,0],[100,100]],  [[100,900],[400,900],[400,650],[350,600],[200,600],[300,700],[300,800],[200,800],[ 200,700],[100,600],[100,900]], [[650,400],[800,400],[700,300],[700,200],[ 800,200],[800,300],[900,400],[900,100],[600,100],[600,350],[650,400]]]
-glyph[38] = [[[700,0],[100,600],[100,800],[200,900],[400,900],[500,800],[500,800],[500,600],[ 450,550],[350,650],[400,700],[300,800],[200,700],[600,300],[700,400],[800,300],[ 700,200],[900,0],[700,0]],  [[550,50],[500,0],[100,0],[0,100],[0,300],[100,400],[150,450],[250,350],[100,200],[ 100,150],[150,100],[400,100],[450,150],[550,50]]] 
+glyph[38] = [[[700,0],[100,600],[100,800],[200,900],[400,900],[500,800],[500,800],[500,600],[ 450,550],[350,650],[400,700],[300,800],[200,700],[600,300],[700,400],[800,300],[ 700,200],[900,0],[700,0]],  [[550,50],[500,0],[100,0],[0,100],[0,300],[100,400],[150,450],[250,350],[100,200],[ 100,150],[150,100],[400,100],[450,150],[550,50]]]
 glyph[39] = [[[300,800],[300,1200],[500,1200],[500,1000],[300,800]]]
 glyph[40] = [[[100,500],[125,700],[175,900],[250,1100],[450,1100],[375,900],[325,700],[300,500],[ 325,300],[375,100],[450,-100],[250,-100],[175,100],[125,300],[100,500]]]
 glyph[41] = [[[100,1100],[300,1100],[375,900],[425,700],[450,500],[425,300],[375,100],[ 300,-100],[100,-100],[175,100],[225,300],[250,500],[225,700],[175,900],[100,1100]]]
@@ -1417,12 +1489,12 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
         if justify == 'right':  l.xmax = position[0]
         if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
     return t
-    
-    
+
+
 #==============================================================================
-# Example code    
+# Example code
 #==============================================================================
-    
+
 #D = text('the quick brown\n fox jumped over\nthe lazy dog', justify = 'center', size = 800)
 #quickplot(D)
 
@@ -1443,12 +1515,12 @@ def basic_die(
               street_length = 1000,
               die_name = 'chip99',
               text_size = 100,
-              text_location = 'SW', 
-              layer = 0, 
-              draw_bbox = True, 
+              text_location = 'SW',
+              layer = 0,
+              draw_bbox = True,
               bbox_layer = 99,
               ):
-    
+
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -1459,7 +1531,7 @@ def basic_die(
     D.add_polygon([-xpts,ypts], layer = layer)
     D.add_polygon([xpts,-ypts], layer = layer)
     D.add_polygon([-xpts,-ypts], layer = layer)
-    
+
     if draw_bbox is True:
         s = np.array(size)/2
         D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer)
@@ -1483,17 +1555,17 @@ def basic_die(
             t.xmax, t.ymin = [sx - d, -sy + d]
     else:
         t.x, t.y = text_location
-    
+
     return D
-    
-    
-    
+
+
+
 #==============================================================================
 # Example code
 #==============================================================================
 
-# D = basic_die(size = (10000, 10000), street_width = 100, street_length = 1000, 
-#               die_name = 'chip99', text_size = 300, text_location = 'SW',  layer = 0,  
+# D = basic_die(size = (10000, 10000), street_width = 100, street_length = 1000,
+#               die_name = 'chip99', text_size = 300, text_location = 'SW',  layer = 0,
 #               draw_bbox = True,  bbox_layer = 99)
 # quickplot(D)
 
@@ -1516,7 +1588,7 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     D = Device('racetrack')
     D.add(route_path)
     return D
-    
+
 
 def _racetrack_gradual_parametric(t, R, N):
     """ Takes in a parametric value ``t`` on (0,1), returns the x,y coordinates
@@ -1526,7 +1598,7 @@ def _racetrack_gradual_parametric(t, R, N):
     R0 = R-(x0-Rmin/sqrt(2))
     t = np.array(t)
     x,y = np.zeros(t.shape), np.zeros(t.shape)
-    
+
     # Doing the math
     x = cos(t*pi/2)*R0 # t (0-1) while x (0 to R0)
     ii =  (Rmin/sqrt(2) < x) & (x <= R0)
@@ -1534,9 +1606,9 @@ def _racetrack_gradual_parametric(t, R, N):
     y[ii] = (R**N - (x[ii]+(x0-Rmin/sqrt(2)))**N)**(1/N)
     y[jj] = (x0-Rmin/sqrt(2))+sqrt(Rmin**2-x[jj]**2)
     return x,y
-    
-    
-    
+
+
+
 #==============================================================================
 # Example code
 #==============================================================================
@@ -1569,13 +1641,13 @@ def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, d
         from skimage import draw
     except:
         raise ImportError("""
-            The fill function requires the module "scikit-image" 
+            The fill function requires the module "scikit-image"
             to operate.  Please retry after installing scikit-image:
-            
+
             $ pip install --upgrade scikit-image """)
 
-    
-    # Prepare polygon array by shifting all points into the first quadrant and 
+
+    # Prepare polygon array by shifting all points into the first quadrant and
     # separating points into x and y lists
     xpts = []
     ypts = []
@@ -1590,16 +1662,16 @@ def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, d
     xsize = int(np.ceil((bounds[1][0]-bounds[0][0]))/dx)
     ysize = int(np.ceil((bounds[1][1]-bounds[0][1]))/dy)
     raster = np.zeros((ysize, xsize), dtype=np.bool)
-    
+
     # TODO: Replace polygon_perimeter with the supercover version
     for n in range(len(xpts)):
         rr, cc = draw.polygon(ypts[n], xpts[n], shape=raster.shape)
         rrp, ccp = draw.polygon_perimeter(ypts[n], xpts[n], shape=raster.shape, clip=False)
         raster[rr, cc] = 1
         raster[rrp, ccp] = 1
-        
+
     return raster
-    
+
 def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
     x = (j+0.5)*dx + bounds[0][0]
     y = (i+0.5)*dy + bounds[0][1]
@@ -1611,21 +1683,21 @@ def _expand_raster(raster, distance = (4,2)):
         from skimage import draw, morphology
     except:
         raise ImportError("""
-            The fill function requires the module "scikit-image" 
+            The fill function requires the module "scikit-image"
             to operate.  Please retry after installing scikit-image:
 
             $ pip install --upgrade scikit-image """)
     if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
-        
+
     num_pixels = np.array(np.ceil(distance), dtype = int)
     neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
     rr, cc = draw.ellipse(num_pixels[1], num_pixels[0], distance[1]+0.5, distance[0]+0.5)
     neighborhood[rr, cc] = 1
-    
+
     return morphology.binary_dilation(image = raster, selem=neighborhood)
 
-    
-            
+
+
 def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
                          densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
     D = Device('fillcell')
@@ -1653,11 +1725,11 @@ def _loop_over(var):
         return var
     else:
         return [var]
-    
+
 def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers = None,
-                    margin = 100, fill_layers = (0,1,3), 
+                    margin = 100, fill_layers = (0,1,3),
                    fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None):
-    
+
     # Create the fill cell.  If fill_inverted is not specified, assume all False
     fill_layers = _loop_over(fill_layers)
     fill_densities = _loop_over(fill_densities)
@@ -1673,7 +1745,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
     fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers,
                                      densities = fill_densities, inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
-    
+
     if avoid_layers == 'all':
         exclude_polys = D.get_polygons(by_spec=False, depth=None)
     else:
@@ -1681,7 +1753,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
         exclude_polys = D.get_polygons(by_spec=True, depth=None)
         exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in avoid_layers}
         exclude_polys = itertools.chain.from_iterable(exclude_polys.values())
-        
+
     if include_layers is None:
         include_polys = []
     else:
@@ -1689,15 +1761,15 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
         include_polys = D.get_polygons(by_spec=True, depth=None)
         include_polys = {key:include_polys[key] for key in include_polys if key in include_layers}
         include_polys = itertools.chain.from_iterable(include_polys.values())
-        
-        
-        
+
+
+
     if bbox is None:  bbox = D.bbox
 
     raster = _rasterize_polygons(polygons = exclude_polys, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
     raster = raster & ~_rasterize_polygons(polygons = include_polys, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
     raster = _expand_raster(raster, distance = margin/np.array(fill_size))
-    
+
     for i in range(np.size(raster,0)):
         sub_rasters = [list(g) for k, g in itertools.groupby(raster[i])]
         j = 0
@@ -1706,7 +1778,7 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
                 x,y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
                 F.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
             j += len(s)
-    
+
     return F
 
 
@@ -1728,18 +1800,18 @@ def polygon_ports(xpts=[-1,-1, 0, 0],
     P.add_polygon([xpts, ypts], layer = layer)
     n = len(xpts)
     xpts.append(xpts[0])
-    ypts.append(ypts[0]) 
+    ypts.append(ypts[0])
     #determine if clockwise or counterclockwise
-    cc = 0     
+    cc = 0
     for i in range(0,n):
         cc += ((xpts[i+1]-xpts[i])*(ypts[i+1]+ypts[i]))
-            
+
     for i in range(0,n):
         midpoint_n = [(xpts[i+1]+xpts[i])/2, (ypts[i+1]+ypts[i])/2]
-        orientation_n = np.arctan2(np.sign(cc)*(xpts[i+1]-xpts[i]),np.sign(cc)*(ypts[i]-ypts[i+1]))*180/np.pi           
-        width_n = np.abs(np.sqrt((xpts[i+1]-xpts[i])**2+(ypts[i+1]-ypts[i])**2))    
+        orientation_n = np.arctan2(np.sign(cc)*(xpts[i+1]-xpts[i]),np.sign(cc)*(ypts[i]-ypts[i+1]))*180/np.pi
+        width_n = np.abs(np.sqrt((xpts[i+1]-xpts[i])**2+(ypts[i+1]-ypts[i])**2))
         P.add_port(name = str(i+1), midpoint = midpoint_n, width = width_n, orientation = orientation_n)
-    
+
     return P
 
 #==============================================================================
@@ -1761,7 +1833,7 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
         for i in range(num_periods):
             cgrating = G.add_ref(compass(size=[period*fill_factor,width_grating], layer = 0))
             cgrating.x+=i*period
-            
+
         # make the taper
         tgrating = G.add_ref(taper(length = length_taper, width1 = width_grating, width2 = width, port = None, layer = 0))
         tgrating.xmin = cgrating.xmax
@@ -1778,9 +1850,9 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
                         # define the port of the grating
             p = G.add_port(port = cgrating.ports['E'], name = 1)
             p.midpoint=p.midpoint+np.array([(1-fill_factor)*period,0])
-                
+
         #draw the deep etched square around the grating
-            deepbox = G.add_ref(compass(size=[num_periods*period, width_grating]), layer=0)    
+            deepbox = G.add_ref(compass(size=[num_periods*period, width_grating]), layer=0)
     return G
 
 #==============================================================================
@@ -1821,7 +1893,7 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
                              pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3):
     """
     Usage:
-        Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however 
+        Call via_route_test_structure() by indicating the number of vias you want drawn. You can also change the other parameters however
         if you do not specifiy a value for a parameter it will just use the default value
         Ex::
 
@@ -1840,7 +1912,7 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
         via_layer -> GDS layer number of the vias
         ex: via_route(54, min_pad_spacing=300)
     """
-    
+
     VR = Device('test_via')
     pad1 = VR.add_ref(rectangle(size=pad_size, layer=pad_layer))
     pad1_overlay = VR.add_ref(rectangle(size=pad_size, layer=wiring1_layer))
@@ -1900,7 +1972,7 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
     else:
         tail = VR.add_ref(compass(size=(3*wire_width,wire_width),layer=wiring1_layer))
         tail_overlay = VR.add_ref(compass(size=(3*wire_width,wire_width),layer=wiring1_layer))
-        
+
     if(up == True and edge != True):
         tail.connect(port = 'W', destination = obj.ports['S'], overlap = wire_width)
         tail_overlay.connect(port = 'W', destination = obj.ports['S'], overlap = wire_width)
@@ -1911,11 +1983,11 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
         tail.connect(port = 'W', destination = obj.ports['E'], overlap = wire_width)
         tail_overlay.connect(port = 'W', destination = obj.ports['E'], overlap = wire_width)
 
-        
+
     pad2.xmin = tail.xmax
     pad2_overlay.xmin = pad2.xmin
     pad2_overlay.ymin = pad2.ymin
-    
+
     return VR
 
 
@@ -1927,7 +1999,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
               comb_pad_layer = None, comb_gnd_layer = None, overlap_pad_layer = None):
     """
     Usage:
-    
+
     Call comb_insulation_test_structure() with any of the
     parameters shown below which you'd like to change. You
     only need to supply the parameters which you intend on
@@ -1946,8 +2018,8 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     if comb_pad_layer is None:  comb_pad_layer = comb_layer
     if comb_gnd_layer is None:  comb_gnd_layer = comb_layer
     if overlap_pad_layer is None:  overlap_pad_layer = overlap_zigzag_layer
-    wire_spacing = wire_width + wire_gap*2 
-    
+    wire_spacing = wire_width + wire_gap*2
+
 
 
     #%% pad overlays
@@ -1955,7 +2027,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     overlay_padl = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_pad_layer ) )
     overlay_padt = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_pad_layer ) )
     overlay_padr = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_gnd_layer))
-    
+
     overlay_padl.xmin = 0
     overlay_padl.ymin = 0
     overlay_padb.ymax = 0
@@ -1964,7 +2036,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     overlay_padr.xmin = overlay_padb.xmax + pad_size[1]/5
     overlay_padt.xmin = overlay_padl.xmax + pad_size[1]/5
     overlay_padt.ymin = overlay_padl.ymax
-    
+
     #%% pads
     padl = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
     padt = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
@@ -1972,7 +2044,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     padb = CI.add_ref(rectangle(size=pad_size, layer=overlap_zigzag_layer))
     padl_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
     padr_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
-    
+
     padl.xmin = overlay_padl.xmin
     padl.center = [padl.center[0],overlay_padl.center[1]]
     padt.ymax = overlay_padt.ymax
@@ -1985,9 +2057,9 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     padl_nub.center = [padl_nub.center[0],padl.center[1]]
     padr_nub.xmax = padr.xmin
     padr_nub.center = [padr_nub.center[0],padr.center[1]]
-    
+
     #%% connected zig
-    
+
     head = CI.add_ref(compass(size=(pad_size[0]/12, wire_width), layer=comb_layer))
     head.xmin = padl_nub.xmax
     head.ymax = padl_nub.ymax
@@ -2034,7 +2106,7 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     tail.connect(port = 'W', destination=old_port)
 
     #%% disconnected zig
-    
+
     dhead = CI.add_ref(compass(size=(padr_nub.ymin -padb.ymax - wire_width, wire_width), layer=overlap_zigzag_layer))
     dhead.rotate(90)
     dhead.ymin = padb.ymax
@@ -2066,12 +2138,12 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
             old_port = obj.ports['W']
         else:
             old_port = obj.ports['E']
-    
+
     return CI
-    
 
 
- 
+
+
 #This is a helper function to make the Ic step wire structure
 def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
     WS4 = Device('test_ic_step')
@@ -2091,11 +2163,11 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
             wire_layer = 0, pad_layer = 1, gnd_layer = None):
     """
     Usage:
-    
-    Call ic_test_structure() with either a list of widths for the thickest part of each wire to test and a list for the 
+
+    Call ic_test_structure() with either a list of widths for the thickest part of each wire to test and a list for the
     thinnest parts of each wire. Alternatively, specify a list of widths for the thinnest part of each wire and ignore the
     wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
-    part of the wire will be larger than the thin part. 
+    part of the wire will be larger than the thin part.
     Ex::
 
         ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
@@ -2123,7 +2195,7 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
         wire_step = ICS.add_ref(_test_ic_wire_step(wire_widths_wide[i], wire_widths[i], wire_layer=wire_layer))
         wire_step.rotate(90)
         wire_step.center = (padt.center[0], padb.ymax + difference/2)
-        translation = translation + pad_size[0]*12/10 
+        translation = translation + pad_size[0]*12/10
         conn_wire_top = ICS.add_ref(rectangle(size=(wire_widths_wide[i], padt.ymin-wire_step.ymax), layer=wire_layer))
         conn_wire_bottom = ICS.add_ref(rectangle(size=(wire_widths_wide[i], wire_step.ymin-padb.ymax), layer=wire_layer))
         conn_wire_top.ymax = padt.ymin
@@ -2131,16 +2203,16 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
         conn_wire_bottom.ymin = padb.ymax
         conn_wire_bottom.xmin = wire_step.xmin
     return ICS
-  
+
 def test_res(pad_size = [50,50],
                      num_squares = 1000,
                      width = 1,
                      res_layer = 0,
                      pad_layer = None,
                      gnd_layer = None):
-    
+
     """ Creates an efficient resonator structure for a wafer layout.
-    
+
     Keyword arguments:
     pad_size    -- Size of the two matched impedance pads (microns)
     num_squares -- Number of squares comprising the resonator wire
@@ -2149,7 +2221,7 @@ def test_res(pad_size = [50,50],
 
     x = pad_size[0]
     z = pad_size[1]
-    
+
     # Checking validity of input
     if x <= 0 or z <= 0:
         raise ValueError('Pad must have positive, real dimensions')
@@ -2159,40 +2231,40 @@ def test_res(pad_size = [50,50],
         raise ValueError('Number of squares must be a positive real number')
     elif width <= 0:
         raise ValueError('Width of cell must be a positive real number')
-    
+
     # Performing preliminary calculations
     num_rows = int(np.floor(z / (2 * width)))
     if num_rows % 2 == 0:
         num_rows -= 1
     num_columns = num_rows - 1
     squares_in_row = (num_squares - num_columns - 2) / num_rows
-    
+
     # Compensating for weird edge cases
     if squares_in_row < 1:
-        num_rows = round(num_rows / 2) - 2   
+        num_rows = round(num_rows / 2) - 2
         squares_in_row = 1
     if width * 2 > z:
-        num_rows = 1        
+        num_rows = 1
         squares_in_row = num_squares - 2
-    
+
     length_row = squares_in_row * width
-    
+
     # Creating row/column corner combination structure
     T = Device()
     Row = rectangle(size = (length_row, width), layer = res_layer)
     Col = rectangle(size = (width, width), layer = res_layer)
-    
+
     row = T.add_ref(Row)
     col = T.add_ref(Col)
     col.move([length_row - width, -width])
-    
+
     # Creating entire waveguide net
     N = Device('net')
     n = 1
     for i in range(num_rows):
-        if i != num_rows - 1: 
+        if i != num_rows - 1:
             d = N.add_ref(T)
-        else: 
+        else:
             d = N.add_ref(Row)
         if n % 2 == 0:
             d.reflect(p1 = (d.x, d.ymax), p2 = (d.x, d.ymin))
@@ -2200,7 +2272,7 @@ def test_res(pad_size = [50,50],
         n += 1
     d = N.add_ref(Col).movex(-width)
     d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
-    
+
     # Creating pads
     P = Device('pads')
     Pad1 = rectangle(size = (x,z), layer = pad_layer)
@@ -2214,7 +2286,7 @@ def test_res(pad_size = [50,50],
     nets = P.add_ref(N).y = pad1.y
     gnd2.center = pad2.center
     gnd2.movex(2.5)
-    
+
     return P
 
 
@@ -2260,7 +2332,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     xpts.append(max(xpts)-length); ypts.append(-a)
     xpts.append(xpts[-1]); ypts.append(-a + width)
     xpts.append(xpts[0]); ypts.append(ypts[0])
-    
+
     xpts = np.array(xpts)
     ypts = np.array(ypts)
 
@@ -2270,15 +2342,15 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     D = Device(name = 'hairpin')
     D.add_polygon([xpts,ypts], layer = layer)
     D.add_polygon([xpts,-ypts], layer = layer)
-    
+
     xports = min(xpts)
     yports = -a + width/2
     D.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
     D.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
-    
+
     return D
-    
-    
+
+
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
 @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
@@ -2288,7 +2360,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     #  Create the basic geometry
     #==========================================================================
     def step_points(eta, W, a):
-        # Returns points from a unit semicircle in the w (= u + iv) plane to 
+        # Returns points from a unit semicircle in the w (= u + iv) plane to
         # the optimal curve in the zeta (= x + iy) plane which transitions
         # a wire from a width of 'W' to a width of 'a'
         # eta takes value 0 to pi
@@ -2323,29 +2395,29 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
         start_width, end_width = end_width, start_width
     else:
         reverse = False
-    
+
     if start_width == end_width: # Just return a square
         ypts = [0, start_width, start_width,           0]
         xpts = [0,           0, start_width, start_width]
     else:
         xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
         xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
-        
+
         xpts = np.linspace(xmin, xmax, num_pts).tolist()
         ypts = []
         for x in xpts:
             x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
             ypts.append(y)
-        
+
         ypts[-1] = end_width
         ypts[0] =  start_width
         xpts.append(xpts[-1])
         ypts.append(0)
         xpts.append(xpts[0])
         ypts.append(0)
-        
+
         # anticrowding_factor stretches the wire out; a stretched wire is a gentler
-        # transition, so there's less chance of current crowding if the fabrication 
+        # transition, so there's less chance of current crowding if the fabrication
         # isn't perfect but as a result, the wire isn't as short as it could be
         xpts = (np.array(xpts)*anticrowding_factor).tolist()
 
@@ -2358,13 +2430,13 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     #==========================================================================
     D = Device(name = 'step')
     D.add_polygon([xpts,ypts], layer = layer)
-    
+
     D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
     D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
-    
+
     return D
-    
-    
+
+
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     D = Device()
 
@@ -2373,7 +2445,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     v = np.logspace(-length_adjust,length_adjust,num_pts)
     xi = a/2.0*((1+2/np.pi*np.arcsinh(1/v)) + 1j*(1+2/np.pi*np.arcsinh(v)))
     xpts = list(np.real(xi)); ypts = list(np.imag(xi))
-    
+
     # Add points for the rest of curve
     d = 2*xpts[0] # Farthest point out * 2, rounded to nearest 100
     xpts.append(width); ypts.append(d)
@@ -2382,19 +2454,19 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     xpts.append(d); ypts.append(0)
     xpts.append(d); ypts.append(width)
     xpts.append(xpts[0]); ypts.append(ypts[0])
-    
+
     D.add_polygon([xpts, ypts], layer = layer)
-    
+
     D.add_port(name = 1, midpoint = [a/4,d], width = a/2, orientation = 90)
     D.add_port(name = 2, midpoint = [d,a/4], width = a/2, orientation = 0)
     return D
 
-    
-    
+
+
 #==============================================================================
 # Example code
 #==============================================================================
-    
+
 #hairpin = optimal_hairpin(width = 1, pitch = 3, length = 30, num_pts = 20)
 #quickplot(hairpin)
 
@@ -2419,7 +2491,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
 
 @device_lru_cache
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-        num_squares = None, turn_ratio = 4, 
+        num_squares = None, turn_ratio = 4,
         terminals_same_side = False, layer = 0):
     # Convenience tests to auto-shape the size based
     # on the number of squares
@@ -2428,7 +2500,7 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         size = [xy,xy]
         num_squares = None
     if ([size[0], size[1], num_squares].count(None) != 1):
-        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' + 
+        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' +
                          ' the arguments ``num_squares`` and ``size`` be None'+
                          ' to prevent overconstraining, for example:\n' +
                          '>>> snspd(size = (3, None), num_squares = 2000)')
@@ -2441,21 +2513,21 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     else:
         xsize = size[0]
         ysize = size[1]
-        
+
     num_meanders = int(np.ceil(ysize/wire_pitch))
-    
+
     D = Device(name = 'snspd')
     hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch,
         turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
-    
-    
+
+
     if (terminals_same_side is False) and ((num_meanders % 2) == 0):
         num_meanders += 1
     elif (terminals_same_side is True) and ((num_meanders % 2) == 1):
         num_meanders += 1
-    
+
     start_nw = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
-    
+
     hp_prev = D.add_ref(hairpin)
     hp_prev.connect(1, start_nw.ports['E'])
     alternate = True
@@ -2469,27 +2541,27 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
             last_port = hp.ports[2]
         hp_prev = hp
         alternate = not alternate
-        
+
     finish_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
     finish_se.connect('E', last_port)
-    
+
     D.add_port(port = start_nw.ports['W'], name = 1)
     D.add_port(port = finish_se.ports['W'], name = 2)
-    
+
     D.info['num_squares'] = num_meanders*(xsize/wire_width)
     D.info['area'] = xsize*ysize
     D.info['size'] = (xsize, ysize)
-    
+
     return D
 
-    
-def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), 
-           num_squares = None, connector_width = 1, turn_ratio = 4, 
+
+def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
+           num_squares = None, connector_width = 1, turn_ratio = 4,
            terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
     S = snspd(wire_width = wire_width, wire_pitch = wire_pitch,
-                        size = size, num_squares = num_squares, turn_ratio = turn_ratio, 
+                        size = size, num_squares = num_squares, turn_ratio = turn_ratio,
                         terminals_same_side = terminals_same_side, layer = layer)
     s = D.add_ref(S)
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
@@ -2501,17 +2573,17 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     step2.connect(port = 1, destination = s.ports[2])
     D.add_port(name = 1, port = step1.ports[2])
     D.add_port(name = 2, port = step2.ports[2])
-    
+
     D.info = S.info
     S.info = {}
-    
+
     return D
-    
-    
+
+
 #==============================================================================
 # Example code
 #==============================================================================
-    
+
 #s = snspd(wire_width = 0.2, wire_pitch = 0.6, size = [10,3], terminals_same_side = True)
 #quickplot(s)
 
@@ -2520,9 +2592,9 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 #quickplot(s)
 
 def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
-                arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                arm_widths = (200, 200), theta = 2.5, theta_resolution = 10,
                 layer = 0):
-    
+
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2533,19 +2605,19 @@ def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
     semicircle_y = rho*sin(thetalist)+rho
 
     # Rest of yTron
-    xc = rho*cos(theta) 
-    yc = rho*sin(theta) 
-    arm_x_left  = arm_lengths[0]*sin(theta) 
-    arm_y_left  = arm_lengths[0]*cos(theta) 
-    arm_x_right = arm_lengths[1]*sin(theta) 
-    arm_y_right = arm_lengths[1]*cos(theta) 
+    xc = rho*cos(theta)
+    yc = rho*sin(theta)
+    arm_x_left  = arm_lengths[0]*sin(theta)
+    arm_y_left  = arm_lengths[0]*cos(theta)
+    arm_x_right = arm_lengths[1]*sin(theta)
+    arm_y_right = arm_lengths[1]*cos(theta)
 
     # Write out x and y coords for yTron polygon
     xpts = semicircle_x.tolist() + [xc+arm_x_right, xc+arm_x_right+arm_widths[1], xc+arm_widths[1], \
-           xc+arm_widths[1], 0, -(xc+arm_widths[0]), -(xc+arm_widths[0]), -(xc+arm_x_left+arm_widths[0]), -(xc+arm_x_left)] 
+           xc+arm_widths[1], 0, -(xc+arm_widths[0]), -(xc+arm_widths[0]), -(xc+arm_x_left+arm_widths[0]), -(xc+arm_x_left)]
     ypts = semicircle_y.tolist() + [yc+arm_y_right,      yc+arm_y_right,      yc,   yc-source_length, yc-source_length,  \
-            yc-source_length,        yc,        yc+arm_y_left,    yc+arm_y_left] 
-    
+            yc-source_length,        yc,        yc+arm_y_left,    yc+arm_y_left]
+
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
@@ -2554,7 +2626,7 @@ def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
     D.add_port(name = 'left', midpoint = [-(xc+arm_x_left+arm_widths[0]/2), yc+arm_y_left],  width = arm_widths[0], orientation = 90)
     D.add_port(name = 'right', midpoint = [xc+arm_x_right+arm_widths[1]/2, yc+arm_y_right],  width = arm_widths[1], orientation = 90)
     D.add_port(name = 'source', midpoint = [0+(arm_widths[1]-arm_widths[0])/2, -source_length+yc],  width = arm_widths[0] + arm_widths[1] + 2*xc, orientation = -90)
-    
+
     #==========================================================================
     #  Record any parameters you may want to access later
     #==========================================================================
@@ -2564,13 +2636,13 @@ def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
     D.info['source_width'] = arm_widths[0] + arm_widths[1] + 2*xc
 
     return D
-    
-    
+
+
 #==============================================================================
 # Example code
 #==============================================================================
 
 #y = ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
-                # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10, 
+                # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10,
                 # layer = 0)
 #quickplot(y)
