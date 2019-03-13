@@ -2,7 +2,7 @@ import operator
 from phidl.quickplotter import _get_layerprop
 
 def write_lyp(filename, layerset):
-    """ Creates a KLayout .lyp Layer Properties file from a set of 
+    """ Creates a KLayout .lyp Layer Properties file from a set of
     PHIDL layers """
     stipple_default = ['I2','I5','I9','I17','I19','I22','I33','I38']
     stipple_count = 0
@@ -11,17 +11,17 @@ def write_lyp(filename, layerset):
 
     # Opening file for writing
     with open('%s' % filename,'w+') as f:
-    
+
         # Writing header string
         f.write('<?xml version="1.0" encoding="utf-8"?>\n')
-    
+
         # Writing layer properties opener
         f.write('<layer-properties>\n')
-        
+
         unsorted_layers = layerset._layers.values()
         sorted_layers = sorted(unsorted_layers, key = operator.attrgetter('gds_layer', 'gds_datatype'))
 
-        for layer in sorted_layers:  
+        for layer in sorted_layers:
             # Extracting information from dictionary layer by layer
             gds_layer = layer.gds_layer
             gds_datatype = layer.gds_datatype
@@ -31,7 +31,7 @@ def write_lyp(filename, layerset):
             if layer.description is not None:
                 name = name + ' - ('  + layer.description + ')'
 
-            
+
             # Setting stipple or 'dither'
             dither = layer.dither
             if dither is None:
@@ -45,7 +45,7 @@ def write_lyp(filename, layerset):
                 raise ValueError("""Stipple index cannot be greater than 46""")
             else:
                 pass
-    
+
             # Writing properties header for speciic layer
             f.write(' <properties>\n')
             # Writing line to specify frame colour
@@ -80,7 +80,7 @@ def write_lyp(filename, layerset):
             f.write('  <source>%s/%s@1</source>\n' % (str(gds_layer), str(gds_datatype)))
             # Writing properties closer for specific layer
             f.write(' </properties>\n')
-    
+
         # Writing layer properties trailer
         f.write('</layer-properties>\n')
 
@@ -135,7 +135,7 @@ def load_lyp(filename):
 
 
 def name2shortName(name_str):
-    ''' Maps the name entry of the lyp element to a name of the phidl layer, 
+    ''' Maps the name entry of the lyp element to a name of the phidl layer,
         i.e. the dictionary key used to access it.
         Default format of the lyp name is
             layer/datatype - phidl_key - description
@@ -187,14 +187,14 @@ def write_svg(D, filename):
     with open(filename, 'w+') as f:
         f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
         f.write('<svg width="%0.6f" height="%0.6f">\n' % (xsize, ysize))
-        
+
         all_polygons = D.get_polygons(by_spec = True)
         for layer, polygons in all_polygons.items():
         #    color = '#800000'
             color = _get_layerprop(layer = layer[0] , datatype = layer[1])['color']
             f.write('  <g id="layer%03i_datatype%03i">\n' % (layer[0], layer[1]))
             group_num += 1
-            
+
             for polygon in polygons:
                 poly_str = '    <path style="fill:%s"\n          d="' % color
                 n = 0
@@ -206,6 +206,6 @@ def write_svg(D, filename):
                 poly_str+= 'Z"/>\n'
                 f.write(poly_str)
             f.write('  </g>\n')
-        
+
         f.write('</svg>\n')
     return filename
