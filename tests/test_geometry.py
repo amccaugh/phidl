@@ -4,6 +4,7 @@ from phidl import Device, Layer, LayerSet, make_device, Port
 import phidl.geometry as pg
 import phidl.routing as pr
 import phidl.utilities as pu
+import numpy as np
 
 def test_rectangle():
     D = pg.rectangle(size = (4,2), layer = 0)
@@ -84,4 +85,4 @@ def test_port_geometry():
     print('init_D.ports', init_D.ports)
     print('end_D.ports', end_D.ports)
     for pnam, port in init_D.ports.items():
-        assert end_D[pnam].midpoint == port.midpoint
+        assert np.all(end_D.ports[pnam].midpoint == port.midpoint)

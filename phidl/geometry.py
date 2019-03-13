@@ -784,7 +784,8 @@ def draw_port(port, layer = 0):
     '''
     if port.parent is None:
         raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
-    D = Device('Port: {} of {}'.format(port.name, port.parent.name))
+    # D = Device('Port: {} of {}'.format(port.name, port.parent.name))
+    D = port.parent
 
     # A visual marker
     triangle_points = [[0, 0]] * 3
@@ -805,9 +806,9 @@ def draw_port(port, layer = 0):
     label_text = json.dumps(label_contents)
     D.label(text=label_text, position=port.midpoint + calculate_label_offset(port), 
             magnification=.04 * port.width, rotation=(90 + port.orientation) % 360, layer=layer)
-    devref = port.parent << D
+    # devref = port.parent << D
     port.parent.remove(port)
-    return devref
+    return D
 
 
 def calculate_label_offset(port):
@@ -847,14 +848,15 @@ def with_geometric_ports(device, layer = 0):
 def with_object_ports(device, layer = 0):
     ''' Does not change the device used as argument. Returns a new one.
     '''
-    temp_device = (device)
+    temp_device = deepcopy(device)
+
+    # import pdb; pdb.set_trace()
     referenced_cells = list(temp_device.get_dependencies(recursive=True))
     all_cells = referenced_cells + [temp_device]
     print(all_cells,'\n')
-    print(all_cells[3].labels[0].text)
+    # print(all_cells[3].labels[0].text)
     # all_cells[2].add_port(port=extract_port(all_cells[2].labels[0]))
     for subcell in all_cells: # Walk through cells
-        # import pdb; pdb.set_trace()
         print(subcell)
         print(subcell.labels, subcell is all_cells[1])
         for lab in subcell.labels:
@@ -864,8 +866,11 @@ def with_object_ports(device, layer = 0):
                 print('the port:', the_port)
                 subcell.add_port(name=the_port.name, port=the_port)
                 print(subcell.ports)
+    print('temp_device.elements', temp_device.elements)
+    print('device.elements', device.elements)
     temp_device.remove_layers(layers=[layer], include_labels=True)
     print('temp_device.ports', temp_device.ports)
+    print('temp_device.elements', temp_device.elements)
     return temp_device
 
 
