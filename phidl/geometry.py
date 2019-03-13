@@ -700,15 +700,6 @@ def import_gds(filename, cellname = None, flatten = False):
                     new_elements.append(e)
             D.elements = new_elements
 
-            # Extract GDS-visible ports
-            if Port.port_layer is not None:
-                for lab in D.labels:
-                    if lab.layer == Port.port_layer:
-                        the_port = Port.from_label(lab.text)
-                        the_port.midpoint = lab.position
-                        D.add_port(port=the_port)
-                D.remove_layers(layers=[Port.port_layer])
-
         topdevice = c2dmap[topcell]
         return topdevice
 
@@ -843,7 +834,7 @@ def extract_port(label, layer = 0):
 def with_geometric_ports(device, layer = 0):
     ''' Does not change the device used as argument. Returns a new one.
     '''
-    temp_device = copy(device)
+    temp_device = deepcopy(device)
     referenced_cells = list(temp_device.get_dependencies(recursive=True))
     all_cells = [temp_device] + referenced_cells
     # Insert GDS-visible ports
@@ -854,16 +845,27 @@ def with_geometric_ports(device, layer = 0):
 
 
 def with_object_ports(device, layer = 0):
-    temp_device = copy(device)
+    ''' Does not change the device used as argument. Returns a new one.
+    '''
+    temp_device = (device)
     referenced_cells = list(temp_device.get_dependencies(recursive=True))
-    all_cells = [temp_device] + referenced_cells
+    all_cells = referenced_cells + [temp_device]
+    print(all_cells,'\n')
+    print(all_cells[3].labels[0].text)
+    # all_cells[2].add_port(port=extract_port(all_cells[2].labels[0]))
     for subcell in all_cells: # Walk through cells
-        # Extract GDS-visible ports
+        # import pdb; pdb.set_trace()
+        print(subcell)
+        print(subcell.labels, subcell is all_cells[1])
         for lab in subcell.labels:
             if lab.layer == layer:
                 the_port = extract_port(lab)
-                subcell.add_port(port=the_port)
-        subcell.remove_layers(layers=[layer])
+                print(subcell.ports)
+                print('the port:', the_port)
+                subcell.add_port(name=the_port.name, port=the_port)
+                print(subcell.ports)
+    temp_device.remove_layers(layers=[layer], include_labels=True)
+    print('temp_device.ports', temp_device.ports)
     return temp_device
 
 

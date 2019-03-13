@@ -67,3 +67,21 @@ def test_offset():
     D = pg.offset([A,B], distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 2)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'bd4b9182042522fa00b5ddb49d182523b4bf9eb5')
+
+def test_port_geometry():
+    # Conversion between object and geometric representation of ports
+    def geom_equal(A, B):
+        return A.hash_geometry(precision = 1e-4) == B.hash_geometry(precision = 1e-4)
+    init_D = pg.compass(layer = 1)
+    geom_D = pg.with_geometric_ports(init_D, layer = 0)
+    end_D = pg.with_object_ports(geom_D)
+
+    assert len(geom_D.ports) == 0
+    geom_D.remove_layers([0], include_labels = True)
+    # assert geom_equal(init_D, geom_D)
+
+    # assert geom_equal(init_D, end_D)
+    print('init_D.ports', init_D.ports)
+    print('end_D.ports', end_D.ports)
+    for pnam, port in init_D.ports.items():
+        assert end_D[pnam].midpoint == port.midpoint
