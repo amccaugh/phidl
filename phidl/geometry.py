@@ -780,19 +780,17 @@ class device_lru_cache:
 
 def draw_port(port, layer = 0):
     ''' Converts a Port to a label and a triangle Device that are then added to the parent.
-        The Port must start with a parent, and ends up removed from the parent.
+        The Port must start with a parent.
     '''
     if port.parent is None:
         raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
-    # D = Device('Port: {} of {}'.format(port.name, port.parent.name))
-    D = port.parent
 
     # A visual marker
     triangle_points = [[0, 0]] * 3
     triangle_points[0] = port.endpoints[0]
     triangle_points[1] = port.endpoints[1]
     triangle_points[2] = (port.midpoint + (port.normal - port.midpoint) * port.width / 10)[1]
-    D.add_polygon(triangle_points, layer)
+    port.parent.add_polygon(triangle_points, layer)
 
     # Label carrying actual information that will be recovered
     label_contents = (str(port.name),
@@ -804,14 +802,15 @@ def draw_port(port, layer = 0):
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    D.label(text=label_text, position=port.midpoint + calculate_label_offset(port), 
-            magnification=.04 * port.width, rotation=(90 + port.orientation) % 360, layer=layer)
-    # devref = port.parent << D
-    port.parent.remove(port)
-    return D
+    port.parent.label(text = label_text, position = port.midpoint + calculate_label_offset(port), 
+                      magnification = .04 * port.width, rotation = (90 + port.orientation) % 360, 
+                      layer = layer)
 
 
 def calculate_label_offset(port):
+    ''' Used to put the label in a pretty position.
+        It is added when drawing and substracted when extracting.
+    '''
     offset_position = np.array((-np.cos(np.pi / 180 * port.orientation), 
                                 -np.sin(np.pi / 180 * port.orientation)))
     offset_position *= port.width * .05
@@ -819,13 +818,11 @@ def calculate_label_offset(port):
 
 
 def extract_port(label, layer = 0):
-    ''' Converts a DeviceReference or Device of a label
-        Also removes that label from the parent.
+    ''' Converts a label into a Port in the parent Device.
+        The label contains name, width, orientation.
+        Does not remove that label from the parent.
+        Returns the new port.
     '''
-    if isinstance(label, DeviceReference):
-        label = label.parent
-
-    # You will have to set the midpoint elsewhere
     name, width, orientation = json.loads(label.text)
     new_port = Port(name=name, width=width, orientation=orientation)
     new_port.midpoint = label.position - calculate_label_offset(new_port)
@@ -833,44 +830,34 @@ def extract_port(label, layer = 0):
 
 
 def with_geometric_ports(device, layer = 0):
-    ''' Does not change the device used as argument. Returns a new one.
+    ''' Converts Port objects over the whole Device hierarchy to geometry and labels.
+        layer: the special port record layer
+        Does not change the device used as argument. Returns a new one lacking all Ports.
     '''
     temp_device = deepcopy(device)
-    referenced_cells = list(temp_device.get_dependencies(recursive=True))
-    all_cells = [temp_device] + referenced_cells
-    # Insert GDS-visible ports
+    all_cells = list(temp_device.get_dependencies(recursive=True))
+    all_cells.append(temp_device)
     for subcell in all_cells:
         for port in subcell.ports.values():
             draw_port(port, layer=layer)
+            subcell.remove(port)
     return temp_device
 
 
 def with_object_ports(device, layer = 0):
-    ''' Does not change the device used as argument. Returns a new one.
+    ''' Converts geometry representing ports over the whole Device hierarchy into Port objects.
+        layer: the special port record layer
+        Does not change the device used as argument. Returns a new one lacking all port geometry.
     '''
     temp_device = deepcopy(device)
-
-    # import pdb; pdb.set_trace()
-    referenced_cells = list(temp_device.get_dependencies(recursive=True))
-    all_cells = referenced_cells + [temp_device]
-    print(all_cells,'\n')
-    # print(all_cells[3].labels[0].text)
-    # all_cells[2].add_port(port=extract_port(all_cells[2].labels[0]))
+    all_cells = list(temp_device.get_dependencies(recursive=True))
+    all_cells.append(temp_device)
     for subcell in all_cells: # Walk through cells
-        print(subcell)
-        print(subcell.labels, subcell is all_cells[1])
         for lab in subcell.labels:
             if lab.layer == layer:
                 the_port = extract_port(lab)
-                print(subcell.ports)
-                print('the port:', the_port)
                 subcell.add_port(name=the_port.name, port=the_port)
-                print(subcell.ports)
-    print('temp_device.elements', temp_device.elements)
-    print('device.elements', device.elements)
     temp_device.remove_layers(layers=[layer], include_labels=True)
-    print('temp_device.ports', temp_device.ports)
-    print('temp_device.elements', temp_device.elements)
     return temp_device
 
 

@@ -82,7 +82,5 @@ def test_port_geometry():
     # assert geom_equal(init_D, geom_D)
 
     # assert geom_equal(init_D, end_D)
-    print('init_D.ports', init_D.ports)
-    print('end_D.ports', end_D.ports)
     for pnam, port in init_D.ports.items():
         assert np.all(end_D.ports[pnam].midpoint == port.midpoint)
