@@ -271,10 +271,6 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    ''' This class now supports drawing ports in the GDS. To do so for all ports on layer 41::
-
-            Port.port_layer = 41
-    '''
     _next_uid = 0
 
     def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
@@ -626,7 +622,6 @@ class Device(gdspy.Cell, _GeometryHelper):
                     c.name = new_name + ('%0.3i' % used_names[new_name])
                     used_names[new_name] += 1
             self.name = 'toplevel'
-
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
         self.name = tempname

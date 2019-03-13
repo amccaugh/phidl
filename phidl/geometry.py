@@ -16,6 +16,7 @@ import pickle
 import json
 
 
+
 ##### Categories:
 # Polygons / shapes
 # Boolean functions
@@ -684,6 +685,7 @@ def import_gds(filename, cellname = None, flatten = False):
             D.labels = cell.labels
             c2dmap.update({cell:D})
             D_list += [D]
+
         for D in D_list:
             new_elements = []
             for e in D.elements:
@@ -802,8 +804,8 @@ def draw_port(port, layer = 0):
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    port.parent.label(text = label_text, position = port.midpoint + calculate_label_offset(port), 
-                      magnification = .04 * port.width, rotation = (90 + port.orientation) % 360, 
+    port.parent.label(text = label_text, position = port.midpoint + calculate_label_offset(port),
+                      magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
 
 
@@ -811,7 +813,7 @@ def calculate_label_offset(port):
     ''' Used to put the label in a pretty position.
         It is added when drawing and substracted when extracting.
     '''
-    offset_position = np.array((-np.cos(np.pi / 180 * port.orientation), 
+    offset_position = np.array((-np.cos(np.pi / 180 * port.orientation),
                                 -np.sin(np.pi / 180 * port.orientation)))
     offset_position *= port.width * .05
     return offset_position
