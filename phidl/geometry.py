@@ -368,17 +368,17 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_po
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
-        if isinstance(e, Device): polygons_to_offset += e.get_polygons()
+        if isinstance(e, Device): polygons_to_offset += e.get_polygons(by_spec = False)
         else: polygons_to_offset.append(e)
-
+    polygons_to_offset = _combine_floating_points(polygons_to_offset, tol = precision/10)
     gds_layer, gds_datatype = _parse_layer(layer)
-    # This pre-joining (by expanding by precision) makes this take twice as
-    # long but is necessary because of floating point errors which otherwise
-    # separate polygons which are nominally joined
-    joined = gdspy.offset(polygons_to_offset, distance = precision, join='miter', tolerance=2,
-                          precision=precision, join_first=join_first,
-                          max_points=4000, layer=gds_layer, datatype = gds_datatype)
-    p = gdspy.offset(joined, distance = distance, join='miter', tolerance=2,
+    # # This pre-joining (by expanding by precision) makes this take twice as
+    # # long but is necessary because of floating point errors which otherwise
+    # # separate polygons which are nominally joined
+    # joined = gdspy.offset(polygons_to_offset, distance = precision, join='miter', tolerance=2,
+    #                       precision=precision, join_first=join_first,
+    #                       max_points=4000, layer=gds_layer, datatype = gds_datatype)
+    p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
                      max_points=4000, layer=gds_layer, datatype = gds_datatype)
     D = Device('offset')
@@ -522,6 +522,53 @@ def _union_polygons(polygons, precision=1e-6):
     unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
                                  precision=precision, max_points=1e9)
     return unioned
+
+
+def _create_floating_point_merge_map(data, tol = 1e-6):
+    """ Creates a dictionary which maps nearby floating points to a single
+    point.  So if given
+    x_data = [-2,-1,0,1.00001,1.0002,1.0003,4,5, 5.003, 6,7,8]
+    create_floating_point_merge_map(data = x_data, tol = 1e-3)
+    will then return:
+    {1.00001: 1.0002,
+     1.0002:  1.0002,
+     1.0003:  1.0002} """
+    data = np.unique(data)
+    data = np.sort(data)
+    indices = np.diff(data) < tol
+
+    data_map_list = []
+    n = 0
+    groups = [list(j) for i, j in itertools.groupby(indices)]
+    for g in groups:
+        if g[0] == True:
+            data_map_list += [data[n:n+len(g)+1]]
+        n += len(g)
+
+    data_map_dict = {}
+    for dm in data_map_list:
+        target = np.median(dm)
+        for d in dm:
+            data_map_dict[d] = target
+    return data_map_dict
+
+def _combine_floating_points(polygons, tol = 1e-6):
+    """ Takes a flattened Device, and merges all nearby floating point values
+    together to eliminate sub-precision errors"""
+    # polygons = D.get_polygons(by_spec = False)
+    all_points = np.vstack(polygons)
+
+    x_correction = _create_floating_point_merge_map(all_points[:,0], tol = tol)
+    y_correction = _create_floating_point_merge_map(all_points[:,1], tol = tol)
+
+    for poly in polygons:
+        for point in poly:
+            if point[0] in x_correction:
+                point[0] = x_correction[point[0]]
+            if point[1] in y_correction:
+                point[1] = y_correction[point[1]]
+    return polygons
+
 
 
 #==============================================================================
