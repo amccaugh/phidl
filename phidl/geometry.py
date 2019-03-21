@@ -533,7 +533,7 @@ def _create_floating_point_merge_map(data, tol = 1e-6):
     {1.00001: 1.0002,
      1.0002:  1.0002,
      1.0003:  1.0002} """
-    data = np.unique(data)
+    # data = np.unique(data)
     data = np.sort(data)
     indices = np.diff(data) < tol
 
@@ -2321,7 +2321,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
 @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
-                 anticrowding_factor = 1.2, layer = 0):
+                 anticrowding_factor = 1.2, symmetric = False, layer = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -2378,10 +2378,16 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
         ypts[-1] = end_width
         ypts[0] =  start_width
-        xpts.append(xpts[-1])
-        ypts.append(0)
-        xpts.append(xpts[0])
-        ypts.append(0)
+        if symmetric == False:
+            xpts.append(xpts[-1])
+            ypts.append(0)
+            xpts.append(xpts[0])
+            ypts.append(0)
+        else:
+            xpts += [x for x in xpts[::-1]]
+            ypts += [-y for y in ypts[::-1]]
+            xpts = [x/2 for x in xpts]
+            ypts = [y/2 for y in ypts]
 
         # anticrowding_factor stretches the wire out; a stretched wire is a gentler
         # transition, so there's less chance of current crowding if the fabrication
@@ -2398,8 +2404,12 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     D = Device(name = 'step')
     D.add_polygon([xpts,ypts], layer = layer)
 
-    D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
-    D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+    if symmetric == False:
+        D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
+        D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+    if symmetric == True:
+        D.add_port(name = 1, midpoint = [min(xpts),0], width = start_width, orientation = 180)
+        D.add_port(name = 2, midpoint = [max(xpts),0], width = end_width, orientation = 0)
 
     return D
 
