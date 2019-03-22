@@ -27,6 +27,8 @@ from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
 import webcolors
 import warnings
+import yaml
+import os
 import hashlib
 import json
 
@@ -627,6 +629,28 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.name = tempname
         return filename
 
+    def write_oas(self, filename, **write_kwargs):
+        if filename.lower().endswith('.gds'):
+            # you are looking for write_gds
+            self.write_gds(filename, **write_kwargs)
+            return
+        try:
+            import klayout.db as pya
+        except ImportError as err:
+            err.args = ('[PHIDL] klayout package needed to write OASIS. pip install klayout\n' + err.args[0], ) + err.args[1:]
+            raise
+        if not filename.lower().endswith('.oas'): filename += '.oas'
+        fileroot = os.path.splitext(filename)[0]
+        tempfilename = fileroot + '-tmp.gds'
+
+        self.write_gds(tempfilename, **write_kwargs)
+        layout = pya.Layout()
+        layout.read(tempfilename)
+        # there can only be one top_cell because we only wrote one device
+        topcell = layout.top_cell()
+        topcell.write(filename)
+        os.remove(tempfilename)
+        return filename
 
     def remap_layers(self, layermap = {}, include_labels = True):
         layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
