@@ -365,21 +365,21 @@ def C(width = 1, size = (10,20) , layer = 0):
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 0):
+def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
-        if isinstance(e, Device): polygons_to_offset += e.get_polygons()
+        if isinstance(e, Device): polygons_to_offset += e.get_polygons(by_spec = False)
         else: polygons_to_offset.append(e)
-
+    polygons_to_offset = _combine_floating_points(polygons_to_offset, tol = precision/10)
     gds_layer, gds_datatype = _parse_layer(layer)
-    # This pre-joining (by expanding by precision) makes this take twice as
-    # long but is necessary because of floating point errors which otherwise
-    # separate polygons which are nominally joined
-    joined = gdspy.offset(polygons_to_offset, precision, join='miter', tolerance=2,
-                          precision=precision, join_first=join_first,
-                          max_points=4000, layer=gds_layer, datatype = gds_datatype)
-    p = gdspy.offset(joined, distance, join='miter', tolerance=2,
+    # # This pre-joining (by expanding by precision) makes this take twice as
+    # # long but is necessary because of floating point errors which otherwise
+    # # separate polygons which are nominally joined
+    # joined = gdspy.offset(polygons_to_offset, distance = precision, join='miter', tolerance=2,
+    #                       precision=precision, join_first=join_first,
+    #                       max_points=4000, layer=gds_layer, datatype = gds_datatype)
+    p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
                      max_points=4000, layer=gds_layer, datatype = gds_datatype)
     D = Device('offset')
@@ -393,7 +393,7 @@ def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer 
                  precision = precision, layer = layer)
 
 
-def invert(elements, border = 10, precision = 0.001, layer = 0):
+def invert(elements, border = 10, precision = 1e-6, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
     D = Device()
@@ -417,7 +417,7 @@ def invert(elements, border = 10, precision = 0.001, layer = 0):
     return D
 
 
-def boolean(A, B, operation, precision = 0.001, layer = 0):
+def boolean(A, B, operation, precision = 1e-6, layer = 0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -459,7 +459,7 @@ def boolean(A, B, operation, precision = 0.001, layer = 0):
     return D
 
 
-def outline(elements, distance = 1, precision = 0.001, layer = 0):
+def outline(elements, distance = 1, precision = 1e-6, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices
     """
@@ -470,12 +470,12 @@ def outline(elements, distance = 1, precision = 0.001, layer = 0):
         else: D.elements.append(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
-    D_bloated = offset(D, distance = distance, join_first = True, precision = 0.001, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = 0.001, layer = layer)
+    D_bloated = offset(D, distance = distance, join_first = True, precision = precision, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = precision, layer = layer)
     return Outline
 
 
-def xor_diff(A,B, precision = 0.001):
+def xor_diff(A,B, precision = 1e-6):
     """ Given two Devices A and B, performs the layer-by-layer XOR
     difference between A and B, and returns polygons representing
     the differences between A and B.
@@ -523,6 +523,53 @@ def _union_polygons(polygons, precision=1e-6):
     unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
                                  precision=precision, max_points=1e9)
     return unioned
+
+
+def _create_floating_point_merge_map(data, tol = 1e-6):
+    """ Creates a dictionary which maps nearby floating points to a single
+    point.  So if given
+    x_data = [-2,-1,0,1.00001,1.0002,1.0003,4,5, 5.003, 6,7,8]
+    create_floating_point_merge_map(data = x_data, tol = 1e-3)
+    will then return:
+    {1.00001: 1.0002,
+     1.0002:  1.0002,
+     1.0003:  1.0002} """
+    # data = np.unique(data)
+    data = np.sort(data)
+    indices = np.diff(data) < tol
+
+    data_map_list = []
+    n = 0
+    groups = [list(j) for i, j in itertools.groupby(indices)]
+    for g in groups:
+        if g[0] == True:
+            data_map_list += [data[n:n+len(g)+1]]
+        n += len(g)
+
+    data_map_dict = {}
+    for dm in data_map_list:
+        target = np.median(dm)
+        for d in dm:
+            data_map_dict[d] = target
+    return data_map_dict
+
+def _combine_floating_points(polygons, tol = 1e-6):
+    """ Takes a flattened Device, and merges all nearby floating point values
+    together to eliminate sub-precision errors"""
+    # polygons = D.get_polygons(by_spec = False)
+    all_points = np.vstack(polygons)
+
+    x_correction = _create_floating_point_merge_map(all_points[:,0], tol = tol)
+    y_correction = _create_floating_point_merge_map(all_points[:,1], tol = tol)
+
+    for poly in polygons:
+        for point in poly:
+            if point[0] in x_correction:
+                point[0] = x_correction[point[0]]
+            if point[1] in y_correction:
+                point[1] = y_correction[point[1]]
+    return polygons
+
 
 
 #==============================================================================
@@ -2358,7 +2405,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
 @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
-                 anticrowding_factor = 1.2, layer = 0):
+                 anticrowding_factor = 1.2, symmetric = False, layer = 0):
 
     #==========================================================================
     #  Create the basic geometry
@@ -2415,10 +2462,16 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
         ypts[-1] = end_width
         ypts[0] =  start_width
-        xpts.append(xpts[-1])
-        ypts.append(0)
-        xpts.append(xpts[0])
-        ypts.append(0)
+        if symmetric == False:
+            xpts.append(xpts[-1])
+            ypts.append(0)
+            xpts.append(xpts[0])
+            ypts.append(0)
+        else:
+            xpts += [x for x in xpts[::-1]]
+            ypts += [-y for y in ypts[::-1]]
+            xpts = [x/2 for x in xpts]
+            ypts = [y/2 for y in ypts]
 
         # anticrowding_factor stretches the wire out; a stretched wire is a gentler
         # transition, so there's less chance of current crowding if the fabrication
@@ -2435,8 +2488,12 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     D = Device(name = 'step')
     D.add_polygon([xpts,ypts], layer = layer)
 
-    D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
-    D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+    if symmetric == False:
+        D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
+        D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+    if symmetric == True:
+        D.add_port(name = 1, midpoint = [min(xpts),0], width = start_width, orientation = 180)
+        D.add_port(name = 2, midpoint = [max(xpts),0], width = end_width, orientation = 0)
 
     return D
 
