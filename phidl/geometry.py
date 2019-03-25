@@ -8,7 +8,7 @@ from scipy import integrate
 # from scipy.interpolate import interp1d
 
 import gdspy
-from phidl.device_layout import Device, Port
+from phidl.device_layout import Device, Port, Polygon
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
@@ -368,8 +368,8 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_po
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
-        if isinstance(e, Device): polygons_to_offset += e.get_polygons(by_spec = False)
-        else: polygons_to_offset.append(e)
+        if isinstance(e, (Device, DeviceReference)): polygons_to_offset += e.get_polygons(by_spec = False)
+        elif isinstance(e, (Polygon, gdspy.Polygon)): polygons_to_offset.append(e)
     polygons_to_offset = _combine_floating_points(polygons_to_offset, tol = precision/10)
     gds_layer, gds_datatype = _parse_layer(layer)
     # # This pre-joining (by expanding by precision) makes this take twice as
@@ -557,9 +557,9 @@ def _combine_floating_points(polygons, tol = 1e-6):
     together to eliminate sub-precision errors"""
     # polygons = D.get_polygons(by_spec = False)
     all_points = np.vstack(polygons)
-
     x_correction = _create_floating_point_merge_map(all_points[:,0], tol = tol)
     y_correction = _create_floating_point_merge_map(all_points[:,1], tol = tol)
+
 
     for poly in polygons:
         for point in poly:
