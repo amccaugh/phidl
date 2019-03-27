@@ -370,7 +370,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_po
     for e in elements:
         if isinstance(e, (Device, DeviceReference)): polygons_to_offset += e.get_polygons(by_spec = False)
         elif isinstance(e, (Polygon, gdspy.Polygon)): polygons_to_offset.append(e)
-    polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = 1e-12)
+    polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = 1e-10)
     gds_layer, gds_datatype = _parse_layer(layer)
     p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
@@ -389,7 +389,7 @@ def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer =
 def invert(elements, border = 10, precision = 1e-6, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
-    D = Device('invert')
+    D = Device()
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
@@ -495,7 +495,7 @@ def xor_diff(A,B, precision = 1e-6):
     return D
 
 
-def union(D, by_layer = False, layer = 0):
+def union(D, by_layer = False, precision=1e-6, layer = 0):
     U = Device()
 
     if by_layer == True:
@@ -510,15 +510,13 @@ def union(D, by_layer = False, layer = 0):
     return U
 
 def _union_polygons(polygons, precision=1e-6):
-    expanded = gdspy.offset(polygons, precision, join='miter', tolerance=2,
-                          precision=precision, join_first=False,
-                          max_points=1e9)
-    unioned = gdspy.fast_boolean(expanded, [], operation = 'or',
+    polygons = _merge_floating_point_errors(polygons, tol = 1e-10)
+    unioned = gdspy.fast_boolean(polygons, [], operation = 'or',
                                  precision=precision, max_points=1e9)
     return unioned
 
 
-def _merge_floating_point_errors(polygons, tol = 1e-12):
+def _merge_floating_point_errors(polygons, tol = 1e-10):
     stacked_polygons = np.vstack(polygons)
     x = stacked_polygons[:,0]
     y = stacked_polygons[:,1]
@@ -530,7 +528,7 @@ def _merge_floating_point_errors(polygons, tol = 1e-12):
     polygons_fixed = np.vsplit(stacked_polygons_fixed, polygon_indices)
     return polygons_fixed
     
-def _merge_nearby_floating_points(x, tol = 1e-12):
+def _merge_nearby_floating_points(x, tol = 1e-10):
     """ Takes an array `x` and merges any values within the tolerance `tol` """
     xargsort = np.argsort(x)
     xargunsort = np.argsort(xargsort)
