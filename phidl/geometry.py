@@ -1437,6 +1437,7 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
         if justify == 'left':   pass
         if justify == 'right':  l.xmax = position[0]
         if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
+    t.flatten()
     return t
 
 
