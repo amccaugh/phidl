@@ -345,7 +345,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype)
+            datatype=gds_datatype, verbose = False)
 
 
     @property
