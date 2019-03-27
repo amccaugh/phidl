@@ -88,6 +88,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### Bugfixes
 - Fixed rare but persistent bug affecting boolean operations on polygons with sub-precision floating point errors.  Will no longer cause jagged edges when two points are misaligned by very small amounts (e.g. points differ by 4e-27 units)
+- Suppressed unecessary warnings
 
 
 ## 1.0.1 (Jan 21, 2019)
