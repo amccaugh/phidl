@@ -501,11 +501,11 @@ def union(D, by_layer = False, precision=1e-6, layer = 0):
     if by_layer == True:
         all_polygons = D.get_polygons(by_spec = True)
         for layer, polygons in all_polygons.items():
-            unioned_polygons = _union_polygons(polygons)
+            unioned_polygons = _union_polygons(polygons, precision = precision)
             U.add_polygon(unioned_polygons, layer = layer)
     else:
         all_polygons = D.get_polygons(by_spec = False)
-        unioned_polygons = _union_polygons(all_polygons)
+        unioned_polygons = _union_polygons(all_polygons, precision = precision)
         U.add_polygon(unioned_polygons, layer = layer)
     return U
 
