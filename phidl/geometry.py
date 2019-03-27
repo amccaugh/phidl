@@ -13,6 +13,7 @@ from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
 import pickle
+import warnings
 
 
 
@@ -1417,14 +1418,16 @@ def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0)
             ascii_val = ord(c)
             if c == ' ':
                 xoffset += 500*scaling
-            elif 33 <= ascii_val <= 126:
+            elif (33 <= ascii_val <= 126) or (ascii_val == 230):
                 for poly in _glyph[ascii_val]:
                     xpts = np.array(poly)[:,0]*scaling
                     ypts = np.array(poly)[:,1]*scaling
                     l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer)
                 xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
             else: 
-                raise ValueError('[PHIDL] text(): No geometry for character "%s" with ascii value %s' % (chr(ascii_val), ascii_val))
+                valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~æ'
+                warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
+                'Valid characters: %s'  % (chr(ascii_val), ascii_val,valid_chars))
         t.add_ref(l)
         yoffset -= 1500*scaling
         xoffset = position[0]
