@@ -364,7 +364,7 @@ def C(width = 1, size = (10,20) , layer = 0):
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_points = 4000, layer = 0):
+def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -512,7 +512,7 @@ def union(D, by_layer = False, precision=1e-6, layer = 0):
 def _union_polygons(polygons, precision=1e-6):
     polygons = _merge_floating_point_errors(polygons, tol = 1e-10)
     unioned = gdspy.fast_boolean(polygons, [], operation = 'or',
-                                 precision=precision, max_points=1e9)
+                                 precision=precision, max_points=4000)
     return unioned
 
 
