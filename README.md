@@ -77,6 +77,18 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 1.0.2 (March 26, 2019)
+
+### New features
+- Added tutorial section for phidl.geometry library lithographic shapes (resolution tests, calipers, stars, etc)
+- Added `symmetric` argument to pg.optimal_step()
+
+### Changes
+- Precision for boolean functions set to 1e-6 by default now
+
+### Bugfixes
+- Fixed rare but persistent bug affecting boolean operations on polygons with sub-precision floating point errors.  Will no longer cause jagged edges when two points are misaligned by very small amounts (e.g. points differ by 4e-27 units)
+
 
 ## 1.0.1 (Jan 21, 2019)
 
