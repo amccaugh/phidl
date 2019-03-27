@@ -528,8 +528,14 @@ def _merge_floating_point_errors(polygons, tol = 1e-10):
     polygons_fixed = np.vsplit(stacked_polygons_fixed, polygon_indices)
     return polygons_fixed
     
+
 def _merge_nearby_floating_points(x, tol = 1e-10):
-    """ Takes an array `x` and merges any values within the tolerance `tol` """
+    """ Takes an array `x` and merges any values within the tolerance `tol`
+    So if given
+    >>> x = [-2, -1, 0, 1.00001, 1.0002, 1.0003, 4, 5, 5.003, 6, 7, 8]
+    >>> _merge_nearby_floating_points(x, tol = 1e-3)
+    will then return:
+    >>> [-2, -1, 0, 1.00001, 1.0001, 1.0001, 4, 5, 5.003, 6, 7, 8] """
     xargsort = np.argsort(x)
     xargunsort = np.argsort(xargsort)
     xsort = x[xargsort]
@@ -540,7 +546,6 @@ def _merge_nearby_floating_points(x, tol = 1e-10):
     for xi in xsortthresholdind:
          xsort[xi+1] = xsort[xi]
     return xsort[xargunsort]
-
 
 
 #==============================================================================
