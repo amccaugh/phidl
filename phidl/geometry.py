@@ -389,7 +389,7 @@ def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer =
 def invert(elements, border = 10, precision = 1e-6, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
-    D = Device()
+    D = Device('invert')
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
