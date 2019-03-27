@@ -85,9 +85,11 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### Changes
 - Precision for boolean functions set to 1e-6 by default now
+- `position` argument removed from pg.text()
 
 ### Bugfixes
 - Fixed rare but persistent bug affecting boolean operations on polygons with sub-precision floating point errors.  Will no longer cause jagged edges when two points are misaligned by very small amounts (e.g. points differ by 4e-27 units)
+- Fix for `remove_layers()` correctly preserves references now  (contribution thanks to Alex Tait @atait)
 - Suppressed unecessary warnings
 
 
