@@ -370,14 +370,8 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_po
     for e in elements:
         if isinstance(e, (Device, DeviceReference)): polygons_to_offset += e.get_polygons(by_spec = False)
         elif isinstance(e, (Polygon, gdspy.Polygon)): polygons_to_offset.append(e)
-    polygons_to_offset = _combine_floating_points(polygons_to_offset, tol = precision/10)
+    polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = 1e-12)
     gds_layer, gds_datatype = _parse_layer(layer)
-    # # This pre-joining (by expanding by precision) makes this take twice as
-    # # long but is necessary because of floating point errors which otherwise
-    # # separate polygons which are nominally joined
-    # joined = gdspy.offset(polygons_to_offset, distance = precision, join='miter', tolerance=2,
-    #                       precision=precision, join_first=join_first,
-    #                       max_points=4000, layer=gds_layer, datatype = gds_datatype)
     p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
                      precision=precision, join_first=join_first,
                      max_points=4000, layer=gds_layer, datatype = gds_datatype)
@@ -386,7 +380,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, max_po
     return D
 
 
-def inset(elements, distance = 0.1, join_first = True, precision = 0.001, layer = 0):
+def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
     print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
     return offset(elements = elements, distance = -distance, join_first = join_first,
                  precision = precision, layer = layer)
@@ -524,50 +518,30 @@ def _union_polygons(polygons, precision=1e-6):
     return unioned
 
 
-def _create_floating_point_merge_map(data, tol = 1e-6):
-    """ Creates a dictionary which maps nearby floating points to a single
-    point.  So if given
-    x_data = [-2,-1,0,1.00001,1.0002,1.0003,4,5, 5.003, 6,7,8]
-    create_floating_point_merge_map(data = x_data, tol = 1e-3)
-    will then return:
-    {1.00001: 1.0002,
-     1.0002:  1.0002,
-     1.0003:  1.0002} """
-    # data = np.unique(data)
-    data = np.sort(data)
-    indices = np.diff(data) < tol
-
-    data_map_list = []
-    n = 0
-    groups = [list(j) for i, j in itertools.groupby(indices)]
-    for g in groups:
-        if g[0] == True:
-            data_map_list += [data[n:n+len(g)+1]]
-        n += len(g)
-
-    data_map_dict = {}
-    for dm in data_map_list:
-        target = np.median(dm)
-        for d in dm:
-            data_map_dict[d] = target
-    return data_map_dict
-
-def _combine_floating_points(polygons, tol = 1e-6):
-    """ Takes a flattened Device, and merges all nearby floating point values
-    together to eliminate sub-precision errors"""
-    # polygons = D.get_polygons(by_spec = False)
-    all_points = np.vstack(polygons)
-    x_correction = _create_floating_point_merge_map(all_points[:,0], tol = tol)
-    y_correction = _create_floating_point_merge_map(all_points[:,1], tol = tol)
-
-
-    for poly in polygons:
-        for point in poly:
-            if point[0] in x_correction:
-                point[0] = x_correction[point[0]]
-            if point[1] in y_correction:
-                point[1] = y_correction[point[1]]
-    return polygons
+def _merge_floating_point_errors(polygons, tol = 1e-12):
+    stacked_polygons = np.vstack(polygons)
+    x = stacked_polygons[:,0]
+    y = stacked_polygons[:,1]
+    polygon_indices = np.cumsum([len(p) for p in polygons])
+    
+    xfixed = _merge_nearby_floating_points(x, tol = tol)
+    yfixed = _merge_nearby_floating_points(y, tol = tol)
+    stacked_polygons_fixed = np.vstack([xfixed, yfixed]).T
+    polygons_fixed = np.vsplit(stacked_polygons_fixed, polygon_indices)
+    return polygons_fixed
+    
+def _merge_nearby_floating_points(x, tol = 1e-12):
+    """ Takes an array `x` and merges any values within the tolerance `tol` """
+    xargsort = np.argsort(x)
+    xargunsort = np.argsort(xargsort)
+    xsort = x[xargsort]
+    xsortthreshold = (np.diff(xsort) < tol)
+    xsortthresholdind = np.argwhere(xsortthreshold)
+    
+    # Merge nearby floating point values
+    for xi in xsortthresholdind:
+         xsort[xi+1] = xsort[xi]
+    return xsort[xargunsort]
 
 
 
