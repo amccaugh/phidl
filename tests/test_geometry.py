@@ -64,7 +64,7 @@ def test_C():
 def test_offset():
     A = pg.cross(length = 10, width = 3, layer = 0)
     B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
-    D = pg.offset([A,B], distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 2)
+    D = pg.offset([A,B], distance = 0.1, join_first = True, precision = 0.001, layer = 2)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
 
