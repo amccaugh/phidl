@@ -1407,10 +1407,11 @@ _width[125] = 500;  _indent[125] = 100  # }
 _width[126] = 800;  _indent[126] = 100  # ~
 _width[230] = 700;  _indent[230] = 100  # Greek mu
 
-def text(text = 'abcd', size = 10, position=(0, 0), justify = 'left', layer = 0):
+def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
     scaling = size/1000
-    xoffset = position[0]
-    yoffset = position[1]
+    position = (0,0)
+    xoffset = 0
+    yoffset = 0
     t = Device('text')
     for line in text.split('\n'):
         l = Device(name = 'textline')
