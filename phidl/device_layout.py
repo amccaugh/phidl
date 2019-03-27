@@ -680,6 +680,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 if isinstance(e, DeviceReference):
                      new_elements.append(e)
             D.elements = new_elements
+
             if include_labels == True:
                 new_labels = []
                 for l in D.labels:
