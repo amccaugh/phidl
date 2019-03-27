@@ -69,9 +69,16 @@ def test_offset():
     assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
 
 def test_text():
-    D = pg.text(text = 'abcdZHXASDHFJJASEu', size = 77, position=(0, 0), justify = 'left', layer = 0)
+    valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~æ'
+    D = pg.text(text = valid_chars, size = 77, justify = 'left', layer = 0)
     h = D.hash_geometry(precision = 1e-4)
-    assert(h == '3f69ade68c9a2dee77d02217550796730d528ee0')
+    assert(h == '6a5eef6483c46cdec54c9c284a5e5002b934a06d')
+    D = pg.text(text = valid_chars, size = 77, justify = 'right', layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'e7a48db1e61e006e4869853fcf6ef53ae0ac508b')
+    D = pg.text(text = valid_chars, size = 77, justify = 'center', layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '6e9d0977b510a079daf15b22387d32222934ba75')
 
 
 def test_copy_deepcopy():
