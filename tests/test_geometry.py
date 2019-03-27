@@ -68,6 +68,12 @@ def test_offset():
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
 
+def test_text():
+    D = pg.text(text = 'abcdZHXASDHFJJASEu', size = 77, position=(0, 0), justify = 'left', layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '3f69ade68c9a2dee77d02217550796730d528ee0')
+
+
 def test_copy_deepcopy():
     D = Device()
     A = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
