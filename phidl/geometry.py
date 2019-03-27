@@ -140,7 +140,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     D = Device(name = 'ellipse')
     a = radii[0]
     b = radii[1]
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
+    t = np.linspace(0, 360, int(np.ceil(360/angle_resolution) + 1))*pi/180
     r = a*b/(sqrt((b*cos(t))**2 + (a*sin(t))**2))
     xpts = r*cos(t)
     ypts = r*sin(t)
@@ -167,7 +167,7 @@ def circle(radius = 10, angle_resolution = 2.5, layer = 0):
     """
 
     D = Device(name = 'circle')
-    t = np.linspace(0, 360, np.ceil(360/angle_resolution) + 1)*pi/180
+    t = np.linspace(0, 360, int(np.ceil(360/angle_resolution) + 1))*pi/180
     xpts = (radius*cos(t)).tolist()
     ypts = (radius*sin(t)).tolist()
     D.add_polygon(points = (xpts,ypts), layer = layer)
@@ -247,7 +247,7 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     outer_radius = radius+width/2
     angle1 = (start_angle)*pi/180
     angle2 = (start_angle + theta)*pi/180
-    t = np.linspace(angle1, angle2, np.ceil(abs(theta)/angle_resolution))
+    t = np.linspace(angle1, angle2, int(np.ceil(abs(theta)/angle_resolution)))
     inner_points_x = (inner_radius*cos(t)).tolist()
     inner_points_y = (inner_radius*sin(t)).tolist()
     outer_points_x = (outer_radius*cos(t)).tolist()
