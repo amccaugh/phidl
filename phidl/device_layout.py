@@ -33,7 +33,7 @@ import hashlib
 import json
 
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 
 
@@ -348,7 +348,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype)
+            datatype=gds_datatype, verbose = False)
 
 
     @property
@@ -922,7 +922,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         # to floating point math. Example: with a precision of 0.1, the
         # floating points 7.049999 and 7.050001 round to different values
         # (7.0 and 7.1), but offset values (7.220485 and 7.220487) don't
-        magic_offset = .17048614593375106857526844968
+        magic_offset = .17048614
 
         final_hash = hashlib.sha1()
         for layer in sorted_layers:
