@@ -827,7 +827,7 @@ class device_lru_cache:
             return deepcopy(cached_output)
 
 
-def draw_port(port, layer = 0):
+def port_to_geometry(port, layer = 0):
     ''' Converts a Port to a label and a triangle Device that are then added to the parent.
         The Port must start with a parent.
     '''
@@ -866,7 +866,7 @@ def calculate_label_offset(port):
     return offset_position
 
 
-def extract_port(label, layer = 0):
+def geometry_to_port(label, layer = 0):
     ''' Converts a label into a Port in the parent Device.
         The label contains name, width, orientation.
         Does not remove that label from the parent.
@@ -888,7 +888,7 @@ def with_geometric_ports(device, layer = 0):
     all_cells.append(temp_device)
     for subcell in all_cells:
         for port in subcell.ports.values():
-            draw_port(port, layer=layer)
+            port_to_geometry(port, layer=layer)
             subcell.remove(port)
     return temp_device
 
@@ -896,7 +896,7 @@ def with_geometric_ports(device, layer = 0):
 def with_object_ports(device, layer = 0):
     ''' Converts geometry representing ports over the whole Device hierarchy into Port objects.
         layer: the special port record layer
-        Does not change the device used as argument. Returns a new one lacking all port geometry.
+        Does not mutate the device in the argument. Returns a new one lacking all port geometry (incl. labels)
     '''
     temp_device = deepcopy(device)
     all_cells = list(temp_device.get_dependencies(recursive=True))
@@ -904,7 +904,7 @@ def with_object_ports(device, layer = 0):
     for subcell in all_cells: # Walk through cells
         for lab in subcell.labels:
             if lab.layer == layer:
-                the_port = extract_port(lab)
+                the_port = geometry_to_port(lab)
                 subcell.add_port(name=the_port.name, port=the_port)
     temp_device.remove_layers(layers=[layer], include_labels=True)
     return temp_device
