@@ -66,4 +66,39 @@ def test_offset():
     B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
     D = pg.offset([A,B], distance = 0.1, join_first = True, precision = 0.001, max_points = 4000, layer = 2)
     h = D.hash_geometry(precision = 1e-4)
-    assert(h == 'bd4b9182042522fa00b5ddb49d182523b4bf9eb5')
+    assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
+
+def test_copy_deepcopy():
+    D = Device()
+    A = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+    B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+    a = D << A
+    b1 = D << B
+    b2 = D << B
+
+    Dcopy = pg.copy(D)
+    Ddeepcopy = pg.deepcopy(D)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+    h = Dcopy.hash_geometry(precision = 1e-4)
+    assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+    h = Ddeepcopy.hash_geometry(precision = 1e-4)
+    assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+
+    D << pg.ellipse(radii = (12,5), angle_resolution = 2.5, layer = 2)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '856cedcbbb53312ff839b9fe016996357e658d33')
+    h = Dcopy.hash_geometry(precision = 1e-4)
+    assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+    h = Ddeepcopy.hash_geometry(precision = 1e-4)
+    assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+
+    A.add_ref(pg.ellipse(radii = (12,5), angle_resolution = 2.5, layer = 2))
+    B.add_polygon([[3,4,5], [6.7, 8.9, 10.15]], layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'c007b674e8053c11c877860f0552fff18676b68e')
+    h = Dcopy.hash_geometry(precision = 1e-4)
+    assert(h == '2590bd786348ab684616eecdfdbcc9735b156e18')
+    h = Ddeepcopy.hash_geometry(precision = 1e-4)
+    assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+
