@@ -770,10 +770,10 @@ def preview_layerset(ls, size = 100):
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
                 size = 20*scale,
-                position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
 
+        T.move((50*scale,-20*scale))
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
         D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
