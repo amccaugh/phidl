@@ -28,7 +28,6 @@ from numpy.linalg import norm
 import webcolors
 import warnings
 import hashlib
-import json
 
 
 __version__ = '1.0.2'
