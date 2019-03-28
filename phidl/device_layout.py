@@ -28,6 +28,7 @@ from numpy.linalg import norm
 import webcolors
 import warnings
 import hashlib
+import json
 
 
 __version__ = '1.0.2'
@@ -583,13 +584,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         return references
 
 
-    def label(self, text = 'hello', position = (0,0), layer = 255):
+    def label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, layer = 255):
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o',
+        self.add(gdspy.Label(text = text, position = position, anchor = 'o', magnification = magnification, rotation = rotation,
                                  layer = gds_layer, texttype = gds_datatype))
         return self
 
