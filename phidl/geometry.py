@@ -713,8 +713,9 @@ def import_gds(filename, cellname = None, flatten = False):
             D_list += [D]
 
         for D in D_list:
-            new_elements = []
-            for e in D.elements:
+            unconverted_elements = D.elements
+            D.elements = []
+            for e in unconverted_elements:
                 if isinstance(e, gdspy.CellReference):
                     ref_device = c2dmap[e.ref_cell]
                     dr = DeviceReference(device = ref_device,
@@ -723,10 +724,13 @@ def import_gds(filename, cellname = None, flatten = False):
                         magnification = e.magnification,
                         x_reflection = e.x_reflection,
                         )
-                    new_elements.append(dr)
+                    D.elements.append(dr)
+                elif isinstance(e, gdspy.PolygonSet):
+                    D.add_polygon(e)
                 else:
-                    new_elements.append(e)
-            D.elements = new_elements
+                    warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
+                        'polygon or reference exists in the GDS, and was not able to be imported. ' \
+                        'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
         return topdevice
