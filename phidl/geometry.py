@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-15 -*-
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
