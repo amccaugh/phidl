@@ -5,6 +5,7 @@ from phidl import Device, Layer, LayerSet, make_device, Port
 import phidl.geometry as pg
 import phidl.routing as pr
 import phidl.utilities as pu
+import numpy as np
 
 def test_rectangle():
     D = pg.rectangle(size = (4,2), layer = 0)
@@ -69,6 +70,25 @@ def test_offset():
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
 
+def test_port_geometry():
+    # Conversion between object and geometric representation of ports
+    def geom_equal(A, B):
+        h1 = A.hash_geometry(precision = 1e-4)
+        h2 = B.hash_geometry(precision = 1e-4)
+        return h1 == h2
+    init_D = pg.compass(layer = 1)
+    geom_D = pg.with_geometric_ports(init_D, layer = 2)
+    end_D = pg.with_object_ports(geom_D, layer = 2)
+    assert geom_equal(init_D, end_D)
+
+    assert len(geom_D.ports) == 0
+    geom_D.remove_layers([2], include_labels = True)
+    assert geom_equal(init_D, geom_D)
+
+    for pnam, port in init_D.ports.items():
+        assert np.all(end_D.ports[pnam].midpoint == port.midpoint)
+
+
 def test_text():
     valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~æ'
     D = pg.text(text = valid_chars, size = 77, justify = 'left', layer = 0)
@@ -115,4 +135,3 @@ def test_copy_deepcopy():
     assert(h == '2590bd786348ab684616eecdfdbcc9735b156e18')
     h = Ddeepcopy.hash_geometry(precision = 1e-4)
     assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
-
