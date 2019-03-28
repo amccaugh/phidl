@@ -77,6 +77,24 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 1.0.2 (March 26, 2019)
+
+### New features
+- Added tutorial section for phidl.geometry library lithographic shapes (resolution tests, calipers, stars, etc)
+- Added `symmetric` argument to pg.optimal_step()
+- Experimental port phidl.geometry function `pg.port_to_geometry()` which converts Ports in a Device into polygon-geometry so they can be saved into the GDS file (in the style of SiEPIC). (contribution thanks to Alex Tait @atait)
+- Added support for `magnification` and `rotation` of `Label`s  (contribution thanks to Alex Tait @atait)
+
+### Changes
+- Precision for boolean functions set to 1e-6 by default now
+- `position` argument removed from pg.text()
+
+### Bugfixes
+- Fixed rare but persistent bug affecting boolean operations (e.g. `pg.offset()`,  `pg.outline()`, `pg.boolean()`, `pg.union()`) on polygons with sub-precision floating point errors.  Will no longer cause jagged edges when two points are misaligned by very small amounts (e.g. when points that should be equal differ by 1e-27 due to floating point imprecision)
+- Fix for `pg.import_gds()` so that items can be moved/rotated correctly after importing
+- Fix for `remove_layers()` correctly preserves references now  (contribution thanks to Alex Tait @atait)
+- Suppressed unecessary warnings
+
 
 ## 1.0.1 (Jan 21, 2019)
 
