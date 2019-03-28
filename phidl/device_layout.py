@@ -30,7 +30,6 @@ import warnings
 import yaml
 import os
 import hashlib
-import json
 
 
 __version__ = '1.0.2'
