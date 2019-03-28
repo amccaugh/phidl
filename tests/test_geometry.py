@@ -89,7 +89,7 @@ def test_port_geometry():
 
 
 def test_text():
-    valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~æ'
+    valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
     D = pg.text(text = valid_chars, size = 77, justify = 'left', layer = 0)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '6a5eef6483c46cdec54c9c284a5e5002b934a06d')
