@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
@@ -713,8 +714,9 @@ def import_gds(filename, cellname = None, flatten = False):
             D_list += [D]
 
         for D in D_list:
-            new_elements = []
-            for e in D.elements:
+            unconverted_elements = D.elements
+            D.elements = []
+            for e in unconverted_elements:
                 if isinstance(e, gdspy.CellReference):
                     ref_device = c2dmap[e.ref_cell]
                     dr = DeviceReference(device = ref_device,
@@ -723,10 +725,13 @@ def import_gds(filename, cellname = None, flatten = False):
                         magnification = e.magnification,
                         x_reflection = e.x_reflection,
                         )
-                    new_elements.append(dr)
+                    D.elements.append(dr)
+                elif isinstance(e, gdspy.PolygonSet):
+                    D.add_polygon(e)
                 else:
-                    new_elements.append(e)
-            D.elements = new_elements
+                    warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
+                        'polygon or reference exists in the GDS, and was not able to be imported. ' \
+                        'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
         return topdevice
@@ -805,10 +810,10 @@ def preview_layerset(ls, size = 100):
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
                 size = 20*scale,
-                position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
 
+        T.move((50*scale,-20*scale))
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
         D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
@@ -1426,7 +1431,7 @@ _glyph[123] = [[[100,500],[200,600],[200,1000],[400,1200],[500,1200],[500,1000],
 _glyph[124] = [[[100,-100],[100,1100],[300,1100],[300,-100],[100,-100]]]
 _glyph[125] = [[[500,500],[400,600],[400,1000],[200,1200],[100,1200],[100,1000],[200,1000],[ 200,600],[300,500],[200,400],[200,0],[100,0],[100,-200],[200,-200],[400,0],[400,400],[500,500]]]
 _glyph[126] = [[[100,700],[250,800],[350,800],[650,600],[750,600],[900,700],[ 900,500],[ 750,400],[650,400],[350,600],[250,600],[100,500],[100,700]]]
-_glyph[230] = [[[300,700],[300,300],[400,200],[500,200],[600,300],[600,700],[800,700],[800,0],[600,0],[ 600,100],[500,0],[400,0],[300,100],[300,-300],[100,-300],[100,700],[300,700]]]
+_glyph[181] = [[[300,700],[300,300],[400,200],[500,200],[600,300],[600,700],[800,700],[800,0],[600,0],[ 600,100],[500,0],[400,0],[300,100],[300,-300],[100,-300],[100,700],[300,700]]]
 
 
 # _glyph _widths and _indents
@@ -1524,7 +1529,7 @@ _width[123] = 500;  _indent[123] = 100  # {
 _width[124] = 400;  _indent[124] = 100  # |
 _width[125] = 500;  _indent[125] = 100  # }
 _width[126] = 800;  _indent[126] = 100  # ~
-_width[230] = 700;  _indent[230] = 100  # Greek mu
+_width[181] = 700;  _indent[181] = 100  # Greek mu
 
 def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
     scaling = size/1000
@@ -1538,14 +1543,14 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
             ascii_val = ord(c)
             if c == ' ':
                 xoffset += 500*scaling
-            elif (33 <= ascii_val <= 126) or (ascii_val == 230):
+            elif (33 <= ascii_val <= 126) or (ascii_val == 181):
                 for poly in _glyph[ascii_val]:
                     xpts = np.array(poly)[:,0]*scaling
                     ypts = np.array(poly)[:,1]*scaling
                     l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer)
                 xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
             else:
-                valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~æ'
+                valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
                 warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
                 'Valid characters: %s'  % (chr(ascii_val), ascii_val,valid_chars))
         t.add_ref(l)
