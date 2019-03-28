@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 import pytest
 
 from phidl import Device, Layer, LayerSet, make_device, Port
