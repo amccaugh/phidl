@@ -522,13 +522,13 @@ def _merge_floating_point_errors(polygons, tol = 1e-10):
     x = stacked_polygons[:,0]
     y = stacked_polygons[:,1]
     polygon_indices = np.cumsum([len(p) for p in polygons])
-    
+
     xfixed = _merge_nearby_floating_points(x, tol = tol)
     yfixed = _merge_nearby_floating_points(y, tol = tol)
     stacked_polygons_fixed = np.vstack([xfixed, yfixed]).T
     polygons_fixed = np.vsplit(stacked_polygons_fixed, polygon_indices)
     return polygons_fixed
-    
+
 
 def _merge_nearby_floating_points(x, tol = 1e-10):
     """ Takes an array `x` and merges any values within the tolerance `tol`
@@ -542,7 +542,7 @@ def _merge_nearby_floating_points(x, tol = 1e-10):
     xsort = x[xargsort]
     xsortthreshold = (np.diff(xsort) < tol)
     xsortthresholdind = np.argwhere(xsortthreshold)
-    
+
     # Merge nearby floating point values
     for xi in xsortthresholdind:
          xsort[xi+1] = xsort[xi]
@@ -769,7 +769,6 @@ def preview_layerset(ls, size = 100):
         T = text(
                 text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
                 size = 20*scale,
-                position=(50*scale,-20*scale),
                 justify = 'center',
                 layer = layer)
 
@@ -1425,7 +1424,7 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
                     ypts = np.array(poly)[:,1]*scaling
                     l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer)
                 xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
-            else: 
+            else:
                 valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~æ'
                 warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
                 'Valid characters: %s'  % (chr(ascii_val), ascii_val,valid_chars))
