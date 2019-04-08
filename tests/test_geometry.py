@@ -77,8 +77,8 @@ def test_port_geometry():
         h2 = B.hash_geometry(precision = 1e-4)
         return h1 == h2
     init_D = pg.compass(layer = 1)
-    geom_D = pg.with_geometric_ports(init_D, layer = 2)
-    end_D = pg.with_object_ports(geom_D, layer = 2)
+    geom_D = pg.ports_to_geometry(init_D, layer = 2)
+    end_D = pg.geometry_to_ports(geom_D, layer = 2)
     assert geom_equal(init_D, end_D)
 
     assert len(geom_D.ports) == 0

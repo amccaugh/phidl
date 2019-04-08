@@ -810,7 +810,7 @@ class device_lru_cache:
             return deepcopy(cached_output)
 
 
-def port_to_geometry(port, layer = 0):
+def _convert_port_to_geometry(port, layer = 0):
     ''' Converts a Port to a label and a triangle Device that are then added to the parent.
         The Port must start with a parent.
     '''
@@ -834,12 +834,12 @@ def port_to_geometry(port, layer = 0):
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    port.parent.label(text = label_text, position = port.midpoint + calculate_label_offset(port),
+    port.parent.label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
                       magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
 
 
-def calculate_label_offset(port):
+def _calculate_label_offset(port):
     ''' Used to put the label in a pretty position.
         It is added when drawing and substracted when extracting.
     '''
@@ -849,7 +849,7 @@ def calculate_label_offset(port):
     return offset_position
 
 
-def geometry_to_port(label, layer = 0):
+def _convert_geometry_to_port(label, layer = 0):
     ''' Converts a label into a Port in the parent Device.
         The label contains name, width, orientation.
         Does not remove that label from the parent.
@@ -857,11 +857,11 @@ def geometry_to_port(label, layer = 0):
     '''
     name, width, orientation = json.loads(label.text)
     new_port = Port(name=name, width=width, orientation=orientation)
-    new_port.midpoint = label.position - calculate_label_offset(new_port)
+    new_port.midpoint = label.position - _calculate_label_offset(new_port)
     return new_port
 
 
-def with_geometric_ports(device, layer = 0):
+def ports_to_geometry(device, layer = 0):
     ''' Converts Port objects over the whole Device hierarchy to geometry and labels.
         layer: the special port record layer
         Does not change the device used as argument. Returns a new one lacking all Ports.
@@ -871,12 +871,12 @@ def with_geometric_ports(device, layer = 0):
     all_cells.append(temp_device)
     for subcell in all_cells:
         for port in subcell.ports.values():
-            port_to_geometry(port, layer=layer)
+            _convert_port_to_geometry(port, layer=layer)
             subcell.remove(port)
     return temp_device
 
 
-def with_object_ports(device, layer = 0):
+def geometry_to_ports(device, layer = 0):
     ''' Converts geometry representing ports over the whole Device hierarchy into Port objects.
         layer: the special port record layer
         Does not mutate the device in the argument. Returns a new one lacking all port geometry (incl. labels)
@@ -887,7 +887,7 @@ def with_object_ports(device, layer = 0):
     for subcell in all_cells: # Walk through cells
         for lab in subcell.labels:
             if lab.layer == layer:
-                the_port = geometry_to_port(lab)
+                the_port = _convert_geometry_to_port(lab)
                 subcell.add_port(name=the_port.name, port=the_port)
     temp_device.remove_layers(layers=[layer], include_labels=True)
     return temp_device
