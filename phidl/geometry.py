@@ -16,6 +16,7 @@ from collections import OrderedDict
 import pickle
 import json
 import warnings
+from functools import update_wrapper
 
 
 
@@ -790,6 +791,8 @@ class device_lru_cache:
         self.maxsize = 32
         self.fn = fn
         self.memo = OrderedDict()
+        update_wrapper(self, fn)
+
     def __call__(self, *args, **kwargs):
         pickle_str = pickle.dumps(args, 1) + pickle.dumps(kwargs, 1)
         if pickle_str not in self.memo.keys():
