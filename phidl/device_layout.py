@@ -30,7 +30,7 @@ import warnings
 import hashlib
 
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 
 
@@ -694,31 +694,29 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
 
-    def distribute(self, direction = 'x', elements = None, spacing = 100, separation = True):
+    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):
         if direction not in (['+x','-x','x','+y','-y','y']):
             raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
 
-        if elements is None:
-            elements = self.elements
+        if elements == 'all': elements = self.elements
 
-        multiplier = 1
-        if   direction[0] == '+':
-            direction = direction[1:]
-        elif direction[0] == '-':
-            direction = direction[1:]
-            multiplier = -1
+        if direction == 'x': direction = '+x'
+        elif direction == 'y': direction = '+y'
 
+        sizes = [e.size for e in elements]
         xy = elements[0].center
-        for e in elements:
-            e.move(origin = e.center, destination = xy, axis = direction)
-            if direction == 'x':
-                xy = xy + (np.array([spacing, 0]) + np.array([e.xsize, 0])*(separation==True))*multiplier
-            elif direction == 'y':
-                xy = xy + (np.array([0, spacing]) + np.array([0, e.ysize])*(separation==True))*multiplier
+        for n, e in enumerate(elements[:-1]):
+            e.center = xy
+            if direction == '+x':  xy[0] += spacing + separation*(sizes[n] + sizes[n+1])[0]/2
+            if direction == '-x':  xy[0] -= spacing + separation*(sizes[n] + sizes[n+1])[0]/2
+            if direction == '+y':  xy[1] += spacing + separation*(sizes[n] + sizes[n+1])[1]/2
+            if direction == '-y':  xy[1] -= spacing + separation*(sizes[n] + sizes[n+1])[1]/2
+        elements[-1].center = xy
         return self
 
 
-    def align(self, alignment = 'ymax', elements = None):
+    def align(self, elements = 'all', alignment = 'ymax'):
+        if elements == 'all': elements = self.elements
         if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
             raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
         if elements is None:
