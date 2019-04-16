@@ -11,7 +11,7 @@ install_requires=[
 ]
 
 setup(name='phidl',
-      version='1.0.2',
+      version='1.0.3',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',
