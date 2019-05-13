@@ -1,16 +1,14 @@
 #==============================================================================
 # Major TODO
 #==============================================================================
+# Add CellArray support for moving/rotating/etc
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
 # geometry: add packer, basic_wire
-# connect(): if width=0 then only move don't rotate orientation
-# Allow assignment of aliases by D['waveguide'] = D << WG
+# Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
 # PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
-# Add text in corner of quickplot which says "F1: Show/hide ports, F2: Show/hide
-# subports, F3: Show/hide alias name, F4: show/hide this text"
 
 #==============================================================================
 # Imports
