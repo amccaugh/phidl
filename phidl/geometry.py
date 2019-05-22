@@ -397,7 +397,7 @@ def invert(elements, border = 10, precision = 1e-6, layer = 0):
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
-        else: D.elements.append(e)
+        else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     # Build the rectangle around the device D
@@ -448,7 +448,7 @@ def boolean(A, B, operation, precision = 1e-6, layer = 0):
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
 
-    p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
+    p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
                  max_points=4000, layer=gds_layer, datatype=gds_datatype)
 
     D = Device('boolean')
@@ -464,7 +464,7 @@ def outline(elements, distance = 1, precision = 1e-6, layer = 0):
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
-        else: D.elements.append(e)
+        else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     D_bloated = offset(D, distance = distance, join_first = True, precision = precision, layer = layer)
@@ -661,7 +661,7 @@ def copy(D):
                                 rotation = ref.rotation,
                                 magnification = ref.magnification,
                                 x_reflection = ref.x_reflection)
-        D_copy.elements.append(new_ref)
+        D_copy.add(new_ref)
         for alias_name, alias_ref in D.aliases.items():
             if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
 
