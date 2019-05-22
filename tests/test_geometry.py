@@ -87,9 +87,9 @@ def test_boolean():
 def test_outline():
     A = pg.cross(length = 10, width = 3, layer = 0)
     B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
-    D = pg.outline([A,B], istance = 1, precision = 1e-6, layer = 2)
+    D = pg.outline([A,B], distance = 1, precision = 1e-6, layer = 2)
     h = D.hash_geometry(precision = 1e-4)
-    assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
+    assert(h == '503522b071080be6c98017cdc616752c1a3d75ce')
 
 
 def test_port_geometry():
