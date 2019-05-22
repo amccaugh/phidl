@@ -33,9 +33,16 @@ def test_move():
     assert(h == '7df43241eca2dd11f267c25876e650eadaca7d9f')
 
 def test_rotate():
+    # Test polygon rotation
     D = Device()
     p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
     p.rotate(37.5)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '2e4815072eabe053c3029d9e29a5b3ed59fe9bb7')
+    # Test Device rotation
+    D = Device()
+    p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
+    D.rotate(37.5)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '2e4815072eabe053c3029d9e29a5b3ed59fe9bb7')
 

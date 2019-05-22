@@ -343,7 +343,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype, verbose = False)
+            datatype=gds_datatype)
 
 
     @property
@@ -455,9 +455,9 @@ class Device(gdspy.Cell, _GeometryHelper):
                 'which does not exist' % (key, self.name))
 
     def __repr__(self):
-        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s elements, %s references)' % \
+        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s polygons, %s references)' % \
                 (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
-                len(self.elements), len(self.references)))
+                len(self.polygons), len(self.references)))
 
 
     def __str__(self):
@@ -478,13 +478,15 @@ class Device(gdspy.Cell, _GeometryHelper):
     def layers(self):
         return self.get_layers()
 
-    @property
-    def references(self):
-        return [e for e in self.elements if isinstance(e, DeviceReference)]
+    # @property
+    # def references(self):
+    #     return [e for e in self.elements if isinstance(e, DeviceReference)]
 
-    @property
-    def polygons(self):
-        return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
+    # @property
+    # def polygons(self):
+    #     return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
+
+
 
     @property
     def bbox(self):
@@ -654,30 +656,31 @@ class Device(gdspy.Cell, _GeometryHelper):
         all_D = list(self.get_dependencies(True))
         all_D += [self]
         for D in all_D:
-            new_elements = []
-            for e in D.elements:
-                if isinstance(e, gdspy.PolygonSet):
-                    new_polygons = []
-                    new_layers = []
-                    new_datatypes = []
-                    for n, layer in enumerate(e.layers):
-                        original_layer = (e.layers[n], e.datatypes[n])
-                        original_layer = _parse_layer(original_layer)
-                        if invert_selection: keep_layer = (original_layer in layers)
-                        else:                keep_layer = (original_layer not in layers)
-                        if keep_layer:
-                            new_polygons += [e.polygons[n]]
-                            new_layers += [e.layers[n]]
-                            new_datatypes += [e.datatypes[n]]
-                     # Don't re-add an empty polygon
-                    if len(new_polygons) > 0:
-                        e.polygons = new_polygons
-                        e.layers = new_layers
-                        e.datatypes = new_datatypes
-                        new_elements.append(e)
-                if isinstance(e, DeviceReference):
-                     new_elements.append(e)
-            D.elements = new_elements
+            new_polygons = []
+            new_references = []
+            for e in D.polygons:
+                new_polygons = []
+                new_layers = []
+                new_datatypes = []
+                for n, layer in enumerate(e.layers):
+                    original_layer = (e.layers[n], e.datatypes[n])
+                    original_layer = _parse_layer(original_layer)
+                    if invert_selection: keep_layer = (original_layer in layers)
+                    else:                keep_layer = (original_layer not in layers)
+                    if keep_layer:
+                        new_polygons += [e.polygons[n]]
+                        new_layers += [e.layers[n]]
+                        new_datatypes += [e.datatypes[n]]
+                 # Don't re-add an empty polygon
+                if len(new_polygons) > 0:
+                    e.polygons = new_polygons
+                    e.layers = new_layers
+                    e.datatypes = new_datatypes
+                    new_polygons.append(e)
+            for e in D.references:
+                 new_references.append(e)
+            D.polygons = new_polygons
+            D.references = new_references
 
             if include_labels == True:
                 new_labels = []
@@ -696,7 +699,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         if direction not in (['+x','-x','x','+y','-y','y']):
             raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
 
-        if elements == 'all': elements = self.elements
+        if elements == 'all': elements = (self.polygons + self.references)
 
         if direction == 'x': direction = '+x'
         elif direction == 'y': direction = '+y'
@@ -714,11 +717,11 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
-        if elements == 'all': elements = self.elements
+        if elements == 'all': elements = (self.polygons + self.references)
         if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
             raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
         if elements is None:
-            elements = self.elements
+            elements = (self.polygons + self.references)
         value = self.__getattribute__(alignment)
         for e in elements:
             e.__setattr__(alignment, value)
@@ -732,9 +735,10 @@ class Device(gdspy.Cell, _GeometryHelper):
             gds_layer, gds_datatype = _parse_layer(single_layer)
             super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
 
-        temp = self.elements
-        self.elements = []
-        [self.add_polygon(poly) for poly in temp]
+        temp_polygons = list(self.polygons)
+        self.references = []
+        self.polygons = []
+        [self.add_polygon(poly) for poly in temp_polygons]
         return self
 
 
@@ -792,7 +796,12 @@ class Device(gdspy.Cell, _GeometryHelper):
                                      it was asked to remove in the Device: "%s".""" % (item))
             else:
                 try:
-                    self.elements.remove(item)
+                    if isinstance(item, gdspy.PolygonSet):
+                        self.polygons.remove(item)
+                    if isinstance(item, gdspy.CellReference):
+                        self.references.remove(item)
+                    if isinstance(item, gdspy.Label):
+                        self.labels.remove(item)
                     self.aliases = { k:v for k, v in self.aliases.items() if v != item}
                 except:
                     raise ValueError("""[PHIDL] Device.remove() cannot find the item
@@ -804,16 +813,16 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def rotate(self, angle = 45, center = (0,0)):
         if angle == 0: return self
-        for e in self.elements:
-            if isinstance(e, Polygon):
-                e.rotate(angle = angle, center = center)
-            elif isinstance(e, DeviceReference):
-                e.rotate(angle, center)
+        for e in self.polygons:
+            e.rotate(angle = angle, center = center)
+        for e in self.references:
+            e.rotate(angle, center)
         for p in self.ports.values():
             p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
         self._bb_valid = False
         return self
+
 
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
@@ -841,11 +850,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         dx,dy = np.array(d) - o
 
         # Move geometries
-        for e in self.elements:
-            if isinstance(e, Polygon):
-                e.translate(dx,dy)
-            if isinstance(e, DeviceReference):
-                e.move(destination = d, origin = o)
+        for e in self.polygons:
+            e.translate(dx,dy)
+        for e in self.references:
+            e.move(destination = d, origin = o)
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
 
@@ -857,7 +865,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        for e in self.elements:
+        for e in (self.polygons+self.references):
             e.reflect(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
