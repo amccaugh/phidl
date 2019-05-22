@@ -20,6 +20,7 @@ def test_add_polygon2():
 
 # Test polygon manipulation
 def test_move():
+    # Test polygon move
     D = Device()
     p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
     p.move([1.7,0.8])
@@ -31,6 +32,13 @@ def test_move():
     p.movey(19.2)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '7df43241eca2dd11f267c25876e650eadaca7d9f')
+    # Test Device move
+    D = Device()
+    D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
+    D.add_polygon( [(8,6,7,9,7,0), (6,8,9,5,7,0)] )
+    D.move([1.7,0.8])
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'c863156dd00a590dc02823e1791554d4142b1ea9')
 
 def test_rotate():
     # Test polygon rotation
@@ -47,9 +55,16 @@ def test_rotate():
     assert(h == '2e4815072eabe053c3029d9e29a5b3ed59fe9bb7')
 
 def test_reflect():
+    # Test polygon reflection
     D = Device()
     p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
     p.reflect(p1 = (1.7,2.5), p2 = (4.5, 9.1))
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'bc6ae5308c2240e425cd503e0cdda30007bbfc4d')
+    # Test Device reflection
+    D = Device()
+    p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
+    D.reflect(p1 = (1.7,2.5), p2 = (4.5, 9.1))
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'bc6ae5308c2240e425cd503e0cdda30007bbfc4d')
 
