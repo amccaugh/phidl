@@ -70,6 +70,28 @@ def test_offset():
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
 
+def test_invert():
+    A = pg.cross(length = 10, width = 3, layer = 0)
+    B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+    D = pg.invert([A,B], border = 4,  precision = 1e-6, layer = 2)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'eed5a4cb31da61a495c9ff4c5dc4d06fe28707aa')
+
+def test_boolean():
+    A = pg.cross(length = 10, width = 3, layer = 0)
+    B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+    D = pg.boolean(A = A, B = B, operation = 'and',  precision = 1e-6, layer = 2)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'fcf1d0809488be01480027a5914dfb399faf088c')
+
+def test_outline():
+    A = pg.cross(length = 10, width = 3, layer = 0)
+    B = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+    D = pg.outline([A,B], istance = 1, precision = 1e-6, layer = 2)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'dea81b4adf9f163577cb4c750342f5f50d4fbb6d')
+
+
 def test_port_geometry():
     # Conversion between object and geometric representation of ports
     def geom_equal(A, B):
