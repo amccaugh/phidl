@@ -18,6 +18,15 @@ def test_add_polygon2():
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'c0629d2a7c557f72fad131ae8260df22c1df2d56')
 
+def test_add_polygon3():
+    D = Device()
+    D.add_polygon( [(8,6), (6,8), (7,9), (9,5)], layer = 7)
+    D.add_polygon( [(8,0), (6,8), (7,9), (9,5)], layer = (8,0))
+    D.add_polygon( [(8,1), (6,8), (7,9), (9,5)], layer = (9,1))
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '96abc3c9e30f3bbb32c5a39aeea2ba0fa3b13ebe')
+    
+    
 # Test polygon manipulation
 def test_move():
     # Test polygon move
@@ -100,3 +109,21 @@ def test_port_remove():
     assert(D.ports['test456'])
     assert(d.ports['test456'])
 
+
+def test_flatten():
+    D = Device()
+    E1 = Device()
+    E2 = Device()
+    E1.add_polygon( [(8,6,7,9,7,0), (6,8,9,5,7,0)], layer = 8)
+    E2.add_polygon( [(18,16,17,19,17,10), (16,18,19,15,17,10)], layer = 9)
+    D << E1
+    D << E2
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '8a057feca51d8097f2a915eda558fe2a9b88fb13')
+    D.flatten()
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '8a057feca51d8097f2a915eda558fe2a9b88fb13')
+    D.flatten(single_layer = (5,5))
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'cfc1ba30384f5f1f7d888f47f16d1f310f95b464')
+    
