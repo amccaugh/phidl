@@ -707,31 +707,35 @@ def import_gds(filename, cellname = None, flatten = False):
         c2dmap = {}
         for cell in gdsii_lib.cell_dict.values():
             D = Device(name = cell.name)
-            D.elements = cell.elements
+            D.polygons = cell.polygons
+            D.references = cell.references
             D.name = cell.name
             D.labels = cell.labels
             c2dmap.update({cell:D})
             D_list += [D]
 
         for D in D_list:
-            unconverted_elements = D.elements
-            D.elements = []
-            for e in unconverted_elements:
-                if isinstance(e, gdspy.CellReference):
-                    ref_device = c2dmap[e.ref_cell]
-                    dr = DeviceReference(device = ref_device,
-                        origin = e.origin,
-                        rotation = e.rotation,
-                        magnification = e.magnification,
-                        x_reflection = e.x_reflection,
-                        )
-                    D.elements.append(dr)
-                elif isinstance(e, gdspy.PolygonSet):
-                    D.add_polygon(e)
-                else:
-                    warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
-                        'polygon or reference exists in the GDS, and was not able to be imported. ' \
-                        'The element was a: "%s"' % e)
+            # First convert each reference so it points to the right Device
+            converted_references = []
+            for e in D.references:
+                ref_device = c2dmap[e.ref_cell]
+                dr = DeviceReference(device = ref_device,
+                    origin = e.origin,
+                    rotation = e.rotation,
+                    magnification = e.magnification,
+                    x_reflection = e.x_reflection,
+                    )
+                converted_references.append(dr)
+            D.references = converted_references
+            # Next convert each Polygon
+            temp_polygons = list(D.polygons)
+            D.polygons = []
+            for p in temp_polygons:
+                D.add_polygon(p)
+                # else:
+                #     warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
+                #         'polygon or reference exists in the GDS, and was not able to be imported. ' \
+                #         'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
         return topdevice
