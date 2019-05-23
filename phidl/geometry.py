@@ -404,9 +404,9 @@ def invert(elements, border = 10, precision = 1e-6, layer = 0):
     R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
     R.center = D.center
 
-    operandA = R.get_polygons()
-    operandB = D.get_polygons()
-    p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
+    operand1 = R.get_polygons()
+    operand2 = D.get_polygons()
+    p = gdspy.fast_boolean(operand1, operand2, operation = 'not', precision=precision,
                  max_points=4000, layer=gds_layer, datatype=gds_datatype)
 
     D = Device('invert')
@@ -487,7 +487,7 @@ def xor_diff(A,B, precision = 1e-6):
     all_layers.update(B_layers)
     for layer in all_layers:
         if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
+            p = gdspy.fast_boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
                                    operation = 'xor', precision=precision,
                                    max_points=4000, layer=layer[0], datatype=layer[1])
         elif (layer in A_layers):
