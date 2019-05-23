@@ -77,12 +77,20 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 1.0.3 (May 23, 2019)
+- Maintenance release to work with `gdspy 1.4`
+- Removal of `scipy` from strict installation requirements
+
+### Bugfixes
+- Minor fix to `distribute()`
+
+
 ## 1.0.2 (March 26, 2019)
 
 ### New features
 - Added tutorial section for phidl.geometry library lithographic shapes (resolution tests, calipers, stars, etc)
 - Added `symmetric` argument to pg.optimal_step()
-- Experimental port phidl.geometry function `pg.port_to_geometry()` which converts Ports in a Device into polygon-geometry so they can be saved into the GDS file (in the style of SiEPIC). (contribution thanks to Alex Tait @atait)
+- Experimental port phidl.geometry function `pg.ports_to_geometry()` and `pg.geometry_to_ports()` which converts Ports in a Device into polygon-geometry (and vice-versa) so they can be saved into the GDS file (in the style of SiEPIC). (contribution thanks to Alex Tait @atait)
 - Added support for `magnification` and `rotation` of `Label`s  (contribution thanks to Alex Tait @atait)
 
 ### Changes
