@@ -126,4 +126,23 @@ def test_flatten():
     D.flatten(single_layer = (5,5))
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'cfc1ba30384f5f1f7d888f47f16d1f310f95b464')
-    
+
+
+def test_remove_layers():
+    D = Device()
+    D.add_polygon( [(8,6,7,9,7), (6,8,9,5,7)], layer = 13)
+    D.add_polygon( [(18,16,17,19,17), (16,18,19,15,17)], layer = 14)
+    xpts = list(range(1000))
+    ypts = [x % 73 for x in xpts]
+    p = D.add_polygon([xpts,ypts], layer = 15)
+    p.fracture(max_points = 13, precision = 1e-4)
+    # Switch part of the polygons to layer (14,0)
+    p.layers[13:17] = [14]*4
+    # Switch part of the polygons to layer (14,1)
+    p.layers[23:27] = [14]*4
+    p.datatypes[23:27] = [1]*4
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '7a7aa6a22b3d0b852a0e465398018dd19a1be305')
+    D.remove_layers(layers = [13,(14,0)])
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'bb81ec3b3a6be2372a7ffc32f57121a9f1a97b34')
