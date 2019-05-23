@@ -588,7 +588,7 @@ D = Device()
 C = pg.circle()
 c1 = D.add_ref(C)   # Add first reference
 c2 = D.add_ref(C)   # Add second reference
-c2.x += 15          # Move the second circle over by 10
+c2.x += 15          # Move the second circle over by 15
 qp(c2)
 qp(D)
 
@@ -621,7 +621,7 @@ print(D.aliases.keys())
 #==============================================================================
 # Flattening a Device
 #==============================================================================
-# Sometimes you want to remove references from a Device while keeping all
+# Sometimes you want to remove cell structure from a Device while keeping all
 # of the shapes/polygons intact and in place.  The D.flatten() keeps all the
 # polygons in D, but removes all the underlying references it's attached to.
 # Also, if you specify the `single_layer` argument it will move all of the
@@ -720,6 +720,7 @@ qp(D_deepcopied)
 E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
 qp(D_deepcopied)
 
+
 #==============================================================================
 # Extracting layers
 #==============================================================================
@@ -760,33 +761,6 @@ qp([E1, E2, E3])
 D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
 qp(D2)
 
-
-#==============================================================================
-# Comparing two Devices
-#==============================================================================
-# Sometimes you want to be able to test whether two Devices are identical or
-# not (similar to the "diff" of a text file).  You can perform this comparison
-# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer
-# XOR difference between the Devices A and B, and returns polygons representing
-# the differences between A and B.
-
-D = Device()
-E1 = pg.ellipse()
-E2 = pg.ellipse().rotate(15)
-E3 = pg.ellipse()
-
-# Let's compare two slightly different Devices
-X1 = pg.xor_diff(A = E1, B = E2)
-# When we plot the result, we see only the differences between E1 and E2
-qp(X1)
-
-# Now let's compare two identical Devices
-X2 = pg.xor_diff(A = E1, B = E3)
-qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
-
-# We can double-check this by computing the area of each device
-print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
-print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
 
 
 #==============================================================================
@@ -831,6 +805,35 @@ dj.xmax += 25
 djl.xmax += 50
 
 qp(D)
+
+
+#==============================================================================
+# Comparing two Devices
+#==============================================================================
+# Sometimes you want to be able to test whether two Devices are identical or
+# not (similar to the "diff" of a text file).  You can perform this comparison
+# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer
+# XOR difference between the Devices A and B, and returns polygons representing
+# the differences between A and B.
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().rotate(15)
+E3 = pg.ellipse()
+
+# Let's compare two slightly different Devices
+X1 = pg.xor_diff(A = E1, B = E2)
+# When we plot the result, we see only the differences between E1 and E2
+qp(X1)
+
+# Now let's compare two identical Devices
+X2 = pg.xor_diff(A = E1, B = E3)
+qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
+
+# We can double-check this by computing the area of each device
+print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
+print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
+
 
 #==============================================================================
 # Removing geometry
@@ -878,7 +881,7 @@ from phidl import device_lru_cache
 @device_lru_cache
 def computationally_intensive_device(width = 10, unused_var = 1):
     D = Device()
-    time.sleep(0.1) # Pretend we're doing computations for 1.5 seconds here
+    time.sleep(0.1) # Pretend we're doing computations for 0.1 seconds here
     D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
     return D
 

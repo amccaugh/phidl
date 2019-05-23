@@ -3,15 +3,14 @@
 from setuptools import setup
 
 install_requires=[
-   'gdspy>=1.3.2',
+   'gdspy>=1.4',
    'numpy',
    'matplotlib',
-   'scipy',
    'webcolors',
 ]
 
 setup(name='phidl',
-      version='1.0.2',
+      version='1.0.3',
       description='PHIDL',
       install_requires=install_requires,
       author='Adam McCaughan',

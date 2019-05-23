@@ -3,9 +3,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
-from scipy.special import iv as besseli
-from scipy.optimize import fmin, fminbound
-from scipy import integrate
 # from scipy.interpolate import interp1d
 
 import gdspy
@@ -16,6 +13,7 @@ from collections import OrderedDict
 import pickle
 import json
 import warnings
+from functools import update_wrapper
 
 
 
@@ -396,16 +394,16 @@ def invert(elements, border = 10, precision = 1e-6, layer = 0):
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
-        else: D.elements.append(e)
+        else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     # Build the rectangle around the device D
     R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
     R.center = D.center
 
-    operandA = R.get_polygons()
-    operandB = D.get_polygons()
-    p = gdspy.fast_boolean(operandA, operandB, operation = 'not', precision=precision,
+    operand1 = R.get_polygons()
+    operand2 = D.get_polygons()
+    p = gdspy.fast_boolean(operand1, operand2, operation = 'not', precision=precision,
                  max_points=4000, layer=gds_layer, datatype=gds_datatype)
 
     D = Device('invert')
@@ -447,7 +445,7 @@ def boolean(A, B, operation, precision = 1e-6, layer = 0):
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
 
-    p = gdspy.fast_boolean(operandA = A_polys, operandB = B_polys, operation = operation, precision=precision,
+    p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
                  max_points=4000, layer=gds_layer, datatype=gds_datatype)
 
     D = Device('boolean')
@@ -463,7 +461,7 @@ def outline(elements, distance = 1, precision = 1e-6, layer = 0):
     if type(elements) is not list: elements = [elements]
     for e in elements:
         if isinstance(e, Device): D.add_ref(e)
-        else: D.elements.append(e)
+        else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     D_bloated = offset(D, distance = distance, join_first = True, precision = precision, layer = layer)
@@ -486,7 +484,7 @@ def xor_diff(A,B, precision = 1e-6):
     all_layers.update(B_layers)
     for layer in all_layers:
         if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.fast_boolean(operandA = A_polys[layer], operandB = B_polys[layer],
+            p = gdspy.fast_boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
                                    operation = 'xor', precision=precision,
                                    max_points=4000, layer=layer[0], datatype=layer[1])
         elif (layer in A_layers):
@@ -660,7 +658,7 @@ def copy(D):
                                 rotation = ref.rotation,
                                 magnification = ref.magnification,
                                 x_reflection = ref.x_reflection)
-        D_copy.elements.append(new_ref)
+        D_copy.add(new_ref)
         for alias_name, alias_ref in D.aliases.items():
             if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
 
@@ -706,31 +704,35 @@ def import_gds(filename, cellname = None, flatten = False):
         c2dmap = {}
         for cell in gdsii_lib.cell_dict.values():
             D = Device(name = cell.name)
-            D.elements = cell.elements
+            D.polygons = cell.polygons
+            D.references = cell.references
             D.name = cell.name
             D.labels = cell.labels
             c2dmap.update({cell:D})
             D_list += [D]
 
         for D in D_list:
-            unconverted_elements = D.elements
-            D.elements = []
-            for e in unconverted_elements:
-                if isinstance(e, gdspy.CellReference):
-                    ref_device = c2dmap[e.ref_cell]
-                    dr = DeviceReference(device = ref_device,
-                        origin = e.origin,
-                        rotation = e.rotation,
-                        magnification = e.magnification,
-                        x_reflection = e.x_reflection,
-                        )
-                    D.elements.append(dr)
-                elif isinstance(e, gdspy.PolygonSet):
-                    D.add_polygon(e)
-                else:
-                    warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
-                        'polygon or reference exists in the GDS, and was not able to be imported. ' \
-                        'The element was a: "%s"' % e)
+            # First convert each reference so it points to the right Device
+            converted_references = []
+            for e in D.references:
+                ref_device = c2dmap[e.ref_cell]
+                dr = DeviceReference(device = ref_device,
+                    origin = e.origin,
+                    rotation = e.rotation,
+                    magnification = e.magnification,
+                    x_reflection = e.x_reflection,
+                    )
+                converted_references.append(dr)
+            D.references = converted_references
+            # Next convert each Polygon
+            temp_polygons = list(D.polygons)
+            D.polygons = []
+            for p in temp_polygons:
+                D.add_polygon(p)
+                # else:
+                #     warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
+                #         'polygon or reference exists in the GDS, and was not able to be imported. ' \
+                #         'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
         return topdevice
@@ -790,6 +792,8 @@ class device_lru_cache:
         self.maxsize = 32
         self.fn = fn
         self.memo = OrderedDict()
+        update_wrapper(self, fn)
+
     def __call__(self, *args, **kwargs):
         pickle_str = pickle.dumps(args, 1) + pickle.dumps(kwargs, 1)
         if pickle_str not in self.memo.keys():
@@ -810,7 +814,7 @@ class device_lru_cache:
             return deepcopy(cached_output)
 
 
-def port_to_geometry(port, layer = 0):
+def _convert_port_to_geometry(port, layer = 0):
     ''' Converts a Port to a label and a triangle Device that are then added to the parent.
         The Port must start with a parent.
     '''
@@ -834,12 +838,12 @@ def port_to_geometry(port, layer = 0):
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    port.parent.label(text = label_text, position = port.midpoint + calculate_label_offset(port),
+    port.parent.label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
                       magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
 
 
-def calculate_label_offset(port):
+def _calculate_label_offset(port):
     ''' Used to put the label in a pretty position.
         It is added when drawing and substracted when extracting.
     '''
@@ -849,7 +853,7 @@ def calculate_label_offset(port):
     return offset_position
 
 
-def geometry_to_port(label, layer = 0):
+def _convert_geometry_to_port(label, layer = 0):
     ''' Converts a label into a Port in the parent Device.
         The label contains name, width, orientation.
         Does not remove that label from the parent.
@@ -857,11 +861,11 @@ def geometry_to_port(label, layer = 0):
     '''
     name, width, orientation = json.loads(label.text)
     new_port = Port(name=name, width=width, orientation=orientation)
-    new_port.midpoint = label.position - calculate_label_offset(new_port)
+    new_port.midpoint = label.position - _calculate_label_offset(new_port)
     return new_port
 
 
-def with_geometric_ports(device, layer = 0):
+def ports_to_geometry(device, layer = 0):
     ''' Converts Port objects over the whole Device hierarchy to geometry and labels.
         layer: the special port record layer
         Does not change the device used as argument. Returns a new one lacking all Ports.
@@ -871,12 +875,12 @@ def with_geometric_ports(device, layer = 0):
     all_cells.append(temp_device)
     for subcell in all_cells:
         for port in subcell.ports.values():
-            port_to_geometry(port, layer=layer)
+            _convert_port_to_geometry(port, layer=layer)
             subcell.remove(port)
     return temp_device
 
 
-def with_object_ports(device, layer = 0):
+def geometry_to_ports(device, layer = 0):
     ''' Converts geometry representing ports over the whole Device hierarchy into Port objects.
         layer: the special port record layer
         Does not mutate the device in the argument. Returns a new one lacking all port geometry (incl. labels)
@@ -887,7 +891,7 @@ def with_object_ports(device, layer = 0):
     for subcell in all_cells: # Walk through cells
         for lab in subcell.labels:
             if lab.layer == layer:
-                the_port = geometry_to_port(lab)
+                the_port = _convert_geometry_to_port(lab)
                 subcell.add_port(name=the_port.name, port=the_port)
     temp_device.remove_layers(layers=[layer], include_labels=True)
     return temp_device
@@ -1149,14 +1153,29 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq
         return (Z_guessed-Z_target)**2 # The error
 
     x0 = dielectric_thickness
+    try:
+        from scipy.optimize import fmin
+    except:
+        raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
+          please install it with `pip install scipy` """)
     w = fmin(error_fun, x0, args=(), disp=False)
     return w[0]
 
 def _G_integrand(xip, B):
+    try:
+        from scipy.special import iv as besseli
+    except:
+        """ [PHIDL] To run this function you need scipy, please install it with
+        pip install scipy """
     return besseli(0, B*sqrt(1-xip**2))
 
 
 def _G(xi, B):
+    try:
+        from scipy.optimize import integrate
+    except:
+        raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
+          please install it with `pip install scipy` """)
     return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
 @device_lru_cache
@@ -2426,6 +2445,11 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
             if y_desired is None:   return (guessed_x-x_desired)**2 # The error
             else:                   return (guessed_y-y_desired)**2
 
+        try:
+            from scipy.optimize import fminbound
+        except:
+            raise ImportError(""" [PHIDL] To run the optimal-curve geometry functions you need scipy,
+              please install it with `pip install scipy` """)
         found_eta = fminbound(fh, x1 = 0, x2 = pi, args=())
         return step_points(found_eta, W = W, a = a)
 
