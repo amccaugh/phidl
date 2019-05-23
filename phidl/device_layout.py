@@ -656,31 +656,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         all_D = list(self.get_dependencies(True))
         all_D += [self]
         for D in all_D:
-            new_polygons = []
-            new_references = []
-            for e in D.polygons:
-                new_polygons = []
-                new_layers = []
-                new_datatypes = []
-                for n, layer in enumerate(e.layers):
-                    original_layer = (e.layers[n], e.datatypes[n])
-                    original_layer = _parse_layer(original_layer)
-                    if invert_selection: keep_layer = (original_layer in layers)
-                    else:                keep_layer = (original_layer not in layers)
-                    if keep_layer:
-                        new_polygons += [e.polygons[n]]
-                        new_layers += [e.layers[n]]
-                        new_datatypes += [e.datatypes[n]]
-                 # Don't re-add an empty polygon
-                if len(new_polygons) > 0:
-                    e.polygons = new_polygons
-                    e.layers = new_layers
-                    e.datatypes = new_datatypes
-                    new_polygons.append(e)
-            for e in D.references:
-                 new_references.append(e)
-            D.polygons = new_polygons
-            D.references = new_references
+            for polygonset in D.polygons:
+                polygon_layers = zip(polygonset.layers, polygonset.datatypes)
+                polygons_to_keep = np.array([(pl in layers) for pl in polygon_layers])
+                if invert_selection == False: polygons_to_keep = ~polygons_to_keep
+                polygonset.polygons =  [p for p,keep in zip(polygonset.polygons,  polygons_to_keep) if keep]
+                polygonset.layers =    [p for p,keep in zip(polygonset.layers,    polygons_to_keep) if keep]
+                polygonset.datatypes = [p for p,keep in zip(polygonset.datatypes, polygons_to_keep) if keep]
 
             if include_labels == True:
                 new_labels = []
