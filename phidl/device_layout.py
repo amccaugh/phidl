@@ -658,8 +658,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         for D in all_D:
             for polygonset in D.polygons:
                 polygon_layers = zip(polygonset.layers, polygonset.datatypes)
-                polygons_to_keep = np.array([(pl in layers) for pl in polygon_layers])
-                if invert_selection == False: polygons_to_keep = ~polygons_to_keep
+                polygons_to_keep = [(pl in layers) for pl in polygon_layers]
+                if invert_selection == False: polygons_to_keep = [(not p) for p in polygons_to_keep]
                 polygonset.polygons =  [p for p,keep in zip(polygonset.polygons,  polygons_to_keep) if keep]
                 polygonset.layers =    [p for p,keep in zip(polygonset.layers,    polygons_to_keep) if keep]
                 polygonset.datatypes = [p for p,keep in zip(polygonset.datatypes, polygons_to_keep) if keep]
