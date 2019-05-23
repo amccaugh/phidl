@@ -1,12 +1,13 @@
 #==============================================================================
 # Major TODO
 #==============================================================================
-# Add CellArray support for moving/rotating/etc
+# Add CellArray support for moving/rotating/etc (also add to import_gds)
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
 # geometry: add packer, basic_wire
+# Add CellArray / other gdspy components to tutorial
 # Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
 # PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
 

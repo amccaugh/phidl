@@ -3,9 +3,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
-from scipy.special import iv as besseli
-from scipy.optimize import fmin, fminbound
-from scipy import integrate
 # from scipy.interpolate import interp1d
 
 import gdspy
@@ -1156,14 +1153,29 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq
         return (Z_guessed-Z_target)**2 # The error
 
     x0 = dielectric_thickness
+    try:
+        from scipy.optimize import fmin
+    except:
+        raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
+          please install it with `pip install scipy` """)
     w = fmin(error_fun, x0, args=(), disp=False)
     return w[0]
 
 def _G_integrand(xip, B):
+    try:
+        from scipy.special import iv as besseli
+    except:
+        """ [PHIDL] To run this function you need scipy, please install it with
+        pip install scipy """
     return besseli(0, B*sqrt(1-xip**2))
 
 
 def _G(xi, B):
+    try:
+        from scipy.optimize import integrate
+    except:
+        raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
+          please install it with `pip install scipy` """)
     return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
 @device_lru_cache
@@ -2433,6 +2445,11 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
             if y_desired is None:   return (guessed_x-x_desired)**2 # The error
             else:                   return (guessed_y-y_desired)**2
 
+        try:
+            from scipy.optimize import fminbound
+        except:
+            raise ImportError(""" [PHIDL] To run the optimal-curve geometry functions you need scipy,
+              please install it with `pip install scipy` """)
         found_eta = fminbound(fh, x1 = 0, x2 = pi, args=())
         return step_points(found_eta, W = W, a = a)
 
