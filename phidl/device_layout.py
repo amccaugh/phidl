@@ -64,6 +64,8 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     if np.asarray(points).ndim == 2:
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
+def _is_iterable(items):
+    return isinstance(items, (list, tuple, set, np.ndarray))
 
 
 def reset():
@@ -498,7 +500,7 @@ class Device(gdspy.Cell, _GeometryHelper):
     def add_ref(self, D, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
-        if type(D) in (list, tuple):
+        if _is_iterable(D):
             return [self.add_ref(E) for E in D]
         if not isinstance(D, Device):
             raise TypeError("""[PHIDL] add_ref() was passed something that
@@ -769,7 +771,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def remove(self, items):
-        if type(items) not in (list, tuple):  items = [items]
+        if not _is_iterable(items):  items = [items]
         for item in items:
             if isinstance(item, Port):
                 try:
@@ -1068,7 +1070,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             p = port
         else:
             raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
-                ' - received (%s), ports available are (%s)' % (port, self.ports.keys()))
+                ' - received (%s), ports available are (%s)' % (port, tuple(self.ports.keys())))
         self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         self.move(origin = p, destination = destination)
         self.move(-overlap*np.array([cos(destination.orientation*pi/180),
