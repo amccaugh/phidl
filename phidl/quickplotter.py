@@ -70,9 +70,10 @@ def quickplot(items, show_ports = True, show_subports = True,
                         ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
-                    for name, port in sd.ports.items():
-                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                        ax.text(port.midpoint[0], port.midpoint[1], name)
+                    if not isinstance(sd, (gdspy.CellArray)):
+                        for name, port in sd.ports.items():
+                            _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                            ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
                     ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
@@ -623,8 +624,9 @@ def quickplot2(item_list, *args, **kwargs):
             # If element is a Device, draw ports and aliases
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
-                    for name, port in ref.ports.items():
-                        viewer.add_port(port, is_subport = True)
+                    if not isinstance(ref, gdspy.CellArray):
+                        for name, port in ref.ports.items():
+                            viewer.add_port(port, is_subport = True)
                 for name, port in element.ports.items():
                     viewer.add_port(port)
                     viewer.add_aliases(element.aliases)
