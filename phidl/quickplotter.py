@@ -8,7 +8,7 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, Port, Layer, Polygon
+from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon
 import gdspy
 
 
@@ -60,12 +60,14 @@ def quickplot(items, show_ports = True, show_subports = True,
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                                edgecolor = 'k', alpha = layerprop['alpha'])
-                for name, port in item.ports.items():
-                    if (port.width is None) or (port.width == 0):
-                        _draw_port_as_point(port)
-                    else:
-                        _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                    ax.text(port.midpoint[0], port.midpoint[1], name)
+                # If item is a Device or DeviceReference, draw ports
+                if isinstance(item, (Device, DeviceReference)):
+                    for name, port in item.ports.items():
+                        if (port.width is None) or (port.width == 0):
+                            _draw_port_as_point(port)
+                        else:
+                            _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                        ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
                     for name, port in sd.ports.items():

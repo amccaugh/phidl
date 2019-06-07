@@ -26,6 +26,27 @@ def test_add_polygon3():
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '96abc3c9e30f3bbb32c5a39aeea2ba0fa3b13ebe')
     
+
+def test_add_array():
+    D = Device()
+    E = pg.rectangle(size = (30, 20), layer = 7)
+    A = D.add_array(E, columns = 7, rows = 5,  spacing = (31, 21))
+    assert(A.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]])
+    A.rotate(10)
+    A.move((15,1.5))
+    A.reflect((0,1))
+    A.get_polygons()
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '418b7503baff80fbe93031d45d87557c277f07b4')
+    
+    F = Device()
+    f1 = F << D
+    f2 = F << D
+    f1.movex(300)
+    f2.rotate(45)
+    h = F.hash_geometry(precision = 1e-4)
+    assert(h == 'fd7c2b4adb811342b836d9fca13992eff951630d')
+    
     
 # Test polygon manipulation
 def test_move():

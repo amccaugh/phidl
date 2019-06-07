@@ -715,14 +715,17 @@ def import_gds(filename, cellname = None, flatten = False):
             # First convert each reference so it points to the right Device
             converted_references = []
             for e in D.references:
-                ref_device = c2dmap[e.ref_cell]
-                dr = DeviceReference(device = ref_device,
-                    origin = e.origin,
-                    rotation = e.rotation,
-                    magnification = e.magnification,
-                    x_reflection = e.x_reflection,
-                    )
-                converted_references.append(dr)
+                if isinstance(e, gdspy.CellReference):
+                    ref_device = c2dmap[e.ref_cell]
+                    dr = DeviceReference(device = ref_device,
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    converted_references.append(dr)
+                elif isinstance(e, gdspy.CellArray):
+                    converted_references.append(e)
             D.references = converted_references
             # Next convert each Polygon
             temp_polygons = list(D.polygons)
