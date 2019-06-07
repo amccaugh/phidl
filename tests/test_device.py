@@ -29,7 +29,8 @@ def test_add_polygon3():
 
 def test_add_array():
     D = Device()
-    E = pg.rectangle(size = (30, 20), layer = 7)
+    E = Device()
+    E.add_polygon([[30, 20], [30,  0], [ 0,  0], [ 0, 20]], layer = 7)
     A = D.add_array(E, columns = 7, rows = 5,  spacing = (31, 21))
     assert(A.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]])
     A.rotate(10)
