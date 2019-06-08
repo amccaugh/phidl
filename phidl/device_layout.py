@@ -9,7 +9,6 @@
 # Minor TODO
 #==============================================================================
 # geometry: add packer, basic_wire
-# Add CellArray / other gdspy components to tutorial
 # Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
 # PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
 
@@ -1038,7 +1037,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
-        self.parent._bb_valid = False
         return self
 
 
@@ -1047,7 +1045,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
-        self.parent._bb_valid = False
         return self
 
 
@@ -1073,7 +1070,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
-        self.parent._bb_valid = False
         return self
 
 
@@ -1144,7 +1140,6 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
-        self.parent._bb_valid = False
         return self
 
 
@@ -1153,7 +1148,6 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
-        self.parent._bb_valid = False
         return self
 
 
@@ -1179,5 +1173,4 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
-        self.parent._bb_valid = False
         return self
