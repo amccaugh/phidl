@@ -121,7 +121,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     Parameters
     ----------
     radii : tuple
-        Semimajor and semiminor axis lengths of the ellipse.
+        Semimajor (x) and semiminor (y) axis lengths of the ellipse.
     angle_resolution : float
         Resolution of the curve of the ring (# of degrees per point).
     layer : int, array-like[2], or set
@@ -130,12 +130,6 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     Returns
     -------
     A Device with an ellipse polygon in it
-
-    Notes
-    -----
-    The orientation of the ellipse is determined by the order of the radii variables;
-    if the first element is larger, the ellipse will be horizontal and if the second
-    element is larger, the ellipse will be vertical.
     """
 
     D = Device(name = 'ellipse')
@@ -692,12 +686,14 @@ def import_gds(filename, cellname = None, flatten = False):
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
         if cellname not in gdsii_lib.cell_dict:
-            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) is not present in file %s' % (cellname,filename))
+            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) \
+                        is not present in file %s' % (cellname,filename))
         topcell = gdsii_lib.cell_dict[cellname]
     elif cellname is None and len(top_level_cells) == 1:
         topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
-        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
+        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, \
+                        you must specify `cellname` to select of one of them')
 
     if flatten == False:
         D_list = []
@@ -743,10 +739,6 @@ def import_gds(filename, cellname = None, flatten = False):
             D.polygons = []
             for p in temp_polygons:
                 D.add_polygon(p)
-                # else:
-                #     warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
-                #         'polygon, cell, reference exists in the GDS, and was not able to be imported. ' \
-                #         'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
         return topdevice
