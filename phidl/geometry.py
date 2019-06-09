@@ -6,7 +6,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 # from scipy.interpolate import interp1d
 
 import gdspy
-from phidl.device_layout import Device, Port, Polygon
+from phidl.device_layout import Device, Port, Polygon, CellArray
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
@@ -715,9 +715,10 @@ def import_gds(filename, cellname = None, flatten = False):
             # First convert each reference so it points to the right Device
             converted_references = []
             for e in D.references:
+                ref_device = c2dmap[e.ref_cell]
                 if isinstance(e, gdspy.CellReference):
-                    ref_device = c2dmap[e.ref_cell]
-                    dr = DeviceReference(device = ref_device,
+                    dr = DeviceReference(
+                        device = ref_device,
                         origin = e.origin,
                         rotation = e.rotation,
                         magnification = e.magnification,
@@ -725,7 +726,17 @@ def import_gds(filename, cellname = None, flatten = False):
                         )
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
-                    converted_references.append(e)
+                    dr = CellArray(
+                        device = ref_device,
+                        columns = e.columns, 
+                        rows = e.rows, 
+                        spacing = e.spacing, 
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    converted_references.append(dr)
             D.references = converted_references
             # Next convert each Polygon
             temp_polygons = list(D.polygons)
@@ -734,7 +745,7 @@ def import_gds(filename, cellname = None, flatten = False):
                 D.add_polygon(p)
                 # else:
                 #     warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
-                #         'polygon or reference exists in the GDS, and was not able to be imported. ' \
+                #         'polygon, cell, reference exists in the GDS, and was not able to be imported. ' \
                 #         'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
