@@ -1,8 +1,6 @@
 #==============================================================================
 # Major TODO
 #==============================================================================
-# Add CellArray support for moving/rotating/etc (also add to import_gds)
-# Remove devicereference .parent._bb_is_valid
 # Replace move command with _input2coordinate
 
 #==============================================================================
@@ -10,7 +8,6 @@
 #==============================================================================
 # geometry: add packer, basic_wire
 # Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
-# PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
 
 #==============================================================================
 # Imports
@@ -30,7 +27,7 @@ import warnings
 import hashlib
 
 
-__version__ = '1.0.3'
+__version__ = '1.1.0'
 
 
 
