@@ -670,7 +670,11 @@ def deepcopy(D):
     Device._next_uid += 1
     D_copy._internal_name = D._internal_name
     D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid) # Write name e.g. 'Unnamed000005'
-
+    # Make sure _bb_valid is set to false for these new objects so new
+    # bounding boxes are created in the cache
+    for D in D_copy.get_dependencies(True):
+        D._bb_valid = False
+        
     return D_copy
 
 
