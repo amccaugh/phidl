@@ -77,6 +77,18 @@ You can also do things like create a backing fill to make sure the resist develo
 
 # Changelog
 
+## 1.1.0 (July 3, 2019)
+
+### New features
+- Added CellArray support, use the `D.add_array()` function (see the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details)
+- Allow plotting of `DeviceReference`s directly in `quickplot`
+
+### Changes
+
+### Bugfixes
+- Bounding box cache speed improvement
+
+
 ## 1.0.3 (May 23, 2019)
 - Maintenance release to work with `gdspy 1.4`
 - Removal of `scipy` from strict installation requirements
