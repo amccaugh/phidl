@@ -773,7 +773,7 @@ def _translate_cell(c):
     return D
 
 
-def preview_layerset(ls, size = 100):
+def preview_layerset(ls, size = 100, spacing = 100):
     """ Generates a preview Device with representations of all the layers,
     used for previewing LayerSet color schemes in quickplot or saved .gds
     files """
@@ -793,8 +793,8 @@ def preview_layerset(ls, size = 100):
         T.move((50*scale,-20*scale))
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
-        D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
-        D.add_ref(T).movex(200 * xloc *scale).movey(-200 * yloc*scale)
+        D.add_ref(R).movex((100+spacing) * xloc *scale).movey(-(100+spacing) * yloc*scale)
+        D.add_ref(T).movex((100+spacing) * xloc *scale).movey(-(100+spacing) * yloc*scale)
     return D
 
 class device_lru_cache:
