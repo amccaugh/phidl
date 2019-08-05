@@ -1182,11 +1182,11 @@ def _G_integrand(xip, B):
 
 def _G(xi, B):
     try:
-        from scipy.optimize import integrate
+        import scipy.integrate
     except:
         raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
           please install it with `pip install scipy` """)
-    return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
+    return B/sinh(B)*scipy.integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
 @device_lru_cache
 def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
