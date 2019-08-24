@@ -11,9 +11,10 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
 - Python 2 >=2.6 or Python 3 >=3.5
-- If you are on Windows and don't already have `gdspy` installed, you will need a C++ compiler
-    - For Python 3, install the [MS C++ Build Tools for VS 2017](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
-    - For Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+- If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
+    - For Windows + Python 3, install the Microsoft ["Build Tools for Visual Studio"](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
+    - For Windows + Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+    - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
 
 # About PHIDL
 
