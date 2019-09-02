@@ -992,7 +992,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     shape = shape.lower()
 
     assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or D'
-    assert taper_type in ['straight','fillet'], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
+    assert taper_type in ['straight','fillet',None], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
 
     if shape ==   'p':
         orientation = -90
