@@ -4,9 +4,9 @@
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
 - [Installation / requirements](#installation--requirements)
+- [Tutorial + examples](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (Try now in an interactive notebook: [Link](https://mybinder.org/v2/gh/amccaugh/phidl/jupyter-notebook2?filepath=phidl_tutorial_example.ipynb))
 - [About PHIDL](#about-phidl)
 - [Changelog](#changelog)
-- [Tutorial + examples](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35)
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
