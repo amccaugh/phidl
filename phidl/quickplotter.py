@@ -8,7 +8,7 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, Port, Layer, Polygon
+from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon
 import gdspy
 
 
@@ -60,17 +60,20 @@ def quickplot(items, show_ports = True, show_subports = True,
                 layerprop = _get_layerprop(layer = key[0], datatype = key[1])
                 _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                                edgecolor = 'k', alpha = layerprop['alpha'])
-                for name, port in item.ports.items():
-                    if (port.width is None) or (port.width == 0):
-                        _draw_port_as_point(port)
-                    else:
-                        _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
-                    ax.text(port.midpoint[0], port.midpoint[1], name)
+                # If item is a Device or DeviceReference, draw ports
+                if isinstance(item, (Device, DeviceReference)):
+                    for name, port in item.ports.items():
+                        if (port.width is None) or (port.width == 0):
+                            _draw_port_as_point(port)
+                        else:
+                            _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                        ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
-                    for name, port in sd.ports.items():
-                        _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
-                        ax.text(port.midpoint[0], port.midpoint[1], name)
+                    if not isinstance(sd, (gdspy.CellArray)):
+                        for name, port in sd.ports.items():
+                            _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                            ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
                     ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
@@ -621,8 +624,9 @@ def quickplot2(item_list, *args, **kwargs):
             # If element is a Device, draw ports and aliases
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
-                    for name, port in ref.ports.items():
-                        viewer.add_port(port, is_subport = True)
+                    if not isinstance(ref, gdspy.CellArray):
+                        for name, port in ref.ports.items():
+                            viewer.add_port(port, is_subport = True)
                 for name, port in element.ports.items():
                     viewer.add_port(port)
                     viewer.add_aliases(element.aliases)

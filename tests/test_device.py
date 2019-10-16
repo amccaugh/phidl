@@ -26,6 +26,50 @@ def test_add_polygon3():
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '96abc3c9e30f3bbb32c5a39aeea2ba0fa3b13ebe')
     
+def test_bbox():
+    D = Device()
+    D.add_polygon( [(0,0), (10,0), (10,10), (0,10)], layer = 2)
+    assert(D._bb_valid == False)
+    # Calculating the bbox should change _bb_valid to True once it's cached
+    assert(D.bbox.tolist() == [[0,0], [10,10]])
+    assert(D._bb_valid == True)
+
+    E = Device()
+    e1 = E.add_ref(D)
+    e2 = E.add_ref(D)
+    e2.movex(30)
+    assert(E._bb_valid == False)
+    assert(E.bbox.tolist() == [[0,0], [40,10]])
+    assert(E._bb_valid == True)
+
+    D.add_polygon( [(0,0), (100,0), (100,100), (0,100)], layer = 2)
+    D.add_polygon( [(0,0), (100,0), (100,100), (0,100)], layer = 2)
+    assert(E.bbox.tolist() == [[0,0], [130,100]])
+    assert(e1.bbox.tolist() == [[0,0], [100,100]])
+    assert(e2.bbox.tolist() == [[30,0], [130,100]])
+
+
+def test_add_array():
+    D = Device()
+    E = Device()
+    E.add_polygon([[30, 20], [30,  0], [ 0,  0], [ 0, 20]], layer = 7)
+    A = D.add_array(E, columns = 7, rows = 5,  spacing = (31, 21))
+    assert(A.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]])
+    A.rotate(10)
+    A.move((15,1.5))
+    A.reflect((0,1))
+    A.get_polygons()
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '418b7503baff80fbe93031d45d87557c277f07b4')
+    
+    F = Device()
+    f1 = F << D
+    f2 = F << D
+    f1.movex(300)
+    f2.rotate(45)
+    h = F.hash_geometry(precision = 1e-4)
+    assert(h == 'fd7c2b4adb811342b836d9fca13992eff951630d')
+    
     
 # Test polygon manipulation
 def test_move():

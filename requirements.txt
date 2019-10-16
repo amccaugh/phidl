@@ -1,0 +1,6 @@
+numpy
+matplotlib
+scipy
+webcolors
+gdspy
+phidl

@@ -82,5 +82,4 @@ target/
 *.bat
 *.lyp
 *.oas
-*.ipynb
 *.svg

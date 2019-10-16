@@ -324,6 +324,23 @@ for p in all_ports:
 
 
 #==============================================================================
+# Advanced: Using CellArray
+#==============================================================================
+# In GDS, there's a type of structure called a "CellArray" which takes a cell
+# and repeats it NxM times on a fixed grid spacing.  For convenience, PHIDL
+# includes this functionality with the add_array() function.  Note that
+# CellArrays are not compatible with ports (since there is no way to 
+# access/modify individual elements in a GDS cellarray)
+
+D = Device()
+R = pg.rectangle([30,20])
+a = D.add_array(R, columns = 7, rows = 5,  spacing = (31, 21))
+# bbox gets the bounding box of the whole array
+a.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]] 
+qp(D)
+
+
+#==============================================================================
 # Adding premade geometry with phidl.geometry
 #==============================================================================
 # Usually at the beginning of a phidl file we import the phidl.geometry module

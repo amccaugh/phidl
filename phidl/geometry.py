@@ -6,7 +6,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 # from scipy.interpolate import interp1d
 
 import gdspy
-from phidl.device_layout import Device, Port, Polygon
+from phidl.device_layout import Device, Port, Polygon, CellArray
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
@@ -121,7 +121,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     Parameters
     ----------
     radii : tuple
-        Semimajor and semiminor axis lengths of the ellipse.
+        Semimajor (x) and semiminor (y) axis lengths of the ellipse.
     angle_resolution : float
         Resolution of the curve of the ring (# of degrees per point).
     layer : int, array-like[2], or set
@@ -130,12 +130,6 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     Returns
     -------
     A Device with an ellipse polygon in it
-
-    Notes
-    -----
-    The orientation of the ellipse is determined by the order of the radii variables;
-    if the first element is larger, the ellipse will be horizontal and if the second
-    element is larger, the ellipse will be vertical.
     """
 
     D = Device(name = 'ellipse')
@@ -533,10 +527,10 @@ def _merge_floating_point_errors(polygons, tol = 1e-10):
 def _merge_nearby_floating_points(x, tol = 1e-10):
     """ Takes an array `x` and merges any values within the tolerance `tol`
     So if given
-    >>> x = [-2, -1, 0, 1.00001, 1.0002, 1.0003, 4, 5, 5.003, 6, 7, 8]
+    >>> x = [-2, -1, 0, 1.0001, 1.0002, 1.0003, 4, 5, 5.003, 6, 7, 8]
     >>> _merge_nearby_floating_points(x, tol = 1e-3)
     will then return:
-    >>> [-2, -1, 0, 1.00001, 1.0001, 1.0001, 4, 5, 5.003, 6, 7, 8] """
+    >>> [-2, -1, 0, 1.0001, 1.0001, 1.0001, 4, 5, 5.003, 6, 7, 8] """
     xargsort = np.argsort(x)
     xargunsort = np.argsort(xargsort)
     xsort = x[xargsort]
@@ -676,7 +670,11 @@ def deepcopy(D):
     Device._next_uid += 1
     D_copy._internal_name = D._internal_name
     D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid) # Write name e.g. 'Unnamed000005'
-
+    # Make sure _bb_valid is set to false for these new objects so new
+    # bounding boxes are created in the cache
+    for D in D_copy.get_dependencies(True):
+        D._bb_valid = False
+        
     return D_copy
 
 
@@ -692,12 +690,14 @@ def import_gds(filename, cellname = None, flatten = False):
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
         if cellname not in gdsii_lib.cell_dict:
-            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) is not present in file %s' % (cellname,filename))
+            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) \
+                        is not present in file %s' % (cellname,filename))
         topcell = gdsii_lib.cell_dict[cellname]
     elif cellname is None and len(top_level_cells) == 1:
         topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
-        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, you must specify `cellname` to select of one of them')
+        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, \
+                        you must specify `cellname` to select of one of them')
 
     if flatten == False:
         D_list = []
@@ -716,23 +716,33 @@ def import_gds(filename, cellname = None, flatten = False):
             converted_references = []
             for e in D.references:
                 ref_device = c2dmap[e.ref_cell]
-                dr = DeviceReference(device = ref_device,
-                    origin = e.origin,
-                    rotation = e.rotation,
-                    magnification = e.magnification,
-                    x_reflection = e.x_reflection,
-                    )
-                converted_references.append(dr)
+                if isinstance(e, gdspy.CellReference):
+                    dr = DeviceReference(
+                        device = ref_device,
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    converted_references.append(dr)
+                elif isinstance(e, gdspy.CellArray):
+                    dr = CellArray(
+                        device = ref_device,
+                        columns = e.columns, 
+                        rows = e.rows, 
+                        spacing = e.spacing, 
+                        origin = e.origin,
+                        rotation = e.rotation,
+                        magnification = e.magnification,
+                        x_reflection = e.x_reflection,
+                        )
+                    converted_references.append(dr)
             D.references = converted_references
             # Next convert each Polygon
             temp_polygons = list(D.polygons)
             D.polygons = []
             for p in temp_polygons:
                 D.add_polygon(p)
-                # else:
-                #     warnings.warn('[PHIDL] import_gds(). Warning an element which was not a ' \
-                #         'polygon or reference exists in the GDS, and was not able to be imported. ' \
-                #         'The element was a: "%s"' % e)
 
         topdevice = c2dmap[topcell]
         return topdevice
@@ -763,7 +773,7 @@ def _translate_cell(c):
     return D
 
 
-def preview_layerset(ls, size = 100):
+def preview_layerset(ls, size = 100, spacing = 100):
     """ Generates a preview Device with representations of all the layers,
     used for previewing LayerSet color schemes in quickplot or saved .gds
     files """
@@ -783,8 +793,8 @@ def preview_layerset(ls, size = 100):
         T.move((50*scale,-20*scale))
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
-        D.add_ref(R).movex(200 * xloc *scale).movey(-200 * yloc*scale)
-        D.add_ref(T).movex(200 * xloc *scale).movey(-200 * yloc*scale)
+        D.add_ref(R).movex((100+spacing) * xloc *scale).movey(-(100+spacing) * yloc*scale)
+        D.add_ref(T).movex((100+spacing) * xloc *scale).movey(-(100+spacing) * yloc*scale)
     return D
 
 class device_lru_cache:
@@ -982,7 +992,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     shape = shape.lower()
 
     assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or D'
-    assert taper_type in ['straight','fillet'], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
+    assert taper_type in ['straight','fillet',None], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
 
     if shape ==   'p':
         orientation = -90
@@ -1172,11 +1182,11 @@ def _G_integrand(xip, B):
 
 def _G(xi, B):
     try:
-        from scipy.optimize import integrate
+        import scipy.integrate
     except:
         raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
           please install it with `pip install scipy` """)
-    return B/sinh(B)*integrate.quad(_G_integrand, 0, xi, args = (B))[0]
+    return B/sinh(B)*scipy.integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
 @device_lru_cache
 def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
@@ -2629,8 +2639,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
 
 def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-           num_squares = None, connector_width = 1, turn_ratio = 4,
-           terminals_same_side = False, layer = 0):
+           num_squares = None, connector_width = 1, connector_symmetric = False,
+            turn_ratio = 4, terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand"""
     D = Device('snspd_expanded')
     S = snspd(wire_width = wire_width, wire_pitch = wire_pitch,
@@ -2639,7 +2649,7 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     s = D.add_ref(S)
     step_device = optimal_step(start_width = wire_width, end_width = connector_width,
                             num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
-                            layer = layer)
+                            symmetric = connector_symmetric, layer = layer)
     step1 = D.add_ref(step_device)
     step2 = D.add_ref(step_device)
     step1.connect(port = 1, destination = s.ports[1])
