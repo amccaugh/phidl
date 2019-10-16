@@ -81,10 +81,13 @@ You can also do things like create a backing fill to make sure the resist develo
 ## 1.1.0 (July 3, 2019)
 
 ### New features
-- Added CellArray support, use the `D.add_array()` function (see the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details)
+- New online notebook to try out PHIDL!  Try now in an interactive online notebook: [Link](https://mybinder.org/v2/gh/amccaugh/phidl/jupyter-notebook2?filepath=phidl_tutorial_example.ipynb)
+- Added full CellArray support, use the `D.add_array()` function (see the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details)
 - Allow plotting of `DeviceReference`s directly in `quickplot`
 
 ### Changes
+- Added `connector_symmetric` argument to `pg.snspd_expanded()`
+
 
 ### Bugfixes
 - Bounding box cache speed improvement
