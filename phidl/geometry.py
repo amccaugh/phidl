@@ -418,7 +418,7 @@ def invert(elements, border = 10, precision = 1e-6, layer = 0):
     return D
 
 
-def boolean(A, B, operation, precision = 1e-6, layer = 0):
+def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -451,9 +451,13 @@ def boolean(A, B, operation, precision = 1e-6, layer = 0):
     elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
-
-    p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
-                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
+    if all(np.array(num_divisions) == np.array([1,1])):
+        p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
+                     max_points=4000, layer=gds_layer, datatype=gds_datatype)
+    else:
+        p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
+                   num_divisions = num_divisions, operation = operation, precision = precision)
+            
 
     D = Device('boolean')
     if p is not None: D.add_polygon(p, layer = layer)
@@ -685,6 +689,67 @@ def _offset_polygons_parallel(
     return offset_polygons
 
 
+def _boolean_region(all_polygons_A, all_polygons_B,
+                    bboxes_A, bboxes_B,
+                    left, bottom, right, top,
+                join_first = True,
+#                max_points = 4000,
+                operation = 'and',
+                precision = 1e-6,
+                ):
+    """ Taking a region of e.g. size (x,y) which needs to be booleaned,
+    this function crops out a region (x, y) large from each set of polygons
+    (A and B), booleans that cropped region and returns the result"""
+        
+    polygons_to_boolean_A = _crop_edge_polygons(all_polygons_A, bboxes_A, left, bottom, right, top, precision)
+    polygons_to_boolean_B = _crop_edge_polygons(all_polygons_B, bboxes_B, left, bottom, right, top, precision)
+    polygons_boolean = clipper.clip(polygons_to_boolean_A, polygons_to_boolean_B,
+                                         operation, 1/precision)
+    return polygons_boolean
+
+
+
+def _boolean_polygons_parallel(
+        polygons_A, polygons_B,
+        num_divisions = [10,10],
+        join_first = True,
+        operation = 'and',
+        precision = 1e-6,
+        ):
+    
+    #    Build bounding boxes
+    polygons_A = np.asarray(polygons_A)
+    polygons_B = np.asarray(polygons_B)
+    bboxes_A = _polygons_to_bboxes(polygons_A)
+    bboxes_B = _polygons_to_bboxes(polygons_B)
+    
+    xmin,ymin = np.min([np.min(bboxes_A[:,0:2], axis = 0), np.min(bboxes_B[:,0:2], axis = 0)], axis = 0)
+    xmax,ymax = np.min([np.max(bboxes_A[:,2:4], axis = 0), np.max(bboxes_B[:,2:4], axis = 0)], axis = 0)
+    
+    xsize = xmax - xmin
+    ysize = ymax - ymin
+    xdelta = xsize/num_divisions[0]
+    ydelta = ysize/num_divisions[1]
+    xcorners = xmin + np.arange(num_divisions[0])*xdelta
+    ycorners = ymin + np.arange(num_divisions[1])*ydelta
+    
+    boolean_polygons = []
+    for n,xc in enumerate(xcorners):
+        for m,yc in enumerate(ycorners):
+            left = xc
+            right = xc+xdelta
+            bottom = yc
+            top = yc+ydelta
+            _boolean_region_polygons = _boolean_region(polygons_A, polygons_B, bboxes_A, bboxes_B,
+                                            left, bottom, right, top,
+                                            join_first = join_first,
+                                            # max_points = max_points,
+                                            operation = operation,
+                                            precision = precision,
+                                            )
+            boolean_polygons += _boolean_region_polygons
+        
+    return boolean_polygons
 
 #==============================================================================
 #
