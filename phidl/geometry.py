@@ -621,7 +621,7 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
     # FIXME: Necessary?
     d = distance*1.01
     
-    polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left, bottom, right, top, precision = precision)
+    polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left-d, bottom-d, right+d, top+d, precision = precision)
     
     # Offset the resulting cropped polygons and recrop to final desired size
     polygons_offset = clipper.offset(polygons_to_offset, distance, 'miter', 2, 1/precision, int(join_first))
