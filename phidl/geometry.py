@@ -423,8 +423,8 @@ def boolean(A, B, operation, precision = 1e-6, layer = 0):
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
 
-    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note
-    that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.  
+    Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
     A_polys = []
