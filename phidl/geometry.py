@@ -570,6 +570,22 @@ def _crop_region(polygons, left, bottom, right, top, precision):
 
 
 
+def _crop_edge_polygons(all_polygons, bboxes, left, bottom, right, top, precision):
+    """ Parses out which polygons are along the edge of the rectangle and need 
+     to be  cropped and which are deep inside the rectangle region and can be
+      left alone, then crops only those polygons along the edge """
+    polygons_in_rect_i = _find_bboxes_in_rect(bboxes, left, bottom, right, top)
+    polygons_edge_i = _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top)
+    polygons_in_rect_no_edge_i = polygons_in_rect_i & (~polygons_edge_i)
+    
+    # Crop polygons along the edge and recombine them with polygons inside the rectangle
+    polygons_edge = all_polygons[polygons_edge_i]
+    polygons_in_rect_no_edge = all_polygons[polygons_in_rect_no_edge_i].tolist()
+    polygons_edge_cropped = _crop_region(polygons_edge, left, bottom, right, top, precision = precision)
+    polygons_to_process = polygons_in_rect_no_edge + polygons_edge_cropped
+    
+    return polygons_to_process
+
 def _find_bboxes_in_rect(bboxes, left, bottom, right, top):
     """ Given a list of polygon bounding boxes and a rectangle defined by
     left/bottom/right/top, this function returns those polygons which overlap
@@ -605,17 +621,7 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
     # FIXME: Necessary?
     d = distance*1.01
     
-    # Parse out which polygons are along the edge of the rectangle and need to be 
-    # cropped and which are deep inside the rectangle region and can be left alone
-    polygons_in_rect_i = _find_bboxes_in_rect(bboxes, left-d, bottom-d, right+d, top+d)
-    polygons_edge_i = _find_bboxes_on_rect_edge(bboxes, left-d, bottom-d, right+d, top+d)
-    polygons_in_rect_no_edge_i = polygons_in_rect_i & (~polygons_edge_i)
-    
-    # Crop polygons along the edge and recombine them with polygons inside the rectangle
-    polygons_edge = all_polygons[polygons_edge_i]
-    polygons_in_rect_no_edge = all_polygons[polygons_in_rect_no_edge_i].tolist()
-    polygons_edge_cropped = _crop_region(polygons_edge, left-d, bottom-d, right+d, top+d, precision = precision)
-    polygons_to_offset = polygons_in_rect_no_edge + polygons_edge_cropped
+    polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left, bottom, right, top, precision = precision)
     
     # Offset the resulting cropped polygons and recrop to final desired size
     polygons_offset = clipper.offset(polygons_to_offset, distance, 'miter', 2, 1/precision, int(join_first))
