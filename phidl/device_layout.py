@@ -337,6 +337,10 @@ class Port(object):
     def y(self):
         return self.midpoint[1]
 
+    @property
+    def center(self):
+        return self.midpoint
+    
     # Use this function instead of copy() (which will not create a new numpy array
     # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
     # DeviceReference recursively, causing performance issues)
