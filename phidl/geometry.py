@@ -724,7 +724,7 @@ def _boolean_polygons_parallel(
     bboxes_B = _polygons_to_bboxes(polygons_B)
     
     xmin,ymin = np.min([np.min(bboxes_A[:,0:2], axis = 0), np.min(bboxes_B[:,0:2], axis = 0)], axis = 0)
-    xmax,ymax = np.min([np.max(bboxes_A[:,2:4], axis = 0), np.max(bboxes_B[:,2:4], axis = 0)], axis = 0)
+    xmax,ymax = np.max([np.max(bboxes_A[:,2:4], axis = 0), np.max(bboxes_B[:,2:4], axis = 0)], axis = 0)
     
     xsize = xmax - xmin
     ysize = ymax - ymin
