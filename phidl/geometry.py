@@ -660,8 +660,8 @@ def _offset_polygons_parallel(
     polygons = np.asarray(polygons)
     bboxes = _polygons_to_bboxes(polygons)
     
-    xmin,ymin = np.min(bboxes[:,0:2], axis = 0)
-    xmax,ymax = np.max(bboxes[:,2:4], axis = 0)
+    xmin,ymin = np.min(bboxes[:,0:2], axis = 0) - distance
+    xmax,ymax = np.max(bboxes[:,2:4], axis = 0) + distance
     
     xsize = xmax - xmin
     ysize = ymax - ymin
