@@ -9,11 +9,6 @@
 # geometry: add packer, basic_wire
 # fix remove -- allow removal of labels and cellarrays
 # Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
-# Offset improvement for >100,000 polygons:
-#   Get list of polygons, np.vstack together, sort, find where x & y medians,
-#   _chop all polygons along median (so half of points on one side, half on the
-#   other), perform offset on each quadrant of polygons, chop again to cut off
-#   incorrect offsets (at value `distance`), stitch together
 
 #==============================================================================
 # Imports
