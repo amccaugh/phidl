@@ -1199,7 +1199,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     p = np.array(stub_size)
     shape = shape.lower()
 
-    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or D'
+    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
     assert taper_type in ['straight','fillet',None], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
 
     if shape ==   'p':
@@ -1210,7 +1210,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     elif shape == 'b':
         f[1], p[1] = -size[1], -stub_size[1]
         orientation = 90
-    elif shape == 'D':
+    elif shape == 'd':
         f[1], p[1] = -size[1], -stub_size[1]
         f[0], p[0] = -size[0], -stub_size[0]
         orientation = 90
