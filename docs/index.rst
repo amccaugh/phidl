@@ -4,6 +4,20 @@
    contain the root `toctree` directive.
 
 
+###############
+Heading
+###############
+
+
+***********
+Subheading
+***********
+
+
+Subsub heading
+=====
+
+
 Welcome to phidl's documentation!
 =================================
 
