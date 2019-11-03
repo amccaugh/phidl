@@ -5,17 +5,25 @@
 
 
 ###############
-Heading
+Boolean / outline / offset
 ###############
 
 
 ***********
-Subheading
+Outline
 ***********
 
 
+
+***********
+Offset
+***********
+
+
+
+
 Subsub heading
-=====
+====================
 
 
 Welcome to phidl's documentation!
