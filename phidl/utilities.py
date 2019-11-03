@@ -186,7 +186,11 @@ def write_svg(D, filename):
     if filename[-4:] != '.svg':  filename += '.svg'
     with open(filename, 'w+') as f:
         f.write('<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n')
-        f.write('<svg width="%0.6f" height="%0.6f">\n' % (xsize, ysize))
+        f.write(('<svg\n   width="%0.6f" \n   height="%0.6f"\n'
+                '   version="1.1"\n'
+                '   xmlns:svg="http://www.w3.org/2000/svg"\n'
+                '   xmlns="http://www.w3.org/2000/svg">\n')
+                % (xsize, ysize))
 
         all_polygons = D.get_polygons(by_spec = True)
         for layer, polygons in all_polygons.items():
