@@ -9,6 +9,9 @@ Boolean / outline / offset
 ###############
 
 
+.. image:: _static/hello.svg
+   :align: center
+
 ***********
 Outline
 ***********
