@@ -6,6 +6,13 @@ from phidl import Device
 
 
 import phidl.geometry as pg
+import os
+
+
+def create_image(D, filename, filepath = '/_static/'):
+    scale = 500/max(D.size)
+    pu.write_svg(os.path.join([os.path.curdir(), filepath, filename]), scale = scale)
+
 
 # example-rectangle
 import phidl.geometry as pg

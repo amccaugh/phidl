@@ -8,8 +8,13 @@
 Boolean / outline / offset
 ###############
 
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 4
+   :start-after: example-rectangle
+   :end-before: pu.write_svg
 
-.. image:: _static/hello.svg
+.. image:: _static/rectangle.svg
    :align: center
 
 ***********
