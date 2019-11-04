@@ -20,7 +20,8 @@ create_image(D, 'rectangle.svg')
 
 # example-bbox
 import phidl.geometry as pg
-D = pg.bbox(bbox = [(-1,-1),(3,4)], layer = 0)
+A = pg.arc(radius = 10, width = 0.5, theta = 85, layer = 0)
+D = pg.bbox(bbox = A.bbox, layer = 1)
 create_image(D, 'bbox.svg')
 
 # example-cross

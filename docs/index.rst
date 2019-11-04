@@ -10,7 +10,7 @@ Basic shapes
 
 .. literalinclude:: gen_geometry.py
    :language: python
-   :dedent: 4
+   :dedent: 0
    :start-after: example-rectangle
    :end-before: create_image
 
@@ -18,10 +18,10 @@ Basic shapes
    :align: center
 
 
-   
+
 .. literalinclude:: gen_geometry.py
    :language: python
-   :dedent: 4
+   :dedent: 0
    :start-after: example-bbox
    :end-before: create_image
 
