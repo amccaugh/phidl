@@ -8,6 +8,8 @@ import os
 
 
 def create_image(D, filename, size = 300, filepath = '_static/'):
+    if any(D.size == 0):
+        D = pg.text('?')
     scale = size/max(D.size)
     pu.write_svg(D, os.path.join(os.path.curdir, filepath, filename), scale = scale)
 
@@ -20,13 +22,13 @@ create_image(D, 'rectangle.svg')
 
 # example-bbox
 import phidl.geometry as pg
-A = pg.arc(radius = 10, width = 0.5, theta = 85, layer = 0)
-D = pg.bbox(bbox = A.bbox, layer = 1)
+A = pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1)
+D = pg.bbox(bbox = A.bbox, layer = 0)
 create_image(D, 'bbox.svg')
 
 # example-cross
 import phidl.geometry as pg
-D = pg.cross(length = 10, width = 3, layer = 0)
+D = pg.cross(length = 10, width = 0.5, layer = 0)
 create_image(D, 'cross.svg')
 
 # example-ellipse
@@ -66,23 +68,36 @@ create_image(D, 'C.svg')
 
 # example-offset
 import phidl.geometry as pg
-D = pg.offset(elements, distance = 0.1, join_first = True, precision = 1e-6, 
-        num_divisions = [offset1,1], layer = 0)
-create_image(D, '.svg')
+# Create geometry to be offset (expanded / contracted)
+T = Device()
+T << pg.ellipse(layer = 1)
+T << pg.rectangle(layer = 2)
+
+Texpanded = pg.offset(T, distance = 1, join_first = True, precision = 1e-6, 
+        num_divisions = [1,1], layer = 0)
+Tshrink = pg.offset(T, distance = 1.5, join_first = True, precision = 1e-6, 
+        num_divisions = [1,1], layer = 0)
+
+D = Device()
+D.add_ref(Texpanded).movex(0)
+D.add_ref(Tshrink).movex(20)
+create_image(D, 'offset.svg')
 
 # example-invert
 import phidl.geometry as pg
-D = pg.invert(elements, border = 10, precision = 1e-6, layer = 0)
+D = pg.invert(pg.ellipse(), border = 10, precision = 1e-6, layer = 0)
 create_image(D, 'invert.svg')
 
 # example-boolean
 import phidl.geometry as pg
-D = pg.boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0)
+A = pg.ellipse()
+B = pg.rectangle()
+D = pg.boolean(A, B, operation = 'not', precision = 1e-6, num_divisions = [1,1], layer = 0)
 create_image(D, 'boolean.svg')
 
 # example-outline
 import phidl.geometry as pg
-D = pg.outline(elements, distance = 1, precision = 1e-6, layer = 0)
+D = pg.outline(pg.ellipse(), distance = 1, precision = 1e-6, layer = 0)
 create_image(D, 'outline.svg')
 
 # example-xor_diff
@@ -92,7 +107,24 @@ create_image(D, 'xor_diff.svg')
 
 # example-union
 import phidl.geometry as pg
-D = pg.union(D, by_layer = False, precision=1e-6, layer = 0)
+D = Device()
+D << pg.ellipse(layer = 0)
+D << pg.ellipse(layer = 0).rotate(15*1)
+D << pg.ellipse(layer = 0).rotate(15*2)
+D << pg.ellipse(layer = 0).rotate(15*3)
+D << pg.ellipse(layer = 1).rotate(15*4)
+D << pg.ellipse(layer = 1).rotate(15*5)
+
+# We have two options to unioning - take all polygons, regardless of 
+# layer, and join them together (in this case on layer 4) like so:
+D_joined = pg.union(D, by_layer = False, layer = 4)
+
+# Or we can perform the union operate by-layer
+D_joined_by_layer = pg.union(D, by_layer = True)
+
+# Space out shapes
+D.add_ref(D_joined).movex(25)
+D.add_ref(D_joined_by_layer).movex(50)
 create_image(D, 'union.svg')
 
 # example-litho_steps
@@ -129,32 +161,49 @@ create_image(D, 'litho_calipers.svg')
 
 # example-extract
 import phidl.geometry as pg
-D = pg.extract(D, layers = [0,1])
+X = pg.ellipse(layer = {0,1})
+D = pg.extract(X, layers = [0,1])
 create_image(D, 'extract.svg')
 
 # example-copy
 import phidl.geometry as pg
-D = pg.copy(D)
+X = pg.ellipse()
+D = pg.copy(X)
 create_image(D, 'copy.svg')
 
 # example-deepcopy
 import phidl.geometry as pg
-D = pg.deepcopy(D)
+X = pg.ellipse()
+D = pg.deepcopy(X)
 create_image(D, 'deepcopy.svg')
 
 # example-copy_layer
 import phidl.geometry as pg
-D = pg.copy_layer(D, layer = 1, new_layer = 2)
+X = Device()
+X << pg.ellipse(layer = 0)
+X << pg.ellipse(layer = 1)
+D = pg.copy_layer(X, layer = 1, new_layer = 2)
 create_image(D, 'copy_layer.svg')
 
 # example-import_gds
 import phidl.geometry as pg
-D = pg.import_gds(filename, cellname = None, flatten = False)
+D = pg.ellipse()
+D.write_gds('myoutput.gds')
+D = pg.import_gds(filename = 'myoutput.gds', cellname = None, flatten = False)
 create_image(D, 'import_gds.svg')
 
 # example-preview_layerset
 import phidl.geometry as pg
-D = pg.preview_layerset(ls, size = 100, spacing = 100)
+from phidl import LayerSet
+lys = LayerSet()
+lys.add_layer('intrinsic', color = 'gray', gds_layer = 0, gds_datatype = 0)
+lys.add_layer('p', color = 'lightblue', gds_layer = 1, gds_datatype = 0)
+lys.add_layer('p+', color = 'blue', gds_layer = 2, gds_datatype = 0)
+lys.add_layer('p++', color = 'darkblue', gds_layer = 3, gds_datatype = 0)
+lys.add_layer('n', color = 'lightgreen', gds_layer = 4, gds_datatype = 0)
+lys.add_layer('n+', color = 'green', gds_layer = 4, gds_datatype = 0)
+lys.add_layer('n++', color = 'darkgreen', gds_layer = 5, gds_datatype = 0)
+D = pg.preview_layerset(lys, size = 100, spacing = 100)
 create_image(D, 'preview_layerset.svg')
 
 # example-connector
