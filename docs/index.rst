@@ -105,7 +105,7 @@ Arc
    :align: center
 
 ***********
-Arc
+Simple shapes
 ***********
 
 
@@ -140,6 +140,10 @@ Arc
 .. image:: _static/C.svg
    :align: center
 
+
+###############
+Boolean / outline / offset
+###############
 
 
 .. literalinclude:: gen_geometry.py
