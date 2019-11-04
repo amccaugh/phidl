@@ -389,9 +389,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6,
 
 
 def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
-    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
-    return offset(elements = elements, distance = -distance, join_first = join_first,
-                 precision = precision, layer = layer)
+    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
 
 
 def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-6, layer = 0):
@@ -459,7 +457,7 @@ def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0)
     return D
 
 
-def outline(elements, distance = 1, precision = 1e-6, layer = 0):
+def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices
     """
@@ -470,8 +468,8 @@ def outline(elements, distance = 1, precision = 1e-6, layer = 0):
         else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
-    D_bloated = offset(D, distance = distance, join_first = True, precision = precision, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = precision, layer = layer)
+    D_bloated = offset(D, distance = distance, join_first = True, num_divisions = num_divisions, precision = precision, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', num_divisions = num_divisions, precision = precision, layer = layer)
     return Outline
 
 
