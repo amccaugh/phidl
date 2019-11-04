@@ -5,17 +5,32 @@
 
 
 ###############
-Boolean / outline / offset
+Basic shapes
 ###############
 
 .. literalinclude:: gen_geometry.py
    :language: python
    :dedent: 4
    :start-after: example-rectangle
-   :end-before: pu.write_svg
+   :end-before: create_image
 
 .. image:: _static/rectangle.svg
    :align: center
+
+
+   
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 4
+   :start-after: example-bbox
+   :end-before: create_image
+
+.. image:: _static/bbox.svg
+   :align: center
+###############
+Boolean / outline / offset
+###############
+
 
 ***********
 Outline
