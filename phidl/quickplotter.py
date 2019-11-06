@@ -144,10 +144,17 @@ def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
 
 
 def _draw_port(ax, port, arrow_scale, color):
-    x,y = port.midpoint
+    # x,y = port.midpoint
     nv = port.normal
-    n = (nv[1]-nv[0])*port.width/10*arrow_scale
-    dx, dy = n[0], n[1]
+    n = (nv[1]-nv[0])
+    dx,dy = n*port.width/8*arrow_scale
+    dx += n[1]*port.width/8*arrow_scale
+    dy += n[0]*port.width/8*arrow_scale
+    # dx,dy = np.array(np.cos(port.orientation/180*np.pi), np.sin(port.orientation/180*np.pi))*port.width/10*arrow_scale + \
+    #         np.array(np.cos((port.orientation+90)/180*np.pi), np.sin((port.orientation+90)/180*np.pi))*port.width/4*arrow_scale
+    # print(port.midpoint)
+    # print(port.width)
+    # print(nv)
     xbound, ybound = np.column_stack(port.endpoints)
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
     arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width*arrow_scale
@@ -159,7 +166,7 @@ def _draw_port(ax, port, arrow_scale, color):
     ax.plot(arrow_points[:,0], arrow_points[:,1], alpha = 0.5, linewidth = 1, color = color) # Draw port edge
     # plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
     #           head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
-    ax.text(port.midpoint[0]+dx, port.midpoint[1]+dy, port.name)
+    ax.text(port.midpoint[0]+dx, port.midpoint[1]+dy, port.name, horizontalalignment = 'center', verticalalignment = 'center')
     bbox = [xmin,ymin,xmax,ymax]
     return bbox
 
