@@ -14,6 +14,7 @@ import gdspy
 
 try:
     from matplotlib import pyplot as plt
+    from matplotlib.collections import PolyCollection
 except:
     warnings.warn("""PHIDL tried to import matplotlib but it failed. PHIDL
                      will still work but quickplot() may not.  Try using
@@ -50,7 +51,6 @@ def quickplot(items, show_ports = True, show_subports = True,
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
 
     # Iterate through each each Device/DeviceReference/Polygon
-    np.random.seed(0)
     if type(items) is not list:  items = [items]
     for item in items:
         if isinstance(item, (Device, DeviceReference, gdspy.CellArray)):
@@ -83,6 +83,7 @@ def quickplot(items, show_ports = True, show_subports = True,
             layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
             _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
+    ax.autoscale()
     plt.draw()
     plt.show(block = False)
 
@@ -105,15 +106,15 @@ def _get_layerprop(layer, datatype):
     return {'color':color, 'alpha':alpha}
 
 
-def _draw_polygons(polygons, ax, **kwargs):
+def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
     """ This function uses a trick where all polygon points are concatenated,
     separated only by NaN values.  This speeds up drawing considerably, see
     http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
     """
-    nan_pt = np.array([[np.nan, np.nan]])
-    polygons_with_nans = [np.concatenate((p, [p[0]], nan_pt), axis = 0) for p in polygons]
-    all_polygons = np.vstack(polygons_with_nans)
-    plt.fill(all_polygons[:,0], all_polygons[:,1], **kwargs)
+    coll = PolyCollection(polygons, **kwargs)
+    ax.add_collection(coll)
+        
+
 
 
 def _draw_port(port, arrow_scale = 1, **kwargs):
