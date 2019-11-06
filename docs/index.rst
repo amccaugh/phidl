@@ -19,7 +19,7 @@ Rectangle
    :start-after: example-rectangle
    :end-before: create_image
 
-.. image:: _static/rectangle.svg
+.. image:: _static/rectangle.png
    :align: center
 
 
@@ -30,7 +30,7 @@ Rectangle
    :start-after: example-bbox
    :end-before: create_image
 
-.. image:: _static/bbox.svg
+.. image:: _static/bbox.png
    :align: center
 
 
@@ -46,7 +46,7 @@ Cross
    :start-after: example-cross
    :end-before: create_image
 
-.. image:: _static/cross.svg
+.. image:: _static/cross.png
    :align: center
 
 
@@ -60,7 +60,7 @@ Ellipse
    :start-after: example-ellipse
    :end-before: create_image
 
-.. image:: _static/ellipse.svg
+.. image:: _static/ellipse.png
    :align: center
 
 
@@ -74,7 +74,7 @@ Circle
    :start-after: example-circle
    :end-before: create_image
 
-.. image:: _static/circle.svg
+.. image:: _static/circle.png
    :align: center
 
 ***********
@@ -87,7 +87,7 @@ Ring
    :start-after: example-ring
    :end-before: create_image
 
-.. image:: _static/ring.svg
+.. image:: _static/ring.png
    :align: center
 
 
@@ -101,7 +101,7 @@ Arc
    :start-after: example-arc
    :end-before: create_image
 
-.. image:: _static/arc.svg
+.. image:: _static/arc.png
    :align: center
 
 ***********
@@ -115,7 +115,7 @@ Simple shapes
    :start-after: example-straight
    :end-before: create_image
 
-.. image:: _static/straight.svg
+.. image:: _static/straight.png
    :align: center
 
 
@@ -126,7 +126,7 @@ Simple shapes
    :start-after: example-L
    :end-before: create_image
 
-.. image:: _static/L.svg
+.. image:: _static/L.png
    :align: center
 
 
@@ -137,7 +137,7 @@ Simple shapes
    :start-after: example-C
    :end-before: create_image
 
-.. image:: _static/C.svg
+.. image:: _static/C.png
    :align: center
 
 
@@ -152,7 +152,7 @@ Boolean / outline / offset
    :start-after: example-offset
    :end-before: create_image
 
-.. image:: _static/offset.svg
+.. image:: _static/offset.png
    :align: center
 
 
@@ -163,7 +163,7 @@ Boolean / outline / offset
    :start-after: example-invert
    :end-before: create_image
 
-.. image:: _static/invert.svg
+.. image:: _static/invert.png
    :align: center
 
 
@@ -174,7 +174,7 @@ Boolean / outline / offset
    :start-after: example-boolean
    :end-before: create_image
 
-.. image:: _static/boolean.svg
+.. image:: _static/boolean.png
    :align: center
 
 
@@ -185,7 +185,7 @@ Boolean / outline / offset
    :start-after: example-outline
    :end-before: create_image
 
-.. image:: _static/outline.svg
+.. image:: _static/outline.png
    :align: center
 
 
@@ -196,7 +196,7 @@ Boolean / outline / offset
    :start-after: example-xor_diff
    :end-before: create_image
 
-.. image:: _static/xor_diff.svg
+.. image:: _static/xor_diff.png
    :align: center
 
 
@@ -207,7 +207,7 @@ Boolean / outline / offset
    :start-after: example-union
    :end-before: create_image
 
-.. image:: _static/union.svg
+.. image:: _static/union.png
    :align: center
 
 
@@ -218,7 +218,7 @@ Boolean / outline / offset
    :start-after: example-litho_steps
    :end-before: create_image
 
-.. image:: _static/litho_steps.svg
+.. image:: _static/litho_steps.png
    :align: center
 
 
@@ -229,7 +229,7 @@ Boolean / outline / offset
    :start-after: example-litho_star
    :end-before: create_image
 
-.. image:: _static/litho_star.svg
+.. image:: _static/litho_star.png
    :align: center
 
 
@@ -240,7 +240,7 @@ Boolean / outline / offset
    :start-after: example-litho_calipers
    :end-before: create_image
 
-.. image:: _static/litho_calipers.svg
+.. image:: _static/litho_calipers.png
    :align: center
 
 
@@ -251,7 +251,7 @@ Boolean / outline / offset
    :start-after: example-extract
    :end-before: create_image
 
-.. image:: _static/extract.svg
+.. image:: _static/extract.png
    :align: center
 
 
@@ -262,7 +262,7 @@ Boolean / outline / offset
    :start-after: example-copy
    :end-before: create_image
 
-.. image:: _static/copy.svg
+.. image:: _static/copy.png
    :align: center
 
 
@@ -273,7 +273,7 @@ Boolean / outline / offset
    :start-after: example-deepcopy
    :end-before: create_image
 
-.. image:: _static/deepcopy.svg
+.. image:: _static/deepcopy.png
    :align: center
 
 
@@ -284,7 +284,7 @@ Boolean / outline / offset
    :start-after: example-copy_layer
    :end-before: create_image
 
-.. image:: _static/copy_layer.svg
+.. image:: _static/copy_layer.png
    :align: center
 
 
@@ -295,7 +295,7 @@ Boolean / outline / offset
    :start-after: example-import_gds
    :end-before: create_image
 
-.. image:: _static/import_gds.svg
+.. image:: _static/import_gds.png
    :align: center
 
 
@@ -306,7 +306,7 @@ Boolean / outline / offset
    :start-after: example-preview_layerset
    :end-before: create_image
 
-.. image:: _static/preview_layerset.svg
+.. image:: _static/preview_layerset.png
    :align: center
 
 
@@ -317,7 +317,7 @@ Boolean / outline / offset
    :start-after: example-connector
    :end-before: create_image
 
-.. image:: _static/connector.svg
+.. image:: _static/connector.png
    :align: center
 
 
@@ -328,7 +328,7 @@ Boolean / outline / offset
    :start-after: example-compass
    :end-before: create_image
 
-.. image:: _static/compass.svg
+.. image:: _static/compass.png
    :align: center
 
 
@@ -339,7 +339,7 @@ Boolean / outline / offset
    :start-after: example-compass_multi
    :end-before: create_image
 
-.. image:: _static/compass_multi.svg
+.. image:: _static/compass_multi.png
    :align: center
 
 
@@ -350,7 +350,7 @@ Boolean / outline / offset
    :start-after: example-flagpole
    :end-before: create_image
 
-.. image:: _static/flagpole.svg
+.. image:: _static/flagpole.png
    :align: center
 
 
@@ -361,7 +361,7 @@ Boolean / outline / offset
    :start-after: example-tee
    :end-before: create_image
 
-.. image:: _static/tee.svg
+.. image:: _static/tee.png
    :align: center
 
 
@@ -372,7 +372,7 @@ Boolean / outline / offset
    :start-after: example-taper
    :end-before: create_image
 
-.. image:: _static/taper.svg
+.. image:: _static/taper.png
    :align: center
 
 
@@ -383,7 +383,7 @@ Boolean / outline / offset
    :start-after: example-ramp
    :end-before: create_image
 
-.. image:: _static/ramp.svg
+.. image:: _static/ramp.png
    :align: center
 
 
@@ -394,7 +394,7 @@ Boolean / outline / offset
    :start-after: example-text
    :end-before: create_image
 
-.. image:: _static/text.svg
+.. image:: _static/text.png
    :align: center
 
 
@@ -405,7 +405,7 @@ Boolean / outline / offset
    :start-after: example-basic_die
    :end-before: create_image
 
-.. image:: _static/basic_die.svg
+.. image:: _static/basic_die.png
    :align: center
 
 
@@ -416,7 +416,7 @@ Boolean / outline / offset
    :start-after: example-fill_rectangle
    :end-before: create_image
 
-.. image:: _static/fill_rectangle.svg
+.. image:: _static/fill_rectangle.png
    :align: center
 
 
@@ -427,7 +427,7 @@ Boolean / outline / offset
    :start-after: example-grating
    :end-before: create_image
 
-.. image:: _static/grating.svg
+.. image:: _static/grating.png
    :align: center
 
 
@@ -438,7 +438,7 @@ Boolean / outline / offset
    :start-after: example-test_via
    :end-before: create_image
 
-.. image:: _static/test_via.svg
+.. image:: _static/test_via.png
    :align: center
 
 
@@ -449,7 +449,7 @@ Boolean / outline / offset
    :start-after: example-test_comb
    :end-before: create_image
 
-.. image:: _static/test_comb.svg
+.. image:: _static/test_comb.png
    :align: center
 
 
@@ -460,7 +460,7 @@ Boolean / outline / offset
    :start-after: example-test_ic
    :end-before: create_image
 
-.. image:: _static/test_ic.svg
+.. image:: _static/test_ic.png
    :align: center
 
 
@@ -471,7 +471,7 @@ Boolean / outline / offset
    :start-after: example-test_res
    :end-before: create_image
 
-.. image:: _static/test_res.svg
+.. image:: _static/test_res.png
    :align: center
 
 
@@ -482,7 +482,7 @@ Boolean / outline / offset
    :start-after: example-optimal_hairpin
    :end-before: create_image
 
-.. image:: _static/optimal_hairpin.svg
+.. image:: _static/optimal_hairpin.png
    :align: center
 
 
@@ -493,7 +493,7 @@ Boolean / outline / offset
    :start-after: example-optimal_step
    :end-before: create_image
 
-.. image:: _static/optimal_step.svg
+.. image:: _static/optimal_step.png
    :align: center
 
 
@@ -504,7 +504,7 @@ Boolean / outline / offset
    :start-after: example-optimal_90deg
    :end-before: create_image
 
-.. image:: _static/optimal_90deg.svg
+.. image:: _static/optimal_90deg.png
    :align: center
 
 
@@ -515,7 +515,7 @@ Boolean / outline / offset
    :start-after: example-snspd
    :end-before: create_image
 
-.. image:: _static/snspd.svg
+.. image:: _static/snspd.png
    :align: center
 
 
@@ -526,7 +526,7 @@ Boolean / outline / offset
    :start-after: example-snspd_expanded
    :end-before: create_image
 
-.. image:: _static/snspd_expanded.svg
+.. image:: _static/snspd_expanded.png
    :align: center
 
 
