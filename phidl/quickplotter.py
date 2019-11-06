@@ -8,7 +8,7 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon
+from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon, _rotate_points
 import gdspy
 
 
@@ -37,11 +37,13 @@ except:
                      quickplot() instead (based on matplotlib) """)
 
 
-def quickplot(items, show_ports = True, show_subports = True,
+def quickplot(items, show_ports = True, show_subports = False,
               label_ports = True, label_aliases = False, new_window = False):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
-    if new_window: fig, ax = plt.subplots(1)
+    if new_window: 
+        fig, ax = plt.subplots(1)
+        ax.autoscale(enable = True, tight = True)
     else:
         ax = plt.gca()  # Get current figure
         ax.cla()        # Clears the axes of all previous polygons
@@ -66,13 +68,13 @@ def quickplot(items, show_ports = True, show_subports = True,
                         if (port.width is None) or (port.width == 0):
                             _draw_port_as_point(port)
                         else:
-                            _draw_port(port, arrow_scale = 2, shape = 'full', color = 'k')
+                            _draw_port(ax, port, arrow_scale = 1,  color = 'r')
                         ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
                     if not isinstance(sd, (gdspy.CellArray)):
                         for name, port in sd.ports.items():
-                            _draw_port(port, arrow_scale = 1, shape = 'right', color = 'r')
+                            _draw_port(ax, port, arrow_scale = 0.75, color = 'k')
                             ax.text(port.midpoint[0], port.midpoint[1], name)
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
@@ -83,7 +85,6 @@ def quickplot(items, show_ports = True, show_subports = True,
             layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
             _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
-    ax.autoscale()
     plt.draw()
     plt.show(block = False)
 
@@ -117,17 +118,16 @@ def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
 
 
 
-def _draw_port(port, arrow_scale = 1, **kwargs):
-    x = port.midpoint[0]
-    y = port.midpoint[1]
-    nv = port.normal
-    n = (nv[1]-nv[0])*arrow_scale
-    dx, dy = n[0], n[1]
+def _draw_port(ax, port, arrow_scale, color):
     xbound, ybound = np.column_stack(port.endpoints)
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
-    plt.plot(xbound, ybound, 'r', alpha = 0.5, linewidth = 3) # Draw port edge
-    plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
-              head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
+    arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width*arrow_scale
+    arrow_points += port.midpoint
+    arrow_points = _rotate_points(arrow_points, angle = port.orientation, center = port.midpoint)
+    ax.plot(xbound, ybound, alpha = 0.5, linewidth = 3, color = color) # Draw port edge
+    ax.plot(arrow_points[:,0], arrow_points[:,1], alpha = 0.5, linewidth = 1, color = color) # Draw port edge
+    # plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
+    #           head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
 
 
 def _draw_port_as_point(port, **kwargs):
