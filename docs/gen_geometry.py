@@ -9,20 +9,21 @@ from phidl import quickplot as qp
 import os
 
 
-def create_image(D, filename, size = 300, filepath = '_static/'):
+def create_image(D, filename, filepath = '_static/'):
     # if any(D.size == 0):
     #     D = pg.text('?')
     qp(D)
     fig = plt.gcf()
     # ax = plt.gca()
-    fig.set_size_inches(10, 4, forward=True)
+    scale = 0.75
+    fig.set_size_inches(10*scale, 4*scale, forward=True)
     # ax.autoscale()
     # plt.draw()
     # plt.show(block = False)
     filename +=  '.png'
     filepathfull = os.path.join(os.path.curdir, filepath, filename)
     print(filepathfull)
-    fig.savefig(filepathfull, dpi=96)
+    fig.savefig(filepathfull, dpi=int(96/scale))
 
 
 # example-rectangle
