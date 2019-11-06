@@ -389,32 +389,25 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6,
 
 
 def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
-    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
-    return offset(elements = elements, distance = -distance, join_first = join_first,
-                 precision = precision, layer = layer)
+    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
 
 
-def invert(elements, border = 10, precision = 1e-6, layer = 0):
+def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-6, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
-    D = Device()
+    Temp = Device()
     if type(elements) is not list: elements = [elements]
     for e in elements:
-        if isinstance(e, Device): D.add_ref(e)
-        else: D.add(e)
+        if isinstance(e, Device): Temp.add_ref(e)
+        else: Temp.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     # Build the rectangle around the device D
-    R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
-    R.center = D.center
+    R = rectangle(size = (Temp.xsize + 2*border, Temp.ysize + 2*border))
+    R.center = Temp.center
 
-    operand1 = R.get_polygons()
-    operand2 = D.get_polygons()
-    p = gdspy.fast_boolean(operand1, operand2, operation = 'not', precision=precision,
-                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
-
-    D = Device('invert')
-    D.add_polygon(p, layer=layer)
+    D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
+                num_divisions = num_divisions, layer = layer)
     return D
 
 
@@ -464,7 +457,7 @@ def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0)
     return D
 
 
-def outline(elements, distance = 1, precision = 1e-6, layer = 0):
+def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices
     """
@@ -475,8 +468,8 @@ def outline(elements, distance = 1, precision = 1e-6, layer = 0):
         else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
-    D_bloated = offset(D, distance = distance, join_first = True, precision = precision, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = precision, layer = layer)
+    D_bloated = offset(D, distance = distance, join_first = True, num_divisions = num_divisions, precision = precision, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', num_divisions = num_divisions, precision = precision, layer = layer)
     return Outline
 
 
