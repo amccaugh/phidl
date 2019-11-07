@@ -45,8 +45,16 @@ def quickplot(items, show_ports = True, show_subports = False,
         fig, ax = plt.subplots(1)
         ax.autoscale(enable = True, tight = True)
     else:
-        ax = plt.gca()  # Get current figure
-        ax.cla()        # Clears the axes of all previous polygons
+        if plt.fignum_exists(num='PHIDL quickplot'):
+            fig = plt.figure('PHIDL quickplot')
+            plt.clf()
+            ax = fig.add_subplot(111)
+            # ax = fig.axes[0]
+        else:
+            fig,ax = plt.subplots(num='PHIDL quickplot')
+        # ax = plt.gca()  # Get current figure
+        # ax.cla()        # Clears the axes of all previous polygons
+        # plt.draw()
     ax.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
@@ -81,7 +89,7 @@ def quickplot(items, show_ports = True, show_subports = False,
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
                     ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
-                             weight = 'bold', size = 'large', ha = 'center')
+                             weight = 'bold', size = 'large', ha = 'center', fontsize = 14)
         elif isinstance(item, Polygon):
             polygons = item.polygons
             layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
@@ -166,7 +174,8 @@ def _draw_port(ax, port, arrow_scale, color):
     ax.plot(arrow_points[:,0], arrow_points[:,1], alpha = 0.5, linewidth = 1, color = color) # Draw port edge
     # plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
     #           head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
-    ax.text(port.midpoint[0]+dx, port.midpoint[1]+dy, port.name, horizontalalignment = 'center', verticalalignment = 'center')
+    ax.text(port.midpoint[0]+dx, port.midpoint[1]+dy, port.name,
+        horizontalalignment = 'center', verticalalignment = 'center', fontsize = 14)
     bbox = [xmin,ymin,xmax,ymax]
     return bbox
 
@@ -176,7 +185,7 @@ def _draw_port_as_point(ax, port, **kwargs):
     y = port.midpoint[1]
     plt.plot(x, y, 'r+', alpha = 0.5, markersize = 15, markeredgewidth = 2) # Draw port edge
     bbox = [x-port.width/2,y-port.width/2,x+port.width/2,y+port.width/2]
-    ax.text(port.midpoint[0], port.midpoint[1], port.name)
+    ax.text(port.midpoint[0], port.midpoint[1], port.name, fontsize = 14)
     return bbox
 
 
