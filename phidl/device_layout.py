@@ -66,17 +66,14 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
 def _is_iterable(items):
     return isinstance(items, (list, tuple, set, np.ndarray))
 
-def _parse_coordinate(c, ports = {}):
-    """ Translates various inputs (lists, tuples, Ports, ) to an (x,y) coordinate """
+def _parse_coordinate(c):
+    """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate """
     if isinstance(c, Port):
         return c.midpoint
     elif np.array(c).size == 2:
         return c
-    elif c in ports: 
-        return ports[c].midpoint
     else:
-        return None
-
+        raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
 
 
 
@@ -608,9 +605,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o', magnification = magnification, rotation = rotation,
-                                 layer = gds_layer, texttype = gds_datatype))
-        return self
+        l = Label(text = text, position = position, anchor = 'o', magnification = magnification, rotation = rotation,
+                                 layer = gds_layer, texttype = gds_datatype)
+        self.add(l)
+        return l
 
     def annotate(self, *args, **kwargs):
         warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
@@ -818,6 +816,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             e.rotate(angle = angle, center = center)
         for e in self.references:
             e.rotate(angle, center)
+        for e in self.labels:
+            e.rotate(angle, center)
         for p in self.ports.values():
             p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
@@ -855,18 +855,16 @@ class Device(gdspy.Cell, _GeometryHelper):
             e.translate(dx,dy)
         for e in self.references:
             e.move(destination = d, origin = o)
+        for e in self.labels:
+            e.move(destination = d, origin = o)
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
-
-        # Move labels
-        for l in self.labels:
-            l.translate(dx,dy)
 
         self._bb_valid = False
         return self
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        for e in (self.polygons+self.references):
+        for e in (self.polygons+self.references+self.labels):
             e.reflect(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
@@ -1175,4 +1173,38 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        return self
+
+
+
+class Label(gdspy.Label, _GeometryHelper):
+
+    def __init__(self, *args, **kwargs):
+        super(Label, self).__init__(*args, **kwargs)
+
+
+    @property
+    def bbox(self):
+        return np.array([[self.position[0], self.position[1]],[self.position[0], self.position[1]]])
+
+    def rotate(self, angle = 45, center = (0,0)):
+        self.position = _rotate_points(self.position, angle = angle, center = center)
+        return self
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        o = _parse_coordinate(origin)
+        d = _parse_coordinate(destination)
+
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        self.position += np.array(d) - o
+        return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        self.position = _reflect_points(self.position, p1, p2)
         return self
