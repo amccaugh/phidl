@@ -47,14 +47,10 @@ def quickplot(items, show_ports = True, show_subports = False,
     else:
         if plt.fignum_exists(num='PHIDL quickplot'):
             fig = plt.figure('PHIDL quickplot')
-            plt.clf()
+            plt.clf() # Erase figure so toolbar at top works correctly
             ax = fig.add_subplot(111)
-            # ax = fig.axes[0]
         else:
             fig,ax = plt.subplots(num='PHIDL quickplot')
-        # ax = plt.gca()  # Get current figure
-        # ax.cla()        # Clears the axes of all previous polygons
-        # plt.draw()
     ax.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
