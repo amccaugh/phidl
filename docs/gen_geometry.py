@@ -42,7 +42,7 @@ from phidl import Device
 D = Device()
 arc = D << pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1).rotate(25)
  # Draw a rectangle around the arc we created by using the arc's bounding box
-rect = D << pg.bbox(bbox = A.bbox, layer = 0)
+rect = D << pg.bbox(bbox = arc.bbox, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'bbox')
 
@@ -76,7 +76,7 @@ create_image(D, 'ring')
 # example-arc
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.arc(radius = 3.2, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
+D = pg.arc(radius = 2.0, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'arc')
 
