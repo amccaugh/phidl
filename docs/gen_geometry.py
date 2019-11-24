@@ -2,6 +2,7 @@
 import phidl.utilities as pu
 from phidl import Device
 from matplotlib import pyplot as plt
+def qp(*args):return None # Dummy quickplot
 
 
 import phidl.geometry as pg
@@ -28,58 +29,79 @@ def create_image(D, filename, filepath = '_static/'):
 
 # example-rectangle
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.rectangle(size = (4.5, 2), layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'rectangle')
 
 
 # example-bbox
 import phidl.geometry as pg
+from phidl import quickplot as qp
 A = pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1)
 D = pg.bbox(bbox = A.bbox, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'bbox')
 
 # example-cross
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.cross(length = 10, width = 0.5, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'cross')
 
 # example-ellipse
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'ellipse')
 
 # example-circle
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.circle(radius = 10, angle_resolution = 2.5, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'circle')
 
 # example-ring
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'ring')
 
 # example-arc
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'arc')
 
 # example-straight
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.straight(size = (4,2), layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'straight')
 
 # example-L
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.L(width = 1, size = (10,20) , layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'L')
 
 # example-C
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.C(width = 1, size = (10,20) , layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'C')
 
 # example-offset
 import phidl.geometry as pg
+from phidl import quickplot as qp
 # Create geometry to be offset (expanded / contracted)
 T = Device()
 T << pg.ellipse(layer = 1)
@@ -93,32 +115,42 @@ Tshrink = pg.offset(T, distance = 1.5, join_first = True, precision = 1e-6,
 D = Device()
 D.add_ref(Texpanded).movex(0)
 D.add_ref(Tshrink).movex(20)
+qp(D) # quickplot the geometry
 create_image(D, 'offset')
 
 # example-invert
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.invert(pg.ellipse(), border = 10, precision = 1e-6, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'invert')
 
 # example-boolean
 import phidl.geometry as pg
+from phidl import quickplot as qp
 A = pg.ellipse()
 B = pg.rectangle()
 D = pg.boolean(A, B, operation = 'not', precision = 1e-6, num_divisions = [1,1], layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'boolean')
 
 # example-outline
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.outline(pg.ellipse(), distance = 1, precision = 1e-6, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'outline')
 
 # example-xor_diff
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.xor_diff(A,B, precision = 1e-6)
+qp(D) # quickplot the geometry
 create_image(D, 'xor_diff')
 
 # example-union
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = Device()
 D << pg.ellipse(layer = 0)
 D << pg.ellipse(layer = 0).rotate(15*1)
@@ -137,30 +169,36 @@ D_joined_by_layer = pg.union(D, by_layer = True)
 # Space out shapes
 D.add_ref(D_joined).movex(25)
 D.add_ref(D_joined_by_layer).movex(50)
+qp(D) # quickplot the geometry
 create_image(D, 'union')
 
 # example-litho_steps
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.litho_steps(
         line_widths = [1,2,4,8,16],
         line_spacing = 10,
         height = 100,
         layer = 0
         )
+qp(D) # quickplot the geometry
 create_image(D, 'litho_steps')
 
 # example-litho_star
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.litho_star(
         num_lines = 20,
         line_width = 2,
         diameter = 200,
         layer = 0
         )
+qp(D) # quickplot the geometry
 create_image(D, 'litho_star')
 
 # example-litho_calipers
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.litho_calipers(
         notch_size = [2,5],
         notch_spacing = 2,
@@ -169,43 +207,55 @@ D = pg.litho_calipers(
         row_spacing = 0,
         layer1 = 1,
         layer2 = 2)
+qp(D) # quickplot the geometry
 create_image(D, 'litho_calipers')
 
 # example-extract
 import phidl.geometry as pg
+from phidl import quickplot as qp
 X = pg.ellipse(layer = {0,1})
 D = pg.extract(X, layers = [0,1])
+qp(D) # quickplot the geometry
 create_image(D, 'extract')
 
 # example-copy
 import phidl.geometry as pg
+from phidl import quickplot as qp
 X = pg.ellipse()
 D = pg.copy(X)
+qp(D) # quickplot the geometry
 create_image(D, 'copy')
 
 # example-deepcopy
 import phidl.geometry as pg
+from phidl import quickplot as qp
 X = pg.ellipse()
 D = pg.deepcopy(X)
+qp(D) # quickplot the geometry
 create_image(D, 'deepcopy')
 
 # example-copy_layer
 import phidl.geometry as pg
+from phidl import quickplot as qp
 X = Device()
 X << pg.ellipse(layer = 0)
 X << pg.ellipse(layer = 1)
 D = pg.copy_layer(X, layer = 1, new_layer = 2)
+qp(D) # quickplot the geometry
 create_image(D, 'copy_layer')
 
 # example-import_gds
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.ellipse()
 D.write_gds('myoutput.gds')
 D = pg.import_gds(filename = 'myoutput.gds', cellname = None, flatten = False)
+qp(D) # quickplot the geometry
 create_image(D, 'import_gds')
 
 # example-preview_layerset
 import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import LayerSet
 lys = LayerSet()
 lys.add_layer('intrinsic', color = 'gray', gds_layer = 0, gds_datatype = 0)
@@ -216,50 +266,68 @@ lys.add_layer('n', color = 'lightgreen', gds_layer = 4, gds_datatype = 0)
 lys.add_layer('n+', color = 'green', gds_layer = 4, gds_datatype = 0)
 lys.add_layer('n++', color = 'darkgreen', gds_layer = 5, gds_datatype = 0)
 D = pg.preview_layerset(lys, size = 100, spacing = 100)
+qp(D) # quickplot the geometry
 create_image(D, 'preview_layerset')
 
 # example-connector
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.connector(midpoint = (0,0), width = 1, orientation = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'connector')
 
 # example-compass
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.compass(size = (4,2), layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'compass')
 
 # example-compass_multi
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'compass_multi')
 
 # example-flagpole
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'flagpole')
 
 # example-tee
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'tee')
 
 # example-taper
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'taper')
 
 # example-ramp
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.ramp(length = 10, width1 = 5, width2 = 8, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'ramp')
 
 # example-text
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.text(text = 'abcd', size = 10, justify = 'left', layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'text')
 
 # example-basic_die
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.basic_die(
               size = (10000, 10000),
               street_width = 100,
@@ -271,76 +339,99 @@ D = pg.basic_die(
               draw_bbox = True,
               bbox_layer = 99,
               )
+qp(D) # quickplot the geometry
 create_image(D, 'basic_die')
 
 # example-fill_rectangle
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers = None,
                     margin = 100, fill_layers = (0,1,3),
                    fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None)
+qp(D) # quickplot the geometry
 create_image(D, 'fill_rectangle')
 
 # example-grating
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 5, length_taper = 10, width = 0.4, partial_etch = False)
+qp(D) # quickplot the geometry
 create_image(D, 'grating')
 
 # example-test_via
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, pad_size = (300,300), min_pad_spacing = 0,
                              pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3)
+qp(D) # quickplot the geometry
 create_image(D, 'test_via')
 
 # example-test_comb
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
               comb_layer = 0, overlap_zigzag_layer = 1,
               comb_pad_layer = None, comb_gnd_layer = None, overlap_pad_layer = None)
+qp(D) # quickplot the geometry
 create_image(D, 'test_comb')
 
 # example-test_ic
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200,200), pad_gap=75,
             wire_layer = 0, pad_layer = 1, gnd_layer = None)
+qp(D) # quickplot the geometry
 create_image(D, 'test_ic')
 
 # example-test_res
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.test_res(pad_size = [50,50],
                      num_squares = 1000,
                      width = 1,
                      res_layer = 0,
                      pad_layer = None,
                      gnd_layer = None)
+qp(D) # quickplot the geometry
 create_image(D, 'test_res')
 
 # example-optimal_hairpin
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     turn_ratio = 4, num_pts = 50, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'optimal_hairpin')
 
 # example-optimal_step
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, symmetric = False, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'optimal_step')
 
 # example-optimal_90deg
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'optimal_90deg')
 
 # example-snspd
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         num_squares = None, turn_ratio = 4,
         terminals_same_side = False, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'snspd')
 
 # example-snspd_expanded
 import phidl.geometry as pg
+from phidl import quickplot as qp
 D = pg.snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
            num_squares = None, connector_width = 1, connector_symmetric = False,
             turn_ratio = 4, terminals_same_side = False, layer = 0)
+qp(D) # quickplot the geometry
 create_image(D, 'snspd_expanded')
