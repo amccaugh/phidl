@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 import os
 
 
@@ -30,6 +31,7 @@ def create_image(D, filename, filepath = '_static/'):
 # example-rectangle
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.rectangle(size = (4.5, 2), layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'rectangle')
@@ -38,6 +40,7 @@ create_image(D, 'rectangle')
 # example-bbox
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 from phidl import Device
 D = Device()
 arc = D << pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1).rotate(25)
@@ -49,6 +52,7 @@ create_image(D, 'bbox')
 # example-cross
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.cross(length = 10, width = 0.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'cross')
@@ -56,12 +60,14 @@ create_image(D, 'cross')
 # example-ellipse
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
 create_image(D, 'ellipse')
 
 # example-circle
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.circle(radius = 10, angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'circle')
@@ -69,6 +75,7 @@ create_image(D, 'circle')
 # example-ring
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.ring(radius = 5, width = 0.5, angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'ring')
@@ -76,6 +83,7 @@ create_image(D, 'ring')
 # example-arc
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.arc(radius = 2.0, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'arc')
@@ -83,6 +91,7 @@ create_image(D, 'arc')
 # example-straight
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.straight(size = (4,2), layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'straight')
@@ -90,6 +99,7 @@ create_image(D, 'straight')
 # example-L
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.L(width = 7, size = (10,20) , layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'L')
@@ -97,6 +107,7 @@ create_image(D, 'L')
 # example-C
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.C(width = 7, size = (10,20) , layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'C')
@@ -104,6 +115,7 @@ create_image(D, 'C')
 # example-offset
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 from phidl import Device
 # Create `T`, an ellipse and rectangle which will be offset (expanded / contracted)
 T = Device()
@@ -128,6 +140,7 @@ create_image(D, 'offset')
 # example-invert
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 E = pg.ellipse(radii = (10,5))
 D = pg.invert(E, border = 0.5, precision = 1e-6, layer = 0)
 qp(D) # quickplot the geometry
@@ -136,6 +149,7 @@ create_image(D, 'invert')
 # example-boolean
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 from phidl import Device
 E = pg.ellipse(radii = (10,5), layer = 1)
 R = pg.rectangle(size = [15,5], layer = 2).movey(-1.5)
@@ -152,6 +166,7 @@ create_image(D, 'boolean')
 # example-outline
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 from phidl import Device
 # Create a blank device and add two shapes
 X = Device()
@@ -171,21 +186,31 @@ create_image(D, 'outline')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 from phidl import Device
-A = pg.ellipse(radii = [10,5], layer = 1)
-B = pg.ellipse(radii = [11,4], layer = 2)
+
+A = Device()
+A.add_ref(pg.ellipse(radii = [10,5], layer = 1))
+A.add_ref(pg.text('A')).move([3,0])
+B = Device()
+B.add_ref(pg.ellipse(radii = [11,4], layer = 1).movex(4))
+B.add_ref(pg.text('B')).move([3.2,0])
 X = pg.xor_diff(A = A, B = B, precision = 1e-6)
 
 # Plot the original geometry and the result
+# Upper left: A / Upper right: B
+# Lower left: A and B / Lower right: A xor B "diff" comparison
 D = Device()
-D.add_ref(A)
-D.add_ref(B)
-D.add_ref(X).movex(25)
+D.add_ref(A).move([-15,25])
+D.add_ref(B).move([15,25])
+D.add_ref(A).movex(-15)
+D.add_ref(B).movex(-15)
+D.add_ref(X).movex(15)
 qp(D) # quickplot the geometry
 create_image(D, 'xor_diff')
 
 # example-union
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = Device()
 D << pg.ellipse(layer = 0)
 D << pg.ellipse(layer = 0).rotate(15*1)
@@ -210,6 +235,7 @@ create_image(D, 'union')
 # example-litho_steps
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.litho_steps(
         line_widths = [1,2,4,8,16],
         line_spacing = 10,
@@ -222,10 +248,11 @@ create_image(D, 'litho_steps')
 # example-litho_star
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.litho_star(
         num_lines = 20,
-        line_width = 2,
-        diameter = 200,
+        line_width = 0.4,
+        diameter = 20,
         layer = 0
         )
 qp(D) # quickplot the geometry
@@ -234,10 +261,11 @@ create_image(D, 'litho_star')
 # example-litho_calipers
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.litho_calipers(
-        notch_size = [2,5],
+        notch_size = [1,5],
         notch_spacing = 2,
-        num_notches = 11,
+        num_notches = 7,
         offset_per_notch = 0.1,
         row_spacing = 0,
         layer1 = 1,
@@ -248,6 +276,10 @@ create_image(D, 'litho_calipers')
 # example-extract
 import phidl.geometry as pg
 from phidl import quickplot as qp
+from phidl import Device
+
+E = Device()
+E.add_ref(pg.)
 X = pg.ellipse(layer = {0,1})
 D = pg.extract(X, layers = [0,1])
 qp(D) # quickplot the geometry
@@ -256,6 +288,7 @@ create_image(D, 'extract')
 # example-copy
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 X = pg.ellipse()
 D = pg.copy(X)
 qp(D) # quickplot the geometry
@@ -264,6 +297,7 @@ create_image(D, 'copy')
 # example-deepcopy
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 X = pg.ellipse()
 D = pg.deepcopy(X)
 qp(D) # quickplot the geometry
@@ -272,6 +306,7 @@ create_image(D, 'deepcopy')
 # example-copy_layer
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 X = Device()
 X << pg.ellipse(layer = 0)
 X << pg.ellipse(layer = 1)
@@ -282,6 +317,7 @@ create_image(D, 'copy_layer')
 # example-import_gds
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.ellipse()
 D.write_gds('myoutput.gds')
 D = pg.import_gds(filename = 'myoutput.gds', cellname = None, flatten = False)
@@ -291,6 +327,7 @@ create_image(D, 'import_gds')
 # example-preview_layerset
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 from phidl import LayerSet
 lys = LayerSet()
 lys.add_layer('intrinsic', color = 'gray', gds_layer = 0, gds_datatype = 0)
@@ -307,6 +344,7 @@ create_image(D, 'preview_layerset')
 # example-connector
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.connector(midpoint = (0,0), width = 1, orientation = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'connector')
@@ -314,6 +352,7 @@ create_image(D, 'connector')
 # example-compass
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.compass(size = (4,2), layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'compass')
@@ -321,6 +360,7 @@ create_image(D, 'compass')
 # example-compass_multi
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'compass_multi')
@@ -328,27 +368,31 @@ create_image(D, 'compass_multi')
 # example-flagpole
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0)
+
+D = pg.flagpole(size = (50,25), stub_size = (4,8), shape = 'p', taper_type = 'fillet', layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'flagpole')
 
 # example-tee
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0)
+
+D = pg.tee(size = (8,4), stub_size = (1,2), taper_type = None, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'tee')
 
 # example-taper
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0)
+
+D = pg.taper(length = 10, width1 = 5, width2 = 4, port = None, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'taper')
 
 # example-ramp
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.ramp(length = 10, width1 = 5, width2 = 8, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'ramp')
@@ -356,22 +400,24 @@ create_image(D, 'ramp')
 # example-text
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.text(text = 'abcd', size = 10, justify = 'left', layer = 0)
+
+D = pg.text(text = 'Hello world!', size = 10, justify = 'left', layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'text')
 
 # example-basic_die
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.basic_die(
-              size = (10000, 10000),
-              street_width = 100,
-              street_length = 1000,
-              die_name = 'chip99',
-              text_size = 100,
-              text_location = 'SW',
+              size = (5000, 5000),  # Size of die
+              street_width = 100,   # Width of corner marks for die-sawing
+              street_length = 1000, # Length of corner marks for die-sawing
+              die_name = 'chip99',  # Label text
+              text_size = 300,      # Label text size
+              text_location = 'SW', # Label text compass location e.g. 'S', 'SE', 'SW'
               layer = 0,
-              draw_bbox = True,
+              draw_bbox = False,
               bbox_layer = 99,
               )
 qp(D) # quickplot the geometry
@@ -380,6 +426,7 @@ create_image(D, 'basic_die')
 # example-fill_rectangle
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers = None,
                     margin = 100, fill_layers = (0,1,3),
                    fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None)
@@ -389,6 +436,7 @@ create_image(D, 'fill_rectangle')
 # example-grating
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 5, length_taper = 10, width = 0.4, partial_etch = False)
 qp(D) # quickplot the geometry
 create_image(D, 'grating')
@@ -396,6 +444,7 @@ create_image(D, 'grating')
 # example-test_via
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, pad_size = (300,300), min_pad_spacing = 0,
                              pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2, via_layer = 3)
 qp(D) # quickplot the geometry
@@ -404,6 +453,7 @@ create_image(D, 'test_via')
 # example-test_comb
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
               comb_layer = 0, overlap_zigzag_layer = 1,
               comb_pad_layer = None, comb_gnd_layer = None, overlap_pad_layer = None)
@@ -413,6 +463,7 @@ create_image(D, 'test_comb')
 # example-test_ic
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200,200), pad_gap=75,
             wire_layer = 0, pad_layer = 1, gnd_layer = None)
 qp(D) # quickplot the geometry
@@ -421,6 +472,7 @@ create_image(D, 'test_ic')
 # example-test_res
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.test_res(pad_size = [50,50],
                      num_squares = 1000,
                      width = 1,
@@ -433,6 +485,7 @@ create_image(D, 'test_res')
 # example-optimal_hairpin
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     turn_ratio = 4, num_pts = 50, layer = 0)
 qp(D) # quickplot the geometry
@@ -441,6 +494,7 @@ create_image(D, 'optimal_hairpin')
 # example-optimal_step
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, symmetric = False, layer = 0)
 qp(D) # quickplot the geometry
@@ -449,6 +503,7 @@ create_image(D, 'optimal_step')
 # example-optimal_90deg
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'optimal_90deg')
@@ -456,6 +511,7 @@ create_image(D, 'optimal_90deg')
 # example-snspd
 import phidl.geometry as pg
 from phidl import quickplot as qp
+
 D = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         num_squares = None, turn_ratio = 4,
         terminals_same_side = False, layer = 0)
@@ -465,7 +521,8 @@ create_image(D, 'snspd')
 # example-snspd_expanded
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
+
+D = pg.snspd_expanded(wire_width = 0.3, wire_pitch = 0.6, size = (10,8),
            num_squares = None, connector_width = 1, connector_symmetric = False,
             turn_ratio = 4, terminals_same_side = False, layer = 0)
 qp(D) # quickplot the geometry
