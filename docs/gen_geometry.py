@@ -2,7 +2,7 @@
 import phidl.utilities as pu
 from phidl import Device
 from matplotlib import pyplot as plt
-def qp(*args):return None # Dummy quickplot
+#def qp(*args):return None # Dummy quickplot
 
 
 import phidl.geometry as pg
@@ -38,8 +38,11 @@ create_image(D, 'rectangle')
 # example-bbox
 import phidl.geometry as pg
 from phidl import quickplot as qp
-A = pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1)
-D = pg.bbox(bbox = A.bbox, layer = 0)
+from phidl import Device
+D = Device()
+arc = D << pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1).rotate(25)
+ # Draw a rectangle around the arc we created by using the arc's bounding box
+rect = D << pg.bbox(bbox = A.bbox, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'bbox')
 
@@ -53,8 +56,7 @@ create_image(D, 'cross')
 # example-ellipse
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
-qp(D) # quickplot the geometry
+D1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
 create_image(D, 'ellipse')
 
 # example-circle
@@ -67,14 +69,14 @@ create_image(D, 'circle')
 # example-ring
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0)
+D = pg.ring(radius = 5, width = 0.5, angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'ring')
 
 # example-arc
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
+D = pg.arc(radius = 3.2, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'arc')
 
@@ -88,63 +90,96 @@ create_image(D, 'straight')
 # example-L
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.L(width = 1, size = (10,20) , layer = 0)
+D = pg.L(width = 7, size = (10,20) , layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'L')
 
 # example-C
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.C(width = 1, size = (10,20) , layer = 0)
+D = pg.C(width = 7, size = (10,20) , layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'C')
 
 # example-offset
 import phidl.geometry as pg
 from phidl import quickplot as qp
-# Create geometry to be offset (expanded / contracted)
+from phidl import Device
+# Create `T`, an ellipse and rectangle which will be offset (expanded / contracted)
 T = Device()
-T << pg.ellipse(layer = 1)
-T << pg.rectangle(layer = 2)
+e = T << pg.ellipse(radii = (10,5), layer = 1)
+r = T << pg.rectangle(size = [15,5], layer = 2)
+r.move([3,-2.5])
 
-Texpanded = pg.offset(T, distance = 1, join_first = True, precision = 1e-6, 
+Texpanded = pg.offset(T, distance = 2, join_first = True, precision = 1e-6, 
         num_divisions = [1,1], layer = 0)
-Tshrink = pg.offset(T, distance = 1.5, join_first = True, precision = 1e-6, 
+Tshrink = pg.offset(T, distance = -1.5, join_first = True, precision = 1e-6, 
         num_divisions = [1,1], layer = 0)
 
+# Plot the original geometry, the expanded, and the shrunk versions
 D = Device()
-D.add_ref(Texpanded).movex(0)
-D.add_ref(Tshrink).movex(20)
+t1 = D.add_ref(T)
+t2 = D.add_ref(Texpanded)
+t3 = D.add_ref(Tshrink)
+D.distribute([t1,t2,t3], direction = 'x', spacing = 5)
 qp(D) # quickplot the geometry
 create_image(D, 'offset')
 
 # example-invert
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.invert(pg.ellipse(), border = 10, precision = 1e-6, layer = 0)
+E = pg.ellipse(radii = (10,5))
+D = pg.invert(E, border = 0.5, precision = 1e-6, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'invert')
 
 # example-boolean
 import phidl.geometry as pg
 from phidl import quickplot as qp
-A = pg.ellipse()
-B = pg.rectangle()
-D = pg.boolean(A, B, operation = 'not', precision = 1e-6, num_divisions = [1,1], layer = 0)
+from phidl import Device
+E = pg.ellipse(radii = (10,5), layer = 1)
+R = pg.rectangle(size = [15,5], layer = 2).movey(-1.5)
+C = pg.boolean(A = E, B = R, operation = 'not', precision = 1e-6, num_divisions = [1,1], layer = 0)
+
+# Plot the originals and the result
+D = Device()
+D.add_ref(E)
+D.add_ref(R)
+D.add_ref(C).movex(30)
 qp(D) # quickplot the geometry
 create_image(D, 'boolean')
 
 # example-outline
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.outline(pg.ellipse(), distance = 1, precision = 1e-6, layer = 0)
+from phidl import Device
+# Create a blank device and add two shapes
+X = Device()
+X.add_ref(pg.cross(length = 25, width = 1, layer = 1))
+X.add_ref(pg.ellipse(radii = [10,5], layer = 2))
+
+O = pg.outline(X, distance = 1.5, precision = 1e-6, layer = 0)
+
+# Plot the original geometry and the result
+D = Device()
+D.add_ref(X)
+D.add_ref(O).movex(30)
 qp(D) # quickplot the geometry
 create_image(D, 'outline')
 
 # example-xor_diff
 import phidl.geometry as pg
 from phidl import quickplot as qp
-D = pg.xor_diff(A,B, precision = 1e-6)
+from phidl import Device
+A = pg.ellipse(radii = [10,5], layer = 1)
+B = pg.ellipse(radii = [11,4], layer = 2)
+X = pg.xor_diff(A = A, B = B, precision = 1e-6)
+
+# Plot the original geometry and the result
+D = Device()
+D.add_ref(A)
+D.add_ref(B)
+D.add_ref(X).movex(25)
 qp(D) # quickplot the geometry
 create_image(D, 'xor_diff')
 
