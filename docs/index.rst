@@ -104,7 +104,7 @@ The `pg.ring()` function creates a ring.  The radius refers to the center radius
 Arc
 ***********
 
-The `pg.ring()` function creates an arc.  The radius refers to the center radius of the arc (halfway between the inner and outer radius).  The arc has two ports, `1` and `2`, on either end, allowing you to easily connect it to other structures.
+The `pg.arc()` function creates an arc.  The radius refers to the center radius of the arc (halfway between the inner and outer radius).  The arc has two ports, `1` and `2`, on either end, allowing you to easily connect it to other structures.
 
 .. literalinclude:: gen_geometry.py
    :language: python
@@ -311,7 +311,7 @@ Lithographic star
 
 
 ***********
-Calipers (inter-layer alignment )
+Calipers (inter-layer alignment)
 ***********
 
 
@@ -355,7 +355,7 @@ Importing GDS files
 
 
 ###############
-Other common shapes
+Useful contact pads / connectors
 ###############
 
 
