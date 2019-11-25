@@ -85,7 +85,8 @@ create_image(D, 'ring')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.arc(radius = 2.0, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0)
+D = pg.arc(radius = 2.0, width = 0.5, theta = 45, start_angle = 0,
+           angle_resolution = 2.5, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'arc')
 
@@ -155,6 +156,7 @@ from phidl import Device
 E = pg.ellipse(radii = (10,5), layer = 1)
 R = pg.rectangle(size = [15,5], layer = 2).movey(-1.5)
 C = pg.boolean(A = E, B = R, operation = 'not', precision = 1e-6, num_divisions = [1,1], layer = 0)
+# Other operations include 'and', 'or', 'xor', or equivalently 'A-B', 'B-A', 'A+B'
 
 # Plot the originals and the result
 D = Device()
@@ -331,13 +333,12 @@ from phidl import quickplot as qp
 
 from phidl import LayerSet
 lys = LayerSet()
-lys.add_layer('intrinsic', color = 'gray', gds_layer = 0, gds_datatype = 0)
 lys.add_layer('p', color = 'lightblue', gds_layer = 1, gds_datatype = 0)
 lys.add_layer('p+', color = 'blue', gds_layer = 2, gds_datatype = 0)
 lys.add_layer('p++', color = 'darkblue', gds_layer = 3, gds_datatype = 0)
 lys.add_layer('n', color = 'lightgreen', gds_layer = 4, gds_datatype = 0)
-lys.add_layer('n+', color = 'green', gds_layer = 4, gds_datatype = 0)
-lys.add_layer('n++', color = 'darkgreen', gds_layer = 5, gds_datatype = 0)
+lys.add_layer('n+', color = 'green', gds_layer = 4, gds_datatype = 98)
+lys.add_layer('n++', color = 'darkgreen', gds_layer = 5, gds_datatype = 99)
 D = pg.preview_layerset(lys, size = 100, spacing = 100)
 qp(D) # quickplot the geometry
 create_image(D, 'preview_layerset')
@@ -416,7 +417,7 @@ D = pg.basic_die(
               street_width = 100,   # Width of corner marks for die-sawing
               street_length = 1000, # Length of corner marks for die-sawing
               die_name = 'chip99',  # Label text
-              text_size = 300,      # Label text size
+              text_size = 500,      # Label text size
               text_location = 'SW', # Label text compass location e.g. 'S', 'SE', 'SW'
               layer = 0,
               draw_bbox = False,
