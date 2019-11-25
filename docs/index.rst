@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+Note: This is still a work-in-progress and is currently meant only as a geometry reference for built-in shapes in the phidl.geometry (pg) library. For a more complete tutorial please see the tutorial here https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py
 
 ###############
 Basic shapes
