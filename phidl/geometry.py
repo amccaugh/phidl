@@ -367,6 +367,8 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6,
     for e in elements:
         if isinstance(e, (Device, DeviceReference)): polygons_to_offset += e.get_polygons(by_spec = False)
         elif isinstance(e, (Polygon, gdspy.Polygon)): polygons_to_offset.append(e)
+    if len(polygons_to_offset) == 0:
+        return Device('offset')
     polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = precision/1000)
     gds_layer, gds_datatype = _parse_layer(layer)
     if all(np.array(num_divisions) == np.array([1,1])):
