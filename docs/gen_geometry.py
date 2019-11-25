@@ -1,6 +1,7 @@
 
 import phidl.utilities as pu
 from phidl import Device
+import phidl
 from matplotlib import pyplot as plt
 #def qp(*args):return None # Dummy quickplot
 
@@ -61,7 +62,7 @@ create_image(D, 'cross')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
+D = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
 create_image(D, 'ellipse')
 
 # example-circle
@@ -279,9 +280,9 @@ from phidl import quickplot as qp
 from phidl import Device
 
 E = Device()
-E.add_ref(pg.)
-X = pg.ellipse(layer = {0,1})
-D = pg.extract(X, layers = [0,1])
+E.add_ref(pg.ellipse(layer = {0,1}))
+#X = pg.ellipse(layer = {0,1})
+D = pg.extract(E, layers = [0,1])
 qp(D) # quickplot the geometry
 create_image(D, 'extract')
 
@@ -340,6 +341,7 @@ lys.add_layer('n++', color = 'darkgreen', gds_layer = 5, gds_datatype = 0)
 D = pg.preview_layerset(lys, size = 100, spacing = 100)
 qp(D) # quickplot the geometry
 create_image(D, 'preview_layerset')
+phidl.reset()
 
 # example-connector
 import phidl.geometry as pg
@@ -401,7 +403,7 @@ create_image(D, 'ramp')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.text(text = 'Hello world!', size = 10, justify = 'left', layer = 0)
+D = pg.text(text = 'Hello world!\nLeft-justfied!', size = 10, justify = 'left', layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'text')
 
