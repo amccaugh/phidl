@@ -5,6 +5,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 
 - [Installation / requirements](#installation--requirements)
 - [Tutorial + examples](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (Try now in an interactive notebook: [Link](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
+- [Geometry + function documentation](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
 - [Changelog](#changelog)
 
