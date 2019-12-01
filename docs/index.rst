@@ -25,7 +25,7 @@ To create a simple rectangle, there are two functions.  The first is `pg.rectang
 .. image:: _static/rectangle.png
    :align: center
 
-The other way to create a rectangle is to define one by its bounding box.  This is useful if you want to create a rectangle which exactly surrounds a piece of existing geometry.  For example, if we have an arc geometry and we want to define a box around it, we can use `pg.bbox()`: 
+The other way to create a rectangle is to define one by its bounding box using `pg.bbox()`.  This is useful if you want to create a rectangle which exactly surrounds a piece of existing geometry.  For example, if we have an arc geometry and we want to define a box around it, we can use `pg.bbox()`: 
 
 .. literalinclude:: gen_geometry.py
    :language: python
