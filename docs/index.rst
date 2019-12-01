@@ -190,10 +190,15 @@ PHIDL has an implementation of the DEPLOF font with the majority of english ASCI
 Boolean / outline / offset / invert
 ###############
 
+There are several common boolean-type operations available in the geometry library.  These include typicaly boolean operations (and/or/not/xor), offsetting (expanding/shrinking polygons), outlining, inverting, and 
+
 ***********
 Boolean
 ***********
 
+The `pg.boolean()` function can perform AND/OR/NOT/XOR operations, and will return a new geometry with the result of that operation.
+
+Speedup note: The `num_divisions` argument can be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]`.
 
 .. literalinclude:: gen_geometry.py
    :language: python
@@ -207,6 +212,10 @@ Boolean
 ***********
 Offset
 ***********
+
+The `pg.offset()` function takes the polygons of the input geometry, combines them together, and expands/contracts them.  The function returns polygons on a single layer -- it does not respect layers.
+
+Speedup note: The `num_divisions` argument can be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]`.
 
 .. literalinclude:: gen_geometry.py
    :language: python
@@ -222,6 +231,10 @@ Offset
 Outline
 ***********
 
+The `pg.outline()` function takes the polygons of the input geometry then performs an offset and "not" boolean operation to create an outline.  The function returns polygons on a single layer -- it does not respect layers.
+
+Speedup note: The `num_divisions` argument can be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]`.
+
 .. literalinclude:: gen_geometry.py
    :language: python
    :dedent: 0
@@ -235,6 +248,10 @@ Outline
 ***********
 Invert
 ***********
+
+The `pg.invert()` function creates an inverted version of the input geometry.  The function creates a rectangle around the geometry (with extra padding of distance `border`), then subtract all polygons from all layers from that rectangle, resulting in an inverted version of the geometry.
+
+Speedup note: The `num_divisions` argument can be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]`.
 
 .. literalinclude:: gen_geometry.py
    :language: python
@@ -250,6 +267,8 @@ Invert
 Union
 ***********
 
+The `pg.union()` function is a "join" function, and is functionally identical to the "OR" operation of `pg.boolean()`.  The one difference is it's able to perform this function layer-wise, so each layer can be individually combined.
+
 .. literalinclude:: gen_geometry.py
    :language: python
    :dedent: 0
@@ -263,6 +282,7 @@ Union
 XOR / diff
 ***********
 
+The `pg.xor_diff()` function can be used to compare two geometries and identify where they are different.  Specifically, it performs a layer-wise XOR operation.  If two geometries are identical, the result will be an empty Device.  If they are not identical, any areas not shared by the two geometries will remain.
 
 .. literalinclude:: gen_geometry.py
    :language: python
