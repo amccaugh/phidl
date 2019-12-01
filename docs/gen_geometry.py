@@ -408,7 +408,9 @@ create_image(D, 'ramp')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.text(text = 'Hello world!\nMultiline text\nLeft-justified', size = 10, justify = 'left', layer = 0)
+D = pg.text(text = 'Hello world!\nMultiline text\nLeft-justified', size = 10,
+            justify = 'left', layer = 0)
+# `justify` should be either 'left', 'center', or 'right'
 qp(D) # quickplot the geometry
 create_image(D, 'text')
 
