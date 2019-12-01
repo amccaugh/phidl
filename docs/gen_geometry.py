@@ -373,6 +373,8 @@ import phidl.geometry as pg
 from phidl import quickplot as qp
 
 D = pg.flagpole(size = (50,25), stub_size = (4,8), shape = 'p', taper_type = 'fillet', layer = 0)
+# taper_type should be None, 'fillet', or 'straight'
+
 qp(D) # quickplot the geometry
 create_image(D, 'flagpole')
 
@@ -380,7 +382,9 @@ create_image(D, 'flagpole')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.tee(size = (8,4), stub_size = (1,2), taper_type = None, layer = 0)
+D = pg.tee(size = (8,4), stub_size = (1,2), taper_type = 'fillet', layer = 0)
+# taper_type should be None, 'fillet', or 'straight'
+
 qp(D) # quickplot the geometry
 create_image(D, 'tee')
 
@@ -388,7 +392,7 @@ create_image(D, 'tee')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.taper(length = 10, width1 = 5, width2 = 4, port = None, layer = 0)
+D = pg.taper(length = 10, width1 = 6, width2 = 4, port = None, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'taper')
 
@@ -396,7 +400,7 @@ create_image(D, 'taper')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.ramp(length = 10, width1 = 5, width2 = 8, layer = 0)
+D = pg.ramp(length = 10, width1 = 4, width2 = 8, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'ramp')
 
@@ -404,7 +408,7 @@ create_image(D, 'ramp')
 import phidl.geometry as pg
 from phidl import quickplot as qp
 
-D = pg.text(text = 'Hello world!\nLeft-justfied!', size = 10, justify = 'left', layer = 0)
+D = pg.text(text = 'Hello world!\nMultiline text\nLeft-justified', size = 10, justify = 'left', layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'text')
 
