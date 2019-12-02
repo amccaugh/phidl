@@ -647,8 +647,7 @@ class Viewer(QGraphicsView):
               F2: Show/hide ports
               F3: Show/hide subports (ports in underlying references)
             """
-            msg = QMessageBox.about(self, 'PHIDL Help', help_str)
-            msg.raise_()
+            QMessageBox.about(self, 'PHIDL Help', help_str)
 
 
 def quickplot2(item_list, *args, **kwargs):
