@@ -6,6 +6,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 # from scipy.interpolate import interp1d
 
 import gdspy
+from gdspy import clipper
 from phidl.device_layout import Device, Port, Polygon, CellArray
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
@@ -359,59 +360,66 @@ def C(width = 1, size = (10,20) , layer = 0):
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
+def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, 
+        num_divisions = [1,1], layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
         if isinstance(e, (Device, DeviceReference)): polygons_to_offset += e.get_polygons(by_spec = False)
         elif isinstance(e, (Polygon, gdspy.Polygon)): polygons_to_offset.append(e)
-    polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = 1e-10)
+    if len(polygons_to_offset) == 0:
+        return Device('offset')
+    polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = precision/1000)
     gds_layer, gds_datatype = _parse_layer(layer)
-    p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
-                     precision=precision, join_first=join_first,
-                     max_points=4000, layer=gds_layer, datatype = gds_datatype)
+    if all(np.array(num_divisions) == np.array([1,1])):
+        p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
+                         precision=precision, join_first=join_first,
+                         max_points=4000, layer=gds_layer, datatype = gds_datatype)
+    else:
+        p = _offset_polygons_parallel(
+            polygons_to_offset,
+            distance = distance,
+            num_divisions = num_divisions,
+            join_first = join_first,
+        #    max_points = 4000,
+            precision = precision,
+            )
+
     D = Device('offset')
     D.add_polygon(p, layer=layer)
     return D
 
 
 def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
-    print('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
-    return offset(elements = elements, distance = -distance, join_first = join_first,
-                 precision = precision, layer = layer)
+    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
 
 
-def invert(elements, border = 10, precision = 1e-6, layer = 0):
+def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-6, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
-    D = Device()
+    Temp = Device()
     if type(elements) is not list: elements = [elements]
     for e in elements:
-        if isinstance(e, Device): D.add_ref(e)
-        else: D.add(e)
+        if isinstance(e, Device): Temp.add_ref(e)
+        else: Temp.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     # Build the rectangle around the device D
-    R = rectangle(size = (D.xsize + 2*border, D.ysize + 2*border))
-    R.center = D.center
+    R = rectangle(size = (Temp.xsize + 2*border, Temp.ysize + 2*border))
+    R.center = Temp.center
 
-    operand1 = R.get_polygons()
-    operand2 = D.get_polygons()
-    p = gdspy.fast_boolean(operand1, operand2, operation = 'not', precision=precision,
-                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
-
-    D = Device('invert')
-    D.add_polygon(p, layer=layer)
+    D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
+                num_divisions = num_divisions, layer = layer)
     return D
 
 
-def boolean(A, B, operation, precision = 1e-6, layer = 0):
+def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
 
-    ``operation`` should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.  Note
-    that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.  
+    Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
     A_polys = []
@@ -438,16 +446,20 @@ def boolean(A, B, operation, precision = 1e-6, layer = 0):
     elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
-
-    p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
-                 max_points=4000, layer=gds_layer, datatype=gds_datatype)
+    if all(np.array(num_divisions) == np.array([1,1])):
+        p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
+                     max_points=4000, layer=gds_layer, datatype=gds_datatype)
+    else:
+        p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
+                   num_divisions = num_divisions, operation = operation, precision = precision)
+            
 
     D = Device('boolean')
     if p is not None: D.add_polygon(p, layer = layer)
     return D
 
 
-def outline(elements, distance = 1, precision = 1e-6, layer = 0):
+def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices
     """
@@ -458,8 +470,8 @@ def outline(elements, distance = 1, precision = 1e-6, layer = 0):
         else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
-    D_bloated = offset(D, distance = distance, join_first = True, precision = precision, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', precision = precision, layer = layer)
+    D_bloated = offset(D, distance = distance, join_first = True, num_divisions = num_divisions, precision = precision, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', num_divisions = num_divisions, precision = precision, layer = layer)
     return Outline
 
 
@@ -505,7 +517,7 @@ def union(D, by_layer = False, precision=1e-6, layer = 0):
     return U
 
 def _union_polygons(polygons, precision=1e-6):
-    polygons = _merge_floating_point_errors(polygons, tol = 1e-10)
+    polygons = _merge_floating_point_errors(polygons, tol = precision/1000)
     unioned = gdspy.fast_boolean(polygons, [], operation = 'or',
                                  precision=precision, max_points=4000)
     return unioned
@@ -520,7 +532,7 @@ def _merge_floating_point_errors(polygons, tol = 1e-10):
     xfixed = _merge_nearby_floating_points(x, tol = tol)
     yfixed = _merge_nearby_floating_points(y, tol = tol)
     stacked_polygons_fixed = np.vstack([xfixed, yfixed]).T
-    polygons_fixed = np.vsplit(stacked_polygons_fixed, polygon_indices)
+    polygons_fixed = np.vsplit(stacked_polygons_fixed, polygon_indices[:-1])
     return polygons_fixed
 
 
@@ -542,6 +554,197 @@ def _merge_nearby_floating_points(x, tol = 1e-10):
          xsort[xi+1] = xsort[xi]
     return xsort[xargunsort]
 
+
+def _crop_region(polygons, left, bottom, right, top, precision):
+    """ Given a rectangular boundary defined by left/bottom/right/top, this
+    takes a list of polygons and cuts them at the boundary, discarding parts
+    of the polygons outside the rectangle. """
+    cropped_polygons = []
+    for p in polygons:
+        clipped_polys = clipper._chop(p, [top, bottom], 1, 1 / precision) # polygon, [cuts], axis, scale
+        for cp in clipped_polys[1]:
+            result = clipper._chop(cp, [left, right], 0, 1 / precision)
+            cropped_polygons += list(result[1])
+    return cropped_polygons
+
+
+
+def _crop_edge_polygons(all_polygons, bboxes, left, bottom, right, top, precision):
+    """ Parses out which polygons are along the edge of the rectangle and need 
+     to be  cropped and which are deep inside the rectangle region and can be
+      left alone, then crops only those polygons along the edge """
+    polygons_in_rect_i = _find_bboxes_in_rect(bboxes, left, bottom, right, top)
+    polygons_edge_i = _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top)
+    polygons_in_rect_no_edge_i = polygons_in_rect_i & (~polygons_edge_i)
+    
+    # Crop polygons along the edge and recombine them with polygons inside the rectangle
+    polygons_edge = all_polygons[polygons_edge_i]
+    polygons_in_rect_no_edge = all_polygons[polygons_in_rect_no_edge_i].tolist()
+    polygons_edge_cropped = _crop_region(polygons_edge, left, bottom, right, top, precision = precision)
+    polygons_to_process = polygons_in_rect_no_edge + polygons_edge_cropped
+    
+    return polygons_to_process
+
+def _find_bboxes_in_rect(bboxes, left, bottom, right, top):
+    """ Given a list of polygon bounding boxes and a rectangle defined by
+    left/bottom/right/top, this function returns those polygons which overlap
+    the rectangle. """
+    result = (bboxes[:,0] <= right) & (bboxes[:,2] >= left) & \
+             (bboxes[:,1] <= top)   & (bboxes[:,3] >= bottom)
+    return result
+
+# _find_bboxes_on_rect_edge
+def _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top):
+    """ Given a list of polygon bounding boxes and a rectangular boundary defined by
+    left/bottom/right/top, this function returns those polygons which intersect
+    the rectangular boundary. """
+    bboxes_left   = _find_bboxes_in_rect(bboxes, left, bottom, left, top)
+    bboxes_right  = _find_bboxes_in_rect(bboxes, right, bottom, right, top)
+    bboxes_top    = _find_bboxes_in_rect(bboxes, left, top, right, top)
+    bboxes_bottom = _find_bboxes_in_rect(bboxes, left, bottom, right, bottom)
+    result = bboxes_left | bboxes_right | bboxes_top | bboxes_bottom
+    return result
+
+
+def _offset_region(all_polygons, bboxes, left, bottom, right, top,
+                distance = 5,
+                join_first = True,
+#                max_points = 4000,
+                precision = 1e-6,
+                ):
+    """ Taking a region of e.g. size (x,y) which needs to be offset by distance d,
+    this function crops out a region (x+2*d, y+2*d) large, offsets that region,
+    then crops it back to size (x,y) to create a valid result """
+        
+    # Mark out a region slightly larger than the final desired region
+    # FIXME: Necessary?
+    d = distance*1.01
+    
+    polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left-d, bottom-d, right+d, top+d, precision = precision)
+    
+    # Offset the resulting cropped polygons and recrop to final desired size
+    polygons_offset = clipper.offset(polygons_to_offset, distance, 'miter', 2, 1/precision, int(join_first))
+    polygons_offset_cropped = _crop_region(polygons_offset, left, bottom, right, top, precision = precision)
+    
+    return polygons_offset_cropped
+
+
+def _polygons_to_bboxes(polygons):
+#    Build bounding boxes
+    bboxes = np.empty([len(polygons),4])
+    for n,p in enumerate(polygons):
+        try:
+            left,bottom = np.min(p,axis = 0)
+        except:
+            import pdb
+            pdb.set_trace()
+        right,top = np.max(p,axis = 0)
+        bboxes[n] = [left, bottom, right, top]
+    return bboxes
+
+def _offset_polygons_parallel(
+    polygons,
+    distance = 5,
+    num_divisions = [10,10],
+    join_first = True,
+#    max_points = 4000,
+    precision = 1e-6,
+    ):
+    
+#    Build bounding boxes
+    polygons = np.asarray(polygons)
+    bboxes = _polygons_to_bboxes(polygons)
+    
+    xmin,ymin = np.min(bboxes[:,0:2], axis = 0) - distance
+    xmax,ymax = np.max(bboxes[:,2:4], axis = 0) + distance
+    
+    xsize = xmax - xmin
+    ysize = ymax - ymin
+    xdelta = xsize/num_divisions[0]
+    ydelta = ysize/num_divisions[1]
+    xcorners = xmin + np.arange(num_divisions[0])*xdelta
+    ycorners = ymin + np.arange(num_divisions[1])*ydelta
+
+    offset_polygons = []
+    for n,xc in enumerate(xcorners):
+        for m,yc in enumerate(ycorners):
+            left = xc
+            right = xc+xdelta
+            bottom = yc
+            top = yc+ydelta
+            _offset_region_polygons = _offset_region(polygons, bboxes,
+                                            left, bottom, right, top,
+                                            distance = distance,
+                                            join_first = join_first,
+#                                            max_points = max_points,
+                                            precision = precision,
+                                            )
+            offset_polygons += _offset_region_polygons
+            
+    return offset_polygons
+
+
+def _boolean_region(all_polygons_A, all_polygons_B,
+                    bboxes_A, bboxes_B,
+                    left, bottom, right, top,
+                join_first = True,
+#                max_points = 4000,
+                operation = 'and',
+                precision = 1e-6,
+                ):
+    """ Taking a region of e.g. size (x,y) which needs to be booleaned,
+    this function crops out a region (x, y) large from each set of polygons
+    (A and B), booleans that cropped region and returns the result"""
+        
+    polygons_to_boolean_A = _crop_edge_polygons(all_polygons_A, bboxes_A, left, bottom, right, top, precision)
+    polygons_to_boolean_B = _crop_edge_polygons(all_polygons_B, bboxes_B, left, bottom, right, top, precision)
+    polygons_boolean = clipper.clip(polygons_to_boolean_A, polygons_to_boolean_B,
+                                         operation, 1/precision)
+    return polygons_boolean
+
+
+
+def _boolean_polygons_parallel(
+        polygons_A, polygons_B,
+        num_divisions = [10,10],
+        join_first = True,
+        operation = 'and',
+        precision = 1e-6,
+        ):
+    
+    #    Build bounding boxes
+    polygons_A = np.asarray(polygons_A)
+    polygons_B = np.asarray(polygons_B)
+    bboxes_A = _polygons_to_bboxes(polygons_A)
+    bboxes_B = _polygons_to_bboxes(polygons_B)
+    
+    xmin,ymin = np.min([np.min(bboxes_A[:,0:2], axis = 0), np.min(bboxes_B[:,0:2], axis = 0)], axis = 0)
+    xmax,ymax = np.max([np.max(bboxes_A[:,2:4], axis = 0), np.max(bboxes_B[:,2:4], axis = 0)], axis = 0)
+    
+    xsize = xmax - xmin
+    ysize = ymax - ymin
+    xdelta = xsize/num_divisions[0]
+    ydelta = ysize/num_divisions[1]
+    xcorners = xmin + np.arange(num_divisions[0])*xdelta
+    ycorners = ymin + np.arange(num_divisions[1])*ydelta
+    
+    boolean_polygons = []
+    for n,xc in enumerate(xcorners):
+        for m,yc in enumerate(ycorners):
+            left = xc
+            right = xc+xdelta
+            bottom = yc
+            top = yc+ydelta
+            _boolean_region_polygons = _boolean_region(polygons_A, polygons_B, bboxes_A, bboxes_B,
+                                            left, bottom, right, top,
+                                            join_first = join_first,
+                                            # max_points = max_points,
+                                            operation = operation,
+                                            precision = precision,
+                                            )
+            boolean_polygons += _boolean_region_polygons
+        
+    return boolean_polygons
 
 #==============================================================================
 #
@@ -991,7 +1194,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     p = np.array(stub_size)
     shape = shape.lower()
 
-    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or D'
+    assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
     assert taper_type in ['straight','fillet',None], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
 
     if shape ==   'p':
@@ -1002,7 +1205,7 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     elif shape == 'b':
         f[1], p[1] = -size[1], -stub_size[1]
         orientation = 90
-    elif shape == 'D':
+    elif shape == 'd':
         f[1], p[1] = -size[1], -stub_size[1]
         f[0], p[0] = -size[0], -stub_size[0]
         orientation = 90
