@@ -7,7 +7,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 - [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [Try now in an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
-- [Changelog](#changelog)
+- [Changelog](#changelog) (latest update 1.2.0 (December 1, 2019))
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
@@ -16,25 +16,6 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
     - For Windows + Python 3, install the Microsoft ["Build Tools for Visual Studio"](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
     - For Windows + Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
     - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
-
-#  Latest changes
-
-## 1.2.0 (December 1, 2019)
-
-### New features
-- Major optimization of `pg.boolean()`, `pg.offset()`, `pg.outline()`, and `pg.invert()`:  The `num_divisions` argument can now be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is much, much more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]` to optimize the operation -- you may see speed improvements well over 100x for very large geometries (>1 million points).
-- New geometry documentation with quick picture references and code examples! See [**Geometry + function documentation**](https://phidl.readthedocs.io/)
-
-### Changes
-- Big update to `quickplot()`, should be faster now and not have issues with overlapping polygons generating whitespace. 
-- Can now use `port.center`, which is identical to `port.midpoint`
-
-
-### Bugfixes
-- Allow labels to be correctly moved/rotated
-- Fix fontsize and figure initialization of `quickplot()`
-- Bugfix for 'd' shape in `pg.flagpole()`
-
 
 # About PHIDL
 
