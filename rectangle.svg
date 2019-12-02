@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="500.000000" 
+   height="500.000000"
+   version="1.1"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg">
+  <g id="layer000_datatype000">
+    <path style="fill:#3dcc5c"
+          d="M 0.000000 175.000000 L 500.000000 175.000000 L 500.000000 325.000000 L 0.000000 325.000000 Z"/>
+    <path style="fill:#3dcc5c"
+          d="M 325.000000 0.000000 L 325.000000 500.000000 L 175.000000 500.000000 L 175.000000 0.000000 Z"/>
+  </g>
+</svg>
