@@ -21,6 +21,10 @@ import phidl.utilities as pu
 #
 # If that doesn't work and you're using IPython, try using the command
 # >>> %gui qt
+#
+# If that doesn't work and you're using Spyder,  you need to change your
+# "Graphics backend" to "Automatic." You can do that in Spyder through the menu
+#     Tools > Preferences > IPython Console > Graphics > Backend: Automatic
 #==============================================================================
 
 
