@@ -1432,7 +1432,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.info['v/c'] = v/3e8
     D.info['time_length'] = np.sum(np.diff(D.info['x']*1e-6)/(D.info['v/c'][:-1]*3e8))
     BetaLmin = np.sqrt(B**2 + 6.523)
-    D.info['f_cutoff'] = BetaLmin*D.info['v/c'][0]*3e8/(pi*length*1e-6)
+    D.info['f_cutoff'] = 1/(2*D.info['time_length'])
     D.info['length'] = length
 
     return D
