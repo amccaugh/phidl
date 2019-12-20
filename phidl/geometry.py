@@ -2568,10 +2568,13 @@ def test_res(pad_size = [50,50],
 #
 #==============================================================================
 
+
 @device_lru_cache
 def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     turn_ratio = 4, num_pts = 50, layer = 0):
-
+    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2627,7 +2630,9 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
 @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, symmetric = False, layer = 0):
-
+    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2725,6 +2730,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
 
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
+    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
     D = Device()
 
     # Get points of ideal curve
