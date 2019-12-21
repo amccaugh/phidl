@@ -361,7 +361,7 @@ def C(width = 1, size = (10,20) , layer = 0):
 #==============================================================================
 
 def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
-        num_divisions = [1,1], layer = 0):
+        num_divisions = [1,1], max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -374,19 +374,20 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     if all(np.array(num_divisions) == np.array([1,1])):
         p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
                          precision=precision, join_first=join_first,
-                         max_points=4000, layer=gds_layer, datatype = gds_datatype)
+                         max_points=max_points, layer=gds_layer, datatype = gds_datatype)
     else:
         p = _offset_polygons_parallel(
             polygons_to_offset,
             distance = distance,
             num_divisions = num_divisions,
             join_first = join_first,
-        #    max_points = 4000,
+            max_points = max_points,
             precision = precision,
             )
 
     D = Device('offset')
-    D.add_polygon(p, layer=layer)
+    polygons = D.add_polygon(p, layer=layer)
+    [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
     return D
 
 
@@ -412,8 +413,8 @@ def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-4, layer
                 num_divisions = num_divisions, layer = layer)
     return D
 
-
-def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1], layer = 0):
+def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
+            max_points=4000, layer = 0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -448,10 +449,11 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1], layer = 0)
 
     if all(np.array(num_divisions) == np.array([1,1])):
         p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
-                     max_points=4000, layer=gds_layer, datatype=gds_datatype)
+                     max_points=max_points, layer=gds_layer, datatype=gds_datatype)
     else:
         p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
-                   num_divisions = num_divisions, operation = operation, precision = precision)
+                   num_divisions = num_divisions, operation = operation,
+                   precision = precision, max_points=max_points)
             
 
     D = Device('boolean')
@@ -609,7 +611,6 @@ def _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top):
 def _offset_region(all_polygons, bboxes, left, bottom, right, top,
                 distance = 5,
                 join_first = True,
-#                max_points = 4000,
                 precision = 1e-4,
                 ):
     """ Taking a region of e.g. size (x,y) which needs to be offset by distance d,
@@ -676,7 +677,6 @@ def _offset_polygons_parallel(
                                             left, bottom, right, top,
                                             distance = distance,
                                             join_first = join_first,
-#                                            max_points = max_points,
                                             precision = precision,
                                             )
             offset_polygons += _offset_region_polygons
@@ -687,8 +687,6 @@ def _offset_polygons_parallel(
 def _boolean_region(all_polygons_A, all_polygons_B,
                     bboxes_A, bboxes_B,
                     left, bottom, right, top,
-                join_first = True,
-#                max_points = 4000,
                 operation = 'and',
                 precision = 1e-4,
                 ):
@@ -707,10 +705,10 @@ def _boolean_region(all_polygons_A, all_polygons_B,
 def _boolean_polygons_parallel(
         polygons_A, polygons_B,
         num_divisions = [10,10],
-        join_first = True,
         operation = 'and',
         precision = 1e-4,
         ):
+
     
     #    Build bounding boxes
     polygons_A = np.asarray(polygons_A)
@@ -737,8 +735,6 @@ def _boolean_polygons_parallel(
             top = yc+ydelta
             _boolean_region_polygons = _boolean_region(polygons_A, polygons_B, bboxes_A, bboxes_B,
                                             left, bottom, right, top,
-                                            join_first = join_first,
-                                            # max_points = max_points,
                                             operation = operation,
                                             precision = precision,
                                             )
