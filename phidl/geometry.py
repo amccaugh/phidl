@@ -447,7 +447,7 @@ def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0)
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
     if all(np.array(num_divisions) == np.array([1,1])):
-        p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
+        p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
                      max_points=4000, layer=gds_layer, datatype=gds_datatype)
     else:
         p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
@@ -490,7 +490,7 @@ def xor_diff(A,B, precision = 1e-6):
     all_layers.update(B_layers)
     for layer in all_layers:
         if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.fast_boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
+            p = gdspy.boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
                                    operation = 'xor', precision=precision,
                                    max_points=4000, layer=layer[0], datatype=layer[1])
         elif (layer in A_layers):
@@ -518,7 +518,7 @@ def union(D, by_layer = False, precision=1e-6, layer = 0):
 
 def _union_polygons(polygons, precision=1e-6):
     polygons = _merge_floating_point_errors(polygons, tol = precision/1000)
-    unioned = gdspy.fast_boolean(polygons, [], operation = 'or',
+    unioned = gdspy.boolean(polygons, [], operation = 'or',
                                  precision=precision, max_points=4000)
     return unioned
 
@@ -1983,7 +1983,7 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
             A.center = (0,0)
             A = A.get_polygons()
             B = R.get_polygons()
-            p = gdspy.fast_boolean(A, B, operation = 'not')
+            p = gdspy.boolean(A, B, operation = 'not')
             D.add_polygon(p, layer = layer)
         else:
             D.add_ref(R)
