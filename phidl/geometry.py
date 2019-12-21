@@ -360,7 +360,7 @@ def C(width = 1, size = (10,20) , layer = 0):
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, 
+def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
         num_divisions = [1,1], layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
@@ -390,11 +390,11 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6,
     return D
 
 
-def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
+def inset(elements, distance = 0.1, join_first = True, precision = 1e-4, layer = 0):
     raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
 
 
-def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-6, layer = 0):
+def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-4, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
     Temp = Device()
@@ -413,7 +413,7 @@ def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-6, layer
     return D
 
 
-def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0):
+def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1], layer = 0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -459,7 +459,7 @@ def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0)
     return D
 
 
-def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, layer = 0):
+def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-4, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices
     """
@@ -475,7 +475,7 @@ def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, lay
     return Outline
 
 
-def xor_diff(A,B, precision = 1e-6):
+def xor_diff(A,B, precision = 1e-4):
     """ Given two Devices A and B, performs the layer-by-layer XOR
     difference between A and B, and returns polygons representing
     the differences between A and B.
@@ -610,7 +610,7 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
                 distance = 5,
                 join_first = True,
 #                max_points = 4000,
-                precision = 1e-6,
+                precision = 1e-4,
                 ):
     """ Taking a region of e.g. size (x,y) which needs to be offset by distance d,
     this function crops out a region (x+2*d, y+2*d) large, offsets that region,
@@ -648,7 +648,7 @@ def _offset_polygons_parallel(
     num_divisions = [10,10],
     join_first = True,
 #    max_points = 4000,
-    precision = 1e-6,
+    precision = 1e-4,
     ):
     
 #    Build bounding boxes
@@ -690,7 +690,7 @@ def _boolean_region(all_polygons_A, all_polygons_B,
                 join_first = True,
 #                max_points = 4000,
                 operation = 'and',
-                precision = 1e-6,
+                precision = 1e-4,
                 ):
     """ Taking a region of e.g. size (x,y) which needs to be booleaned,
     this function crops out a region (x, y) large from each set of polygons
@@ -709,7 +709,7 @@ def _boolean_polygons_parallel(
         num_divisions = [10,10],
         join_first = True,
         operation = 'and',
-        precision = 1e-6,
+        precision = 1e-4,
         ):
     
     #    Build bounding boxes
