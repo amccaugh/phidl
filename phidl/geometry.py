@@ -361,7 +361,8 @@ def C(width = 1, size = (10,20) , layer = 0):
 #==============================================================================
 
 def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
-        num_divisions = [1,1], max_points = 4000, layer = 0):
+        num_divisions = [1,1],  join='miter', tolerance=2,
+        max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -372,7 +373,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = precision/1000)
     gds_layer, gds_datatype = _parse_layer(layer)
     if all(np.array(num_divisions) == np.array([1,1])):
-        p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
+        p = gdspy.offset(polygons_to_offset, distance = distance, join=join, tolerance=tolerance,
                          precision=precision, join_first=join_first,
                          max_points=max_points, layer=gds_layer, datatype = gds_datatype)
     else:
@@ -381,8 +382,9 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
             distance = distance,
             num_divisions = num_divisions,
             join_first = join_first,
-            max_points = max_points,
             precision = precision,
+            join = join,
+            tolerance = tolerance,
             )
 
     D = Device('offset')
@@ -453,11 +455,13 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     else:
         p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
                    num_divisions = num_divisions, operation = operation,
-                   precision = precision, max_points=max_points)
+                   precision = precision)
             
 
     D = Device('boolean')
-    if p is not None: D.add_polygon(p, layer = layer)
+    if p is not None:
+        polygons = D.add_polygon(p, layer = layer)
+        [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
     return D
 
 
@@ -612,6 +616,8 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
                 distance = 5,
                 join_first = True,
                 precision = 1e-4,
+                join = 'miter',
+                tolerance = 2,
                 ):
     """ Taking a region of e.g. size (x,y) which needs to be offset by distance d,
     this function crops out a region (x+2*d, y+2*d) large, offsets that region,
@@ -624,7 +630,7 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
     polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left-d, bottom-d, right+d, top+d, precision = precision)
     
     # Offset the resulting cropped polygons and recrop to final desired size
-    polygons_offset = clipper.offset(polygons_to_offset, distance, 'miter', 2, 1/precision, int(join_first))
+    polygons_offset = clipper.offset(polygons_to_offset, distance, join, tolerance, 1/precision, int(join_first))
     polygons_offset_cropped = _crop_region(polygons_offset, left, bottom, right, top, precision = precision)
     
     return polygons_offset_cropped
@@ -648,8 +654,9 @@ def _offset_polygons_parallel(
     distance = 5,
     num_divisions = [10,10],
     join_first = True,
-#    max_points = 4000,
     precision = 1e-4,
+    join = 'miter',
+    tolerance = 2,
     ):
     
 #    Build bounding boxes
@@ -678,6 +685,8 @@ def _offset_polygons_parallel(
                                             distance = distance,
                                             join_first = join_first,
                                             precision = precision,
+                                            join = join,
+                                            tolerance = tolerance,
                                             )
             offset_polygons += _offset_region_polygons
             
