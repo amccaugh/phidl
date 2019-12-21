@@ -393,28 +393,6 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     return D
 
 
-def inset(elements, distance = 0.1, join_first = True, precision = 1e-4, layer = 0):
-    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
-
-
-def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-4, layer = 0):
-    """ Creates an inverted version of the input shapes with an additional
-    border around the edges """
-    Temp = Device()
-    if type(elements) is not list: elements = [elements]
-    for e in elements:
-        if isinstance(e, Device): Temp.add_ref(e)
-        else: Temp.add(e)
-    gds_layer, gds_datatype = _parse_layer(layer)
-
-    # Build the rectangle around the device D
-    R = rectangle(size = (Temp.xsize + 2*border, Temp.ysize + 2*border))
-    R.center = Temp.center
-
-    D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
-                num_divisions = num_divisions, layer = layer)
-    return D
-
 def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
             max_points=4000, layer = 0):
     """
@@ -484,6 +462,28 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
          max_points = max_points, precision = precision, layer = layer)
     return Outline
 
+
+def inset(elements, distance = 0.1, join_first = True, precision = 1e-4, layer = 0):
+    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
+
+
+def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], layer = 0):
+    """ Creates an inverted version of the input shapes with an additional
+    border around the edges """
+    Temp = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): Temp.add_ref(e)
+        else: Temp.add(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    # Build the rectangle around the device D
+    R = rectangle(size = (Temp.xsize + 2*border, Temp.ysize + 2*border))
+    R.center = Temp.center
+
+    D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
+                num_divisions = num_divisions, layer = layer)
+    return D
 
 def xor_diff(A,B, precision = 1e-4):
     """ Given two Devices A and B, performs the layer-by-layer XOR
