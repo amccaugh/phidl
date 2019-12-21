@@ -522,6 +522,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
         d = DeviceReference(device)   # Create a DeviceReference (CellReference)
+        d.owner = self
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
@@ -929,6 +930,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
+        self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
@@ -1040,6 +1042,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1048,6 +1053,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+        
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1073,6 +1081,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1108,6 +1118,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
             x_reflection=x_reflection,
             ignore_missing=False)
         self.parent = device
+        self.owner = None
 
     @property
     def bbox(self):
@@ -1143,6 +1154,9 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1151,6 +1165,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1176,6 +1192,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 

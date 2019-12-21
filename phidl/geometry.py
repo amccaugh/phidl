@@ -863,6 +863,7 @@ def copy(D):
                                 rotation = ref.rotation,
                                 magnification = ref.magnification,
                                 x_reflection = ref.x_reflection)
+        new_ref.owner = D_copy
         D_copy.add(new_ref)
         for alias_name, alias_ref in D.aliases.items():
             if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
@@ -885,6 +886,7 @@ def deepcopy(D):
     # bounding boxes are created in the cache
     for D in D_copy.get_dependencies(True):
         D._bb_valid = False
+    D_copy._bb_valid = False
         
     return D_copy
 
