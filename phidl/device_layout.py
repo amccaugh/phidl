@@ -7,11 +7,11 @@
 # Minor TODO
 #==============================================================================
 # geometry: Add packer(), make option to limit die size
-# fix remove -- allow removal of labels and cellarrays
 # Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
 # add wire_basic to phidl.routing.  also add endcap parameter
 # make “elements to polygons” general function
 # fix boolean with empty device
+# make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
 
 #==============================================================================
 # Imports
@@ -487,7 +487,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def __setitem__(self, key, element):
         """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
-        if isinstance(element, DeviceReference):
+        if isinstance(element, (DeviceReference,Polygon,CellArray)):
             self.aliases[key] = element
         else:
             raise ValueError('[PHIDL] Tried to assign alias "%s" in Device "%s",  '
@@ -1053,7 +1053,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
-        
+
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
