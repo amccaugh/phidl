@@ -7,7 +7,6 @@
 # Minor TODO
 #==============================================================================
 # geometry: Add packer(), make option to limit die size
-# Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
 # add wire_basic to phidl.routing.  also add endcap parameter
 # make “elements to polygons” general function
 # fix boolean with empty device
