@@ -467,7 +467,7 @@ def inset(elements, distance = 0.1, join_first = True, precision = 1e-4, layer =
     raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
 
 
-def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], layer = 0):
+def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], max_points = 4000, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges """
     Temp = Device()
@@ -482,7 +482,7 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], layer
     R.center = Temp.center
 
     D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
-                num_divisions = num_divisions, layer = layer)
+                num_divisions = num_divisions, max_points = max_points, layer = layer)
     return D
 
 def xor_diff(A,B, precision = 1e-4):
@@ -721,7 +721,6 @@ def _boolean_polygons_parallel(
         operation = 'and',
         precision = 1e-4,
         ):
-
     
     #    Build bounding boxes
     polygons_A = np.asarray(polygons_A)
