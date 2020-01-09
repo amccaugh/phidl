@@ -602,20 +602,21 @@ class Device(gdspy.Cell, _GeometryHelper):
         return p
 
 
-    def label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, layer = 255):
+    def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        l = Label(text = text, position = position, anchor = 'o', magnification = magnification, rotation = rotation,
+        l = Label(text = text, position = position, anchor = anchor, magnification = magnification, rotation = rotation,
                                  layer = gds_layer, texttype = gds_datatype)
         self.add(l)
         return l
 
-    def annotate(self, *args, **kwargs):
-        warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
-        return self.label(*args, **kwargs)
+
+    def label(*args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
+        return self.add_label(*args, **kwargs)
 
 
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
