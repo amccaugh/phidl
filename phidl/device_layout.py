@@ -573,6 +573,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_array() was passed something that
             was not a Device object. """)
         a = CellArray(device = device, columns = columns, rows = rows, spacing = spacing)
+        a.owner = self
         self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
         if alias is not None:
             self.aliases[alias] = a
