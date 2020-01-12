@@ -902,10 +902,10 @@ def import_gds(filename, cellname = None, flatten = False):
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
-        if cellname not in gdsii_lib.cell_dict:
+        if cellname not in gdsii_lib.cells:
             raise ValueError('[PHIDL] import_gds() The requested cell (named %s) \
                         is not present in file %s' % (cellname,filename))
-        topcell = gdsii_lib.cell_dict[cellname]
+        topcell = gdsii_lib.cells[cellname]
     elif cellname is None and len(top_level_cells) == 1:
         topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
@@ -915,7 +915,7 @@ def import_gds(filename, cellname = None, flatten = False):
     if flatten == False:
         D_list = []
         c2dmap = {}
-        for cell in gdsii_lib.cell_dict.values():
+        for cell in gdsii_lib.cells.values():
             D = Device(name = cell.name)
             D.polygons = cell.polygons
             D.references = cell.references
