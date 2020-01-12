@@ -29,8 +29,11 @@ import webcolors
 import warnings
 import hashlib
 
+# Remove this once gdspy fully deprecates current_library
+import gdspy.library
+gdspy.library.use_current_library = False
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 
 
