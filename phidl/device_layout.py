@@ -6,12 +6,12 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
+# Replace write_gds() with GdsLibrary.write_gds()
 # geometry: Add packer(), make option to limit die size
-# fix remove -- allow removal of labels and cellarrays
-# Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
 # add wire_basic to phidl.routing.  also add endcap parameter
 # make “elements to polygons” general function
 # fix boolean with empty device
+# make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
 
 #==============================================================================
 # Imports
@@ -30,8 +30,11 @@ import webcolors
 import warnings
 import hashlib
 
+# Remove this once gdspy fully deprecates current_library
+import gdspy.library
+gdspy.library.use_current_library = False
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 
 
@@ -487,7 +490,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def __setitem__(self, key, element):
         """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
-        if isinstance(element, DeviceReference):
+        if isinstance(element, (DeviceReference,Polygon,CellArray)):
             self.aliases[key] = element
         else:
             raise ValueError('[PHIDL] Tried to assign alias "%s" in Device "%s",  '
@@ -522,6 +525,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
         d = DeviceReference(device)   # Create a DeviceReference (CellReference)
+        d.owner = self
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
@@ -573,6 +577,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_array() was passed something that
             was not a Device object. """)
         a = CellArray(device = device, columns = columns, rows = rows, spacing = spacing)
+        a.owner = self
         self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
         if alias is not None:
             self.aliases[alias] = a
@@ -602,20 +607,21 @@ class Device(gdspy.Cell, _GeometryHelper):
         return p
 
 
-    def label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, layer = 255):
+    def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        l = Label(text = text, position = position, anchor = 'o', magnification = magnification, rotation = rotation,
+        l = Label(text = text, position = position, anchor = anchor, magnification = magnification, rotation = rotation,
                                  layer = gds_layer, texttype = gds_datatype)
         self.add(l)
         return l
 
-    def annotate(self, *args, **kwargs):
-        warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
-        return self.label(*args, **kwargs)
+
+    def label(self, *args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
+        return self.add_label(*args, **kwargs)
 
 
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
@@ -929,6 +935,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
+        self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
@@ -1040,6 +1047,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1048,6 +1058,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1073,6 +1086,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1108,6 +1123,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
             x_reflection=x_reflection,
             ignore_missing=False)
         self.parent = device
+        self.owner = None
 
     @property
     def bbox(self):
@@ -1143,6 +1159,9 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1151,6 +1170,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1176,6 +1197,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 

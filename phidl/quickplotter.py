@@ -60,7 +60,7 @@ def quickplot(items, show_ports = True, show_subports = False,
     # Iterate through each each Device/DeviceReference/Polygon
     if type(items) is not list:  items = [items]
     for item in items:
-        if isinstance(item, (Device, DeviceReference, gdspy.CellArray)):
+        if isinstance(item, (Device, DeviceReference, CellArray)):
             polygons_spec = item.get_polygons(by_spec=True, depth=None)
             for key in sorted(polygons_spec):
                 polygons = polygons_spec[key]
@@ -647,8 +647,7 @@ class Viewer(QGraphicsView):
               F2: Show/hide ports
               F3: Show/hide subports (ports in underlying references)
             """
-            msg = QMessageBox.about(self, 'PHIDL Help', help_str)
-            msg.raise_()
+            QMessageBox.about(self, 'PHIDL Help', help_str)
 
 
 def quickplot2(item_list, *args, **kwargs):

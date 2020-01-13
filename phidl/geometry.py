@@ -360,8 +360,9 @@ def C(width = 1, size = (10,20) , layer = 0):
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 1e-6, 
-        num_divisions = [1,1], layer = 0):
+def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
+        num_divisions = [1,1],  join='miter', tolerance=2,
+        max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -372,48 +373,28 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-6,
     polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = precision/1000)
     gds_layer, gds_datatype = _parse_layer(layer)
     if all(np.array(num_divisions) == np.array([1,1])):
-        p = gdspy.offset(polygons_to_offset, distance = distance, join='miter', tolerance=2,
+        p = gdspy.offset(polygons_to_offset, distance = distance, join=join, tolerance=tolerance,
                          precision=precision, join_first=join_first,
-                         max_points=4000, layer=gds_layer, datatype = gds_datatype)
+                         max_points=max_points, layer=gds_layer, datatype = gds_datatype)
     else:
         p = _offset_polygons_parallel(
             polygons_to_offset,
             distance = distance,
             num_divisions = num_divisions,
             join_first = join_first,
-        #    max_points = 4000,
             precision = precision,
+            join = join,
+            tolerance = tolerance,
             )
 
     D = Device('offset')
-    D.add_polygon(p, layer=layer)
+    polygons = D.add_polygon(p, layer=layer)
+    [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
     return D
 
 
-def inset(elements, distance = 0.1, join_first = True, precision = 1e-6, layer = 0):
-    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
-
-
-def invert(elements, border = 10, num_divisions = [1,1], precision = 1e-6, layer = 0):
-    """ Creates an inverted version of the input shapes with an additional
-    border around the edges """
-    Temp = Device()
-    if type(elements) is not list: elements = [elements]
-    for e in elements:
-        if isinstance(e, Device): Temp.add_ref(e)
-        else: Temp.add(e)
-    gds_layer, gds_datatype = _parse_layer(layer)
-
-    # Build the rectangle around the device D
-    R = rectangle(size = (Temp.xsize + 2*border, Temp.ysize + 2*border))
-    R.center = Temp.center
-
-    D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
-                num_divisions = num_divisions, layer = layer)
-    return D
-
-
-def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0):
+def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
+            max_points=4000, layer = 0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -447,19 +428,23 @@ def boolean(A, B, operation, precision = 1e-6, num_divisions = [1,1], layer = 0)
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
     if all(np.array(num_divisions) == np.array([1,1])):
-        p = gdspy.fast_boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
-                     max_points=4000, layer=gds_layer, datatype=gds_datatype)
+        p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
+                     max_points=max_points, layer=gds_layer, datatype=gds_datatype)
     else:
         p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
-                   num_divisions = num_divisions, operation = operation, precision = precision)
+                   num_divisions = num_divisions, operation = operation,
+                   precision = precision)
             
 
     D = Device('boolean')
-    if p is not None: D.add_polygon(p, layer = layer)
+    if p is not None:
+        polygons = D.add_polygon(p, layer = layer)
+        [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
     return D
 
 
-def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, layer = 0):
+def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
+    join = 'miter', tolerance = 2, join_first = True, max_points = 4000, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices
     """
@@ -470,12 +455,37 @@ def outline(elements, distance = 1, num_divisions = [1,1], precision = 1e-6, lay
         else: D.add(e)
     gds_layer, gds_datatype = _parse_layer(layer)
 
-    D_bloated = offset(D, distance = distance, join_first = True, num_divisions = num_divisions, precision = precision, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', num_divisions = num_divisions, precision = precision, layer = layer)
+    D_bloated = offset(D, distance = distance, join_first = join_first,
+        num_divisions = num_divisions, precision = precision, max_points = max_points,
+        join = join, tolerance = tolerance, layer = layer)
+    Outline = boolean(A = D_bloated, B = D, operation = 'A-B', num_divisions = num_divisions,
+         max_points = max_points, precision = precision, layer = layer)
     return Outline
 
 
-def xor_diff(A,B, precision = 1e-6):
+def inset(elements, distance = 0.1, join_first = True, precision = 1e-4, layer = 0):
+    raise ValueError('[PHIDL] pg.inset() is deprecated, please use pg.offset()')
+
+
+def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], max_points = 4000, layer = 0):
+    """ Creates an inverted version of the input shapes with an additional
+    border around the edges """
+    Temp = Device()
+    if type(elements) is not list: elements = [elements]
+    for e in elements:
+        if isinstance(e, Device): Temp.add_ref(e)
+        else: Temp.add(e)
+    gds_layer, gds_datatype = _parse_layer(layer)
+
+    # Build the rectangle around the device D
+    R = rectangle(size = (Temp.xsize + 2*border, Temp.ysize + 2*border))
+    R.center = Temp.center
+
+    D = boolean(A = R, B = Temp, operation = 'A-B', precision = precision,
+                num_divisions = num_divisions, max_points = max_points, layer = layer)
+    return D
+
+def xor_diff(A,B, precision = 1e-4):
     """ Given two Devices A and B, performs the layer-by-layer XOR
     difference between A and B, and returns polygons representing
     the differences between A and B.
@@ -490,7 +500,7 @@ def xor_diff(A,B, precision = 1e-6):
     all_layers.update(B_layers)
     for layer in all_layers:
         if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.fast_boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
+            p = gdspy.boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
                                    operation = 'xor', precision=precision,
                                    max_points=4000, layer=layer[0], datatype=layer[1])
         elif (layer in A_layers):
@@ -502,24 +512,24 @@ def xor_diff(A,B, precision = 1e-6):
     return D
 
 
-def union(D, by_layer = False, precision=1e-6, layer = 0):
+def union(D, by_layer = False, precision = 1e-4, join_first = True, max_points = 4000, layer = 0):
     U = Device()
 
     if by_layer == True:
         all_polygons = D.get_polygons(by_spec = True)
         for layer, polygons in all_polygons.items():
-            unioned_polygons = _union_polygons(polygons, precision = precision)
+            unioned_polygons = _union_polygons(polygons, precision = precision, max_points=max_points)
             U.add_polygon(unioned_polygons, layer = layer)
     else:
         all_polygons = D.get_polygons(by_spec = False)
-        unioned_polygons = _union_polygons(all_polygons, precision = precision)
+        unioned_polygons = _union_polygons(all_polygons, precision = precision, max_points=max_points)
         U.add_polygon(unioned_polygons, layer = layer)
     return U
 
-def _union_polygons(polygons, precision=1e-6):
+def _union_polygons(polygons, precision = 1e-4, max_points = 4000):
     polygons = _merge_floating_point_errors(polygons, tol = precision/1000)
-    unioned = gdspy.fast_boolean(polygons, [], operation = 'or',
-                                 precision=precision, max_points=4000)
+    unioned = gdspy.boolean(polygons, [], operation = 'or',
+                                 precision=precision, max_points=max_points)
     return unioned
 
 
@@ -609,8 +619,9 @@ def _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top):
 def _offset_region(all_polygons, bboxes, left, bottom, right, top,
                 distance = 5,
                 join_first = True,
-#                max_points = 4000,
-                precision = 1e-6,
+                precision = 1e-4,
+                join = 'miter',
+                tolerance = 2,
                 ):
     """ Taking a region of e.g. size (x,y) which needs to be offset by distance d,
     this function crops out a region (x+2*d, y+2*d) large, offsets that region,
@@ -623,7 +634,7 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
     polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left-d, bottom-d, right+d, top+d, precision = precision)
     
     # Offset the resulting cropped polygons and recrop to final desired size
-    polygons_offset = clipper.offset(polygons_to_offset, distance, 'miter', 2, 1/precision, int(join_first))
+    polygons_offset = clipper.offset(polygons_to_offset, distance, join, tolerance, 1/precision, int(join_first))
     polygons_offset_cropped = _crop_region(polygons_offset, left, bottom, right, top, precision = precision)
     
     return polygons_offset_cropped
@@ -647,8 +658,9 @@ def _offset_polygons_parallel(
     distance = 5,
     num_divisions = [10,10],
     join_first = True,
-#    max_points = 4000,
-    precision = 1e-6,
+    precision = 1e-4,
+    join = 'miter',
+    tolerance = 2,
     ):
     
 #    Build bounding boxes
@@ -676,8 +688,9 @@ def _offset_polygons_parallel(
                                             left, bottom, right, top,
                                             distance = distance,
                                             join_first = join_first,
-#                                            max_points = max_points,
                                             precision = precision,
+                                            join = join,
+                                            tolerance = tolerance,
                                             )
             offset_polygons += _offset_region_polygons
             
@@ -687,10 +700,8 @@ def _offset_polygons_parallel(
 def _boolean_region(all_polygons_A, all_polygons_B,
                     bboxes_A, bboxes_B,
                     left, bottom, right, top,
-                join_first = True,
-#                max_points = 4000,
                 operation = 'and',
-                precision = 1e-6,
+                precision = 1e-4,
                 ):
     """ Taking a region of e.g. size (x,y) which needs to be booleaned,
     this function crops out a region (x, y) large from each set of polygons
@@ -707,9 +718,8 @@ def _boolean_region(all_polygons_A, all_polygons_B,
 def _boolean_polygons_parallel(
         polygons_A, polygons_B,
         num_divisions = [10,10],
-        join_first = True,
         operation = 'and',
-        precision = 1e-6,
+        precision = 1e-4,
         ):
     
     #    Build bounding boxes
@@ -737,8 +747,6 @@ def _boolean_polygons_parallel(
             top = yc+ydelta
             _boolean_region_polygons = _boolean_region(polygons_A, polygons_B, bboxes_A, bboxes_B,
                                             left, bottom, right, top,
-                                            join_first = join_first,
-                                            # max_points = max_points,
                                             operation = operation,
                                             precision = precision,
                                             )
@@ -855,13 +863,14 @@ def copy(D):
                                 rotation = ref.rotation,
                                 magnification = ref.magnification,
                                 x_reflection = ref.x_reflection)
+        new_ref.owner = D_copy
         D_copy.add(new_ref)
         for alias_name, alias_ref in D.aliases.items():
             if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
 
     for port in D.ports.values():      D_copy.add_port(port = port)
     for poly in D.polygons:   D_copy.add_polygon(poly)
-    for label in D.labels:    D_copy.label(text = label.text,
+    for label in D.labels:    D_copy.add_label(text = label.text,
                                            position = label.position,
                                            layer = (label.layer, label.texttype))
     return D_copy
@@ -877,7 +886,8 @@ def deepcopy(D):
     # bounding boxes are created in the cache
     for D in D_copy.get_dependencies(True):
         D._bb_valid = False
-        
+    D_copy._bb_valid = False
+    
     return D_copy
 
 
@@ -892,10 +902,10 @@ def import_gds(filename, cellname = None, flatten = False):
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
-        if cellname not in gdsii_lib.cell_dict:
+        if cellname not in gdsii_lib.cells:
             raise ValueError('[PHIDL] import_gds() The requested cell (named %s) \
                         is not present in file %s' % (cellname,filename))
-        topcell = gdsii_lib.cell_dict[cellname]
+        topcell = gdsii_lib.cells[cellname]
     elif cellname is None and len(top_level_cells) == 1:
         topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
@@ -905,7 +915,7 @@ def import_gds(filename, cellname = None, flatten = False):
     if flatten == False:
         D_list = []
         c2dmap = {}
-        for cell in gdsii_lib.cell_dict.values():
+        for cell in gdsii_lib.cells.values():
             D = Device(name = cell.name)
             D.polygons = cell.polygons
             D.references = cell.references
@@ -931,9 +941,9 @@ def import_gds(filename, cellname = None, flatten = False):
                 elif isinstance(e, gdspy.CellArray):
                     dr = CellArray(
                         device = ref_device,
-                        columns = e.columns, 
-                        rows = e.rows, 
-                        spacing = e.spacing, 
+                        columns = e.columns,
+                        rows = e.rows,
+                        spacing = e.spacing,
                         origin = e.origin,
                         rotation = e.rotation,
                         magnification = e.magnification,
@@ -1033,25 +1043,29 @@ def _convert_port_to_geometry(port, layer = 0):
     '''
     if port.parent is None:
         raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
+    if isinstance(port.parent, DeviceReference):
+        device = port.parent.parent
+    else:
+        device = port.parent
 
     # A visual marker
     triangle_points = [[0, 0]] * 3
     triangle_points[0] = port.endpoints[0]
     triangle_points[1] = port.endpoints[1]
     triangle_points[2] = (port.midpoint + (port.normal - port.midpoint) * port.width / 10)[1]
-    port.parent.add_polygon(triangle_points, layer)
+    device.add_polygon(triangle_points, layer)
 
     # Label carrying actual information that will be recovered
     label_contents = (str(port.name),
                       # port.midpoint,  # rather than put this in the text, use the label position
                       float(np.round(port.width, decimals=3)),  # this can have rounding errors that are less than a nanometer
                       float(port.orientation),
-                      # port.parent,  # this is definitely not serializable
+                      # device,  # this is definitely not serializable
                       # port.info,  # would like to include, but it might go longer than 1024 characters
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    port.parent.label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
+    device.add_label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
                       magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
 
@@ -1406,7 +1420,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     # and lengthening sections according to the speed of light in that section
     v = np.array([_microstrip_v_with_Lk(w*1e-6, dielectric_thickness*1e-6, eps_r, Lk_per_sq) for w in widths])
     dx = np.diff(x)
-    dx_compensated = dx/v[:-1]
+    dx_compensated = dx*v[:-1]
     x_compensated = np.cumsum(dx_compensated)
     x = np.hstack([0,x_compensated])/max(x_compensated)*length
 
@@ -1430,8 +1444,9 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     D.info['x'] = x
     D.info['Z'] = Z
     D.info['v/c'] = v/3e8
+    D.info['time_length'] = np.sum(np.diff(D.info['x']*1e-6)/(D.info['v/c'][:-1]*3e8))
     BetaLmin = np.sqrt(B**2 + 6.523)
-    D.info['f_cutoff'] = BetaLmin*D.info['v/c'][0]*3e8/(2*pi*length*1e-6)
+    D.info['f_cutoff'] = 1/(2*D.info['time_length'])
     D.info['length'] = length
 
     return D
@@ -1982,7 +1997,7 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
             A.center = (0,0)
             A = A.get_polygons()
             B = R.get_polygons()
-            p = gdspy.fast_boolean(A, B, operation = 'not')
+            p = gdspy.boolean(A, B, operation = 'not')
             D.add_polygon(p, layer = layer)
         else:
             D.add_ref(R)
@@ -2567,10 +2582,13 @@ def test_res(pad_size = [50,50],
 #
 #==============================================================================
 
+
 @device_lru_cache
 def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     turn_ratio = 4, num_pts = 50, layer = 0):
-
+    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2626,7 +2644,9 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
 @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, symmetric = False, layer = 0):
-
+    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2724,6 +2744,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
 
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
+    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
     D = Device()
 
     # Get points of ideal curve

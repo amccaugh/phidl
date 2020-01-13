@@ -95,7 +95,7 @@ def test_move():
     # Test label move
     D = Device()
     D.add_polygon( [(8,8,8,8), (6,6,6,6)] )
-    l = D.label('testing', position = D.center)
+    l = D.add_label('testing', position = D.center)
     print(all(l.center == D.center))
     D.rotate(45)
     print(np.allclose(l.center, D.center))
