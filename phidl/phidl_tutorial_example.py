@@ -277,11 +277,11 @@ qp(D2)
 # or printed like the polygons created by the text()
 
 
-D2.label(text = 'First label', position = mwg1.center)
-D2.label('Second label', mwg2.center)
+D2.add_label(text = 'First label', position = mwg1.center)
+D2.add_label('Second label', mwg2.center)
 
 # It's very useful for recording information about the devices or layout
-D2.label(text = 'The x size of this\nlayout is %s' % D2.xsize,
+D2.add_label(text = 'The x size of this\nlayout is %s' % D2.xsize,
             position = (D2.xmax, D2.ymax), layer = 255)
 
 # Again, note we have to write the GDS for it to be visible (view in KLayout)

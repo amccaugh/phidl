@@ -870,7 +870,7 @@ def copy(D):
 
     for port in D.ports.values():      D_copy.add_port(port = port)
     for poly in D.polygons:   D_copy.add_polygon(poly)
-    for label in D.labels:    D_copy.label(text = label.text,
+    for label in D.labels:    D_copy.add_label(text = label.text,
                                            position = label.position,
                                            layer = (label.layer, label.texttype))
     return D_copy
@@ -1061,7 +1061,7 @@ def _convert_port_to_geometry(port, layer = 0):
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
-    port.parent.label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
+    port.parent.add_label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
                       magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
 
