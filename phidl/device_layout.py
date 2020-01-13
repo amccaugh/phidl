@@ -6,6 +6,7 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
+# Replace write_gds() with GdsLibrary.write_gds()
 # geometry: Add packer(), make option to limit die size
 # add wire_basic to phidl.routing.  also add endcap parameter
 # make “elements to polygons” general function
