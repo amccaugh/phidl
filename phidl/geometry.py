@@ -1066,7 +1066,6 @@ def _convert_port_to_geometry(port, layer = 0):
                      )
     label_text = json.dumps(label_contents)
     device.add_label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
-    port.parent.add_label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
                       magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
 

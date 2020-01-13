@@ -93,6 +93,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### Bugfixes
 - Maintenance update to work with `gdspy` 1.5 (specifically `pg.import_gds()` fixes)
+- Allow DeviceReferences to be used with `pg.port_to_geometry()` (thanks Alex Tait @atait )
 
 ## 1.2.0 (December 1, 2019)
 
