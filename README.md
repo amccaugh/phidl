@@ -7,7 +7,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 - [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [Try now in an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
-- [Changelog](#changelog) (latest update 1.2.0 (December 1, 2019))
+- [Changelog](#changelog) (latest update 1.2.1 (January 13, 2020))
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
@@ -78,6 +78,21 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 # Changelog
+
+## 1.2.1 (January 13, 2020)
+
+- Maintenance update to work with `gdspy` 1.5
+
+### New features
+- References, arrays and polygons can all be assigned to a Device using `D['myname'] = `
+
+### Changes
+- Default precision changed to `1e-4` on boolean functions (for 1 unit = 1 micron, this corresponds to 0.1 nanometer precision)
+- Added `join`, `miter` and `max_points` arguments to `pg.offset` to match the arguments with gdspy
+- The `Device.label()` function is going to be move to `Device.add_label()` - both will still work for now, but when using `label()` a warning will pop up suggesting you switch to `add_label()` since it will be removed in future versions.
+
+### Bugfixes
+- Maintenance update to work with `gdspy` 1.5 (specifically `pg.import_gds()` fixes)
 
 ## 1.2.0 (December 1, 2019)
 
