@@ -887,7 +887,7 @@ def deepcopy(D):
     for D in D_copy.get_dependencies(True):
         D._bb_valid = False
     D_copy._bb_valid = False
-        
+    
     return D_copy
 
 
@@ -941,9 +941,9 @@ def import_gds(filename, cellname = None, flatten = False):
                 elif isinstance(e, gdspy.CellArray):
                     dr = CellArray(
                         device = ref_device,
-                        columns = e.columns, 
-                        rows = e.rows, 
-                        spacing = e.spacing, 
+                        columns = e.columns,
+                        rows = e.rows,
+                        spacing = e.spacing,
                         origin = e.origin,
                         rotation = e.rotation,
                         magnification = e.magnification,
@@ -1043,24 +1043,29 @@ def _convert_port_to_geometry(port, layer = 0):
     '''
     if port.parent is None:
         raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
+    if isinstance(port.parent, DeviceReference):
+        device = port.parent.parent
+    else:
+        device = port.parent
 
     # A visual marker
     triangle_points = [[0, 0]] * 3
     triangle_points[0] = port.endpoints[0]
     triangle_points[1] = port.endpoints[1]
     triangle_points[2] = (port.midpoint + (port.normal - port.midpoint) * port.width / 10)[1]
-    port.parent.add_polygon(triangle_points, layer)
+    device.add_polygon(triangle_points, layer)
 
     # Label carrying actual information that will be recovered
     label_contents = (str(port.name),
                       # port.midpoint,  # rather than put this in the text, use the label position
                       float(np.round(port.width, decimals=3)),  # this can have rounding errors that are less than a nanometer
                       float(port.orientation),
-                      # port.parent,  # this is definitely not serializable
+                      # device,  # this is definitely not serializable
                       # port.info,  # would like to include, but it might go longer than 1024 characters
                       # port.uid,  # not including because it is part of the build process, not the port state
                      )
     label_text = json.dumps(label_contents)
+    device.add_label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
     port.parent.add_label(text = label_text, position = port.midpoint + _calculate_label_offset(port),
                       magnification = .04 * port.width, rotation = (90 + port.orientation) % 360,
                       layer = layer)
