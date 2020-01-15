@@ -441,18 +441,14 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
             elif len(A_polys) == 0: p = B_polys
             elif len(B_polys) == 0: p = A_polys
     else:
-        print('hello0')
         # If no trivial solutions, run boolean operation either in parallel or straight
         if all(np.array(num_divisions) == np.array([1,1])):
             p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
                          max_points=max_points, layer=gds_layer, datatype=gds_datatype)
-            print('hello')
         else:
             p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
                        num_divisions = num_divisions, operation = operation,
                        precision = precision)
-            print('hello2')
-            
 
     if p is not None:
         polygons = D.add_polygon(p, layer = layer)
