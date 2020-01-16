@@ -950,6 +950,7 @@ def import_gds(filename, cellname = None, flatten = False):
                         magnification = e.magnification,
                         x_reflection = e.x_reflection,
                         )
+                    dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
                     dr = CellArray(
@@ -962,6 +963,7 @@ def import_gds(filename, cellname = None, flatten = False):
                         magnification = e.magnification,
                         x_reflection = e.x_reflection,
                         )
+                    dr.owner = D
                     converted_references.append(dr)
             D.references = converted_references
             # Next convert each Polygon
