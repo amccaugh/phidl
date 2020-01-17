@@ -34,7 +34,7 @@ import hashlib
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 
 
