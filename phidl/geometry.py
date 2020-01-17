@@ -403,6 +403,8 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
+    D = Device('boolean')
+
     A_polys = []
     B_polys = []
     if type(A) is not list: A = [A]
@@ -427,16 +429,27 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
 
-    if all(np.array(num_divisions) == np.array([1,1])):
-        p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
-                     max_points=max_points, layer=gds_layer, datatype=gds_datatype)
+    # Check for trivial solutions
+    if (len(A_polys) == 0) or (len(B_polys) == 0):
+        if (operation == 'not'):
+            if len(A_polys) == 0:   p = None
+            elif len(B_polys) == 0: p = A_polys
+        elif (operation == 'and'):
+            p = None
+        elif (operation == 'or') or (operation == 'xor'):
+            if (len(A_polys) == 0) and (len(B_polys) == 0): p = None
+            elif len(A_polys) == 0: p = B_polys
+            elif len(B_polys) == 0: p = A_polys
     else:
-        p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
-                   num_divisions = num_divisions, operation = operation,
-                   precision = precision)
-            
+        # If no trivial solutions, run boolean operation either in parallel or straight
+        if all(np.array(num_divisions) == np.array([1,1])):
+            p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
+                         max_points=max_points, layer=gds_layer, datatype=gds_datatype)
+        else:
+            p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
+                       num_divisions = num_divisions, operation = operation,
+                       precision = precision)
 
-    D = Device('boolean')
     if p is not None:
         polygons = D.add_polygon(p, layer = layer)
         [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
@@ -937,6 +950,7 @@ def import_gds(filename, cellname = None, flatten = False):
                         magnification = e.magnification,
                         x_reflection = e.x_reflection,
                         )
+                    dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
                     dr = CellArray(
@@ -949,6 +963,7 @@ def import_gds(filename, cellname = None, flatten = False):
                         magnification = e.magnification,
                         x_reflection = e.x_reflection,
                         )
+                    dr.owner = D
                     converted_references.append(dr)
             D.references = converted_references
             # Next convert each Polygon

@@ -34,7 +34,7 @@ import hashlib
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 
 
@@ -634,22 +634,30 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            used_names = {'toplevel':1}
+            all_cells_names = [c._internal_name for c in all_cells_sorted]
+            all_cells_original_names = [c.name for c in all_cells_sorted]
+            used_names = {'toplevel'}
+            n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
                     new_name = c._internal_name[:max_cellname_length]
                 else:
                     new_name = c._internal_name
-                if new_name not in used_names:
-                    used_names[new_name] = 1
-                    c.name = new_name
-                else:
-                    c.name = new_name + ('%0.3i' % used_names[new_name])
-                    used_names[new_name] += 1
+                temp_name = new_name
+                while temp_name in used_names:
+                    n += 1
+                    temp_name = new_name + ('%0.3i' % n)
+                new_name = temp_name
+                used_names.add(new_name)
+                c.name = new_name
             self.name = 'toplevel'
+        # Write the gds
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
-        self.name = tempname
+        # Return cells to their original names if they were auto-renamed
+        if auto_rename == True:
+            for n,c in enumerate(all_cells_sorted):
+                c.name = all_cells_original_names[n]
         return filename
 
 
