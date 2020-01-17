@@ -83,6 +83,7 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### Bugfixes
 - Fixed rare bug with `pg.import_gds()` causing cell name collisions
+- `pg.boolean()` no longer errors when passed empty geometries
 
 ## 1.2.1 (January 13, 2020)
 
