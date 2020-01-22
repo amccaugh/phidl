@@ -92,6 +92,20 @@ def test_move():
     D.move([1.7,0.8])
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'c863156dd00a590dc02823e1791554d4142b1ea9')
+    # Test label move
+    D = Device()
+    D.add_polygon( [(8,8,8,8), (6,6,6,6)] )
+    l = D.add_label('testing', position = D.center)
+    print(all(l.center == D.center))
+    D.rotate(45)
+    print(np.allclose(l.center, D.center))
+    D.move([70000.5,30000.5])
+    print(np.allclose(l.center, D.center))
+    D.rotate(75)
+    print(np.allclose(l.center, D.center))
+    D.reflect([7,5])
+    print(np.allclose(l.center, D.center))
+
 
 def test_rotate():
     # Test polygon rotation

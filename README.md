@@ -3,17 +3,19 @@
 # PHIDL
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
-- [Installation / requirements](#installation--requirements)
+- [**Installation / requirements**](#installation--requirements)
+- [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [Try now in an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
+- [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
-- [Changelog](#changelog)
-- [Tutorial + examples](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35)
+- [Changelog](#changelog) (latest update 1.2.2 (January 17, 2020))
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
 - Python 2 >=2.6 or Python 3 >=3.5
-- If you are on Windows and don't already have `gdspy` installed, you will need a C++ compiler
-    - For Python 3, install the [MS C++ Build Tools for VS 2017](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
-    - For Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+- If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
+    - For Windows + Python 3, install the Microsoft ["Build Tools for Visual Studio"](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
+    - For Windows + Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+    - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
 
 # About PHIDL
 
@@ -76,6 +78,61 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 # Changelog
+
+## 1.2.2 (January 17, 2020)
+
+### Bugfixes
+- Fixed rare bug with `pg.import_gds()` causing cell name collisions
+- `pg.boolean()` no longer errors when passed empty geometries
+
+## 1.2.1 (January 13, 2020)
+
+- Maintenance update to work with `gdspy` 1.5
+
+### New features
+- References, arrays and polygons can all be assigned to a Device using `D['myname'] = `
+
+### Changes
+- Default precision changed to `1e-4` on boolean functions (for 1 unit = 1 micron, this corresponds to 0.1 nanometer precision)
+- Added `join`, `miter` and `max_points` arguments to `pg.offset` to match the arguments with gdspy
+- The `Device.label()` function is going to be move to `Device.add_label()` - both will still work for now, but when using `label()` a warning will pop up suggesting you switch to `add_label()` since it will be removed in future versions.
+
+### Bugfixes
+- Maintenance update to work with `gdspy` 1.5 (specifically `pg.import_gds()` fixes)
+- Allow DeviceReferences to be used with `pg.port_to_geometry()` (thanks Alex Tait @atait )
+
+## 1.2.0 (December 1, 2019)
+
+### New features
+- Major optimization of `pg.boolean()`, `pg.offset()`, `pg.outline()`, and `pg.invert()`:  The `num_divisions` argument can now be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is much, much more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]` to optimize the operation -- you may see speed improvements well over 100x for very large geometries (>1 million points).
+- New geometry documentation with quick picture references and code examples! See [**Geometry + function documentation**](https://phidl.readthedocs.io/)
+
+### Changes
+- Big update to `quickplot()`, should be faster now and not have issues with overlapping polygons generating whitespace. 
+- Can now use `port.center`, which is identical to `port.midpoint`
+
+
+### Bugfixes
+- Allow labels to be correctly moved/rotated
+- Fix fontsize and figure initialization of `quickplot()`
+- Bugfix for 'd' shape in `pg.flagpole()`
+
+
+
+## 1.1.0 (October 16, 2019)
+
+### New features
+- New online notebook to try out PHIDL!  Try now in an interactive online notebook: [Link](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb)
+- Added full CellArray support, use the `D.add_array()` function (see the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details)
+- Allow plotting of `DeviceReference`s directly in `quickplot`
+
+### Changes
+- Added `connector_symmetric` argument to `pg.snspd_expanded()`
+
+
+### Bugfixes
+- Bounding box cache speed improvement
+
 
 ## 1.0.3 (May 23, 2019)
 - Maintenance release to work with `gdspy 1.4`

@@ -6,8 +6,12 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# geometry: add packer, basic_wire
-# Let both References/Arrays/Polygons to be assigned as D['waveguide'] = D << WG
+# Replace write_gds() with GdsLibrary.write_gds()
+# geometry: Add packer(), make option to limit die size
+# add wire_basic to phidl.routing.  also add endcap parameter
+# make “elements to polygons” general function
+# fix boolean with empty device
+# make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
 
 #==============================================================================
 # Imports
@@ -28,8 +32,11 @@ import yaml
 import os
 import hashlib
 
+# Remove this once gdspy fully deprecates current_library
+import gdspy.library
+gdspy.library.use_current_library = False
 
-__version__ = '1.1.0'
+__version__ = '1.2.2'
 
 
 
@@ -67,8 +74,8 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
 def _is_iterable(items):
     return isinstance(items, (list, tuple, set, np.ndarray))
 
-def _parse_coordinate(c, ports = {}):
-    """ Translates various inputs (lists, tuples, Ports, ) to an (x,y) coordinate """
+def _parse_coordinate(c):
+    """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate """
     if isinstance(c, Port):
         return c.midpoint
     elif np.array(c).size == 2:
@@ -76,8 +83,7 @@ def _parse_coordinate(c, ports = {}):
     elif c in ports:
         return ports[c].midpoint
     else:
-        return None
-
+        raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
 
 
 
@@ -333,6 +339,10 @@ class Port(object):
     def y(self):
         return self.midpoint[1]
 
+    @property
+    def center(self):
+        return self.midpoint
+    
     # Use this function instead of copy() (which will not create a new numpy array
     # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
     # DeviceReference recursively, causing performance issues)
@@ -484,7 +494,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def __setitem__(self, key, element):
         """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
-        if isinstance(element, DeviceReference):
+        if isinstance(element, (DeviceReference,Polygon,CellArray)):
             self.aliases[key] = element
         else:
             raise ValueError('[PHIDL] Tried to assign alias "%s" in Device "%s",  '
@@ -519,6 +529,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
         d = DeviceReference(device)   # Create a DeviceReference (CellReference)
+        d.owner = self
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
@@ -570,6 +581,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError("""[PHIDL] add_array() was passed something that
             was not a Device object. """)
         a = CellArray(device = device, columns = columns, rows = rows, spacing = spacing)
+        a.owner = self
         self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
         if alias is not None:
             self.aliases[alias] = a
@@ -599,19 +611,21 @@ class Device(gdspy.Cell, _GeometryHelper):
         return p
 
 
-    def label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, layer = 255):
+    def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o', magnification = magnification, rotation = rotation,
-                                 layer = gds_layer, texttype = gds_datatype))
-        return self
+        l = Label(text = text, position = position, anchor = anchor, magnification = magnification, rotation = rotation,
+                                 layer = gds_layer, texttype = gds_datatype)
+        self.add(l)
+        return l
 
-    def annotate(self, *args, **kwargs):
-        warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
-        return self.label(*args, **kwargs)
+
+    def label(self, *args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
+        return self.add_label(*args, **kwargs)
 
 
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
@@ -624,22 +638,30 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            used_names = {'toplevel':1}
+            all_cells_names = [c._internal_name for c in all_cells_sorted]
+            all_cells_original_names = [c.name for c in all_cells_sorted]
+            used_names = {'toplevel'}
+            n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
                     new_name = c._internal_name[:max_cellname_length]
                 else:
                     new_name = c._internal_name
-                if new_name not in used_names:
-                    used_names[new_name] = 1
-                    c.name = new_name
-                else:
-                    c.name = new_name + ('%0.3i' % used_names[new_name])
-                    used_names[new_name] += 1
+                temp_name = new_name
+                while temp_name in used_names:
+                    n += 1
+                    temp_name = new_name + ('%0.3i' % n)
+                new_name = temp_name
+                used_names.add(new_name)
+                c.name = new_name
             self.name = 'toplevel'
+        # Write the gds
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
-        self.name = tempname
+        # Return cells to their original names if they were auto-renamed
+        if auto_rename == True:
+            for n,c in enumerate(all_cells_sorted):
+                c.name = all_cells_original_names[n]
         return filename
 
     def write_oas(self, filename, **write_kwargs):
@@ -837,6 +859,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             e.rotate(angle = angle, center = center)
         for e in self.references:
             e.rotate(angle, center)
+        for e in self.labels:
+            e.rotate(angle, center)
         for p in self.ports.values():
             p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
@@ -874,18 +898,16 @@ class Device(gdspy.Cell, _GeometryHelper):
             e.translate(dx,dy)
         for e in self.references:
             e.move(destination = d, origin = o)
+        for e in self.labels:
+            e.move(destination = d, origin = o)
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
-
-        # Move labels
-        for l in self.labels:
-            l.translate(dx,dy)
 
         self._bb_valid = False
         return self
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        for e in (self.polygons+self.references):
+        for e in (self.polygons+self.references+self.labels):
             e.reflect(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
@@ -947,6 +969,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
+        self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
@@ -1058,6 +1081,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1066,6 +1092,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1091,6 +1120,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1126,6 +1157,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
             x_reflection=x_reflection,
             ignore_missing=False)
         self.parent = device
+        self.owner = None
 
     @property
     def bbox(self):
@@ -1161,6 +1193,9 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1169,6 +1204,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
 
@@ -1194,4 +1231,40 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
+        if self.owner is not None:
+            self.owner._bb_valid = False
+        return self
+
+
+
+class Label(gdspy.Label, _GeometryHelper):
+
+    def __init__(self, *args, **kwargs):
+        super(Label, self).__init__(*args, **kwargs)
+
+
+    @property
+    def bbox(self):
+        return np.array([[self.position[0], self.position[1]],[self.position[0], self.position[1]]])
+
+    def rotate(self, angle = 45, center = (0,0)):
+        self.position = _rotate_points(self.position, angle = angle, center = center)
+        return self
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        o = _parse_coordinate(origin)
+        d = _parse_coordinate(destination)
+
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        self.position += np.array(d) - o
+        return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        self.position = _reflect_points(self.position, p1, p2)
         return self

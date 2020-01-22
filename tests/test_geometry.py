@@ -157,3 +157,22 @@ def test_copy_deepcopy():
     assert(h == '2590bd786348ab684616eecdfdbcc9735b156e18')
     h = Ddeepcopy.hash_geometry(precision = 1e-4)
     assert(h == '0313cd7e58aa265b44dd1ea10265d1088a2f1c6d')
+
+
+def test_write_and_import_gds():
+    D = Device()
+    D.add_ref(pg.rectangle(size=[1.5,2.7], layer = [3,2]))
+    D.add_ref(pg.rectangle(size=[0.8,2.5], layer = [9,7]))
+    D.add_array(pg.rectangle(size=[1,2], layer = [4,66]), rows = 3,
+                      columns = 2, spacing = [14,7.5])
+    D.add_array(pg.rectangle(size=[1.5,2.5], layer = [4,67]), rows = 1,
+                      columns = 2, spacing = [14,7.5])
+    D.add_polygon([[3,4,5], [6.7, 8.9, 10.15]], layer = [7,8])
+    D.add_polygon([[3,4,5], [1.7, 8.9, 10.15]], layer = [7,9])
+    precision = 1e-4
+    unit = 1e-6
+    h1 = D.hash_geometry(precision = precision)
+    D.write_gds('temp.gds', precision = unit*precision, unit = 1e-6)
+    Dimport = pg.import_gds('temp.gds', flatten = False)
+    h2 = Dimport.hash_geometry(precision = precision)
+    assert(h1 == h2)
