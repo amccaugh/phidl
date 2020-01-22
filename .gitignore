@@ -17,6 +17,7 @@ venv
 venvinfo
 *.sublime-project
 *.sublime-workspace
+.pytest_cache
 
 
 # IPython notebooks
