@@ -3,21 +3,25 @@
 # PHIDL
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
-- [Installation / requirements](#installation--requirements)
+- [**Installation / requirements**](#installation--requirements)
+- [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [Try now in an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
+- [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
-- [Changelog](#changelog)
-- [Tutorial + examples](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L40)
+- [Changelog](#changelog) (latest update 1.2.2 (January 17, 2020))
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
 - Python 2 >=2.6 or Python 3 >=3.5
-- If you are on Windows and don't already have `gdspy` installed, you will need a C++ compiler
-    - For Python 3, install the [MS C++ Build Tools for VS 2017](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
-    - For Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+- If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
+    - For Windows + Python 3, install the Microsoft ["Build Tools for Visual Studio"](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017)
+    - For Windows + Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+    - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
 
 # About PHIDL
 
-PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify GDSII geometry creation by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L40) as well which will walk you through the process of getting acquainted with PHIDL.
+*fiddle (verb) - /ˈfidl/ - to make minor manual movements, especially to adjust something*
+
+PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy). It strives to simplify GDSII geometry creation by making the design process layout-driven, rather than coordinate-driven.  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) as well which will walk you through the process of getting acquainted with PHIDL.
 
 The purpose of PHIDL is to fill a void in the GDS design space: creation of elements in a simple, layout-driven, parameterized way, without a large amount of code overhead. Many GDS tools exist, but they tend to fall in one of two categories: (1) GUI-based layout tools with ad-hoc scripting interfaces, or (2) full-featured Cadence-style layout software which requires 30 lines of boilerplate/overhead code just to draw a simple ring. 
 
@@ -46,12 +50,26 @@ It also allows you to do things like add text and create smooth or straight rout
 ![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
     
 
-Other useful functionality available are standard operations like booleans and less standard ones like creating outlines.  With a single line function, you can outline a complex meander structure (blue color) attached to a contact pad, very useful when using positive-tone electron-beam lithography resists.  A whole complicated layout can be outlined directly in the GDS without requiring you to use Beamer:
+Other useful functionality available are standard operations like booleans:
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_8.png)
+
+ and less standard ones like creating outlines. A whole layout can be outlined directly in the GDS without requiring you to use Beamer (useful for positive-tone resist structures):
 
 `pg.outline(D, distance = 0.7, layer = 4)`
 
-![phidl example image](https://amccaugh.github.io/phidl/readme_5.jpg)
+![phidl example image](https://amccaugh.github.io/phidl/readme_5.png)
  
+The geometry library also has useful resolution test-structures built into it, for instance
+
+```
+pg.litho_calipers(num_notches = 7, offset_per_notch = 0.1)
+pg.litho_steps(line_widths = [1,2,4,8,16])
+pg.litho_star(num_lines = 16, line_width = 3)
+```
+
+![phidl example image](https://amccaugh.github.io/phidl/readme_7.png)
+
 
 You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device which needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
 
@@ -60,6 +78,96 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 # Changelog
+
+## 1.2.2 (January 17, 2020)
+
+### Bugfixes
+- Fixed extremely rare bug with `write_gds()` which could potentially cause cell name collisions
+- `pg.boolean()` no longer errors when passed empty geometries
+
+## 1.2.1 (January 13, 2020)
+
+- Maintenance update to work with `gdspy` 1.5
+
+### New features
+- References, arrays and polygons can all be assigned to a Device using `D['myname'] = `
+
+### Changes
+- Default precision changed to `1e-4` on boolean functions (for 1 unit = 1 micron, this corresponds to 0.1 nanometer precision)
+- Added `join`, `miter` and `max_points` arguments to `pg.offset` to match the arguments with gdspy
+- The `Device.label()` function is going to be move to `Device.add_label()` - both will still work for now, but when using `label()` a warning will pop up suggesting you switch to `add_label()` since it will be removed in future versions.
+
+### Bugfixes
+- Maintenance update to work with `gdspy` 1.5 (specifically `pg.import_gds()` fixes)
+- Allow DeviceReferences to be used with `pg.port_to_geometry()` (thanks Alex Tait @atait )
+
+## 1.2.0 (December 1, 2019)
+
+### New features
+- Major optimization of `pg.boolean()`, `pg.offset()`, `pg.outline()`, and `pg.invert()`:  The `num_divisions` argument can now be used to divide up the geometry into multiple rectangular regions and process each region sequentially (which is much, much more computationally efficient).  If you have a large geometry that takes a long time to process, try using `num_divisions = [10,10]` to optimize the operation -- you may see speed improvements well over 100x for very large geometries (>1 million points).
+- New geometry documentation with quick picture references and code examples! See [**Geometry + function documentation**](https://phidl.readthedocs.io/)
+
+### Changes
+- Big update to `quickplot()`, should be faster now and not have issues with overlapping polygons generating whitespace. 
+- Can now use `port.center`, which is identical to `port.midpoint`
+
+
+### Bugfixes
+- Allow labels to be correctly moved/rotated
+- Fix fontsize and figure initialization of `quickplot()`
+- Bugfix for 'd' shape in `pg.flagpole()`
+
+
+
+## 1.1.0 (October 16, 2019)
+
+### New features
+- New online notebook to try out PHIDL!  Try now in an interactive online notebook: [Link](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb)
+- Added full CellArray support, use the `D.add_array()` function (see the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details)
+- Allow plotting of `DeviceReference`s directly in `quickplot`
+
+### Changes
+- Added `connector_symmetric` argument to `pg.snspd_expanded()`
+
+
+### Bugfixes
+- Bounding box cache speed improvement
+
+
+## 1.0.3 (May 23, 2019)
+- Maintenance release to work with `gdspy 1.4`
+- Removal of `scipy` from strict installation requirements
+
+### Bugfixes
+- Minor fix to `distribute()`
+
+
+## 1.0.2 (March 26, 2019)
+
+### New features
+- Added tutorial section for phidl.geometry library lithographic shapes (resolution tests, calipers, stars, etc)
+- Added `symmetric` argument to pg.optimal_step()
+- Experimental port phidl.geometry function `pg.ports_to_geometry()` and `pg.geometry_to_ports()` which converts Ports in a Device into polygon-geometry (and vice-versa) so they can be saved into the GDS file (in the style of SiEPIC). (contribution thanks to Alex Tait @atait)
+- Added support for `magnification` and `rotation` of `Label`s  (contribution thanks to Alex Tait @atait)
+
+### Changes
+- Precision for boolean functions set to 1e-6 by default now
+- `position` argument removed from pg.text()
+
+### Bugfixes
+- Fixed rare but persistent bug affecting boolean operations (e.g. `pg.offset()`,  `pg.outline()`, `pg.boolean()`, `pg.union()`) on polygons with sub-precision floating point errors.  Will no longer cause jagged edges when two points are misaligned by very small amounts (e.g. when points that should be equal differ by 1e-27 due to floating point imprecision)
+- Fix for `pg.import_gds()` so that items can be moved/rotated correctly after importing
+- Fix for `remove_layers()` correctly preserves references now  (contribution thanks to Alex Tait @atait)
+- Suppressed unecessary warnings
+
+
+## 1.0.1 (Jan 21, 2019)
+
+### New features
+- `D.remove()` can now remove Ports as well as references/polygons
+
+### Bugfixes
+- Can't have a major release without at least one bug!  Fixed errors introduced by optimized-rotation algorithm.
 
 ## 1.0.0 (Jan 14, 2019)
 - 1.0 release!  The core functionality of phidl has been stable for over 18 months, and all major planned features have been implemented.  Time to reflect that in the version number!

@@ -1,16 +1,17 @@
 #==============================================================================
 # Major TODO
 #==============================================================================
+# Replace move command with _input2coordinate
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# geometry: add packer, basic_wire
-# connect(): if width=0 then only move don't rotate orientation
-# Allow assignment of aliases by D['waveguide'] = D << WG
-# PHIDL fix quickplot "AttributeError: 'DeviceReference' object has no attribute 'aliases'"
-# Add text in corner of quickplot which says "F1: Show/hide ports, F2: Show/hide
-# subports, F3: Show/hide alias name, F4: show/hide this text"
+# Replace write_gds() with GdsLibrary.write_gds()
+# geometry: Add packer(), make option to limit die size
+# add wire_basic to phidl.routing.  also add endcap parameter
+# make “elements to polygons” general function
+# fix boolean with empty device
+# make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
 
 #==============================================================================
 # Imports
@@ -29,8 +30,11 @@ import webcolors
 import warnings
 import hashlib
 
+# Remove this once gdspy fully deprecates current_library
+import gdspy.library
+gdspy.library.use_current_library = False
 
-__version__ = '0.9.1'
+__version__ = '1.2.2'
 
 
 
@@ -42,31 +46,17 @@ def _rotate_points(points, angle = 45, center = (0,0)):
     """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
-    # First check for common, easy values of angle
-    p_arr = np.asarray(points)
     if angle == 0:
-        return p_arr
-
-    c0 = np.asarray(center)
-    displacement = p_arr - c0
-    if angle == 180:
-        return c0 - displacement
-
-    if p_arr.ndim == 2:
-        perpendicular = displacement[:, ::-1]
-    elif p_arr.ndim == 1:
-        perpendicular = displacement[::-1]
-    if angle == 90:
-        return c0 + perpendicular
-    elif angle == 270:
-        return c0 - perpendicular
-
-    # Fall back to trigonometry
+         return points
     angle = angle*pi/180
     ca = cos(angle)
     sa = sin(angle)
     sa = np.array((-sa, sa))
-    return displacement * ca + perpendicular * sa + c0
+    c0 = np.array(center)
+    if np.asarray(points).ndim == 2:
+        return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
+    if np.asarray(points).ndim == 1:
+        return (points - c0) * ca + (points - c0)[::-1] * sa + c0
 
 def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
@@ -74,13 +64,25 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
-    if np.asarray(points).ndim == 1: 
+    if np.asarray(points).ndim == 1:
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(points-p1))/norm(p2-p1)**2) - points
-    if np.asarray(points).ndim == 2: 
+    if np.asarray(points).ndim == 2:
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
+def _is_iterable(items):
+    return isinstance(items, (list, tuple, set, np.ndarray))
 
-        
+def _parse_coordinate(c):
+    """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate """
+    if isinstance(c, Port):
+        return c.midpoint
+    elif np.array(c).size == 2:
+        return c
+    else:
+        raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
+
+
+
 def reset():
     Layer.layer_dict = {}
     Device._next_uid = 0
@@ -95,11 +97,11 @@ class LayerSet(object):
     def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
                  description = None, color = None, inverted = False,
                   alpha = 0.6, dither = None):
-        new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, name = name, 
+        new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, name = name,
                  description = description, inverted = inverted,
                  color = color, alpha = alpha, dither = dither)
         if name in self._layers:
-            raise ValueError('[PHIDL] LayerSet: Tried to add layer named "%s", but a layer' 
+            raise ValueError('[PHIDL] LayerSet: Tried to add layer named "%s", but a layer'
                 ' with that name already exists in this LayerSet' % (name))
         else:
             self._layers[name] = new_layer
@@ -109,7 +111,7 @@ class LayerSet(object):
         try:
             return self._layers[val]
         except:
-            raise ValueError('[PHIDL] LayerSet: Tried to access layer named "%s"' 
+            raise ValueError('[PHIDL] LayerSet: Tried to access layer named "%s"'
                 ' which does not exist' % (val))
 
 
@@ -121,7 +123,7 @@ class LayerSet(object):
 class Layer(object):
     layer_dict = {}
 
-    def __init__(self, gds_layer = 0, gds_datatype = 0, name = 'unnamed', 
+    def __init__(self, gds_layer = 0, gds_datatype = 0, name = 'unnamed',
                  description = None, inverted = False,
                  color = None, alpha = 0.6, dither = None):
         if isinstance(gds_layer, Layer):
@@ -142,7 +144,7 @@ class Layer(object):
         self.inverted = inverted
         self.alpha = alpha
         self.dither = dither
-        
+
         try:
             if color is None: # not specified
                 self.color = None
@@ -155,35 +157,17 @@ class Layer(object):
                 self.color = webcolors.name_to_hex(color)
         except:
             raise ValueError("""[PHIDL] Layer() color must be specified as a
-            0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex  color 
+            0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex  color
             (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or
             see http://www.w3schools.com/colors/colors_names.asp )
             """)
-            
+
         Layer.layer_dict[(gds_layer, gds_datatype)] = self
 
     def __repr__(self):
         return ('Layer (name %s, GDS layer %s, GDS datatype %s, description %s, color %s)' % \
                 (self.name, self.gds_layer, self.gds_datatype, self.description, self.color))
-                         
-    def __lt__(self, other):
-        selfIntVal = self.gds_layer
-        if type(other) is Layer:
-            otherIntVal = other.gds_layer
-        else:
-            otherIntVal = other
-        return selfIntVal < otherIntVal
 
-    def __gt__(self, other):
-        selfIntVal = self.gds_layer
-        if type(other) is Layer:
-            otherIntVal = other.gds_layer
-        else:
-            otherIntVal = other
-        return selfIntVal > otherIntVal
-
-    def __mod__(self, other):
-        return self.gds_layer % other
 
 def _parse_layer(layer):
     """ Check if the variable layer is a Layer object, a 2-element list like
@@ -203,15 +187,15 @@ def _parse_layer(layer):
             that could not be interpreted as a layer: layer = %s""" % layer)
     return (gds_layer, gds_datatype)
 
-    
-    
+
+
 class _GeometryHelper(object):
-    """ This is a helper class. It can be added to any other class which has 
+    """ This is a helper class. It can be added to any other class which has
     the functions move() and the property ``bbox`` (as in self.bbox).  It uses
     that function+property to enable you to do things like check what the center
     of the bounding box is (self.center), and also to do things like move the
     bounding box such that its maximum x value is 5.2 (self.xmax = 5.2) """
-    
+
     @property
     def center(self):
         return np.sum(self.bbox,0)/2
@@ -219,7 +203,7 @@ class _GeometryHelper(object):
     @center.setter
     def center(self, destination):
         self.move(destination = destination, origin = self.center)
-        
+
     @property
     def x(self):
         return np.sum(self.bbox,0)[0]/2
@@ -228,7 +212,7 @@ class _GeometryHelper(object):
     def x(self, destination):
         destination = (destination, self.center[1])
         self.move(destination = destination, origin = self.center, axis = 'x')
-        
+
     @property
     def y(self):
         return np.sum(self.bbox,0)[1]/2
@@ -237,7 +221,7 @@ class _GeometryHelper(object):
     def y(self, destination):
         destination = ( self.center[0], destination)
         self.move(destination = destination, origin = self.center, axis = 'y')
-        
+
     @property
     def xmax(self):
         return self.bbox[1][0]
@@ -245,7 +229,7 @@ class _GeometryHelper(object):
     @xmax.setter
     def xmax(self, destination):
         self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
-        
+
     @property
     def ymax(self):
         return self.bbox[1][1]
@@ -253,7 +237,7 @@ class _GeometryHelper(object):
     @ymax.setter
     def ymax(self, destination):
         self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
-        
+
     @property
     def xmin(self):
         return self.bbox[0][0]
@@ -261,7 +245,7 @@ class _GeometryHelper(object):
     @xmin.setter
     def xmin(self, destination):
         self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
-        
+
     @property
     def ymin(self):
         return self.bbox[0][1]
@@ -269,7 +253,7 @@ class _GeometryHelper(object):
     @ymin.setter
     def ymin(self, destination):
         self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
-        
+
     @property
     def size(self):
         bbox = self.bbox
@@ -279,7 +263,7 @@ class _GeometryHelper(object):
     def xsize(self):
         bbox = self.bbox
         return bbox[1][0] - bbox[0][0]
-        
+
     @property
     def ysize(self):
         bbox = self.bbox
@@ -314,11 +298,11 @@ class Port(object):
         self.uid = Port._next_uid
         if self.width < 0: raise ValueError('[PHIDL] Port creation error: width must be >=0')
         Port._next_uid += 1
-        
+
     def __repr__(self):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
                 (self.name, self.midpoint, self.width, self.orientation))
-       
+
     @property
     def endpoints(self):
         dxdy = np.array([
@@ -328,7 +312,7 @@ class Port(object):
         left_point = self.midpoint - dxdy
         right_point = self.midpoint + dxdy
         return np.array([left_point, right_point])
-    
+
     @endpoints.setter
     def endpoints(self, points):
         p1, p2 = np.array(points[0]), np.array(points[1])
@@ -336,7 +320,7 @@ class Port(object):
         dx, dy = p2-p1
         self.orientation = np.arctan2(dx,dy)*180/pi
         self.width = sqrt(dx**2 + dy**2)
-        
+
     @property
     def normal(self):
         dx = np.cos((self.orientation)*pi/180)
@@ -350,7 +334,11 @@ class Port(object):
     @property
     def y(self):
         return self.midpoint[1]
-        
+
+    @property
+    def center(self):
+        return self.midpoint
+    
     # Use this function instead of copy() (which will not create a new numpy array
     # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
     # DeviceReference recursively, causing performance issues)
@@ -373,7 +361,7 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
-    
+
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
@@ -389,7 +377,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
-            
+
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
@@ -404,7 +392,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-            
+
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
@@ -420,7 +408,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
             self.parent._bb_valid = False
         return self
 
-            
+
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _reflect_points(points, p1, p2)
@@ -428,7 +416,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
             self.parent._bb_valid = False
         return self
 
-    
+
 
 def make_device(fun, config = None, **kwargs):
     config_dict = {}
@@ -447,13 +435,13 @@ def make_device(fun, config = None, **kwargs):
         raise ValueError("""[PHIDL] Device() was passed a function, but that
         function does not produce a Device.""")
     return D
-    
+
 
 
 class Device(gdspy.Cell, _GeometryHelper):
-    
+
     _next_uid = 0
-    
+
     def __init__(self, *args, **kwargs):
         if len(args) > 0:
             if callable(args[0]):
@@ -461,7 +449,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                     'by calling Device(device_making_function), please use '
                     'make_device(device_making_function) instead')
 
-        
+
         # Allow name to be set like Device('arc') or Device(name = 'arc')
         if 'name' in kwargs:                          _internal_name = kwargs['name']
         elif (len(args) == 1) and (len(kwargs) == 0): _internal_name = args[0]
@@ -489,9 +477,9 @@ class Device(gdspy.Cell, _GeometryHelper):
                 'which does not exist' % (key, self.name))
 
     def __repr__(self):
-        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s elements, %s references)' % \
+        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s polygons, %s references)' % \
                 (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
-                len(self.elements), len(self.references)))
+                len(self.polygons), len(self.references)))
 
 
     def __str__(self):
@@ -502,7 +490,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def __setitem__(self, key, element):
         """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
-        if isinstance(element, DeviceReference):
+        if isinstance(element, (DeviceReference,Polygon,CellArray)):
             self.aliases[key] = element
         else:
             raise ValueError('[PHIDL] Tried to assign alias "%s" in Device "%s",  '
@@ -512,29 +500,32 @@ class Device(gdspy.Cell, _GeometryHelper):
     def layers(self):
         return self.get_layers()
 
-    @property
-    def references(self):
-        return [e for e in self.elements if isinstance(e, DeviceReference)]
+    # @property
+    # def references(self):
+    #     return [e for e in self.elements if isinstance(e, DeviceReference)]
 
-    @property
-    def polygons(self):
-        return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
-        
+    # @property
+    # def polygons(self):
+    #     return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
+
+
+
     @property
     def bbox(self):
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
 
-    def add_ref(self, D, alias = None):
+    def add_ref(self, device, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
-        if type(D) in (list, tuple):
-            return [self.add_ref(E) for E in D]
-        if not isinstance(D, Device):
+        if _is_iterable(device):
+            return [self.add_ref(E) for E in device]
+        if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
-        d = DeviceReference(D)   # Create a DeviceReference (CellReference)
+        d = DeviceReference(device)   # Create a DeviceReference (CellReference)
+        d.owner = self
         self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
@@ -544,7 +535,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def add_polygon(self, points, layer = None):
         # Check if input a list of polygons by seeing if it's 3 levels deep
-        try:    
+        try:
             points[0][0][0] # Try to access first x point
             return [self.add_polygon(p, layer) for p in points]
         except: pass # Verified points is not a list of polygons, continue on
@@ -553,9 +544,9 @@ class Device(gdspy.Cell, _GeometryHelper):
             if layer is None:   layers = zip(points.layers, points.datatypes)
             else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
-                
+
         # Check if layer is actually a list of Layer objects
-        try:    
+        try:
             if isinstance(layer, LayerSet):
                 return [self.add_polygon(points, l) for l in layer._layers.values()]
             elif isinstance(layer, set):
@@ -563,7 +554,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             elif all([isinstance(l, (Layer)) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
             elif len(layer) > 2: # Someone wrote e.g. layer = [1,4,5]
-                raise ValueError(""" [PHIDL] When using add_polygon() with 
+                raise ValueError(""" [PHIDL] When using add_polygon() with
                     multiple layers, each element in your `layer` argument
                     list must be of type Layer(), e.g.:
                     `layer = [Layer(1,0), my_layer, Layer(4)]""")
@@ -579,8 +570,20 @@ class Device(gdspy.Cell, _GeometryHelper):
             gds_datatype = gds_datatype, parent = self)
         self.add(polygon)
         return polygon
-        
-        
+
+
+    def add_array(self, device, columns = 2, rows = 2, spacing = (100,100), alias = None):
+        if not isinstance(device, Device):
+            raise TypeError("""[PHIDL] add_array() was passed something that
+            was not a Device object. """)
+        a = CellArray(device = device, columns = columns, rows = rows, spacing = spacing)
+        a.owner = self
+        self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
+        if alias is not None:
+            self.aliases[alias] = a
+        return a                # Return the CellArray
+
+
     def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
         to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
@@ -599,37 +602,28 @@ class Device(gdspy.Cell, _GeometryHelper):
                 orientation = orientation, parent = self)
         if name is not None: p.name = name
         if p.name in self.ports:
-            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid)) 
+            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid))
         self.ports[p.name] = p
         return p
-        
-    def add_array(self, device, start = (0,0), spacing = (10,0), num_devices = 6, config = None, **kwargs):
-         # Check if ``device`` is actually a device-making function
-        if callable(device):    d = make_device(fun = device, config = config, **kwargs)
-        else:                   d = device
-        references = []
-        for n in range(num_devices):
-            sd = self.add_ref(d)
-            sd.move(destination = np.array(spacing)*n, origin = -np.array(start))
-            references.append(sd)
-        return references
-        
 
-    def label(self, text = 'hello', position = (0,0), layer = 255):
+
+    def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
         if len(text) >= 1023:
-            raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)') 
+            raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        self.add(gdspy.Label(text = text, position = position, anchor = 'o',
-                                 layer = gds_layer, texttype = gds_datatype))
-        return self
-        
-    def annotate(self, *args, **kwargs):
-        warnings.warn('[PHIDL] WARNING: annotate() has been deprecated, please replace with label()')
-        return self.label(*args, **kwargs)
+        l = Label(text = text, position = position, anchor = anchor, magnification = magnification, rotation = rotation,
+                                 layer = gds_layer, texttype = gds_datatype)
+        self.add(l)
+        return l
 
-    
+
+    def label(self, *args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
+        return self.add_label(*args, **kwargs)
+
+
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
                   auto_rename = True, max_cellname_length = 28):
         if filename[-4:] != '.gds':  filename += '.gds'
@@ -640,22 +634,30 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            used_names = {'toplevel':1}
+            all_cells_names = [c._internal_name for c in all_cells_sorted]
+            all_cells_original_names = [c.name for c in all_cells_sorted]
+            used_names = {'toplevel'}
+            n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
                     new_name = c._internal_name[:max_cellname_length]
                 else:
                     new_name = c._internal_name
-                if new_name not in used_names:
-                    used_names[new_name] = 1
-                    c.name = new_name
-                else:
-                    c.name = new_name + ('%0.3i' % used_names[new_name])
-                    used_names[new_name] += 1
+                temp_name = new_name
+                while temp_name in used_names:
+                    n += 1
+                    temp_name = new_name + ('%0.3i' % n)
+                new_name = temp_name
+                used_names.add(new_name)
+                c.name = new_name
             self.name = 'toplevel'
+        # Write the gds
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
-        self.name = tempname
+        # Return cells to their original names if they were auto-renamed
+        if auto_rename == True:
+            for n,c in enumerate(all_cells_sorted):
+                c.name = all_cells_original_names[n]
         return filename
 
 
@@ -688,28 +690,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         all_D = list(self.get_dependencies(True))
         all_D += [self]
         for D in all_D:
-            new_elements = []
-            for e in D.elements:
-                if isinstance(e, gdspy.PolygonSet):
-                    new_polygons = []
-                    new_layers = []
-                    new_datatypes = []
-                    for n, layer in enumerate(e.layers):
-                        original_layer = (e.layers[n], e.datatypes[n])
-                        original_layer = _parse_layer(original_layer)
-                        if invert_selection: keep_layer = (original_layer in layers)
-                        else:                keep_layer = (original_layer not in layers)
-                        if keep_layer:
-                            new_polygons += [e.polygons[n]]
-                            new_layers += [e.layers[n]]
-                            new_datatypes += [e.datatypes[n]]
-                     # Don't re-add an empty polygon
-                    if len(new_polygons) > 0:
-                        e.polygons = new_polygons
-                        e.layers = new_layers
-                        e.datatypes = new_datatypes
-                        new_elements.append(e)
-            D.elements = new_elements
+            for polygonset in D.polygons:
+                polygon_layers = zip(polygonset.layers, polygonset.datatypes)
+                polygons_to_keep = [(pl in layers) for pl in polygon_layers]
+                if invert_selection == False: polygons_to_keep = [(not p) for p in polygons_to_keep]
+                polygonset.polygons =  [p for p,keep in zip(polygonset.polygons,  polygons_to_keep) if keep]
+                polygonset.layers =    [p for p,keep in zip(polygonset.layers,    polygons_to_keep) if keep]
+                polygonset.datatypes = [p for p,keep in zip(polygonset.datatypes, polygons_to_keep) if keep]
 
             if include_labels == True:
                 new_labels = []
@@ -724,35 +711,33 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
 
-    def distribute(self, direction = 'x', elements = None, spacing = 100, separation = True):
+    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):
         if direction not in (['+x','-x','x','+y','-y','y']):
             raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
 
-        if elements is None:
-            elements = self.elements
-            
-        multiplier = 1
-        if   direction[0] == '+':
-            direction = direction[1:]
-        elif direction[0] == '-':
-            direction = direction[1:]
-            multiplier = -1
+        if elements == 'all': elements = (self.polygons + self.references)
 
+        if direction == 'x': direction = '+x'
+        elif direction == 'y': direction = '+y'
+
+        sizes = [e.size for e in elements]
         xy = elements[0].center
-        for e in elements:
-            e.move(origin = e.center, destination = xy, axis = direction)
-            if direction == 'x':
-                xy = xy + (np.array([spacing, 0]) + np.array([e.xsize, 0])*(separation==True))*multiplier
-            elif direction == 'y':
-                xy = xy + (np.array([0, spacing]) + np.array([0, e.ysize])*(separation==True))*multiplier
+        for n, e in enumerate(elements[:-1]):
+            e.center = xy
+            if direction == '+x':  xy[0] += spacing + separation*(sizes[n] + sizes[n+1])[0]/2
+            if direction == '-x':  xy[0] -= spacing + separation*(sizes[n] + sizes[n+1])[0]/2
+            if direction == '+y':  xy[1] += spacing + separation*(sizes[n] + sizes[n+1])[1]/2
+            if direction == '-y':  xy[1] -= spacing + separation*(sizes[n] + sizes[n+1])[1]/2
+        elements[-1].center = xy
         return self
 
 
-    def align(self, alignment = 'ymax', elements = None):
+    def align(self, elements = 'all', alignment = 'ymax'):
+        if elements == 'all': elements = (self.polygons + self.references)
         if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
             raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
         if elements is None:
-            elements = self.elements
+            elements = (self.polygons + self.references)
         value = self.__getattribute__(alignment)
         for e in elements:
             e.__setattr__(alignment, value)
@@ -766,9 +751,10 @@ class Device(gdspy.Cell, _GeometryHelper):
             gds_layer, gds_datatype = _parse_layer(single_layer)
             super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
 
-        temp = self.elements
-        self.elements = []
-        [self.add_polygon(poly) for poly in temp]
+        temp_polygons = list(self.polygons)
+        self.references = []
+        self.polygons = []
+        [self.add_polygon(poly) for poly in temp_polygons]
         return self
 
 
@@ -777,8 +763,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         DeviceReference into the Device, destroying the reference
         in the process but keeping the polygon geometry """
         if reference not in self.references:
-            raise ValueError("""[PHIDL] Device.absorb() failed - 
-                the reference it was asked to absorb does not 
+            raise ValueError("""[PHIDL] Device.absorb() failed -
+                the reference it was asked to absorb does not
                 exist in this Device. """)
         ref_polygons = reference.get_polygons(by_spec = True)
         for (layer, polys) in ref_polygons.items():
@@ -788,19 +774,19 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def get_ports(self, depth = None):
-        """ Returns copies of all the ports of the Device, rotated 
+        """ Returns copies of all the ports of the Device, rotated
         and translated so that they're in their top-level position.
         The Ports returned are copies of the originals, but each copy
         has the same ``uid'' as the original so that they can be
         traced back to the original if needed"""
         port_list = [p._copy(new_uid = False) for p in self.ports.values()]
-        
+
         if depth is None or depth > 0:
             for r in self.references:
                 if depth is None: new_depth = None
                 else:             new_depth = depth - 1
                 ref_ports = r.parent.get_ports(depth=new_depth)
-                
+
                 # Transform ports that came from a reference
                 ref_ports_transformed = []
                 for rp in ref_ports:
@@ -811,39 +797,51 @@ class Device(gdspy.Cell, _GeometryHelper):
                     new_port.new_orientation = new_orientation
                     ref_ports_transformed.append(new_port)
                 port_list += ref_ports_transformed
-            
+
         return port_list
 
 
     def remove(self, items):
-        if type(items) not in (list, tuple):  items = [items]
+        if not _is_iterable(items):  items = [items]
         for item in items:
-            try:
-                self.elements.remove(item)
-            except:
-                raise ValueError("""[PHIDL] Device.remove() cannot find the item
-                                 it was asked to remove in the Device "%s".""" % (self.name))
-            if isinstance(item, DeviceReference):
-                # If appears in list of aliases, remove that alias
-                self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+            if isinstance(item, Port):
+                try:
+                    self.ports = { k:v for k, v in self.ports.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the Port
+                                     it was asked to remove in the Device: "%s".""" % (item))
+            else:
+                try:
+                    if isinstance(item, gdspy.PolygonSet):
+                        self.polygons.remove(item)
+                    if isinstance(item, gdspy.CellReference):
+                        self.references.remove(item)
+                    if isinstance(item, gdspy.Label):
+                        self.labels.remove(item)
+                    self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                     it was asked to remove in the Device: "%s".""" % (item))
 
         self._bb_valid = False
         return self
 
-    
+
     def rotate(self, angle = 45, center = (0,0)):
         if angle == 0: return self
-        for e in self.elements:
-            if isinstance(e, Polygon):
-                e.rotate(angle = angle, center = center)
-            elif isinstance(e, DeviceReference):
-                e.rotate(angle, center)
+        for e in self.polygons:
+            e.rotate(angle = angle, center = center)
+        for e in self.references:
+            e.rotate(angle, center)
+        for e in self.labels:
+            e.rotate(angle, center)
         for p in self.ports.values():
             p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
         self._bb_valid = False
         return self
-            
+
+
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
@@ -858,7 +856,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
-            
+
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:        d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
@@ -868,25 +866,22 @@ class Device(gdspy.Cell, _GeometryHelper):
         if axis == 'y': d = (o[0], d[1])
 
         dx,dy = np.array(d) - o
-        
+
         # Move geometries
-        for e in self.elements:
-            if isinstance(e, Polygon): 
-                e.translate(dx,dy)
-            if isinstance(e, DeviceReference): 
-                e.move(destination = d, origin = o)
+        for e in self.polygons:
+            e.translate(dx,dy)
+        for e in self.references:
+            e.move(destination = d, origin = o)
+        for e in self.labels:
+            e.move(destination = d, origin = o)
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
-        
-        # Move labels
-        for l in self.labels:
-            l.translate(dx,dy)
-        
+
         self._bb_valid = False
         return self
-            
+
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        for e in self.elements:
+        for e in (self.polygons+self.references+self.labels):
             e.reflect(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
@@ -894,7 +889,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             p.orientation = 2*phi - p.orientation
         self._bb_valid = False
         return self
-    
+
 
     def hash_geometry(self, precision = 1e-4):
         """
@@ -909,7 +904,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
         )
         ...
-        Note: For each layer, each polygon is individually hashed and then 
+        Note: For each layer, each polygon is individually hashed and then
               the polygon hashes are sorted, to ensure the hash stays constant
               regardless of the ordering the polygons.  Similarly, the layers
               are sorted by (layer, datatype)
@@ -922,7 +917,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         # to floating point math. Example: with a precision of 0.1, the
         # floating points 7.049999 and 7.050001 round to different values
         # (7.0 and 7.1), but offset values (7.220485 and 7.220487) don't
-        magic_offset = .17048614593375106857526844968
+        magic_offset = .17048614
 
         final_hash = hashlib.sha1()
         for layer in sorted_layers:
@@ -937,7 +932,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return final_hash.hexdigest()
 
 
-    
+
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         super(DeviceReference, self).__init__(
@@ -948,6 +943,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                  x_reflection=x_reflection,
                  ignore_missing=False)
         self.parent = device
+        self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
@@ -957,14 +953,14 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __repr__(self):
         return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
                 (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
-    
+
 
     def __str__(self):
         return self.__repr__()
-        
+
 
     def __getitem__(self, val):
-        """ This allows you to access an alias from the reference's parent, and receive 
+        """ This allows you to access an alias from the reference's parent, and receive
         a copy of the reference which is correctly rotated and translated"""
         try:
             alias_device = self.parent[val]
@@ -988,7 +984,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         """ This property allows you to access myref.ports, and receive a copy
         of the ports dict which is correctly rotated and translated"""
         for name, port in self.parent.ports.items():
-            port = self.parent.ports[name] 
+            port = self.parent.ports[name]
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
                 port.orientation, self.origin, self.rotation, self.x_reflection)
             if name not in self._local_ports:
@@ -998,7 +994,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             self._local_ports[name].parent = self
         # Remove any ports that no longer exist in the reference's parent
         parent_names = self.parent.ports.keys()
-        local_names = self._local_ports.keys()
+        local_names = list(self._local_ports.keys())
         for name in local_names:
             if name not in parent_names: self._local_ports.pop(name)
         return self._local_ports
@@ -1006,20 +1002,20 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     @property
     def info(self):
         return self.parent.info
-        
+
     @property
     def bbox(self):
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
-        
 
-        
+
+
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
-        
+
         if x_reflection:
             new_point[1] = -new_point[1]
             new_orientation = -orientation
@@ -1029,9 +1025,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if origin is not None:
             new_point = new_point + np.array(origin)
         new_orientation = mod(new_orientation, 360)
-            
+
         return new_point, new_orientation
-        
+
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves the DeviceReference from the origin point to the destination.  Both
          origin and destination can be 1x2 array-like, Port, or a key
@@ -1046,12 +1042,12 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         elif np.array(origin).size == 2:    o = origin
         elif origin in self.ports:    o = self.ports[origin].midpoint
         else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-            
+
         if isinstance(destination, Port):           d = destination.midpoint
         elif np.array(destination).size == 2:   d = destination
         elif destination in self.ports:   d = self.ports[destination].midpoint
         else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
-            
+
         # Lock one axis if necessary
         if axis == 'x': d = (d[0], o[1])
         if axis == 'y': d = (o[0], d[1])
@@ -1059,44 +1055,49 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # This needs to be done in two steps otherwise floating point errors can accrue
         dxdy = np.array(d) - np.array(o)
         self.origin = np.array(self.origin) + dxdy
-        self.parent._bb_valid = False
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
 
-        
+
     def rotate(self, angle = 45, center = (0,0)):
         if angle == 0: return self
         if type(center) is Port:  center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
-        self.parent._bb_valid = False
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
-        
-        
+
+
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         if type(p1) is Port:  p1 = p1.midpoint
         if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
         # Translate so reflection axis passes through origin
         self.origin = self.origin - p1
-        
+
         # Rotate so reflection axis aligns with x-axis
         angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
         self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
         self.rotation -= angle
-        
+
         # Reflect across x-axis
         self.x_reflection = not self.x_reflection
         self.origin[1] = -self.origin[1]
         self.rotation = -self.rotation
-        
+
         # Un-rotate and un-translate
         self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
         self.rotation += angle
         self.origin = self.origin + p1
 
-        self.parent._bb_valid = False
+        if self.owner is not None:
+            self.owner._bb_valid = False
         return self
-        
+
 
     def connect(self, port, destination, overlap = 0):
         # ``port`` can either be a string with the name or an actual Port
@@ -1106,10 +1107,138 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             p = port
         else:
             raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
-                ' - received (%s), ports available are (%s)' % (port, self.ports.keys()))
+                ' - received (%s), ports available are (%s)' % (port, tuple(self.ports.keys())))
         self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
         self.move(origin = p, destination = destination)
         self.move(-overlap*np.array([cos(destination.orientation*pi/180),
                                      sin(destination.orientation*pi/180)]))
         return self
 
+
+
+
+class CellArray(gdspy.CellArray, _GeometryHelper):
+    def __init__(self, device, columns, rows, spacing, origin=(0, 0),
+                 rotation=0, magnification=None, x_reflection=False):
+        super(CellArray, self).__init__(
+            columns = columns,
+            rows = rows,
+            spacing = spacing,
+            ref_cell = device,
+            origin=origin,
+            rotation=rotation,
+            magnification=magnification,
+            x_reflection=x_reflection,
+            ignore_missing=False)
+        self.parent = device
+        self.owner = None
+
+    @property
+    def bbox(self):
+        bbox = self.get_bounding_box()
+        if bbox is None:  bbox = ((0,0),(0,0))
+        return np.array(bbox)
+
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        """ Moves the CellArray from the origin point to the destination.  Both
+         origin and destination can be 1x2 array-like, Port, or a key
+         corresponding to one of the Ports in this device_ref """
+
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = (0,0)
+
+        if isinstance(origin, Port):            o = origin.midpoint
+        elif np.array(origin).size == 2:    o = origin
+        elif origin in self.ports:    o = self.ports[origin].midpoint
+        else: raise ValueError('[CellArray.move()] ``origin`` not array-like, a port, or port name')
+
+        if isinstance(destination, Port):           d = destination.midpoint
+        elif np.array(destination).size == 2:   d = destination
+        elif destination in self.ports:   d = self.ports[destination].midpoint
+        else: raise ValueError('[CellArray.move()] ``destination`` not array-like, a port, or port name')
+
+        # Lock one axis if necessary
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        # This needs to be done in two steps otherwise floating point errors can accrue
+        dxdy = np.array(d) - np.array(o)
+        self.origin = np.array(self.origin) + dxdy
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
+        return self
+
+
+    def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
+        if type(center) is Port:  center = center.midpoint
+        self.rotation += angle
+        self.origin = _rotate_points(self.origin, angle, center)
+        if self.owner is not None:
+            self.owner._bb_valid = False
+        return self
+
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        if type(p1) is Port:  p1 = p1.midpoint
+        if type(p2) is Port:  p2 = p2.midpoint
+        p1 = np.array(p1);  p2 = np.array(p2)
+        # Translate so reflection axis passes through origin
+        self.origin = self.origin - p1
+
+        # Rotate so reflection axis aligns with x-axis
+        angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
+        self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
+        self.rotation -= angle
+
+        # Reflect across x-axis
+        self.x_reflection = not self.x_reflection
+        self.origin[1] = -self.origin[1]
+        self.rotation = -self.rotation
+
+        # Un-rotate and un-translate
+        self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
+        self.rotation += angle
+        self.origin = self.origin + p1
+
+        if self.owner is not None:
+            self.owner._bb_valid = False
+        return self
+
+
+
+class Label(gdspy.Label, _GeometryHelper):
+
+    def __init__(self, *args, **kwargs):
+        super(Label, self).__init__(*args, **kwargs)
+
+
+    @property
+    def bbox(self):
+        return np.array([[self.position[0], self.position[1]],[self.position[0], self.position[1]]])
+
+    def rotate(self, angle = 45, center = (0,0)):
+        self.position = _rotate_points(self.position, angle = angle, center = center)
+        return self
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        o = _parse_coordinate(origin)
+        d = _parse_coordinate(destination)
+
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        self.position += np.array(d) - o
+        return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        self.position = _reflect_points(self.position, p1, p2)
+        return self

@@ -4,6 +4,7 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
 
 # matrix:
 #   include:
@@ -11,17 +12,14 @@ python:
 #       dist: xenial
 #       sudo: required
 
-before_install:
-    # Tricks to avoid matplotlib error about X11:
-    # 'no display name and no $DISPLAY environment variable'
-    # http://docs.travis-ci.com/user/gui-and-headless-browsers/#Starting-a-Web-Server
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
+services:
+  - xvfb
+
 
 install:
   - pip install --upgrade pip
   - pip install -U matplotlib==2.2.3 # Needed because Travis CI pulls 3.0.2 even though it doesn't work with Python 2.7
-  - pip install -U scipy==1.1.0 # Needed because 1.2.0 has UTF-8 issues
+  - pip install -U scipy==1.1.0 # Compatible with Python 2 and 3
   - python setup.py install
 
 script:

@@ -12,10 +12,7 @@ import phidl.utilities as pu
 # Helpful (but not necessary) notes about plotting. (Can be skipped)
 #==============================================================================
 # Note: If you have Qt + PyQt installed, you may be able to use the much
-# faster quickplot2() function, which acts like KLayout (try zooming with
-# the mousewheel, and right-click-dragging to zoom). The F1/F2/F3 keys also
-# show/hide Ports, Subports, and Aliases respectively.  The Esc key resets
-# the view
+# faster quickplot2() function
 #
 # We recommend trying the following just to see if it works:
 # >>> from phidl import quickplot2 as qp
@@ -24,11 +21,10 @@ import phidl.utilities as pu
 #
 # If that doesn't work and you're using IPython, try using the command
 # >>> %gui qt
-
-# Uncomment this if you're using the original quickplot (not quickplot2)
-# and you'd like to see each result in a new window
-# import functools
-# qp = functools.partial(qp, new_window = True)
+#
+# If that doesn't work and you're using Spyder,  you need to change your
+# "Graphics backend" to "Automatic." You can do that in Spyder through the menu
+#     Tools > Preferences > IPython Console > Graphics > Backend: Automatic
 #==============================================================================
 
 
@@ -59,7 +55,7 @@ def waveguide(width = 10, height = 1):
 #==============================================================================
 # Create a blank device
 #==============================================================================
-# Let's create a new device ``D`` which will act as a blank canvas (D can be 
+# Let's create a new device ``D`` which will act as a blank canvas (D can be
 # thought of as a blank GDS cell with some special features). Note that when we
 # make a Device, we usually assign it a variable name with a capital letter
 D = Device('MultiWaveguide')
@@ -155,7 +151,7 @@ qp(D) # quickplot it!
 #==============================================================================
 # Manipulating geometry 3 - Smarter movement with ports
 #==============================================================================
-# All the waveguides we made have two ports: 'wgport1' and 'wgport2'  We can 
+# All the waveguides we made have two ports: 'wgport1' and 'wgport2'  We can
 # use these names in place of (x,y) pairs.  For instance, if we want to move
 # wg1 such that its port 'wgport1' rests on the origin, we do:
 wg1.move(origin = 'wgport1', destination = [0,0])
@@ -163,7 +159,7 @@ wg1.move(origin = 'wgport1', destination = [0,0])
 # access the Port objects for any Device (or DeviceReference) by calling device.ports,
 # --which returns a Python dictionary--and accessing its value with the key
 wg3.move(origin = wg3.ports['wgport1'], destination = [0,0])
-# We can even move one port to another 
+# We can even move one port to another
 wg2.move(origin = wg2.ports['wgport1'], destination = wg3.ports['wgport2'])
 # Several functions beyond just move() can take Ports as inputs
 wg1.rotate(angle = -60, center = wg1.ports['wgport2'])
@@ -189,7 +185,7 @@ wg1.rotate(angle = 15, center = [0,0]).move([10,20])
 #==============================================================================
 # Connecting devices with connect()
 #==============================================================================
-# The connect command allows us to connect DeviceReference ports together like 
+# The connect command allows us to connect DeviceReference ports together like
 # Lego blocks.  There is an optional parameter called ``overlap`` which is
 # useful if you have shapes you want to intersect with some overlap (or with a
 # negative number, separate the ports).
@@ -206,8 +202,8 @@ qp(D) # quickplot it!
 # Although our waveguides wg1/wg2/wg3 have ports, they're only references
 # of the device ``D`` we're working in, and D itself does not -- it only draws
 # the subports (ports of wg1, wg2, wg3) as a convenience.  We need to add ports
-# that we specifically want in our new device ``D``. add_port() can take a 
-# port argument which allows you to pass it an underlying reference port to 
+# that we specifically want in our new device ``D``. add_port() can take a
+# port argument which allows you to pass it an underlying reference port to
 # copy. You can also rename the port if you desire:
 p1 = D.add_port(port = wg1.ports['wgport2'], name = 1)
 p2 = D.add_port(port = wg3.ports['wgport1'], name = 2)
@@ -254,7 +250,7 @@ qp(D2) # quickplot it!
 # Routing
 #==============================================================================
 # Routing allows us to connect two ports which face each other with a smooth
-# polygon.  Since we connected our two 
+# polygon.  Since we connected our two
 D2.add_ref( pr.route_basic(port1 = mwg1.ports[1], port2 = mwg2.ports[2],
             path_type = 'sine', width_type = 'straight') )
 qp(D2)
@@ -264,7 +260,7 @@ qp(D2)
 #==============================================================================
 # Adding text
 #==============================================================================
-# The function text() creates a Device, just like waveguide.  Use it and 
+# The function text() creates a Device, just like waveguide.  Use it and
 # manipulate it like any other Device
 t = D2.add_ref( pg.text('Hello\nworld!', size = 10, justify = 'center'))
 t.move([0,40]).rotate(45)
@@ -274,18 +270,18 @@ qp(D2)
 #==============================================================================
 # Labeling
 #==============================================================================
-# We can also label (annotate) our devices, in order to record information 
-# directly into the final GDS file without putting any extra geometry onto any 
+# We can also label (annotate) our devices, in order to record information
+# directly into the final GDS file without putting any extra geometry onto any
 # layer
 # This label will display in a GDS viewer, but will not be rendered
 # or printed like the polygons created by the text()
 
 
-D2.label(text = 'First label', position = mwg1.center)
-D2.label('Second label', mwg2.center)
+D2.add_label(text = 'First label', position = mwg1.center)
+D2.add_label('Second label', mwg2.center)
 
 # It's very useful for recording information about the devices or layout
-D2.label(text = 'The x size of this\nlayout is %s' % D2.xsize,
+D2.add_label(text = 'The x size of this\nlayout is %s' % D2.xsize,
             position = (D2.xmax, D2.ymax), layer = 255)
 
 # Again, note we have to write the GDS for it to be visible (view in KLayout)
@@ -332,6 +328,23 @@ for p in all_ports:
 
 
 #==============================================================================
+# Advanced: Using CellArray
+#==============================================================================
+# In GDS, there's a type of structure called a "CellArray" which takes a cell
+# and repeats it NxM times on a fixed grid spacing.  For convenience, PHIDL
+# includes this functionality with the add_array() function.  Note that
+# CellArrays are not compatible with ports (since there is no way to 
+# access/modify individual elements in a GDS cellarray)
+
+D = Device()
+R = pg.rectangle([30,20])
+a = D.add_array(R, columns = 7, rows = 5,  spacing = (31, 21))
+# bbox gets the bounding box of the whole array
+a.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]] 
+qp(D)
+
+
+#==============================================================================
 # Adding premade geometry with phidl.geometry
 #==============================================================================
 # Usually at the beginning of a phidl file we import the phidl.geometry module
@@ -353,7 +366,7 @@ g3.xmin = g1.xmax + 5
 qp(D)
 
 # There are dozens of these types of structures.  See the /phidl/geometry.py
-# file for a full geometry list.  Note some of the more complex shapes are 
+# file for a full geometry list.  Note some of the more complex shapes are
 # experimental and may change with time.
 
 
@@ -361,19 +374,35 @@ qp(D)
 D.write_gds('MyNewGDS.gds')
 
 
+#==============================================================================
+# Premade geometry: Lithography shapes
+#==============================================================================
+# PHIDL comes with a set of handy functions for creating standard lithographic
+# test structures, such as calipers (for detecting fabrication-layer-offsets),
+# stars, and positive + negative-tone steps
+D = Device()
+d1 = D << pg.litho_calipers(notch_size = [3,10], notch_spacing = 2, num_notches = 7,
+        offset_per_notch = 0.2, row_spacing = 0, layer1 = 1, layer2 = 2).rotate(90)
+d2 = D << pg.litho_steps(line_widths = [1,2,4,8,16], line_spacing = 10, height = 80, layer = 0).movex(80)
+d3 = D << pg.litho_star(num_lines = 16, line_width = 3, diameter = 80, layer = 4).movex(240)
+d1.y = d2.y = d3.y
+qp(D)
+D.write_gds('LithographyTestStructuresMetrics.gds')
+
+
 
 #==============================================================================
 # Importing GDS files
 #==============================================================================
-# The phidl.geometry module is responsible for generating premade Devices.  
+# The phidl.geometry module is responsible for generating premade Devices.
 # This includes imported geometry from other GDS files too.  When you import
 # a GDS, you specify which layers you want, and it will import those layers
 # as a new Device.  The new device can then be manipulated like any other.
 
 # Let's import the GDS we just saved in the previous step.  Although generally
-# you must specify which cell in the GDS file you want to import using the 
+# you must specify which cell in the GDS file you want to import using the
 # argument `cellname`, if the GDS file has only one top-level cell (like our
-# MyLayerSetPreview.gds file does), the cellname argument can be left out and 
+# MyLayerSetPreview.gds file does), the cellname argument can be left out and
 # import_gds() will import that top-level cell.
 
 # Let's first just import the entire GDS as-is
@@ -399,11 +428,11 @@ DL = Device()
 DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
 
 
-# 2) as a 2-element list [0,1] or tuple (0,1) representing the gds layer 
-# number (0-255) and gds layer datatype (0-255)  
+# 2) as a 2-element list [0,1] or tuple (0,1) representing the gds layer
+# number (0-255) and gds layer datatype (0-255)
 DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
 
-# 3) as a Layer object  
+# 3) as a Layer object
 my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', description = 'Gold pads liftoff')
 my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
 DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
@@ -424,8 +453,8 @@ polygon_list = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)], layer = my_laye
 print([(p.layers[0], p.datatypes[0]) for p in polygon_list])
 
 # However, when you use it on a phidl.geometry function, it does not produce
-# multiple Devices! It will only produce a single Device with geometry on all 
-# of your specified layers. This is because the `layer` argument is passed 
+# multiple Devices! It will only produce a single Device with geometry on all
+# of your specified layers. This is because the `layer` argument is passed
 # transparently to the add_polygon() function through the function
 E = pg.ellipse(layer = {4, 8, 19})
 print(E.layers)
@@ -436,7 +465,7 @@ print(E.layers)
 #==============================================================================
 # What you can also do is make a LayerSet, which lets you
 # conveniently call each Layer object just by its name.  You can also specify
-# the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color 
+# the layer color using an RGB triplet e.g (0.1, 0.4, 0.2), an HTML hex color
 # (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or 'lightblue'
 # see http://www.w3schools.com/colors/colors_names.asp )
 # The 'alpha' argument also lets you specify how transparent that layer should
@@ -531,7 +560,7 @@ def complicated_waveguide(width = 10, height = 1, x = 10, y = 25, rotation = 15)
     C.rotate(angle = rotation, center = (0,0))
     C.move((x,y))
     return C
-    
+
 cwg_parameters = {
             'width' : 14,
             'height' : 1,
@@ -554,8 +583,8 @@ qp(C2)
 C3 = make_device(complicated_waveguide, config = cwg_parameters, width = 500, rotation = 35)
 qp(C3)
 
-# The most useful implementation of this is to keep a standard set of 
-# parameters and then override certain parameters each iteration of the for 
+# The most useful implementation of this is to keep a standard set of
+# parameters and then override certain parameters each iteration of the for
 # loop. Say we want to use our standard cwg_parameters but change the height
 #  each time:
 D = Device()
@@ -580,7 +609,7 @@ D = Device()
 C = pg.circle()
 c1 = D.add_ref(C)   # Add first reference
 c2 = D.add_ref(C)   # Add second reference
-c2.x += 15          # Move the second circle over by 10
+c2.x += 15          # Move the second circle over by 15
 qp(c2)
 qp(D)
 
@@ -604,7 +633,7 @@ D['circle3'].x += 15            # Moving the second circle over by 15
 qp(D['circle2'], label_aliases = True)
 qp(D, label_aliases = True)
 
-# You can also access the list of aliases for your Device whenever you want 
+# You can also access the list of aliases for your Device whenever you want
 # to by accessing Device.aliases, which is a Python dictionary.  For example:
 print(D.aliases)
 print(D.aliases.keys())
@@ -613,8 +642,8 @@ print(D.aliases.keys())
 #==============================================================================
 # Flattening a Device
 #==============================================================================
-# Sometimes you want to remove references from a Device while keeping all
-# of the shapes/polygons intact and in place.  The D.flatten() keeps all the 
+# Sometimes you want to remove cell structure from a Device while keeping all
+# of the shapes/polygons intact and in place.  The D.flatten() keeps all the
 # polygons in D, but removes all the underlying references it's attached to.
 # Also, if you specify the `single_layer` argument it will move all of the
 # polyons to that single layer
@@ -635,8 +664,8 @@ D.write_gds('D_ellipses_flattened_singlelayer.gds')
 #==============================================================================
 # Decluttering - Absorbing references into a main Device
 #==============================================================================
-# Say you had a Device "D" which contains several references named 
-# "ref1", "ref2", "ref_cluttered".  Suppose the reference "ref_cluttered" is 
+# Say you had a Device "D" which contains several references named
+# "ref1", "ref2", "ref_cluttered".  Suppose the reference "ref_cluttered" is
 # cluttering up your cell hierarchy when you're viewing it in your favorite
 # GDS viewer.  The D.absorb() function can eliminate the "ref_cluttered"
 # hierarchy while maintaining the geometry -- it strips out all the polygons
@@ -660,14 +689,14 @@ D.write_gds('D_de_cluttered.gds')
 #==============================================================================
 # Copying a Device
 #==============================================================================
-# Since copying a Device involves creating a new geometry, you can copy a 
-# Device D using the pg.copy(D) or pg.deepcopy(D) function.  pg.copy(D) 
-# maintains the underlying connections to other Device, so that newly-created 
-# Device uses the same references as the original device.  Conversely, 
+# Since copying a Device involves creating a new geometry, you can copy a
+# Device D using the pg.copy(D) or pg.deepcopy(D) function.  pg.copy(D)
+# maintains the underlying connections to other Device, so that newly-created
+# Device uses the same references as the original device.  Conversely,
 # pg.deepcopy() creates completely new copies of every underlying polygon and
 # reference, so that the newly-created Device shares no dependencies/references
-# with the original Device.  These functions are especially useful if 
-# you want to flatten a geometry without damaging the structure of the 
+# with the original Device.  These functions are especially useful if
+# you want to flatten a geometry without damaging the structure of the
 # original Device.
 
 D = Device()
@@ -680,7 +709,7 @@ D_copied = pg.copy(D)
 qp(D_copied)
 
 # Observe that if we add geometry to D now, D_copied is unaffected
-D.add_ref(pg.circle()) 
+D.add_ref(pg.circle())
 D.rotate(45)
 qp(D_copied)
 
@@ -703,7 +732,7 @@ D_deepcopied = pg.deepcopy(D)
 qp(D_deepcopied)
 
 # As before, if we add geometry to D now, D_deepcopied is unaffected
-D.add_ref(pg.circle()) 
+D.add_ref(pg.circle())
 D.rotate(45)
 qp(D_deepcopied)
 
@@ -712,13 +741,14 @@ qp(D_deepcopied)
 E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
 qp(D_deepcopied)
 
+
 #==============================================================================
 # Extracting layers
 #==============================================================================
-# Say you want to grab all the polygons of a single layer from your Device. You 
+# Say you want to grab all the polygons of a single layer from your Device. You
 # can do this using the pg.extract() function, which will create a new Device
 # with all of the polygons from D.  Note that the Device created from this
-# function is necessarily flattened (otherwise it could inadvertantly modify 
+# function is necessarily flattened (otherwise it could inadvertantly modify
 # other Devices which share references with the extracted Device)
 
 D = Device()
@@ -737,7 +767,7 @@ qp(D_only_layers_1_and_2)
 #==============================================================================
 # Making boolean shapes
 #==============================================================================
-# If you want to subtract one shape from another, merge two shapes, or 
+# If you want to subtract one shape from another, merge two shapes, or
 # perform an XOR on them, you can do that with the pg.boolean() function.
 # the ``operation`` argument should be {not, and, or, xor, 'A-B', 'B-A', 'A+B'}.
 # Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
@@ -753,38 +783,11 @@ D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
 qp(D2)
 
 
-#==============================================================================
-# Comparing two Devices
-#==============================================================================
-# Sometimes you want to be able to test whether two Devices are identical or
-# not (similar to the "diff" of a text file).  You can perform this comparison
-# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer  
-# XOR difference between the Devices A and B, and returns polygons representing 
-# the differences between A and B.
-
-D = Device()
-E1 = pg.ellipse()
-E2 = pg.ellipse().rotate(15)
-E3 = pg.ellipse()
-
-# Let's compare two slightly different Devices
-X1 = pg.xor_diff(A = E1, B = E2)
-# When we plot the result, we see only the differences between E1 and E2
-qp(X1) 
-
-# Now let's compare two identical Devices
-X2 = pg.xor_diff(A = E1, B = E3)
-qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
-
-# We can double-check this by computing the area of each device
-print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
-print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
-
 
 #==============================================================================
 # Creating outlines of shapes
 #==============================================================================
-# Sometimes, when writing in a positive-tone resist, it is useful to produce 
+# Sometimes, when writing in a positive-tone resist, it is useful to produce
 # an outline of an existing shape. The pg.outline() function allows you to do
 # exactly that
 
@@ -810,7 +813,7 @@ D << pg.ellipse(layer = 0).rotate(15*3)
 D << pg.ellipse(layer = 1).rotate(15*4)
 D << pg.ellipse(layer = 1).rotate(15*5)
 
-# We have two options to unioning - take all polygons, regardless of 
+# We have two options to unioning - take all polygons, regardless of
 # layer, and join them together (in this case on layer 5) like so:
 D_joined = pg.union(D, by_layer = False, layer = 5)
 
@@ -823,6 +826,35 @@ dj.xmax += 25
 djl.xmax += 50
 
 qp(D)
+
+
+#==============================================================================
+# Comparing two Devices
+#==============================================================================
+# Sometimes you want to be able to test whether two Devices are identical or
+# not (similar to the "diff" of a text file).  You can perform this comparison
+# by using the pg.xor_diff(A, B) function.  It will perform a layer-by-layer
+# XOR difference between the Devices A and B, and returns polygons representing
+# the differences between A and B.
+
+D = Device()
+E1 = pg.ellipse()
+E2 = pg.ellipse().rotate(15)
+E3 = pg.ellipse()
+
+# Let's compare two slightly different Devices
+X1 = pg.xor_diff(A = E1, B = E2)
+# When we plot the result, we see only the differences between E1 and E2
+qp(X1)
+
+# Now let's compare two identical Devices
+X2 = pg.xor_diff(A = E1, B = E3)
+qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
+
+# We can double-check this by computing the area of each device
+print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
+print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
+
 
 #==============================================================================
 # Removing geometry
@@ -847,7 +879,7 @@ qp(D)
 # Save / export to SVG
 #==============================================================================
 # For figure-quality publications sometimes you want to save your geometry
-# as a more convenient vector file format like SVG (for Inkscape, Illustrator, 
+# as a more convenient vector file format like SVG (for Inkscape, Illustrator,
 # etc). For that purpose you can use the write_svg() command
 from phidl.utilities import write_svg
 
@@ -870,7 +902,7 @@ from phidl import device_lru_cache
 @device_lru_cache
 def computationally_intensive_device(width = 10, unused_var = 1):
     D = Device()
-    time.sleep(0.1) # Pretend we're doing computations for 1.5 seconds here
+    time.sleep(0.1) # Pretend we're doing computations for 0.1 seconds here
     D.add_polygon( [(width,6,7,9), (6,8,9,5)] )
     return D
 
@@ -898,12 +930,12 @@ print('Function with new arguments took %s seconds to run' % (time.time()-time_s
 #==============================================================================
 # A D.hash_geometry() function produces a unique string (based on SHA1-hashing)
 # based on the underlying polygons which allows us to tell whether the polygons
-# in a Device are the same as another device.  This allows us to compare 
+# in a Device are the same as another device.  This allows us to compare
 # one device with another and check if they have the same geometry. GDS
 # structure is ignored -- only final geometry/polygon output is considered
 # Note:  Does not hash Ports or Labels!
 
-# Create two Devices and check that they have the same geometry hash - even 
+# Create two Devices and check that they have the same geometry hash - even
 # though one has a reference and the other doesn't
 D = Device()
 e = D << pg.ellipse(radii = [10,15], layer = 2)
