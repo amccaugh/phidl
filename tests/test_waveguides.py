@@ -24,7 +24,6 @@ xs = WG_XS(components=[WG_XS_Component(width=1, offset=0, layer=Layer(name='wg_d
 
 @contained_phidlDevice
 def Eulers(TOP):
-    lytest.utest_buds.test_root = os.path.dirname(__file__)
     for theta in [20, 45, 90]:
         for rr in [2, 4, 6, 10, 20]:
             eb = TOP << xs.cell_bend(theta, radius=rr, euler=True)
@@ -39,19 +38,17 @@ def test_Eulers(): difftest_it(Eulers)()
 
 @contained_phidlDevice
 def Sbend1(TOP):
-    lytest.utest_buds.test_root = os.path.dirname(__file__)
     with pytest.raises(ValueError):
         # too tight
         TOP << xs.cell_s_bend_by_offset(15, 70, radius=20)
     TOP << xs.cell_s_bend_by_offset(60, 70, radius=20).movex(30)
     TOP << xs.cell_s_bend_by_offset(50, 3, radius=20).movex(60)
 
-def test_Sbend1(): difftest_it(Sbend1)()
+# def test_Sbend1(): difftest_it(Sbend1)()
 
 
 @contained_phidlDevice
 def Sbend2(TOP):
-    lytest.utest_buds.test_root = os.path.dirname(__file__)
     TOP << xs.cell_s_bend(max_slope=30)
     TOP << xs.cell_s_bend(max_slope=-2).move((20, 0))
 
@@ -60,7 +57,6 @@ def test_Sbend2(): difftest_it(Sbend2)()
 
 @contained_phidlDevice
 def Manhattan_Routing(TOP):
-    lytest.utest_buds.test_root = os.path.dirname(__file__)
     wgsrc = TOP << xs.cell_straight(10)
     for direction in [0, 90, -90, 180]:
         wgdest = TOP << xs.cell_straight(10)
@@ -76,7 +72,6 @@ def test_Manhattan_Routing(): difftest_it(Manhattan_Routing)()
 
 @contained_phidlDevice
 def General_Routing(TOP):
-    lytest.utest_buds.test_root = os.path.dirname(__file__)
     for euler in [True, False]:
         wg = TOP << xs.route_points([[0,0], [20, 20], [80, 20], [10, 0], [0,-50], [-20, -20], [0,0]], euler=euler)
     wg.movey(70)
