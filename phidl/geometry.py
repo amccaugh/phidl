@@ -360,7 +360,7 @@ def C(width = 1, size = (10,20) , layer = 0):
 #
 #==============================================================================
 
-def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
+def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
         num_divisions = [1,1],  join='miter', tolerance=2,
         max_points = 4000, layer = 0):
     if type(elements) is not list: elements = [elements]
@@ -399,7 +399,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
 
-    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.  
+    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.
     Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
@@ -593,19 +593,19 @@ def _crop_region(polygons, left, bottom, right, top, precision):
 
 
 def _crop_edge_polygons(all_polygons, bboxes, left, bottom, right, top, precision):
-    """ Parses out which polygons are along the edge of the rectangle and need 
+    """ Parses out which polygons are along the edge of the rectangle and need
      to be  cropped and which are deep inside the rectangle region and can be
       left alone, then crops only those polygons along the edge """
     polygons_in_rect_i = _find_bboxes_in_rect(bboxes, left, bottom, right, top)
     polygons_edge_i = _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top)
     polygons_in_rect_no_edge_i = polygons_in_rect_i & (~polygons_edge_i)
-    
+
     # Crop polygons along the edge and recombine them with polygons inside the rectangle
     polygons_edge = all_polygons[polygons_edge_i]
     polygons_in_rect_no_edge = all_polygons[polygons_in_rect_no_edge_i].tolist()
     polygons_edge_cropped = _crop_region(polygons_edge, left, bottom, right, top, precision = precision)
     polygons_to_process = polygons_in_rect_no_edge + polygons_edge_cropped
-    
+
     return polygons_to_process
 
 def _find_bboxes_in_rect(bboxes, left, bottom, right, top):
@@ -639,17 +639,17 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
     """ Taking a region of e.g. size (x,y) which needs to be offset by distance d,
     this function crops out a region (x+2*d, y+2*d) large, offsets that region,
     then crops it back to size (x,y) to create a valid result """
-        
+
     # Mark out a region slightly larger than the final desired region
     # FIXME: Necessary?
     d = distance*1.01
-    
+
     polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left-d, bottom-d, right+d, top+d, precision = precision)
-    
+
     # Offset the resulting cropped polygons and recrop to final desired size
     polygons_offset = clipper.offset(polygons_to_offset, distance, join, tolerance, 1/precision, int(join_first))
     polygons_offset_cropped = _crop_region(polygons_offset, left, bottom, right, top, precision = precision)
-    
+
     return polygons_offset_cropped
 
 
@@ -675,14 +675,14 @@ def _offset_polygons_parallel(
     join = 'miter',
     tolerance = 2,
     ):
-    
+
 #    Build bounding boxes
     polygons = np.asarray(polygons)
     bboxes = _polygons_to_bboxes(polygons)
-    
+
     xmin,ymin = np.min(bboxes[:,0:2], axis = 0) - distance
     xmax,ymax = np.max(bboxes[:,2:4], axis = 0) + distance
-    
+
     xsize = xmax - xmin
     ysize = ymax - ymin
     xdelta = xsize/num_divisions[0]
@@ -706,7 +706,7 @@ def _offset_polygons_parallel(
                                             tolerance = tolerance,
                                             )
             offset_polygons += _offset_region_polygons
-            
+
     return offset_polygons
 
 
@@ -719,7 +719,7 @@ def _boolean_region(all_polygons_A, all_polygons_B,
     """ Taking a region of e.g. size (x,y) which needs to be booleaned,
     this function crops out a region (x, y) large from each set of polygons
     (A and B), booleans that cropped region and returns the result"""
-        
+
     polygons_to_boolean_A = _crop_edge_polygons(all_polygons_A, bboxes_A, left, bottom, right, top, precision)
     polygons_to_boolean_B = _crop_edge_polygons(all_polygons_B, bboxes_B, left, bottom, right, top, precision)
     polygons_boolean = clipper.clip(polygons_to_boolean_A, polygons_to_boolean_B,
@@ -734,23 +734,23 @@ def _boolean_polygons_parallel(
         operation = 'and',
         precision = 1e-4,
         ):
-    
+
     #    Build bounding boxes
     polygons_A = np.asarray(polygons_A)
     polygons_B = np.asarray(polygons_B)
     bboxes_A = _polygons_to_bboxes(polygons_A)
     bboxes_B = _polygons_to_bboxes(polygons_B)
-    
+
     xmin,ymin = np.min([np.min(bboxes_A[:,0:2], axis = 0), np.min(bboxes_B[:,0:2], axis = 0)], axis = 0)
     xmax,ymax = np.max([np.max(bboxes_A[:,2:4], axis = 0), np.max(bboxes_B[:,2:4], axis = 0)], axis = 0)
-    
+
     xsize = xmax - xmin
     ysize = ymax - ymin
     xdelta = xsize/num_divisions[0]
     ydelta = ysize/num_divisions[1]
     xcorners = xmin + np.arange(num_divisions[0])*xdelta
     ycorners = ymin + np.arange(num_divisions[1])*ydelta
-    
+
     boolean_polygons = []
     for n,xc in enumerate(xcorners):
         for m,yc in enumerate(ycorners):
@@ -764,7 +764,7 @@ def _boolean_polygons_parallel(
                                             precision = precision,
                                             )
             boolean_polygons += _boolean_region_polygons
-        
+
     return boolean_polygons
 
 #==============================================================================
@@ -900,7 +900,7 @@ def deepcopy(D):
     for D in D_copy.get_dependencies(True):
         D._bb_valid = False
     D_copy._bb_valid = False
-    
+
     return D_copy
 
 
@@ -1138,6 +1138,48 @@ def geometry_to_ports(device, layer = 0):
     temp_device.remove_layers(layers=[layer], include_labels=True)
     return temp_device
 
+
+def promote_ports(device, devref, startswith=None, exclude=False, promote_nonstrings=False):
+    ''' Promotes every port in the DeviceReference to the Device (with some exclusion options)
+
+        Args:
+            device (Device): destination where ports will be promoted
+            devref (DeviceReference): source of ports, child of "device"
+            startswith (str): port names starting with that string are selected
+                None means everything is selected.
+                If you want to select nothing, you shouldn't be using this function.
+            exclude (bool): promote the string-selected ports (False) or not (True)
+                It applies to the strings only.
+            promote_nonstrings (bool): promote the ports whose keys are not strings.
+                Most likely, these ports have integer keys
+
+        Returns:
+            None
+
+        Say you want to promote everything that doesn't start with 'el_', then you'd use
+            startswith='el_', exclude=True, promote_nonstrings=True
+
+        Say you want to promote everything, then
+            promote_nonstrings=True
+    '''
+    for pname in devref.ports.keys():
+        # handle the exclusion options
+        to_add = False
+        if isinstance(pname, str):
+            if startswith is None:
+                to_add = True
+            elif pname.startswith(startswith):
+                to_add = True
+            to_add = to_add ^ exclude
+        else:
+            if promote_nonstrings:
+                to_add = True
+        # do the promotion
+        if to_add:
+            port = devref.ports[pname]
+            if port.name in device.ports.keys():
+                raise ValueError('Duplicate port {} in {}'.format(port.name, device))
+            device.add_port(port.name, port=port)
 
 #==============================================================================
 #
@@ -2602,8 +2644,8 @@ def test_res(pad_size = [50,50],
 def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     turn_ratio = 4, num_pts = 50, layer = 0):
     # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
-    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
-    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2660,8 +2702,8 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, symmetric = False, layer = 0):
     # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
-    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
-    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     #==========================================================================
     #  Create the basic geometry
     #==========================================================================
@@ -2760,8 +2802,8 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
-    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
-    # superconducting nanocircuits. Physical Review B, 84(17), 1–27. 
+    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
+    # superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     D = Device()
 
     # Get points of ideal curve
