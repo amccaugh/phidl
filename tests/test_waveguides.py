@@ -44,7 +44,7 @@ def Sbend1(TOP):
     TOP << xs.cell_s_bend_by_offset(60, 70, radius=20).movex(30)
     TOP << xs.cell_s_bend_by_offset(50, 3, radius=20).movex(60)
 
-# def test_Sbend1(): difftest_it(Sbend1)()
+def test_Sbend1(): difftest_it(Sbend1)()
 
 
 @contained_phidlDevice

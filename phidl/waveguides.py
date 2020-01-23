@@ -578,9 +578,12 @@ def concatenate_waveguides(sections, promote_other_ports=True):
         else:
             this_sec.connect('wg_in_1', prev_sec.ports['wg_out_1'])
         prev_sec = this_sec
-        # There might be other ports if you have an electrooptic device. Promote them.
-        pg.promote_ports(CAT, this_sec, exclude=True, startswith='wg_')
         CAT.info['wg_length'] += sec.info.get('wg_length', 0)
+        # There might be other ports if you have an electrooptic device. Promote them.
+        if promote_other_ports:
+            for port in this_sec.ports.values():
+                if not port.name.startswith('wg_'):
+                    CAT.add_port(port=port)
     # and the last port
     try:
         CAT.add_port(port = this_sec.ports['wg_out_1'])

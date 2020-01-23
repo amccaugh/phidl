@@ -1139,48 +1139,6 @@ def geometry_to_ports(device, layer = 0):
     return temp_device
 
 
-def promote_ports(device, devref, startswith=None, exclude=False, promote_nonstrings=False):
-    ''' Promotes every port in the DeviceReference to the Device (with some exclusion options)
-
-        Args:
-            device (Device): destination where ports will be promoted
-            devref (DeviceReference): source of ports, child of "device"
-            startswith (str): port names starting with that string are selected
-                None means everything is selected.
-                If you want to select nothing, you shouldn't be using this function.
-            exclude (bool): promote the string-selected ports (False) or not (True)
-                It applies to the strings only.
-            promote_nonstrings (bool): promote the ports whose keys are not strings.
-                Most likely, these ports have integer keys
-
-        Returns:
-            None
-
-        Say you want to promote everything that doesn't start with 'el_', then you'd use
-            startswith='el_', exclude=True, promote_nonstrings=True
-
-        Say you want to promote everything, then
-            promote_nonstrings=True
-    '''
-    for pname in devref.ports.keys():
-        # handle the exclusion options
-        to_add = False
-        if isinstance(pname, str):
-            if startswith is None:
-                to_add = True
-            elif pname.startswith(startswith):
-                to_add = True
-            to_add = to_add ^ exclude
-        else:
-            if promote_nonstrings:
-                to_add = True
-        # do the promotion
-        if to_add:
-            port = devref.ports[pname]
-            if port.name in device.ports.keys():
-                raise ValueError('Duplicate port {} in {}'.format(port.name, device))
-            device.add_port(port.name, port=port)
-
 #==============================================================================
 #
 # Connectors
