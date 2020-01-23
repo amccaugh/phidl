@@ -20,8 +20,9 @@ install:
   - pip install --upgrade pip
   - pip install -U matplotlib==2.2.3 # Needed because Travis CI pulls 3.0.2 even though it doesn't work with Python 2.7
   - pip install -U scipy==1.1.0 # Compatible with Python 2 and 3
-  - python setup.py install
+  - pip install lytest  # For XOR testing
+  - pip install .
 
 script:
   - python ./phidl/phidl_tutorial_example.py
-  - pytest
+  - pytest tests
