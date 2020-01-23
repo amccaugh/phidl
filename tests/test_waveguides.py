@@ -7,6 +7,7 @@ from phidl.waveguides import WG_XS, WG_XS_Component
 import phidl.waveguides
 phidl.waveguides.minimum_bent_edge_length = 0.1
 
+
 # Testing frameworks
 # Note that lytest stores GDS's corresponding to the correct layout for examination and XOR
 import pytest
@@ -43,7 +44,7 @@ def Sbend1(TOP):
     TOP << xs.cell_s_bend_by_offset(60, 70, radius=20).movex(30)
     TOP << xs.cell_s_bend_by_offset(50, 3, radius=20).movex(60)
 
-def test_Sbend1(): difftest_it(Sbend1)()
+# def test_Sbend1(): difftest_it(Sbend1)()
 
 
 @contained_phidlDevice
