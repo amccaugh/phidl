@@ -2,4 +2,3 @@ numpy
 matplotlib
 webcolors
 gdspy
-phidl
