@@ -7,6 +7,7 @@ from phidl.waveguides import WG_XS, WG_XS_Component
 import phidl.waveguides
 phidl.waveguides.minimum_bent_edge_length = 0.1
 
+
 # Testing frameworks
 # Note that lytest stores GDS's corresponding to the correct layout for examination and XOR
 import pytest
