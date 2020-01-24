@@ -82,19 +82,9 @@ class WG_XS(object):
             comp.offset *= -1
         return new_xsect
 
-    def combine(self, other):
-        ''' Superimposes two WG_XSs
-
-            Returns:
-                (WG_XS) OR'ed result
-        '''
-        wg_out = self.copy()
-        wg_out.components.extend(other.components)
-        return wg_out
-
     @property
     def rib_width(self):
-        ''' Width of the wg_deep layer. For convenience because this is used very commonly '''
+        ''' Width of the wg_deep layer. For convenience because this is used commonly '''
         si_comps = self.get_by_layer(self.rib_layer)
         if self.explicit_rib_width is not None:
             return self.explicit_rib_width
@@ -322,49 +312,6 @@ class WG_XS(object):
         port_spacing = inner_S.ports['wg_out_1'].midpoint[0] - inner_S.ports['wg_in_1'].midpoint[0]
         entry_exit = self.cell_straight(longitudinal_offset/2 - port_spacing/2)
         return concatenate_waveguides([entry_exit, bend1, central, bend2, entry_exit])
-
-    def cell_euler_s_bend_by_lateral_offset(self, target_offset, radius=None, tol=1e-2):
-        ''' Binary search for the desired offset in the lateral direction.
-            This is challenging to do analytically because it uses Euler bends
-
-            EXPERIMENTAL
-            If it is giving you trouble, it is recommended that
-            - you use cell_s_bend_by_offset and just accept the straight-to-bend loss
-            - you use cell_s_bend and find a way to reorient your layout strategy around the resulting offset
-        '''
-        if radius is None:
-            radius = self.radius
-        flip_at_the_end = target_offset < 0
-        target_offset = abs(target_offset)
-        slope_bounds = np.array([5, 90])
-        def objective_function(slope):
-            Test_piece = self.cell_s_bend(max_slope=-slope, radius=radius)
-            # kqp(Test_piece, fresh=True)  # debugging
-            actual_y = abs(Test_piece.ports['wg_in_1'].y - Test_piece.ports['wg_out_1'].y)
-            return target_offset - actual_y
-        slope_objectives = np.array([objective_function(s) for s in slope_bounds])
-        # we expect the initial objectives to bracket the optimal
-        if np.product(slope_objectives) > 0:
-            raise ValueError('Initial slope bounds did not bracket the needed slope')
-        for bin_search_step in range(20):
-            this_slope = np.mean(slope_bounds)
-            this_objective = objective_function(this_slope)
-            # print('error:', this_objective)
-            if abs(this_objective) < tol:
-                this_objective = np.round(this_slope, decimals=3)
-                best_sBend = self.cell_s_bend(max_slope=-this_slope, radius=radius)
-                break
-            if this_objective > 0:
-                slope_bounds[0] = this_slope
-                slope_objectives[0] = this_objective
-            else:
-                slope_bounds[1] = this_slope
-                slope_objectives[1] = this_objective
-        else:
-            raise ValueError('Binary search for S bend height failed')
-        if flip_at_the_end:
-            best_sBend.reflect()
-        return best_sBend
 
     def cell_taper(self, wg_dest=None, taper_len=10, keep_layernames=['wg_shallow'], min_tip_width=0.1,
                    route_basic_options = dict(path_type='sine', width_type='sine')):
