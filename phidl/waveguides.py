@@ -97,7 +97,7 @@ class WG_XS(object):
 
     @property
     def full_width(self):
-        ''' Width of all components in the WG_XS '''
+        ''' Width of the full WG_XS '''
         going_min = 0
         going_max = 0
         for comp in self.components:
@@ -179,12 +179,10 @@ class WG_XS(object):
     def _make_half_euler(self, theta=90, radius=None, angle_resolution=None, num_steps=10, angular_coverage=None, flip_xsect=False):
         ''' Helper for making Euler curves
 
-            radius is the minimum radius.
+            radius is the minimum radius of the curve, in the central segment
             angular_coverage is the angle of section that will be greater than the minimum radius.
             angle_resolution feeds through to cell_bend
             num_steps is number of bend segments of different radii
-
-            Angle resolution is degrees. If it is None, it will be determined by minimum_bent_edge_length and radius
         '''
         if angular_coverage is None:
             angular_coverage = abs(theta) / 4
@@ -232,7 +230,7 @@ class WG_XS(object):
             but gradually decreasing bend radius.
             This eliminates straight-to-bend losses.
 
-            radius is the minimum radius. If unspecified, radius will the the minimum set by this WG_XS.
+            radius is the minimum radius of the curve in the central segment. If unspecified, radius will the the minimum set by this WG_XS.
             angular_coverage is the angle of section that will be greater than the minimum radius.
             angle_resolution feeds through to cell_bend. If it is None, it will be determined by minimum_bent_edge_length and radius
             num_steps is number of bend segments of different radii
@@ -271,8 +269,11 @@ class WG_XS(object):
             max_slope refers to the angle of the waveguide in the center, relative to the in/out angles.
             See cell_euler_bend for description of other arguments.
 
-            No guarantees about the sizes or offsets. That's a different method
-            Meanwhile, use the connect functions.
+            No guarantees about the sizes or offsets.
+            You usually don't care since you can use the connect functions
+            If you would like to do S bends based on precise offset:
+                - use cell_s_bend_by_offset (circular arcs). Have to accept the straight-to-bend loss
+                - guess and check or do a binary search over this method until the desired offset is achieved
         '''
         SBEND = Device('WG Sbend')
         euler_kwargs = dict(theta=max_slope,
@@ -291,6 +292,9 @@ class WG_XS(object):
 
     def cell_s_bend_by_offset(self, longitudinal_offset, lateral_offset, radius=None):
         ''' Two opposing circular segments that give a specified offset
+
+            longitudinal_offset: in the direction of the input port
+            lateral_offset: perpendicular to the direction of the port
         '''
         if radius is None:
             radius = self.radius
@@ -455,7 +459,7 @@ def manhattan_points(port1, port2, radius=5):
         For S shapes (180 degree difference), the perpendicular segment occurs closer to port1, so the order of arguments matters
 
         There is no layout or shapes in this function. You use the points elsewhere.
-        The radius argument does not matter if there is a -90 or 90 degree difference
+        That means the radius argument does not matter if there is a -90 or 90 degree difference – there is only one joint
     '''
     # Vector math helper functions
     def rotate(coords, angle_degrees):
@@ -557,12 +561,13 @@ class WG_XS_Component(object):
         self.offset = offset
         self.layer = layer
         if self.layer is None:
-            raise ValueError('When initializing a WG_XS_Component, you must specify a Layer')
+            raise ValueError('When initializing a WG_XS_Component, you must specify one Layer')
 
     def copy(self):
         return deepcopy(self)
 
     def __repr__(self):
+        ''' Human readable '''
         core_attributes = ['width', 'offset', 'layer']
         attrstrs = ('{k}={my_attr}'.format(k=k, my_attr=getattr(self,k)) for k in core_attributes)
         fullstr = ',\n'.join(attrstrs)
@@ -581,18 +586,20 @@ class WG_XS_Component(object):
 
     @min.setter
     def min(self, new_min):
+        ''' The setter changes the width/offset but not the max '''
         new_max = self.max
         self.width = np.abs(new_max - new_min)
         self.offset = (new_max + new_min) / 2
 
     @max.setter
     def max(self, new_max):
+        ''' The setter changes the width/offset but not the min '''
         new_min = self.min
         self.width = np.abs(new_max - new_min)
         self.offset = (new_max + new_min) / 2
 
     def _is_offset_positive(self):
-        ''' Based on the sign of offset '''
+        ''' Based on the sign of offset. Used for inner/outer '''
         if self.offset > 0:
             return True
         elif self.offset < 0:
