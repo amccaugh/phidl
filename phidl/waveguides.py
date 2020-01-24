@@ -552,7 +552,7 @@ def concatenate_waveguides(sections, promote_other_ports=True):
     except KeyError:
         # This might be a terminator
         pass
-    return CAT
+    return CAT.flatten()
 
 
 class WG_XS_Component(object):

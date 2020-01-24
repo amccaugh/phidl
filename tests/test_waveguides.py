@@ -3,7 +3,7 @@ import numpy as np
 
 # Functions under test
 from phidl.device_layout import Layer
-from phidl.waveguides import WG_XS, WG_XS_Component
+from phidl.waveguides import WG_XS, WG_XS_Component, concatenate_waveguides
 import phidl.waveguides
 phidl.waveguides.minimum_bent_edge_length = 0.1
 
@@ -18,7 +18,7 @@ from lytest import contained_phidlDevice, difftest_it
 # Default WG_XS
 xs = WG_XS(components=[WG_XS_Component(width=1, offset=0, layer=Layer(name='wg_deep', gds_layer=22)),
                        WG_XS_Component(width=3, offset=0, layer=Layer(name='wg_shallow', gds_layer=21)),
-                       WG_XS_Component(width=1, offset=1, layer=Layer(name='offset_part', gds_layer=1))],
+                       WG_XS_Component(width=1, offset=1, layer=Layer(name='offset_left', gds_layer=1))],
            radius=5)
 
 
@@ -113,8 +113,35 @@ def General_Routing(TOP):
 def test_General_Routing(): difftest_it(General_Routing)()
 
 
-# TODO
-# concatenate_waveguides
-# more complex Xsections
-# tapers and terminators
-# get_by_layer
+@contained_phidlDevice
+def Sections(TOP):
+    ''' More complex multi-section waveguide with tapers '''
+    xs_middle =  WG_XS(components=[WG_XS_Component(width=2, offset=0, layer=Layer(name='wg_deep', gds_layer=22)),
+                       WG_XS_Component(width=6, offset=0, layer=Layer(name='wg_shallow', gds_layer=21)),
+                       WG_XS_Component(width=.5, offset=2, layer=Layer(name='offset_left', gds_layer=1)),
+                       WG_XS_Component(width=.5, offset=-2, layer=Layer(name='offset_right', gds_layer=2))])
+    for side in [-1, 1]:
+        # A useful strategy for inner/outer initialization
+        contact = WG_XS_Component(width=1, offset=10*side, layer=Layer(name='contact', gds_layer=16))
+        contact.inner = xs_middle.get_by_layer('wg_deep')[0].max
+        contact.outer = xs_middle.get_by_layer('wg_shallow')[0].max + .5
+        xs_middle.components.append(contact)
+
+    sections = [# entry taper from nothing (i.e. a terminator)
+                WG_XS().cell_taper(xs, 5, keep_layernames=['wg_deep', 'wg_shallow']),
+                # straight entry
+                xs.cell_straight(5),
+                # taper to complicated middle
+                xs.cell_taper(xs_middle, 5),
+                # complicated middle
+                xs_middle.cell_straight(5),
+                # taper back to simple (with taper options)
+                xs_middle.cell_taper(xs, 5,
+                                     route_basic_options=dict(width_type='straight', path_type='straight')),
+                # straight exit
+                xs.cell_straight(5),
+                # terminator that does not have wg_shallow
+                xs.cell_taper(WG_XS(), 5, keep_layernames=['wg_deep'])]
+    TOP << concatenate_waveguides(sections)
+
+def test_Sections(): difftest_it(Sections)()
