@@ -47,6 +47,17 @@ class WG_XS(object):
         fullstr = ',\n'.join(attrstrs)
         return '{name}(\n{fullstr}\n)'.format(name = type(self).__name__, fullstr = fullstr)
 
+    def __eq__(self, other):
+        for attr in ['radius', 'loss', 'ngroup', 'wavelength']:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        # components might not be in the same order, so use get by layer
+        layers = set(comp.layer for comp in self.components)
+        for layer in layers:
+            if self.get_by_layer(layer) != other.get_by_layer(layer):
+                return False
+        return True
+
 
     ## xsection utilities ##
 
@@ -572,6 +583,17 @@ class WG_XS_Component(object):
         attrstrs = ('{k}={my_attr}'.format(k=k, my_attr=getattr(self,k)) for k in core_attributes)
         fullstr = ',\n'.join(attrstrs)
         return '{name}(\n{fullstr}\n)'.format(name = type(self).__name__, fullstr = fullstr)
+
+    def __eq__(self, other):
+        ''' Layers are considered equal if they're name, layer, and datatype are the same '''
+        if self.width != other.width:
+            return False
+        if self.offset != other.offset:
+            return False
+        for layer_prop in ['name', 'gds_layer', 'gds_datatype']:
+            if getattr(self.layer, layer_prop) != getattr(other.layer, layer_prop):
+                return False
+        return True
 
 
     ## Component utilities ##

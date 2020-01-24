@@ -22,6 +22,40 @@ xs = WG_XS(components=[WG_XS_Component(width=1, offset=0, layer=Layer(name='wg_d
            radius=5)
 
 
+def test_equality():
+    xs2 = xs.copy()
+    assert xs == xs2
+    # unsorted components
+    xs2.components.append(xs2.components[0])
+    xs2.components.pop(0)
+    assert xs == xs2
+    # not equal
+    xs2.radius = 6
+    assert xs != xs2
+    xs2.radius = 5
+    assert xs == xs2
+    xs2.components[1].offset = -1
+    assert xs != xs2
+
+
+def test_component_setting():
+    xs1 = xs.copy()
+    xs2 = xs.copy()
+    xs1.components[0].offset = 2
+    xs2.components[0].max = 2.5
+    xs2.components[0].min = 1.5
+    assert xs1 == xs2
+    # Doing it this direction is not ideal, but the width will be corrected to positive
+    xs2.components[0].min = 2.5
+    xs2.components[0].max = 1.5
+    assert xs1 == xs2
+    # inner and outer
+    xs1.components[2].offset = 2
+    xs2.components[2].outer = 2.5
+    xs2.components[2].inner = 1.5
+    assert xs1 == xs2
+
+
 @contained_phidlDevice
 def Eulers(TOP):
     for theta in [20, 45, 90]:
