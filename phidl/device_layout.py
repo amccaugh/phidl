@@ -12,6 +12,7 @@
 # make “elements to polygons” general function
 # fix boolean with empty device
 # make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
+# check that aliases show up properly in quickplot2
 
 #==============================================================================
 # Imports
