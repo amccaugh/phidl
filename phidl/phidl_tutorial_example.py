@@ -19,10 +19,13 @@ import phidl.utilities as pu
 # >>> import phidl.geometry as pg
 # >>> qp(pg.rectangle())
 #
-# If that doesn't work and you're using IPython, try using the command
+# IPYTHON: If using IPython, try first running the command
 # >>> %gui qt
 #
-# If that doesn't work and you're using Spyder,  you need to change your
+# JUPYTER: If using Jupyter Notebook, try first running the command
+# >>> %matplotlib qt
+#
+# SPYDER: If using Spyder,  you need to change your
 # "Graphics backend" to "Automatic." You can do that in Spyder through the menu
 #     Tools > Preferences > IPython Console > Graphics > Backend: Automatic
 #==============================================================================
