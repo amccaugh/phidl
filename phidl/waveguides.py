@@ -460,7 +460,14 @@ class WG_XS(object):
         '''
         if radius is None:
             radius = self.radius
-        points = manhattan_points(port1, port2, radius=radius)
+        if euler:
+            # point_radius is used when calculating the joints
+            # It can be different if the bends are Euler and have a different effective radius
+            test_bend = self.cell_bend(90, radius=radius, euler=True)
+            point_radius = test_bend.info['Reff']
+        else:
+            point_radius = radius
+        points = manhattan_points(port1, port2, radius=point_radius)
         return self.route_points(points, radius=radius, euler=euler)
 
 
@@ -503,8 +510,8 @@ def manhattan_points(port1, port2, radius=5):
         framed_points = np.insert(framed_points, 1, rel_point, axis=0)
     elif dtheta == 180:
         if framed_points[1][1] != 0:
-            rel_1 = [framed_points[0,0] + radius, 0]
-            rel_2 = [rel_1[0], framed_points[1][1]]
+            rel_1 = [radius, 0]
+            rel_2 = [radius, framed_points[1][1]]
             framed_points = np.insert(framed_points, 1, rel_1, axis=0)
             framed_points = np.insert(framed_points, 2, rel_2, axis=0)
         # otherwise, it is just straight and there is no middle joint
