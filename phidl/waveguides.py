@@ -27,7 +27,7 @@ class WG_XS(object):
         The resulting Devices have the convention of two ports: 'wg_in_1' and 'wg_out_1'
             as well as length information in Device.info['wg_length']
     '''
-    def __init__(self, radius=5, loss=0, ngroup=4, wavelength=1.550, components=[], explicit_rib_width=None):
+    def __init__(self, radius=5, loss=0, ngroup=4, wavelength=1.550, components=None, explicit_rib_width=None):
         ''' "radius" is the minimum and default radius, not necessarily the only radius
             "components" is a list of WG_XS_Components that each have layer, width, and offset
         '''
@@ -35,7 +35,7 @@ class WG_XS(object):
         self.loss = float(loss)
         self.ngroup = float(ngroup)
         self.wavelength = float(wavelength)
-        self.components = components
+        self.components = components if components is not None else []
         self.explicit_rib_width = explicit_rib_width
 
     def copy(self):
