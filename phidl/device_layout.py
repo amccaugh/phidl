@@ -626,7 +626,8 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
-                  auto_rename = True, max_cellname_length = 28):
+                  auto_rename = True, max_cellname_length = 28,
+                  toplevel_name = 'toplevel'):
         if filename[-4:] != '.gds':  filename += '.gds'
         tempname = self.name
         referenced_cells = list(self.get_dependencies(recursive=True))
@@ -637,7 +638,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
             all_cells_names = [c._internal_name for c in all_cells_sorted]
             all_cells_original_names = [c.name for c in all_cells_sorted]
-            used_names = {'toplevel'}
+            used_names = {toplevel_name}
             n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
@@ -651,7 +652,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 new_name = temp_name
                 used_names.add(new_name)
                 c.name = new_name
-            self.name = 'toplevel'
+            self.name = toplevel_name
         # Write the gds
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
