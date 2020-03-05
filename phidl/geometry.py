@@ -2077,7 +2077,9 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
         for s in sub_rasters:
             if s[0] == 0:
                 x,y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
-                F.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, origin = (x, y)))
+                # F.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, ))
+                a = F.add_array(fill_cell, columns = len(s), rows = 1, spacing = fill_size)
+                a.move((x, y))
             j += len(s)
 
     return F
