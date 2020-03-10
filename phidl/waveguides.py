@@ -199,8 +199,6 @@ class WG_XS(object):
             angular_coverage = abs(theta) / 4
         if radius is None:
             radius = self.radius
-        if angle_resolution is None:
-            angle_resolution = minimum_bent_edge_length / radius * 180 / np.pi
 
         #: the arcangle that is a solid turn of the minimum radius.
         circular_arcangle = abs(theta) / 2 - angular_coverage
