@@ -1821,38 +1821,36 @@ def basic_die(
               draw_bbox = True,
               bbox_layer = 99,
               ):
-
-    #==========================================================================
-    #  Create the basic geometry
-    #==========================================================================
     D = Device(name = 'die')
-    xpts = np.array([size[0]/2, size[0]/2, size[0]/2-street_width, size[0]/2-street_width, size[0]/2-street_length, size[0]/2-street_length])
-    ypts = np.array([size[1]/2, size[1]/2-street_length, size[1]/2-street_length, size[1]/2-street_width, size[1]/2-street_width, size[1]/2])
+    sx, sy = size[0]/2, size[1]/2
+    xpts = np.array([sx, sx, sx-street_width, sx-street_width,
+        sx-street_length, sx-street_length])
+    ypts = np.array([sy, sy-street_length, sy-street_length,
+        sy-street_width, sy-street_width, sy])
     D.add_polygon([xpts,ypts], layer = layer)
     D.add_polygon([-xpts,ypts], layer = layer)
     D.add_polygon([xpts,-ypts], layer = layer)
     D.add_polygon([-xpts,-ypts], layer = layer)
 
     if draw_bbox is True:
-        s = np.array(size)/2
-        D.add_polygon([[s[0],s[1]], [s[0],-s[1]],[-s[0],-s[1]],[-s[0],s[1]]], layer = bbox_layer)
+        D.add_polygon([[sx,sy], [sx,-sy],[-sx,-sy],[-sx,sy]], layer = bbox_layer)
     D.center = (0,0)
     t = D.add_ref(text(text = die_name, size = text_size, layer=layer))
 
     d = street_width + 20
-    sx, sy = size[0]/2, size[1]/2
     if type(text_location) is str:
-        if text_location.upper() == 'NW':
+        text_location = text_location.upper()
+        if text_location == 'NW':
             t.xmin, t.ymax = [-sx + d, sy - d]
-        elif text_location.upper() == 'N':
+        elif text_location == 'N':
             t.x, t.ymax = [0, sy - d]
-        elif text_location.upper() == 'NE':
+        elif text_location == 'NE':
             t.xmax, t.ymax = [sx - d, sy - d]
-        if text_location.upper() == 'SW':
+        if text_location == 'SW':
             t.xmin, t.ymin = [-sx + d, -sy + d]
-        elif text_location.upper() == 'S':
+        elif text_location == 'S':
             t.x, t.ymin = [0, -sy + d]
-        elif text_location.upper() == 'SE':
+        elif text_location == 'SE':
             t.xmax, t.ymin = [sx - d, -sy + d]
     else:
         t.x, t.y = text_location
