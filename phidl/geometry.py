@@ -1827,7 +1827,7 @@ def basic_die(
     #==========================================================================
     D = Device(name = 'die')
     xpts = np.array([size[0]/2, size[0]/2, size[0]/2-street_width, size[0]/2-street_width, size[0]/2-street_length, size[0]/2-street_length])
-    ypts = np.array([size[1]/2, size[1]/2-street_length, size[0]/2-street_length, size[0]/2-street_width, size[0]/2-street_width, size[1]/2])
+    ypts = np.array([size[1]/2, size[1]/2-street_length, size[1]/2-street_length, size[1]/2-street_width, size[1]/2-street_width, size[1]/2])
     D.add_polygon([xpts,ypts], layer = layer)
     D.add_polygon([-xpts,ypts], layer = layer)
     D.add_polygon([xpts,-ypts], layer = layer)
