@@ -32,7 +32,7 @@ new_poly.transform(transformation)
 # Create layer https://www.klayout.de/doc-qt5/code/class_Layout.html#m_layer
 new_layer = layout.layer(1,6) # new_layer represents the *index* of the relevant layer in the layout's layer list
 new_layer2 = layout.layer(3,7) 
-new_layer2 = layout.layer(4,8) 
+new_layer3 = layout.layer(4,8) 
 layer_indices = layout.layer_indexes() # Get the layout's indices of layers
 layout.layer_infos() # Get the layout's indices of layers
 grab_layer = layout.layer(3,7)
@@ -42,11 +42,18 @@ grab_layer = layout.layer(3,7)
 # Add polygon
 p1 = new_cell.shapes(new_layer).insert(new_poly)
 p2 = new_cell.shapes(new_layer).insert(new_poly.transform(transformation))
+p3 = new_cell.shapes(new_layer2).insert(new_poly.transform(transformation))
 #shapes = new_cell.shapes(new_layer)
 
-# Iterate through polygons
-p1 = new_cell.shapes(new_layer).insert(new_poly)
+# Iterate through polygons in one layer of a cell
+list(new_cell.each_shape(new_layer))
 
+# Iterate through all polygons in a cell (get_polygons())
+all_polygons_iterator = new_cell.begin_shapes_rec(new_layer)
+while not all_polygons_iterator.at_end():
+    polygon = all_polygons_iterator.shape()
+    print(polygon)
+    all_polygons_iterator.next()
 
 # List all layers in use
 
