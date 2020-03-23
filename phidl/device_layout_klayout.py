@@ -362,10 +362,8 @@ class Port(object):
 
 class Polygon(_GeometryHelper):
 
-    def __init__(self, points, gds_layer, gds_datatype, parent):
+    def __init__(self, points, parent):
         self.parent = parent
-        super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype)
 
 
     @property
@@ -435,23 +433,13 @@ def make_device(fun, config = None, **kwargs):
     return D
 
 
+layout = kdb.Layout()
 
-class Device(gdspy.Cell, _GeometryHelper):
+class Device(object):
 
     _next_uid = 0
 
-    def __init__(self, *args, **kwargs):
-        if len(args) > 0:
-            if callable(args[0]):
-                raise ValueError('[PHIDL] You can no longer create geometry '
-                    'by calling Device(device_making_function), please use '
-                    'make_device(device_making_function) instead')
-
-
-        # Allow name to be set like Device('arc') or Device(name = 'arc')
-        if 'name' in kwargs:                          _internal_name = kwargs['name']
-        elif (len(args) == 1) and (len(kwargs) == 0): _internal_name = args[0]
-        else:                                         _internal_name = 'Unnamed'
+    def __init__(self, name = 'Unnamed'):
 
         # Make a new blank device
         self.ports = {}
@@ -460,9 +448,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         # self.a = self.aliases
         # self.p = self.ports
         self.uid = Device._next_uid
-        self._internal_name = _internal_name
+        self._internal_name = name
+        self.name = name
         gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
-        super(Device, self).__init__(name = gds_name, exclude_from_current=True)
+        self.kl_cell = layout.create_cell(gds_name)
         Device._next_uid += 1
 
 
@@ -496,7 +485,8 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def layers(self):
-        return self.get_layers()
+        # FIXME broken, returns all layers
+        return [(l.layer, l.datatype) for l in layout.layer_infos()]
 
     # @property
     # def references(self):
@@ -510,9 +500,9 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def bbox(self):
-        bbox = self.get_bounding_box()
-        if bbox is None:  bbox = ((0,0),(0,0))
-        return np.array(bbox)
+        b = self.kl_cell.dbbox()
+        bbox = ((b.left, b.bottom),(b.right, b.top))
+        return bbox
 
     def add_ref(self, device, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
