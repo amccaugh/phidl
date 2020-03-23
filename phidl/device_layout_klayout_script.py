@@ -124,6 +124,9 @@ def rotate(polygon, angle):
 
 #%%
 from phidl.device_layout import _parse_layer
+from gdspy import CellArray
+import gdspy
+from phidl.quickplotter import _get_layerprop, _draw_polygons, _update_bbox
 
 
 def _kl_polygon_to_array(polygon):
@@ -328,7 +331,8 @@ class Device(object):
             gds_datatype = gds_datatype)
         return polygon
 
-    def get_polygons(self, by_spec = True):
+    def get_polygons(self, by_spec = True, depth = None):
+        # FIXME depth not implemented
         layer_infos = layout.layer_infos()
         if by_spec: polygons = {}
         else:       polygons = []
@@ -376,3 +380,72 @@ p3 = D.add_polygon([[1,2,3],[4,6,90]], layer = 7)
 #D.kl_cell
 print(D.get_polygons(True))
 
+
+
+
+def quickplot(items, show_ports = True, show_subports = False,
+              label_ports = True, label_aliases = False, new_window = False):
+    """ Takes a list of devices/references/polygons or single one of those, and
+    plots them.  Also has the option to overlay their ports """
+    if new_window: 
+        fig, ax = plt.subplots(1)
+        ax.autoscale(enable = True, tight = True)
+    else:
+        if plt.fignum_exists(num='PHIDL quickplot'):
+            fig = plt.figure('PHIDL quickplot')
+            plt.clf() # Erase figure so toolbar at top works correctly
+            ax = fig.add_subplot(111)
+        else:
+            fig,ax = plt.subplots(num='PHIDL quickplot')
+    ax.axis('equal')
+    ax.grid(True, which='both', alpha = 0.4)
+    ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
+    ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
+    bbox = None
+
+    # Iterate through each each Device/DeviceReference/Polygon
+    if type(items) is not list:  items = [items]
+    for item in items:
+        if isinstance(item, (Device, DeviceReference, CellArray)):
+            polygons_spec = item.get_polygons(by_spec=True, depth=None)
+            for key in sorted(polygons_spec):
+                polygons = polygons_spec[key]
+                layerprop = _get_layerprop(layer = key[0], datatype = key[1])
+                new_bbox = _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                               edgecolor = 'k', alpha = layerprop['alpha'])
+                bbox = _update_bbox(bbox, new_bbox)
+            # If item is a Device or DeviceReference, draw ports
+            if isinstance(item, (Device, DeviceReference)):
+                for name, port in item.ports.items():
+                    if (port.width is None) or (port.width == 0):
+                        new_bbox = _draw_port_as_point(ax, port)
+                    else:
+                        new_bbox = _draw_port(ax, port, arrow_scale = 1,  color = 'r')
+                    bbox = _update_bbox(bbox, new_bbox)
+            if isinstance(item, Device) and show_subports is True:
+                for sd in item.references:
+                    if not isinstance(sd, (gdspy.CellArray)):
+                        for name, port in sd.ports.items():
+                            new_bbox = _draw_port(ax, port, arrow_scale = 0.75, color = 'k')
+                            bbox = _update_bbox(bbox, new_bbox)
+            if isinstance(item, Device) and label_aliases is True:
+                for name, ref in item.aliases.items():
+                    ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
+                             weight = 'bold', size = 'large', ha = 'center', fontsize = 14)
+        elif isinstance(item, Polygon):
+            polygons = item.polygons
+            layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
+            new_bbox = _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+                           edgecolor = 'k', alpha = layerprop['alpha'])
+            bbox = _update_bbox(bbox, new_bbox)
+    if bbox == None:
+        bbox = [0,0,1,1]
+    xmargin = (bbox[2]-bbox[0])*0.2
+    ymargin = (bbox[3]-bbox[1])*0.2
+    ax.set_xlim([bbox[0]-xmargin, bbox[2]+xmargin])
+    ax.set_ylim([bbox[1]-ymargin, bbox[3]+ymargin])
+    # print(bbox)
+    plt.draw()
+    plt.show(block = False)
+
+quickplot(D)
