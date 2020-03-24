@@ -149,17 +149,15 @@ D.move([20,15])
 
 d = D.add_ref(D2)
 
-d.rotate(45)
+d.rotate(35)
 
 qp(D, new_window = True)
 
-print(d.kl_instance)
-D.reflect((0,0),(100,100))
-print(d.kl_instance)
-qp(D, new_window = True)
 
+
+D3 = pg.snspd()
 #d = DeviceReference(D2)
-
+qp(D3, new_window = True)
 #%%
 D = Device()
 p = D.add_polygon([[1,2],[3,4],[6,9]], layer = (2,3))
@@ -171,19 +169,18 @@ p3 = D.add_polygon([[1,2,3],[4,6,90]], layer = 7)
 print(D.get_polygons(True))
 
 #%%
-p = D.add_polygon([[1,2],[3,4],[6,9]], layer = (2,3))
-p1 = (0,1)
-p2 = (0,0)
-theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
-klt1 = p._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
-klt2 = p._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
-klt3 = p._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
-klt4 = p._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
-klt5 = p._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
+import phidl
+import phidl.geometry as pg
+from phidl import quickplot as qp
+import klayout.db as kdb
+from phidl.device_layout import Device
 
-klt = klt1*klt2*klt3*klt4*klt5
-p.kl_polygon.transform(klt)
+D = pg.rectangle()
+D.add_polygon([[0,0],[1,2],[.1,0]], layer = 2)
 
+D.center = [47,47]
+
+qp(D)
 #%%
 
 # Get instances

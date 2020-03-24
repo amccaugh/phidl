@@ -86,12 +86,12 @@ def quickplot(items, show_ports = True, show_subports = False,
                 for name, ref in item.aliases.items():
                     ax.text(ref.x, ref.y, str(name), style = 'italic', color = 'blue',
                              weight = 'bold', size = 'large', ha = 'center', fontsize = 14)
-        elif isinstance(item, Polygon):
-            polygons = item.polygons
-            layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
-            new_bbox = _draw_polygons(polygons, ax, facecolor = layerprop['color'],
-                           edgecolor = 'k', alpha = layerprop['alpha'])
-            bbox = _update_bbox(bbox, new_bbox)
+#        elif isinstance(item, Polygon):
+#            polygons = item.polygons
+#            layerprop = _get_layerprop(item.layers[0], item.datatypes[0])
+#            new_bbox = _draw_polygons(polygons, ax, facecolor = layerprop['color'],
+#                           edgecolor = 'k', alpha = layerprop['alpha'])
+#            bbox = _update_bbox(bbox, new_bbox)
     if bbox == None:
         bbox = [0,0,1,1]
     xmargin = (bbox[2]-bbox[0])*0.2

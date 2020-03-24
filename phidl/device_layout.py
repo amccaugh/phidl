@@ -478,7 +478,7 @@ layout = kdb.Layout()
 
 
 
-class Device(object):
+class Device(_GeometryHelper):
 
     _next_uid = 0
 
@@ -557,7 +557,7 @@ class Device(object):
         Device.  """
         if _is_iterable(device):
             return [self.add_ref(E) for E in device]
-        print(type(device))
+        # print(type(device))
 #        if not isinstance(device, Device):
 #            raise TypeError("""[PHIDL] add_ref() was passed something that
 #            was not a Device object. """)
@@ -1007,7 +1007,7 @@ class Device(object):
 
 
 
-class DeviceReference(object):
+class DeviceReference(_GeometryHelper):
     def __init__(self, device, owner_device):
         transformation = kdb.DCplxTrans(
                 1,  # Magnification
@@ -1017,7 +1017,7 @@ class DeviceReference(object):
                 0  # Y-displacement
                 )
         self.kl_instance = owner_device.kl_cell.insert(kdb.DCellInstArray(device.kl_cell.cell_index(), transformation))
-        
+        self.parent = device
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
@@ -1087,7 +1087,7 @@ class DeviceReference(object):
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
-        # Last transformation goes first (order of transforms reversed when multiplying)
+        # Last transformation applied first
         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
         klt *= self._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
         klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
@@ -1126,140 +1126,83 @@ class DeviceReference(object):
     #     return new_reference
 
 
-    # @property
-    # def ports(self):
-    #     """ This property allows you to access myref.ports, and receive a copy
-    #     of the ports dict which is correctly rotated and translated"""
-    #     for name, port in self.parent.ports.items():
-    #         port = self.parent.ports[name]
-    #         new_midpoint, new_orientation = self._transform_port(port.midpoint, \
-    #             port.orientation, self.origin, self.rotation, self.x_reflection)
-    #         if name not in self._local_ports:
-    #             self._local_ports[name] = port._copy(new_uid = True)
-    #         self._local_ports[name].midpoint = new_midpoint
-    #         self._local_ports[name].orientation = mod(new_orientation,360)
-    #         self._local_ports[name].parent = self
-    #     # Remove any ports that no longer exist in the reference's parent
-    #     parent_names = self.parent.ports.keys()
-    #     local_names = list(self._local_ports.keys())
-    #     for name in local_names:
-    #         if name not in parent_names: self._local_ports.pop(name)
-    #     return self._local_ports
+    @property
+    def ports(self):
+        """ This property allows you to access myref.ports, and receive a copy
+        of the ports dict which is correctly rotated and translated"""
+        for name, port in self.parent.ports.items():
+            port = self.parent.ports[name]
+            new_midpoint, new_orientation = self._transform_port(port.midpoint, \
+                port.orientation, self.origin, self.rotation, self.x_reflection)
+            if name not in self._local_ports:
+                self._local_ports[name] = port._copy(new_uid = True)
+            self._local_ports[name].midpoint = new_midpoint
+            self._local_ports[name].orientation = mod(new_orientation,360)
+            self._local_ports[name].parent = self
+        # Remove any ports that no longer exist in the reference's parent
+        parent_names = self.parent.ports.keys()
+        local_names = list(self._local_ports.keys())
+        for name in local_names:
+            if name not in parent_names: self._local_ports.pop(name)
+        return self._local_ports
 
-    # @property
-    # def info(self):
-    #     return self.parent.info
+    @property
+    def info(self):
+        return self.parent.info
 
-    # @property
-    # def bbox(self):
-    #     bbox = self.get_bounding_box()
-    #     if bbox is None:  bbox = ((0,0),(0,0))
-    #     return np.array(bbox)
+    @property
+    def bbox(self):
+        b = self.kl_instance.dbbox()
+        bbox = ((b.left, b.bottom),(b.right, b.top))
+        return bbox
 
+    @property
+    def origin(self):
+        kl_transform = self.kl_instance.dcplx_trans
+        return (kl_transform.disp.x, kl_transform.disp.y)
 
+    @property
+    def rotation(self):
+        kl_transform = self.kl_instance.dcplx_trans
+        return kl_transform.angle
 
-    # def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
-    #     # Apply GDS-type transformations to a port (x_ref)
-    #     new_point = np.array(point)
-    #     new_orientation = orientation
+    @property
+    def x_reflection(self):
+        kl_transform = self.kl_instance.dcplx_trans
+        return kl_transform.is_mirror()
 
-    #     if x_reflection:
-    #         new_point[1] = -new_point[1]
-    #         new_orientation = -orientation
-    #     if rotation is not None:
-    #         new_point = _rotate_points(new_point, angle = rotation, center = [0, 0])
-    #         new_orientation += rotation
-    #     if origin is not None:
-    #         new_point = new_point + np.array(origin)
-    #     new_orientation = mod(new_orientation, 360)
+    def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
+        # Apply GDS-type transformations to a port (x_ref)
+        new_point = np.array(point)
+        new_orientation = orientation
 
-    #     return new_point, new_orientation
+        if x_reflection:
+            new_point[1] = -new_point[1]
+            new_orientation = -orientation
+        if rotation is not None:
+            new_point = _rotate_points(new_point, angle = rotation, center = [0, 0])
+            new_orientation += rotation
+        if origin is not None:
+            new_point = new_point + np.array(origin)
+        new_orientation = mod(new_orientation, 360)
 
-    # def move(self, origin = (0,0), destination = None, axis = None):
-    #     """ Moves the DeviceReference from the origin point to the destination.  Both
-    #      origin and destination can be 1x2 array-like, Port, or a key
-    #      corresponding to one of the Ports in this device_ref """
-
-    #     # If only one set of coordinates is defined, make sure it's used to move things
-    #     if destination is None:
-    #         destination = origin
-    #         origin = (0,0)
-
-    #     if isinstance(origin, Port):            o = origin.midpoint
-    #     elif np.array(origin).size == 2:    o = origin
-    #     elif origin in self.ports:    o = self.ports[origin].midpoint
-    #     else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-
-    #     if isinstance(destination, Port):           d = destination.midpoint
-    #     elif np.array(destination).size == 2:   d = destination
-    #     elif destination in self.ports:   d = self.ports[destination].midpoint
-    #     else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
-
-    #     # Lock one axis if necessary
-    #     if axis == 'x': d = (d[0], o[1])
-    #     if axis == 'y': d = (o[0], d[1])
-
-    #     # This needs to be done in two steps otherwise floating point errors can accrue
-    #     dxdy = np.array(d) - np.array(o)
-    #     self.origin = np.array(self.origin) + dxdy
-
-    #     if self.owner is not None:
-    #         self.owner._bb_valid = False
-    #     return self
+        return new_point, new_orientation
 
 
-    # def rotate(self, angle = 45, center = (0,0)):
-    #     if angle == 0: return self
-    #     if type(center) is Port:  center = center.midpoint
-    #     self.rotation += angle
-    #     self.origin = _rotate_points(self.origin, angle, center)
-
-    #     if self.owner is not None:
-    #         self.owner._bb_valid = False
-    #     return self
-
-
-    # def reflect(self, p1 = (0,1), p2 = (0,0)):
-    #     if type(p1) is Port:  p1 = p1.midpoint
-    #     if type(p2) is Port:  p2 = p2.midpoint
-    #     p1 = np.array(p1);  p2 = np.array(p2)
-    #     # Translate so reflection axis passes through origin
-    #     self.origin = self.origin - p1
-
-    #     # Rotate so reflection axis aligns with x-axis
-    #     angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
-    #     self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
-    #     self.rotation -= angle
-
-    #     # Reflect across x-axis
-    #     self.x_reflection = not self.x_reflection
-    #     self.origin[1] = -self.origin[1]
-    #     self.rotation = -self.rotation
-
-    #     # Un-rotate and un-translate
-    #     self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
-    #     self.rotation += angle
-    #     self.origin = self.origin + p1
-
-    #     if self.owner is not None:
-    #         self.owner._bb_valid = False
-    #     return self
-
-
-    # def connect(self, port, destination, overlap = 0):
-    #     # ``port`` can either be a string with the name or an actual Port
-    #     if port in self.ports: # Then ``port`` is a key for the ports dict
-    #         p = self.ports[port]
-    #     elif type(port) is Port:
-    #         p = port
-    #     else:
-    #         raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
-    #             ' - received (%s), ports available are (%s)' % (port, tuple(self.ports.keys())))
-    #     self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
-    #     self.move(origin = p, destination = destination)
-    #     self.move(-overlap*np.array([cos(destination.orientation*pi/180),
-    #                                  sin(destination.orientation*pi/180)]))
-    #     return self
+    def connect(self, port, destination, overlap = 0):
+        # ``port`` can either be a string with the name or an actual Port
+        if port in self.ports: # Then ``port`` is a key for the ports dict
+            p = self.ports[port]
+        elif type(port) is Port:
+            p = port
+        else:
+            raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
+                ' - received (%s), ports available are (%s)' % (port, tuple(self.ports.keys())))
+        self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
+        self.move(origin = p, destination = destination)
+        self.move(-overlap*np.array([cos(destination.orientation*pi/180),
+                                     sin(destination.orientation*pi/180)]))
+        return self
 
 
 
