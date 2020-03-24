@@ -1097,33 +1097,33 @@ class DeviceReference(_GeometryHelper):
 
         return self
 
-    # def __repr__(self):
-    #     return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
-    #             (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
+    def __repr__(self):
+        return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
+                (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
 
 
-    # def __str__(self):
-    #     return self.__repr__()
+    def __str__(self):
+        return self.__repr__()
 
 
-    # def __getitem__(self, val):
-    #     """ This allows you to access an alias from the reference's parent, and receive
-    #     a copy of the reference which is correctly rotated and translated"""
-    #     try:
-    #         alias_device = self.parent[val]
-    #     except:
-    #         raise ValueError('[PHIDL] Tried to access alias "%s" from parent '
-    #             'Device "%s", which does not exist' % (val, self.parent.name))
-    #     new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
+    def __getitem__(self, val):
+        """ This allows you to access an alias from the reference's parent, and receive
+        a copy of the reference which is correctly rotated and translated"""
+        try:
+            alias_device = self.parent[val]
+        except:
+            raise ValueError('[PHIDL] Tried to access alias "%s" from parent '
+                'Device "%s", which does not exist' % (val, self.parent.name))
+        new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
 
-    #     if self.x_reflection:
-    #         new_reference.reflect((1,0))
-    #     if self.rotation is not None:
-    #         new_reference.rotate(self.rotation)
-    #     if self.origin is not None:
-    #         new_reference.move(self.origin)
+        if self.x_reflection:
+            new_reference.reflect((1,0))
+        if self.rotation is not None:
+            new_reference.rotate(self.rotation)
+        if self.origin is not None:
+            new_reference.move(self.origin)
 
-    #     return new_reference
+        return new_reference
 
 
     @property
