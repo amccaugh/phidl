@@ -33,7 +33,13 @@ import hashlib
 
 __version__ = '1.2.2'
 
+#==============================================================================
+# KLayout utility functions
+#==============================================================================
 
+def _kl_polygon_to_array(kl_polygon):
+    return [ (pt.x,pt.y) for pt in kl_polygon.each_point() ]
+    
 
 #==============================================================================
 # Useful transformation functions
@@ -357,74 +363,93 @@ class Port(object):
         return self
 
 
-class Polygon(_GeometryHelper):
+# class Polygon(_GeometryHelper):
 
-    def __init__(self, points, device, gds_layer, gds_datatype):
-        self.parent = device.kl_cell
-        points = np.array(points, dtype  = np.float64)
-        polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
-        kl_layer = layout.layer(gds_layer, gds_datatype)
-        self.kl_polygon = device.kl_cell.shapes(kl_layer).insert(polygon)
+#     def __init__(self, points, device, gds_layer, gds_datatype):
+#         self.kl_cell = device.kl_cell
+#         points = np.array(points, dtype  = np.float64)
+#         polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
+#         self.kl_layer = layout.layer(gds_layer, gds_datatype)
+#         self.kl_polygon = device.kl_cell.shapes(self.kl_layer).insert(polygon)
     
-    def _to_array(self):
-        [ (pt.x,pt.y) for pt in self.kl_polygon.each_point() ]
+#     def _to_array(self):
+#         [ (pt.x,pt.y) for pt in self.kl_polygon.each_point() ]
 
-    @property
-    def bbox(self):
-        b = new_poly.bbox() # Get KLayout bounding box object
-        return [[b.left, b.bottom],[b.right, b.top]] 
+#     def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
+#         transformation = kdb.DCplxTrans(
+#             float(magnification),  # Magnification
+#             float(rotation),  # Rotation
+#             x_reflection,# X-axis mirroring
+#             float(dx), # X-displacement
+#             float(dy),  # Y-displacement
+#             )
+#         return transformation
 
-    def rotate(self, angle = 45, center = (0,0)):
-        transformation = kdb.DCplxTrans(
-                1.0,  # Magnification
-                angle,  # Rotation
-                False,# X-axis mirroring
-                0, # X-displacement
-                0,  # Y-displacement
-                )
-        self.kl_polygon.transform(transformation)
-        return self
+#     @property
+#     def bbox(self):
+#         b = new_poly.bbox() # Get KLayout bounding box object
+#         return [[b.left, b.bottom],[b.right, b.top]] 
 
-    def move(self, origin = (0,0), destination = None, axis = None):
-        """ Moves elements of the Device from the origin point to the destination.  Both
-         origin and destination can be 1x2 array-like, Port, or a key
-         corresponding to one of the Ports in this device """
+#     # We cannot store kl_polygon because the pointer may change over time
+#     # So instead we search for it each time we want the polygon
+#     @property
+#     def kl_polygon2(self):
+#         return self.kl_cell.shapes(self.kl_layer).find(self.kl_polygon)
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
+#     def rotate(self, angle = 45, center = (0,0)):
+#         klt = self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
+#         self.kl_polygon.transform(klt)
+#         return self
 
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
+#     def move(self, origin = (0,0), destination = None, axis = None):
+#         """ Moves elements of the Device from the origin point to the destination.  Both
+#          origin and destination can be 1x2 array-like, Port, or a key
+#          corresponding to one of the Ports in this device """
 
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:        d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+#         # If only one set of coordinates is defined, make sure it's used to move things
+#         if destination is None:
+#             destination = origin
+#             origin = [0,0]
 
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
+#         if isinstance(origin, Port):            o = origin.midpoint
+#         elif np.array(origin).size == 2:    o = origin
+#         elif origin in self.ports:    o = self.ports[origin].midpoint
+#         else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
 
-        dx,dy = np.array(d) - o
+#         if isinstance(destination, Port):           d = destination.midpoint
+#         elif np.array(destination).size == 2:        d = destination
+#         elif destination in self.ports:   d = self.ports[destination].midpoint
+#         else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+
+#         if axis == 'x': d = (d[0], o[1])
+#         if axis == 'y': d = (o[0], d[1])
+
+#         dx,dy = np.array(d) - o
         
-        transformation = kdb.CplxTrans(
-                1.0,  # Magnification
-                0,  # Rotation
-                False,# X-axis mirroring
-                dx, # X-displacement
-                dy,  # Y-displacement
-                )
-        self.kl_polygon.transform(transformation)
+#         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = dx, dy = dy)
+#         self.kl_polygon.transform(klt)
         
-        return self
+#         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
-        print('Not yet implemented')
-        return self
+#     def reflect(self, p1 = (0,1), p2 = (0,0)):
+#         theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
+#         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
+#         # klt *= self._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
+#         # klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
+#         # klt *= self._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
+#         # klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
+#         # klt = klt1*klt2*klt3*klt4*klt5
+#         import time
+#         time.sleep(0.1)
+#         print(self.kl_polygon)
+#         print('Failure')
+#         print(type(klt))
+#         print(type(self.kl_polygon))
+#         self.kl_polygon2.transform(klt)
+#         print('Failure2')
+
+#         return self
 
 
 
@@ -481,14 +506,14 @@ class Device(object):
             raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  '
                 'which does not exist' % (key, self.name))
 
-    def __repr__(self):
-        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s polygons, %s references)' % \
-                (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
-                len(self.polygons), len(self.references)))
+    # def __repr__(self):
+    #     return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s polygons, %s references)' % \
+    #             (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
+    #             len(self.polygons), len(self.references)))
 
 
-    def __str__(self):
-        return self.__repr__()
+    # def __str__(self):
+    #     return self.__repr__()
 
     def __lshift__(self, element):
         return self.add_ref(element)
@@ -506,17 +531,18 @@ class Device(object):
         layers = []
         layer_infos = layout.layer_infos()
         for layer_idx in layout.layer_indices():
-            kl_iterator = kl_cell.begin_shapes_rec(layer_idx)
+            kl_iterator = self.kl_cell.begin_shapes_rec(layer_idx)
             if not kl_iterator.at_end(): # Then there are shapes on that layer
                  layers.append( (layer_infos[layer_idx].layer, layer_infos[layer_idx].datatype) )
+        return layers
 
-    # @property
-    # def references(self):
-    #     return [e for e in self.elements if isinstance(e, DeviceReference)]
+    @property
+    def references(self):
+        return [e for e in self.elements if isinstance(e, DeviceReference)]
 
     # @property
     # def polygons(self):
-    #     return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
+    #     return list(self.kl_cell.each_shape(new_layer))
 
 
 
@@ -531,11 +557,11 @@ class Device(object):
         Device.  """
         if _is_iterable(device):
             return [self.add_ref(E) for E in device]
-        if not isinstance(device, Device):
-            raise TypeError("""[PHIDL] add_ref() was passed something that
-            was not a Device object. """)
-        d = DeviceReference(device)   # Create a DeviceReference (CellReference)
-        self.kl_cell.insert(d)
+        print(type(device))
+#        if not isinstance(device, Device):
+#            raise TypeError("""[PHIDL] add_ref() was passed something that
+#            was not a Device object. """)
+        d = DeviceReference(device = device, owner_device = self)   # Create a DeviceReference (CellReference)
 
         if alias is not None:
             self.aliases[alias] = d
@@ -573,11 +599,14 @@ class Device(object):
         if len(points[0]) > 2:
             # Convert to form [[1,2],[3,4],[5,6]]
             points = np.column_stack((points))
-        print(points)
         gds_layer, gds_datatype = _parse_layer(layer)
-        polygon = Polygon(points = points, device = self, gds_layer = gds_layer,
-            gds_datatype = gds_datatype)
-        return polygon
+
+        points = np.array(points, dtype  = np.float64)
+        polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
+        self.kl_layer = layout.layer(gds_layer, gds_datatype)
+        self.kl_cell.shapes(self.kl_layer).insert(polygon)
+        
+        return self
 
     def get_polygons(self, by_spec = True, depth = None):
         # FIXME depth not implemented
@@ -589,8 +618,12 @@ class Device(object):
             layer_polygons = []
             all_polygons_iterator = self.kl_cell.begin_shapes_rec(layer_idx)
             while not all_polygons_iterator.at_end():
-                polygon = all_polygons_iterator.shape().dsimple_polygon
-                layer_polygons.append( _kl_polygon_to_array(polygon) )
+                # Get the klayout polygon in micrometer units (DSimplePolygon)
+                kl_polygon = all_polygons_iterator.shape().dsimple_polygon 
+                # Apply any transformations if that shape was in a child cell
+                kl_polygon = kl_polygon.transformed(all_polygons_iterator.dtrans())
+                # Appent the transformed polygons to the big list
+                layer_polygons.append( _kl_polygon_to_array(kl_polygon) )
                 all_polygons_iterator.next()
             if not by_spec:
                 polygons += layer_polygons
@@ -599,7 +632,6 @@ class Device(object):
                 polygons[(l.layer, l.datatype)] = layer_polygons
         return polygons
         
-
 
     # def add_array(self, device, columns = 2, rows = 2, spacing = (100,100), alias = None):
     #     if not isinstance(device, Device):
@@ -613,27 +645,27 @@ class Device(object):
     #     return a                # Return the CellArray
 
 
-    # def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
-    #     """ Can be called to copy an existing port like add_port(port = existing_port) or
-    #     to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
-    #     Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
-    #     if port is not None:
-    #         if not isinstance(port, Port):
-    #             raise ValueError('[PHIDL] add_port() error: Argument `port` must be a Port for copying')
-    #         p = port._copy(new_uid = True)
-    #         p.parent = self
-    #     elif isinstance(name, Port):
-    #         p = name._copy(new_uid = True)
-    #         p.parent = self
-    #         name = p.name
-    #     else:
-    #         p = Port(name = name, midpoint = midpoint, width = width,
-    #             orientation = orientation, parent = self)
-    #     if name is not None: p.name = name
-    #     if p.name in self.ports:
-    #         raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid))
-    #     self.ports[p.name] = p
-    #     return p
+    def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
+        """ Can be called to copy an existing port like add_port(port = existing_port) or
+        to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
+        Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
+        if port is not None:
+            if not isinstance(port, Port):
+                raise ValueError('[PHIDL] add_port() error: Argument `port` must be a Port for copying')
+            p = port._copy(new_uid = True)
+            p.parent = self
+        elif isinstance(name, Port):
+            p = name._copy(new_uid = True)
+            p.parent = self
+            name = p.name
+        else:
+            p = Port(name = name, midpoint = midpoint, width = width,
+                orientation = orientation, parent = self)
+        if name is not None: p.name = name
+        if p.name in self.ports:
+            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid))
+        self.ports[p.name] = p
+        return p
 
 
     # def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
@@ -647,6 +679,83 @@ class Device(object):
     #     self.add(l)
     #     return l
 
+
+    def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
+        transformation = kdb.DCplxTrans(
+            float(magnification),  # Magnification
+            float(rotation),  # Rotation
+            x_reflection,# X-axis mirroring
+            float(dx), # X-displacement
+            float(dy),  # Y-displacement
+            )
+        return transformation
+
+    def _apply_kl_transform(self, transformation):
+        for kl_instance in self.kl_cell.each_inst():
+            kl_instance.transform(transformation)
+        kl_polygons = []
+        for layer_idx in layout.layer_indices():
+            kl_polygons += self.kl_cell.each_shape(layer_idx)
+        [klp.transform(transformation) for klp in kl_polygons]
+
+
+    def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = center[0], dy = center[1])
+        klt *= self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -center[0], dy = -center[1])
+        self._apply_kl_transform(klt)
+        for p in self.ports.values():
+            p.midpoint = _rotate_points(p.midpoint, angle, center)
+            p.orientation = mod(p.orientation + angle, 360)
+        return self
+
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        """ Moves elements of the Device from the origin point to the destination.  Both
+         origin and destination can be 1x2 array-like, Port, or a key
+         corresponding to one of the Ports in this device """
+
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        if isinstance(origin, Port):            o = origin.midpoint
+        elif np.array(origin).size == 2:    o = origin
+        elif origin in self.ports:    o = self.ports[origin].midpoint
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
+
+        if isinstance(destination, Port):           d = destination.midpoint
+        elif np.array(destination).size == 2:        d = destination
+        elif destination in self.ports:   d = self.ports[destination].midpoint
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
+
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        dx,dy = np.array(d) - o
+
+        # Move geometries
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = dx, dy = dy)
+        self._apply_kl_transform(klt)
+        for p in self.ports.values():
+            p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+
+        return self
+
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
+        # Last transformation goes first (order of transforms reversed when multiplying)
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
+        klt *= self._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
+        self._apply_kl_transform(klt)
+
+        return self
 
     # def label(self, *args, **kwargs):
     #     warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
@@ -856,70 +965,6 @@ class Device(object):
     #     return self
 
 
-    # def rotate(self, angle = 45, center = (0,0)):
-    #     if angle == 0: return self
-    #     for e in self.polygons:
-    #         e.rotate(angle = angle, center = center)
-    #     for e in self.references:
-    #         e.rotate(angle, center)
-    #     for e in self.labels:
-    #         e.rotate(angle, center)
-    #     for p in self.ports.values():
-    #         p.midpoint = _rotate_points(p.midpoint, angle, center)
-    #         p.orientation = mod(p.orientation + angle, 360)
-    #     self._bb_valid = False
-    #     return self
-
-
-    # def move(self, origin = (0,0), destination = None, axis = None):
-    #     """ Moves elements of the Device from the origin point to the destination.  Both
-    #      origin and destination can be 1x2 array-like, Port, or a key
-    #      corresponding to one of the Ports in this device """
-
-    #     # If only one set of coordinates is defined, make sure it's used to move things
-    #     if destination is None:
-    #         destination = origin
-    #         origin = [0,0]
-
-    #     if isinstance(origin, Port):            o = origin.midpoint
-    #     elif np.array(origin).size == 2:    o = origin
-    #     elif origin in self.ports:    o = self.ports[origin].midpoint
-    #     else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
-
-    #     if isinstance(destination, Port):           d = destination.midpoint
-    #     elif np.array(destination).size == 2:        d = destination
-    #     elif destination in self.ports:   d = self.ports[destination].midpoint
-    #     else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
-
-    #     if axis == 'x': d = (d[0], o[1])
-    #     if axis == 'y': d = (o[0], d[1])
-
-    #     dx,dy = np.array(d) - o
-
-    #     # Move geometries
-    #     for e in self.polygons:
-    #         e.translate(dx,dy)
-    #     for e in self.references:
-    #         e.move(destination = d, origin = o)
-    #     for e in self.labels:
-    #         e.move(destination = d, origin = o)
-    #     for p in self.ports.values():
-    #         p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
-
-    #     self._bb_valid = False
-    #     return self
-
-    # def reflect(self, p1 = (0,1), p2 = (0,0)):
-    #     for e in (self.polygons+self.references+self.labels):
-    #         e.reflect(p1, p2)
-    #     for p in self.ports.values():
-    #         p.midpoint = _reflect_points(p.midpoint, p1, p2)
-    #         phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
-    #         p.orientation = 2*phi - p.orientation
-    #     self._bb_valid = False
-    #     return self
-
-
     # def hash_geometry(self, precision = 1e-4):
     #     """
     #     Algorithm:
@@ -963,21 +1008,94 @@ class Device(object):
 
 
 class DeviceReference(object):
-    def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
-        if magnification == None: magnification = 1
+    def __init__(self, device, owner_device):
         transformation = kdb.DCplxTrans(
-                magnification,  # Magnification
-                rotation,  # Rotation
-                x_reflection,# X-axis mirroring
-                origin[0], # X-displacement
-                origin[1]  # Y-displacement
+                1,  # Magnification
+                0,  # Rotation
+                False,# X-axis mirroring
+                0, # X-displacement
+                0  # Y-displacement
                 )
-        self.kl_instance = kl_cell.insert(kdb.DCellInstArray(device.kl_cell.cell_index(), transformation))
+        self.kl_instance = owner_device.kl_cell.insert(kdb.DCellInstArray(device.kl_cell.cell_index(), transformation))
         
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
         self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
+
+
+    def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
+        transformation = kdb.DCplxTrans(
+            float(magnification),  # Magnification
+            float(rotation),  # Rotation
+            x_reflection,# X-axis mirroring
+            float(dx), # X-displacement
+            float(dy),  # Y-displacement
+            )
+        return transformation
+
+    def _apply_kl_transform(self, transformation):
+        self.kl_instance.transform(transformation)
+
+
+
+    def rotate(self, angle = 45, center = (0,0)):
+        if angle == 0: return self
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = center[0], dy = center[1])
+        klt *= self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -center[0], dy = -center[1])
+        self._apply_kl_transform(klt)
+        for p in self.ports.values():
+            p.midpoint = _rotate_points(p.midpoint, angle, center)
+            p.orientation = mod(p.orientation + angle, 360)
+        return self
+
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        """ Moves elements of the Device from the origin point to the destination.  Both
+         origin and destination can be 1x2 array-like, Port, or a key
+         corresponding to one of the Ports in this device """
+
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        if isinstance(origin, Port):            o = origin.midpoint
+        elif np.array(origin).size == 2:    o = origin
+        elif origin in self.ports:    o = self.ports[origin].midpoint
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
+
+        if isinstance(destination, Port):           d = destination.midpoint
+        elif np.array(destination).size == 2:        d = destination
+        elif destination in self.ports:   d = self.ports[destination].midpoint
+        else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
+
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        dx,dy = np.array(d) - o
+
+        # Move geometries
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = dx, dy = dy)
+        self._apply_kl_transform(klt)
+        for p in self.ports.values():
+            p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+
+        return self
+
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
+        # Last transformation goes first (order of transforms reversed when multiplying)
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
+        klt *= self._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
+        self._apply_kl_transform(klt)
+
+        return self
 
     # def __repr__(self):
     #     return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
@@ -1142,6 +1260,28 @@ class DeviceReference(object):
     #     self.move(-overlap*np.array([cos(destination.orientation*pi/180),
     #                                  sin(destination.orientation*pi/180)]))
     #     return self
+
+
+
+class CellArray(DeviceReference):
+    def __init__(self, device, columns, rows, spacing, origin=(0, 0),
+                 rotation=0, magnification=None, x_reflection=False):
+        if magnification == None: magnification = 1
+        transformation = kdb.DCplxTrans(
+                magnification,  # Magnification
+                rotation,  # Rotation
+                x_reflection,# X-axis mirroring
+                origin[0], # X-displacement
+                origin[1]  # Y-displacement
+                )
+        kl_instance = kdb.DCellInstArray(device.kl_cell.cell_index(),
+            transformation,
+            spacing[0], # a:  The displacement vector of the array in the 'a' axis
+            spacing[1], # b:  The displacement vector of the array in the 'b' axis
+            columns[0], # na: The number of placements in the 'a' axis
+            rows[0], # nb: The number of placements in the 'b' axis
+            )
+        self.kl_instance = kl_cell.insert(kl_instance)
 
 
 
