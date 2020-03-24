@@ -7,7 +7,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 
 import gdspy
 from gdspy import clipper
-from phidl.device_layout import Device, Port, Polygon, CellArray
+from phidl.device_layout import Device, Port, CellArray
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
@@ -1420,7 +1420,7 @@ def _G(xi, B):
           please install it with `pip install scipy` """)
     return B/sinh(B)*scipy.integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
-@device_lru_cache
+# @device_lru_cache
 def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
                  Lk_per_sq = 250e-12, Z1 = None, Z2 = None, width1 = None, width2 = None,
                  num_pts = 100, layer = 0):
@@ -1467,7 +1467,7 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
     return D
 
 
-@device_lru_cache
+# @device_lru_cache
 def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
 
@@ -2123,7 +2123,7 @@ def polygon_ports(xpts=[-1,-1, 0, 0],
 # quickplot(P)
 
 
-@device_lru_cache
+# @device_lru_cache
 def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 5, length_taper = 10, width = 0.4, partial_etch = False):
     #returns a fiber grating
     G = Device('grating')
@@ -2598,7 +2598,7 @@ def test_res(pad_size = [50,50],
 #==============================================================================
 
 
-@device_lru_cache
+# @device_lru_cache
 def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     turn_ratio = 4, num_pts = 50, layer = 0):
     # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
@@ -2656,7 +2656,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
 
 
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
-@device_lru_cache
+# @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
                  anticrowding_factor = 1.2, symmetric = False, layer = 0):
     # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
@@ -2813,7 +2813,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
 #==============================================================================
 
 
-@device_lru_cache
+# @device_lru_cache
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         num_squares = None, turn_ratio = 4,
         terminals_same_side = False, layer = 0):
