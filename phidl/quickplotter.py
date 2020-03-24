@@ -8,7 +8,7 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon, _rotate_points
+from phidl.device_layout import Device, DeviceReference, CellArray, Layer, _rotate_points
 import gdspy
 
 
