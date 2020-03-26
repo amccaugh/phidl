@@ -5,10 +5,8 @@ import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
 # from scipy.interpolate import interp1d
 
-import gdspy
-from gdspy import clipper
-from phidl.device_layout import Device, Port, CellArray
-from phidl.device_layout import _parse_layer, DeviceReference
+from phidl.device_layout import Device, Port, CellArray, DeviceReference
+from phidl.device_layout import _parse_layer, layout
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -911,77 +909,59 @@ def copy_layer(D, layer = 1, new_layer = 2):
 
 
 def import_gds(filename, cellname = None, flatten = False):
-    gdsii_lib = gdspy.GdsLibrary()
-    gdsii_lib.read_gds(filename)
-    top_level_cells = gdsii_lib.top_level()
+
+    # First we set all the cell names in this layout to "" (from zeropdk)
+    # so that imported cells don't have name collisions
+    cell_dict = {cell.name: cell for cell in layout.each_cell()}
+    used_names =  set(cell_dict.keys())
+    for cell in cell_dict.values():
+        layout.rename_cell(cell.cell_index(), '')
+
+    # Then we load the new cells from the file and get their names
+    layout.read(filename)
+    imported_cell_dict = {cell.name: cell for cell in layout.each_cell() if cell.name != ''}
+
+    # Find the top level cell from the
+    top_level_cells = {cell.name:cell for cell in layout.top_cells() if cell.name != ''}
+
+    # Correct any overlapping names by appending an integer to the end of the name
+    for name, cell in imported_cell_dict.items():
+        new_name = name
+        n = 1
+        while new_name in used_names:
+            new_name = name + ('%0.1i' % n)
+            n += 1
+        layout.rename_cell(cell.cell_index(), new_name)
+        used_names.add(new_name)
+
+    # Rename all the old cells back to their original names
+    for name, cell in cell_dict.items():
+        layout.rename_cell(cell.cell_index(), name)
+
+    # Verify that the topcell name specified exists or that there's only 
+    # one topcell.  If not, delete the imported cells and raise a ValueError
     if cellname is not None:
-        if cellname not in gdsii_lib.cells:
-            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) \
-                        is not present in file %s' % (cellname,filename))
-        topcell = gdsii_lib.cells[cellname]
+        if cellname not in top_level_cells:
+            [layout.delete_cell(cell.cell_index()) for cell in imported_cell_dict.values()]
+            raise ValueError('[PHIDL] import_gds() The requested cell (named %s)' +
+                        ' is not present in file %s' % (cellname,filename))
+        top_cell = top_level_cells[cellname]
     elif cellname is None and len(top_level_cells) == 1:
-        topcell = top_level_cells[0]
+        top_cell = list(top_level_cells.values())[0]
     elif cellname is None and len(top_level_cells) > 1:
-        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, \
-                        you must specify `cellname` to select of one of them')
+        [layout.delete_cell(cell.cell_index()) for cell in imported_cell_dict.values()]
+        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells,' +
+                        ' you must specify `cellname` to select of one of them')
 
-    if flatten == False:
-        D_list = []
-        c2dmap = {}
-        for cell in gdsii_lib.cells.values():
-            D = Device(name = cell.name)
-            D.polygons = cell.polygons
-            D.references = cell.references
-            D.name = cell.name
-            D.labels = cell.labels
-            c2dmap.update({cell:D})
-            D_list += [D]
+    # Create a new Device, but delete the klayout cell that is created
+    # and replace it with the imported cell
+    D = Device('import_gds')
+    layout.delete_cell(D.kl_cell.cell_index())
+    D.kl_cell = top_cell
 
-        for D in D_list:
-            # First convert each reference so it points to the right Device
-            converted_references = []
-            for e in D.references:
-                ref_device = c2dmap[e.ref_cell]
-                if isinstance(e, gdspy.CellReference):
-                    dr = DeviceReference(
-                        device = ref_device,
-                        origin = e.origin,
-                        rotation = e.rotation,
-                        magnification = e.magnification,
-                        x_reflection = e.x_reflection,
-                        )
-                    dr.owner = D
-                    converted_references.append(dr)
-                elif isinstance(e, gdspy.CellArray):
-                    dr = CellArray(
-                        device = ref_device,
-                        columns = e.columns,
-                        rows = e.rows,
-                        spacing = e.spacing,
-                        origin = e.origin,
-                        rotation = e.rotation,
-                        magnification = e.magnification,
-                        x_reflection = e.x_reflection,
-                        )
-                    dr.owner = D
-                    converted_references.append(dr)
-            D.references = converted_references
-            # Next convert each Polygon
-            temp_polygons = list(D.polygons)
-            D.polygons = []
-            for p in temp_polygons:
-                D.add_polygon(p)
+    # FIXME Add Flatten option here
 
-        topdevice = c2dmap[topcell]
-        return topdevice
-
-    elif flatten == True:
-        D = Device('import_gds')
-        polygons = topcell.get_polygons(by_spec = True)
-
-        for layer_in_gds, polys in polygons.items():
-            D.add_polygon(polys, layer = layer_in_gds)
-        return D
+    return D
 
 
 def _translate_cell(c):

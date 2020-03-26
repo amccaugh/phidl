@@ -1,3 +1,11 @@
+
+#==============================================================================
+# KLayout backend TODO
+#==============================================================================
+# Change Device.refernces to Device._references -- references is only there
+# to internally keep track of ports, and not be manipulated by the user
+
+    
 #==============================================================================
 # Major TODO
 #==============================================================================
@@ -16,6 +24,7 @@
 #==============================================================================
 # Imports
 #==============================================================================
+
 
 from __future__ import division # Otherwise integer division e.g.  20 / 7 = 2
 from __future__ import print_function # Use print('hello') instead of print 'hello'
@@ -40,6 +49,14 @@ __version__ = '1.2.2'
 def _kl_polygon_to_array(kl_polygon):
     return [ (pt.x,pt.y) for pt in kl_polygon.each_point() ]
     
+def _gather_kl_shapes(kl_cell, shape_type = kdb.Shapes.SAll): # Listed on https://www.klayout.de/doc-qt5/code/class_Shapes.html
+    """ Returns a dictionary with keys = layer_idx and 
+    values = an iterator which returns shapes of that type on that layer.
+    shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
+    kl_shapes = {}
+    for layer_idx in layout.layer_indices():
+        kl_shapes[layer_idx] = cell.each_shape(layer_idx,shape_type)
+    return kl_shapes
 
 #==============================================================================
 # Useful transformation functions
@@ -357,99 +374,98 @@ class Port(object):
 
     def rotate(self, angle = 45, center = None):
         self.orientation = mod(self.orientation + angle, 360)
-        if center is None:
-            center = self.midpoint
+        if center is None: center = self.midpoint
+        center = _parse_coordinate(center)
         self.midpoint = _rotate_points(self.midpoint, angle = angle, center = center)
         return self
 
 
-# class Polygon(_GeometryHelper):
+class Polygon(_GeometryHelper):
 
-#     def __init__(self, points, device, gds_layer, gds_datatype):
-#         self.kl_cell = device.kl_cell
-#         points = np.array(points, dtype  = np.float64)
-#         polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
-#         self.kl_layer = layout.layer(gds_layer, gds_datatype)
-#         self.kl_polygon = device.kl_cell.shapes(self.kl_layer).insert(polygon)
+    def __init__(self, points, device, gds_layer, gds_datatype):
+        self.kl_cell = device.kl_cell
+        points = np.array(points, dtype  = np.float64)
+        polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
+        self.kl_layer = layout.layer(gds_layer, gds_datatype)
+        self.kl_shape = device.kl_cell.shapes(self.kl_layer).insert(polygon)
     
-#     def _to_array(self):
-#         [ (pt.x,pt.y) for pt in self.kl_polygon.each_point() ]
+    def _to_array(self):
+        [ (pt.x,pt.y) for pt in self.kl_shape.each_point() ]
 
-#     def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
-#         transformation = kdb.DCplxTrans(
-#             float(magnification),  # Magnification
-#             float(rotation),  # Rotation
-#             x_reflection,# X-axis mirroring
-#             float(dx), # X-displacement
-#             float(dy),  # Y-displacement
-#             )
-#         return transformation
+    def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
+        transformation = kdb.DCplxTrans(
+            float(magnification),  # Magnification
+            float(rotation),  # Rotation
+            x_reflection,# X-axis mirroring
+            float(dx), # X-displacement
+            float(dy),  # Y-displacement
+            )
+        return transformation
 
-#     @property
-#     def bbox(self):
-#         b = new_poly.bbox() # Get KLayout bounding box object
-#         return [[b.left, b.bottom],[b.right, b.top]] 
+    @property
+    def bbox(self):
+        b = self.kl_shape.dbbox()
+        bbox = ((b.left, b.bottom),(b.right, b.top))
+        return bbox
 
-#     # We cannot store kl_polygon because the pointer may change over time
-#     # So instead we search for it each time we want the polygon
-#     @property
-#     def kl_polygon2(self):
-#         return self.kl_cell.shapes(self.kl_layer).find(self.kl_polygon)
+    # # We cannot store kl_shape because the pointer may change over time
+    # # So instead we search for it each time we want the polygon
+    # @property
+    # def kl_shape2(self):
+    #     return self.kl_cell.shapes(self.kl_layer).find(self.kl_shape)
 
-#     def rotate(self, angle = 45, center = (0,0)):
-#         klt = self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
-#         self.kl_polygon.transform(klt)
-#         return self
+    def rotate(self, angle = 45, center = (0,0)):
+        klt = self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
+        self.kl_shape.transform(klt)
+        return self
 
-#     def move(self, origin = (0,0), destination = None, axis = None):
-#         """ Moves elements of the Device from the origin point to the destination.  Both
-#          origin and destination can be 1x2 array-like, Port, or a key
-#          corresponding to one of the Ports in this device """
+    def move(self, origin = (0,0), destination = None, axis = None):
+        """ Moves elements of the Device from the origin point to the destination.  Both
+         origin and destination can be 1x2 array-like, Port, or a key
+         corresponding to one of the Ports in this device """
 
-#         # If only one set of coordinates is defined, make sure it's used to move things
-#         if destination is None:
-#             destination = origin
-#             origin = [0,0]
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
 
-#         if isinstance(origin, Port):            o = origin.midpoint
-#         elif np.array(origin).size == 2:    o = origin
-#         elif origin in self.ports:    o = self.ports[origin].midpoint
-#         else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
+        if isinstance(origin, Port):            o = origin.midpoint
+        elif np.array(origin).size == 2:    o = origin
+        elif origin in self.ports:    o = self.ports[origin].midpoint
+        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
 
-#         if isinstance(destination, Port):           d = destination.midpoint
-#         elif np.array(destination).size == 2:        d = destination
-#         elif destination in self.ports:   d = self.ports[destination].midpoint
-#         else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
+        if isinstance(destination, Port):           d = destination.midpoint
+        elif np.array(destination).size == 2:        d = destination
+        elif destination in self.ports:   d = self.ports[destination].midpoint
+        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
 
-#         if axis == 'x': d = (d[0], o[1])
-#         if axis == 'y': d = (o[0], d[1])
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
 
-#         dx,dy = np.array(d) - o
+        dx,dy = np.array(d) - o
         
-#         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = dx, dy = dy)
-#         self.kl_polygon.transform(klt)
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = dx, dy = dy)
+        self.kl_shape.transform(klt)
         
-#         return self
+        return self
 
 
-#     def reflect(self, p1 = (0,1), p2 = (0,0)):
-#         theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
-#         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
-#         # klt *= self._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
-#         # klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
-#         # klt *= self._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
-#         # klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
-#         # klt = klt1*klt2*klt3*klt4*klt5
-#         import time
-#         time.sleep(0.1)
-#         print(self.kl_polygon)
-#         print('Failure')
-#         print(type(klt))
-#         print(type(self.kl_polygon))
-#         self.kl_polygon2.transform(klt)
-#         print('Failure2')
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        theta = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])/np.pi*180
+        klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = p1[0], dy = p1[1])
+        klt *= self._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = True, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = theta, x_reflection = False, dx = 0, dy = 0)
+        klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
+        # klt = klt1*klt2*klt3*klt4*klt5
+        # print(self.kl_shape)
+        # print('Failure')
+        # print(type(klt))
+        # print(type(self.kl_shape))
+        self.kl_shape.transform(klt)
+        # print('Failure2')
 
-#         return self
+        return self
 
 
 
@@ -472,8 +488,8 @@ def make_device(fun, config = None, **kwargs):
         function does not produce a Device.""")
     return D
 
-
-layout = kdb.Layout()
+_phidl_library = kdb.Library()
+layout = _phidl_library.layout()
 
 
 
@@ -491,10 +507,11 @@ class Device(_GeometryHelper):
         # self.a = self.aliases
         # self.p = self.ports
         self.uid = Device._next_uid
-        self._internal_name = name
+        self._internal_name = name  # FIXME maybe not necessary?
         self.name = name
         gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
         self.kl_cell = layout.create_cell(gds_name)
+        self.references = []
         Device._next_uid += 1
 
 
@@ -536,10 +553,6 @@ class Device(_GeometryHelper):
                  layers.append( (layer_infos[layer_idx].layer, layer_infos[layer_idx].datatype) )
         return layers
 
-    @property
-    def references(self):
-        return [e for e in self.elements if isinstance(e, DeviceReference)]
-
     # @property
     # def polygons(self):
     #     return list(self.kl_cell.each_shape(new_layer))
@@ -562,6 +575,7 @@ class Device(_GeometryHelper):
 #            raise TypeError("""[PHIDL] add_ref() was passed something that
 #            was not a Device object. """)
         d = DeviceReference(device = device, owner_device = self)   # Create a DeviceReference (CellReference)
+        self.references.append(d)
 
         if alias is not None:
             self.aliases[alias] = d
@@ -600,13 +614,15 @@ class Device(_GeometryHelper):
             # Convert to form [[1,2],[3,4],[5,6]]
             points = np.column_stack((points))
         gds_layer, gds_datatype = _parse_layer(layer)
-
         points = np.array(points, dtype  = np.float64)
-        polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
-        self.kl_layer = layout.layer(gds_layer, gds_datatype)
-        self.kl_cell.shapes(self.kl_layer).insert(polygon)
-        
-        return self
+
+        polygon = Polygon(points = points, device = self, gds_layer = gds_layer, gds_datatype = gds_datatype)
+        return polygon 
+
+        # polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
+        # kl_layer = layout.layer(gds_layer, gds_datatype)
+        # self.kl_cell.shapes(kl_layer).insert(polygon)        
+        # return self
 
     def get_polygons(self, by_spec = True, depth = None):
         # FIXME depth not implemented
@@ -618,12 +634,14 @@ class Device(_GeometryHelper):
             layer_polygons = []
             all_polygons_iterator = self.kl_cell.begin_shapes_rec(layer_idx)
             while not all_polygons_iterator.at_end():
-                # Get the klayout polygon in micrometer units (DSimplePolygon)
-                kl_polygon = all_polygons_iterator.shape().dsimple_polygon 
-                # Apply any transformations if that shape was in a child cell
-                kl_polygon = kl_polygon.transformed(all_polygons_iterator.dtrans())
-                # Appent the transformed polygons to the big list
-                layer_polygons.append( _kl_polygon_to_array(kl_polygon) )
+                kl_shape = all_polygons_iterator.shape()
+                if kl_shape.is_polygon():
+                    # Get the klayout polygon in micrometer units (DSimplePolygon)
+                    kl_polygon = kl_shape.dsimple_polygon 
+                    # Apply any transformations if that shape was in a child cell
+                    kl_polygon = kl_polygon.transformed(all_polygons_iterator.dtrans())
+                    # Appent the transformed polygons to the big list
+                    layer_polygons.append( _kl_polygon_to_array(kl_polygon) )
                 all_polygons_iterator.next()
             if not by_spec:
                 polygons += layer_polygons
@@ -668,16 +686,13 @@ class Device(_GeometryHelper):
         return p
 
 
-    # def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
-    #     if len(text) >= 1023:
-    #         raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
-    #     gds_layer, gds_datatype = _parse_layer(layer)
+    def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
+        if len(text) >= 1023:
+            raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
 
-    #     if type(text) is not str: text = str(text)
-    #     l = Label(text = text, position = position, anchor = anchor, magnification = magnification, rotation = rotation,
-    #                              layer = gds_layer, texttype = gds_datatype)
-    #     self.add(l)
-    #     return l
+        if type(text) is not str: text = str(text)
+        l = Label(text = text, position = position, anchor = anchor, parent = self, layer = layer)
+        return l
 
 
     def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
@@ -693,14 +708,27 @@ class Device(_GeometryHelper):
     def _apply_kl_transform(self, transformation):
         for kl_instance in self.kl_cell.each_inst():
             kl_instance.transform(transformation)
-        kl_polygons = []
+        kl_shapes = []
+        # Collect shapes (polygons + labels) from each layer in the layout
         for layer_idx in layout.layer_indices():
-            kl_polygons += self.kl_cell.each_shape(layer_idx)
-        [klp.transform(transformation) for klp in kl_polygons]
+            kl_shapes += self.kl_cell.each_shape(layer_idx)
+        # Transform shapes
+        for klp in kl_shapes:
+            if klp.is_text():
+                # The movement of label position has to be calculated manually
+                # because the kdb.text object only allows "Simple" transformations
+                x,y = klp.text_dpos.x, klp.text_dpos.y
+                x,y = _rotate_points((x,y), angle = transformation.angle, center = (0,0))
+                x +=  transformation.disp.x
+                y +=  transformation.disp.y
+                klp.text_dpos = kdb.DVector(x,y)
+            elif klp.is_polygon():
+                klp.transform(transformation)
 
 
     def rotate(self, angle = 45, center = (0,0)):
         if angle == 0: return self
+        center = _parse_coordinate(center)
         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = center[0], dy = center[1])
         klt *= self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
         klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -center[0], dy = -center[1])
@@ -762,41 +790,42 @@ class Device(_GeometryHelper):
     #     return self.add_label(*args, **kwargs)
 
 
-    # def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
-    #               auto_rename = True, max_cellname_length = 28):
-    #     if filename[-4:] != '.gds':  filename += '.gds'
-    #     tempname = self.name
-    #     referenced_cells = list(self.get_dependencies(recursive=True))
-    #     all_cells = [self] + referenced_cells
+    def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
+                  auto_rename = True, max_cellname_length = 28):
+        if filename[-4:] != '.gds':  filename += '.gds'
 
-    #     # Autofix names so there are no duplicates
-    #     if auto_rename == True:
-    #         all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-    #         all_cells_names = [c._internal_name for c in all_cells_sorted]
-    #         all_cells_original_names = [c.name for c in all_cells_sorted]
-    #         used_names = {'toplevel'}
-    #         n = 1
-    #         for c in all_cells_sorted:
-    #             if max_cellname_length is not None:
-    #                 new_name = c._internal_name[:max_cellname_length]
-    #             else:
-    #                 new_name = c._internal_name
-    #             temp_name = new_name
-    #             while temp_name in used_names:
-    #                 n += 1
-    #                 temp_name = new_name + ('%0.3i' % n)
-    #             new_name = temp_name
-    #             used_names.add(new_name)
-    #             c.name = new_name
-    #         self.name = 'toplevel'
-    #     # Write the gds
-    #     gdspy.write_gds(filename, cells=all_cells, name='library',
-    #                     unit=unit, precision=precision)
-    #     # Return cells to their original names if they were auto-renamed
-    #     if auto_rename == True:
-    #         for n,c in enumerate(all_cells_sorted):
-    #             c.name = all_cells_original_names[n]
-    #     return filename
+        # tempname = self.name
+        # referenced_cells = list(self.get_dependencies(recursive=True))
+        # all_cells = [self] + referenced_cells
+
+        # # Autofix names so there are no duplicates
+        # if auto_rename == True:
+        #     all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
+        #     all_cells_names = [c._internal_name for c in all_cells_sorted]
+        #     all_cells_original_names = [c.name for c in all_cells_sorted]
+        #     used_names = {'toplevel'}
+        #     n = 1
+        #     for c in all_cells_sorted:
+        #         if max_cellname_length is not None:
+        #             new_name = c._internal_name[:max_cellname_length]
+        #         else:
+        #             new_name = c._internal_name
+        #         temp_name = new_name
+        #         while temp_name in used_names:
+        #             n += 1
+        #             temp_name = new_name + ('%0.3i' % n)
+        #         new_name = temp_name
+        #         used_names.add(new_name)
+        #         c.name = new_name
+        #     self.name = 'toplevel'
+
+        # Write the gds
+        self.kl_cell.write(filename)
+        # Return cells to their original names if they were auto-renamed
+        # if auto_rename == True:
+        #     for n,c in enumerate(all_cells_sorted):
+        #         c.name = all_cells_original_names[n]
+        return filename
 
 
     # def remap_layers(self, layermap = {}, include_labels = True):
@@ -882,18 +911,15 @@ class Device(_GeometryHelper):
     #     return self
 
 
-    # def flatten(self,  single_layer = None):
-    #     if single_layer is None:
-    #         super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
-    #     else:
-    #         gds_layer, gds_datatype = _parse_layer(single_layer)
-    #         super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
-
-    #     temp_polygons = list(self.polygons)
-    #     self.references = []
-    #     self.polygons = []
-    #     [self.add_polygon(poly) for poly in temp_polygons]
-    #     return self
+    def flatten(self,  single_layer = None): # https://www.klayout.de/doc/code/class_Cell.html#method63
+        self.kl_cell.flatten(False) # bool prune = False
+        # gds_layer, gds_datatype = _parse_layer(single_layer)
+        del self.references[:]
+        # temp_polygons = list(self.polygons)
+        # self.references = []
+        # self.polygons = []
+        # [self.add_polygon(poly) for poly in temp_polygons]
+        return self
 
 
     # def absorb(self, reference):
@@ -911,32 +937,32 @@ class Device(_GeometryHelper):
     #     return self
 
 
-    # def get_ports(self, depth = None):
-    #     """ Returns copies of all the ports of the Device, rotated
-    #     and translated so that they're in their top-level position.
-    #     The Ports returned are copies of the originals, but each copy
-    #     has the same ``uid'' as the original so that they can be
-    #     traced back to the original if needed"""
-    #     port_list = [p._copy(new_uid = False) for p in self.ports.values()]
+    def get_ports(self, depth = None):
+        """ Returns copies of all the ports of the Device, rotated
+        and translated so that they're in their top-level position.
+        The Ports returned are copies of the originals, but each copy
+        has the same ``uid'' as the original so that they can be
+        traced back to the original if needed"""
+        port_list = [p._copy(new_uid = False) for p in self.ports.values()]
 
-    #     if depth is None or depth > 0:
-    #         for r in self.references:
-    #             if depth is None: new_depth = None
-    #             else:             new_depth = depth - 1
-    #             ref_ports = r.parent.get_ports(depth=new_depth)
+        if depth is None or depth > 0:
+            for r in self.references:
+                if depth is None: new_depth = None
+                else:             new_depth = depth - 1
+                ref_ports = r.parent.get_ports(depth=new_depth)
 
-    #             # Transform ports that came from a reference
-    #             ref_ports_transformed = []
-    #             for rp in ref_ports:
-    #                 new_port = rp._copy(new_uid = False)
-    #                 new_midpoint, new_orientation = r._transform_port(rp.midpoint, \
-    #                 rp.orientation, r.origin, r.rotation, r.x_reflection)
-    #                 new_port.midpoint = new_midpoint
-    #                 new_port.new_orientation = new_orientation
-    #                 ref_ports_transformed.append(new_port)
-    #             port_list += ref_ports_transformed
+                # Transform ports that came from a reference
+                ref_ports_transformed = []
+                for rp in ref_ports:
+                    new_port = rp._copy(new_uid = False)
+                    new_midpoint, new_orientation = r._transform_port(rp.midpoint, \
+                    rp.orientation, r.origin, r.rotation, r.x_reflection)
+                    new_port.midpoint = new_midpoint
+                    new_port.new_orientation = new_orientation
+                    ref_ports_transformed.append(new_port)
+                port_list += ref_ports_transformed
 
-    #     return port_list
+        return port_list
 
 
     # def remove(self, items):
@@ -1037,17 +1063,23 @@ class DeviceReference(_GeometryHelper):
     def _apply_kl_transform(self, transformation):
         self.kl_instance.transform(transformation)
 
+    def get_polygons(self, by_spec = True, depth = None):
+        temp_device = Device('zxcbuypasdfu317468123asdfs3')
+        # self.temp_device = temp_device
+        transformation = self.kl_instance.dcplx_trans
+        kl_instance = temp_device.kl_cell.insert(kdb.DCellInstArray(self.parent.kl_cell.cell_index(), transformation))
+        polygons = temp_device.get_polygons(by_spec = by_spec, depth = depth)
+        layout.delete_cell(temp_device.kl_cell.cell_index()) # Use this instead of _destroy()!
+        return polygons
 
 
     def rotate(self, angle = 45, center = (0,0)):
         if angle == 0: return self
+        center = _parse_coordinate(center)
         klt = self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = center[0], dy = center[1])
         klt *= self._kl_transform(magnification = 1, rotation = angle, x_reflection = False, dx = 0, dy = 0)
         klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -center[0], dy = -center[1])
         self._apply_kl_transform(klt)
-        for p in self.ports.values():
-            p.midpoint = _rotate_points(p.midpoint, angle, center)
-            p.orientation = mod(p.orientation + angle, 360)
         return self
 
 
@@ -1323,34 +1355,63 @@ class CellArray(DeviceReference):
 
 
 
-# class Label(gdspy.Label, _GeometryHelper):
+class Label(_GeometryHelper):
 
-#     def __init__(self, *args, **kwargs):
-#         super(Label, self).__init__(*args, **kwargs)
+    def __init__(self, text, position, anchor, parent, layer):
+        layer = _parse_layer(layer)
+        position = _parse_coordinate(position)
+        kl_layer = layout.layer(layer[0], layer[1])
+        t = kdb.DText.new(text, position[0], position[1])
+        t = parent.kl_cell.shapes(kl_layer).insert(t)
+        self.kl_shape = t
+        # self.kl_text = t.dtext
 
 
-#     @property
-#     def bbox(self):
-#         return np.array([[self.position[0], self.position[1]],[self.position[0], self.position[1]]])
+    @property
+    def kl_text(self):
+        return self.kl_shape.dtext
 
-#     def rotate(self, angle = 45, center = (0,0)):
-#         self.position = _rotate_points(self.position, angle = angle, center = center)
-#         return self
+    @property
+    def position(self):
+        return (self.kl_text.x, self.kl_text.y)
 
-#     def move(self, origin = (0,0), destination = None, axis = None):
-#         if destination is None:
-#             destination = origin
-#             origin = [0,0]
+    @position.setter
+    def position(self, destination):
+        self.move(destination = destination, origin = self.center)
 
-#         o = _parse_coordinate(origin)
-#         d = _parse_coordinate(destination)
+    @property
+    def bbox(self):
+        b = self.kl_text.dbbox()
+        bbox = ((b.left, b.bottom),(b.right, b.top))
+        return bbox
 
-#         if axis == 'x': d = (d[0], o[1])
-#         if axis == 'y': d = (o[0], d[1])
 
-#         self.position += np.array(d) - o
-#         return self
+    def rotate(self, angle = 45, center = (0,0)):
+        self.position = _rotate_points(self.position, angle = angle, center = center)
+        return self
 
-#     def reflect(self, p1 = (0,1), p2 = (0,0)):
-#         self.position = _reflect_points(self.position, p1, p2)
-#         return self
+    def move(self, origin = (0,0), destination = None, axis = None):
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        o = _parse_coordinate(origin)
+        d = _parse_coordinate(destination)
+
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+
+        dx,dy = np.array(d) - o
+        transformation = kdb.DTrans(
+        0,  # Rotation
+        False,# X-axis mirroring
+        float(dx), # X-displacement
+        float(dy),  # Y-displacement
+        )
+        self.kl_shape.transform(transformation)
+
+        return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        self.position = _reflect_points(self.position, p1, p2)
+        return self

@@ -1,3 +1,4 @@
+#%%
 from __future__ import division, print_function, absolute_import
 import numpy as np
 
@@ -7,6 +8,9 @@ from phidl import quickplot as qp # Rename "quickplot()" to the easier "qp()"
 import phidl.geometry as pg
 import phidl.routing as pr
 import phidl.utilities as pu
+
+import functools
+qp = functools.partial(qp, new_window = True, show_subports = True)
 
 #==============================================================================
 # Helpful (but not necessary) notes about plotting. (Can be skipped)
@@ -262,7 +266,7 @@ qp(D2)
 #==============================================================================
 # The function text() creates a Device, just like waveguide.  Use it and
 # manipulate it like any other Device
-t = D2.add_ref( pg.text('Hello\nworld!', size = 10, justify = 'center'))
+t = D2.add_ref( pg.text('Hello\nworld!', size = 10, justify = 'center', layer = 7))
 t.move([0,40]).rotate(45)
 qp(D2)
 
@@ -327,21 +331,21 @@ for p in all_ports:
 
 
 
-#==============================================================================
-# Advanced: Using CellArray
-#==============================================================================
-# In GDS, there's a type of structure called a "CellArray" which takes a cell
-# and repeats it NxM times on a fixed grid spacing.  For convenience, PHIDL
-# includes this functionality with the add_array() function.  Note that
-# CellArrays are not compatible with ports (since there is no way to 
-# access/modify individual elements in a GDS cellarray)
-
-D = Device()
-R = pg.rectangle([30,20])
-a = D.add_array(R, columns = 7, rows = 5,  spacing = (31, 21))
-# bbox gets the bounding box of the whole array
-a.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]] 
-qp(D)
+##==============================================================================
+## Advanced: Using CellArray
+##==============================================================================
+## In GDS, there's a type of structure called a "CellArray" which takes a cell
+## and repeats it NxM times on a fixed grid spacing.  For convenience, PHIDL
+## includes this functionality with the add_array() function.  Note that
+## CellArrays are not compatible with ports (since there is no way to 
+## access/modify individual elements in a GDS cellarray)
+#
+#D = Device()
+#R = pg.rectangle([30,20])
+#a = D.add_array(R, columns = 7, rows = 5,  spacing = (31, 21))
+## bbox gets the bounding box of the whole array
+#a.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]] 
+#qp(D)
 
 
 #==============================================================================
@@ -391,28 +395,28 @@ D.write_gds('LithographyTestStructuresMetrics.gds')
 
 
 
-#==============================================================================
-# Importing GDS files
-#==============================================================================
-# The phidl.geometry module is responsible for generating premade Devices.
-# This includes imported geometry from other GDS files too.  When you import
-# a GDS, you specify which layers you want, and it will import those layers
-# as a new Device.  The new device can then be manipulated like any other.
-
-# Let's import the GDS we just saved in the previous step.  Although generally
-# you must specify which cell in the GDS file you want to import using the
-# argument `cellname`, if the GDS file has only one top-level cell (like our
-# MyLayerSetPreview.gds file does), the cellname argument can be left out and
-# import_gds() will import that top-level cell.
-
-# Let's first just import the entire GDS as-is
-E = pg.import_gds(filename = 'MyNewGDS.gds')
-qp(E)
-
-
-# Similarly, we can import the same file but flatten the entire cell
-# heirarchy
-E2 = pg.import_gds(filename = 'MyNewGDS.gds', flatten = True)
+##==============================================================================
+## Importing GDS files
+##==============================================================================
+## The phidl.geometry module is responsible for generating premade Devices.
+## This includes imported geometry from other GDS files too.  When you import
+## a GDS, you specify which layers you want, and it will import those layers
+## as a new Device.  The new device can then be manipulated like any other.
+#
+## Let's import the GDS we just saved in the previous step.  Although generally
+## you must specify which cell in the GDS file you want to import using the
+## argument `cellname`, if the GDS file has only one top-level cell (like our
+## MyLayerSetPreview.gds file does), the cellname argument can be left out and
+## import_gds() will import that top-level cell.
+#
+## Let's first just import the entire GDS as-is
+#E = pg.import_gds(filename = 'MyNewGDS.gds')
+#qp(E)
+#
+#
+## Similarly, we can import the same file but flatten the entire cell
+## heirarchy
+#E2 = pg.import_gds(filename = 'MyNewGDS.gds', flatten = True)
 
 
 #==============================================================================
@@ -450,7 +454,7 @@ DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 my_layers = {1, (3,5), (7,8)}
 # When you apply the set to add_polygon, you get a list of the returned polygons
 polygon_list = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)], layer = my_layers)
-print([(p.layers[0], p.datatypes[0]) for p in polygon_list])
+#print([(p.layers[0], p.datatypes[0]) for p in polygon_list])
 
 # However, when you use it on a phidl.geometry function, it does not produce
 # multiple Devices! It will only produce a single Device with geometry on all
@@ -533,7 +537,7 @@ qp(D)
 # Remapping layers
 #==============================================================================
 # Let's import our layerset preview again
-D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
+#D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
 
 # We can use the remap_layers() function to map layers arbitrarily. Say we
 # wanted to move shapes on layer 5 to layer 99, and layer 6 to layer 77
