@@ -139,35 +139,21 @@ def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll, depth = None): # L
     values = an iterator which returns shapes of that type on that layer.
     Scans through child cells recursively to a depth of `depth`
     shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
-    # Make it python-friendly so we can use list() and for-loops on it
-#    class KLIterator:
-#        def __init__(self, kl_iterator):
-#            self.kl_iterator = kl_iterator
-#            
-#        def __iter__(self):
-#            return self
-#    
-#        def __next__(self): # Python 2: def next(self)
-#            if self.kl_iterator.at_end(): raise StopIteration
-#            else:
-#                self.kl_iterator.next()
-#                return self.kl_iterator.shape()
-#        
+    
+    # Python doesn't recognize the KLayout RecursiveShapeIterator as an iterator,
+    # so here we wrap it in a generator so we can use list() and use it in for-loops
     def iterator_gen(kl_iterator):
         while not kl_iterator.at_end():
             yield kl_iterator.shape()
             kl_iterator.next()
-#        print('hello')
-#        print(iterator.at_end())
     
     iterator_dict = {}
     for layer_idx in layout.layer_indices():
-        iterator = kl_cell.begin_shapes_rec(layer_idx)
-        iterator.shape_flags = shape_type
+        kl_iterator = kl_cell.begin_shapes_rec(layer_idx)
+        kl_iterator.shape_flags = shape_type
         if depth is not None:
-            iterator.max_depth = depth
-        iterator_dict[layer_idx] = iterator_gen(iterator)
-#        iterator_dict[layer_idx] = iterator
+            kl_iterator.max_depth = depth
+        iterator_dict[layer_idx] = iterator_gen(kl_iterator)
     
     return iterator_dict
 
@@ -189,13 +175,8 @@ else:
 
 iterator_dict = _kl_shape_iterator(D.kl_cell, shape_type = shape_type, depth = None)
 iterator = iterator_dict[kl_layer_idx]
-while not iterator.at_end():
-    print('hello')
-    print(iterator.at_end())
-    kl_shape = iterator.shape()
+for kl_shape in iterator:
     kl_shape.layer = new_kl_layer_idx
-    iterator.next()
-#    break
     
     
 

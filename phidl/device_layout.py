@@ -59,6 +59,36 @@ def _gather_kl_shapes(kl_cell, shape_type = kdb.Shapes.SAll): # Listed on https:
         kl_shapes[layer_idx] = kl_cell.each_shape(layer_idx,shape_type)
     return kl_shapes
 
+def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll, depth = None): # Listed on https://www.klayout.de/doc-qt5/code/class_Shapes.html
+    """ Returns a dictionary with keys = layer_idx and 
+    values = an iterator which returns shapes of that type on that layer.
+    Scans through child cells recursively to a depth of `depth`
+    shape_type is one of e.g. kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
+    
+    # Python doesn't recognize the KLayout RecursiveShapeIterator as an iterator,
+    # so here we wrap it in a generator so we can use list() and use it in for-loops
+    def iterator_gen(kl_iterator):
+        while not kl_iterator.at_end():
+            yield kl_iterator.shape()
+            kl_iterator.next()
+    
+    iterator_dict = {}
+    for layer_idx in layout.layer_indices():
+        kl_iterator = kl_cell.begin_shapes_rec(layer_idx)
+        kl_iterator.shape_flags = shape_type
+        if depth is not None:
+            kl_iterator.max_depth = depth
+        iterator_dict[layer_idx] = iterator_gen(kl_iterator)
+    
+    return iterator_dict
+
+def _get_kl_layer(gds_layer, gds_datatype):
+    """Returns the layer index and KLayout Layer object for a given
+    gds layer and datatype, creating a new one if it doesn't exist """
+    layer_idx = layout.layer(gds_layer,gds_datatype)
+    layer_infos = layout.layer_infos()
+    return layer_idx, layer_infos[layer_idx]
+
 #==============================================================================
 # Useful transformation functions
 #==============================================================================
