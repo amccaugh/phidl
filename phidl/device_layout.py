@@ -2,8 +2,9 @@
 #==============================================================================
 # KLayout backend TODO
 #==============================================================================
-# Change Device.refernces to Device._references -- references is only there
+# - Change Device.refernces to Device._references -- references is only there
 # to internally keep track of ports, and not be manipulated by the user
+# - Add https://www.klayout.de/doc/code/class_SaveLayoutOptions.html to write_gds() for max_points etc
 
     
 #==============================================================================
@@ -55,7 +56,7 @@ def _gather_kl_shapes(kl_cell, shape_type = kdb.Shapes.SAll): # Listed on https:
     shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
     kl_shapes = {}
     for layer_idx in layout.layer_indices():
-        kl_shapes[layer_idx] = cell.each_shape(layer_idx,shape_type)
+        kl_shapes[layer_idx] = kl_cell.each_shape(layer_idx,shape_type)
     return kl_shapes
 
 #==============================================================================
@@ -625,7 +626,6 @@ class Device(_GeometryHelper):
         # return self
 
     def get_polygons(self, by_spec = True, depth = None):
-        # FIXME depth not implemented
         layer_infos = layout.layer_infos()
         if by_spec: polygons = {}
         else:       polygons = []
@@ -633,6 +633,7 @@ class Device(_GeometryHelper):
         for layer_idx in layout.layer_indices():
             layer_polygons = []
             all_polygons_iterator = self.kl_cell.begin_shapes_rec(layer_idx)
+            if depth is not None: all_polygons_iterator.max_depth = int(depth)
             while not all_polygons_iterator.at_end():
                 kl_shape = all_polygons_iterator.shape()
                 if kl_shape.is_polygon():
@@ -640,7 +641,7 @@ class Device(_GeometryHelper):
                     kl_polygon = kl_shape.dsimple_polygon 
                     # Apply any transformations if that shape was in a child cell
                     kl_polygon = kl_polygon.transformed(all_polygons_iterator.dtrans())
-                    # Appent the transformed polygons to the big list
+                    # Append the transformed polygons to the big list
                     layer_polygons.append( _kl_polygon_to_array(kl_polygon) )
                 all_polygons_iterator.next()
             if not by_spec:

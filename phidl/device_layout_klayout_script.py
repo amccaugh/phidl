@@ -121,64 +121,86 @@ from phidl import Device, quickplot as qp
 import klayout.db as kdb
 from phidl.device_layout import DeviceReference
 from phidl.device_layout import layout
+from phidl.device_layout import _parse_layer
+
+
+layer = (3,5)
+new_layer = (8,8)
+include_labels = True
+
 
 layout.clear()
 
-D = pg.ellipse()
-filename = 'test2.gds'
-cellname = None
-flatten = False
+D = pg.snspd(layer = (3,5))
+#D2 = pg.ellipse(layer = 77)
+
+def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll, depth = None): # Listed on https://www.klayout.de/doc-qt5/code/class_Shapes.html
+    """ Returns a dictionary with keys = layer_idx and 
+    values = an iterator which returns shapes of that type on that layer.
+    Scans through child cells recursively to a depth of `depth`
+    shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
+    # Make it python-friendly so we can use list() and for-loops on it
+#    class KLIterator:
+#        def __init__(self, kl_iterator):
+#            self.kl_iterator = kl_iterator
+#            
+#        def __iter__(self):
+#            return self
+#    
+#        def __next__(self): # Python 2: def next(self)
+#            if self.kl_iterator.at_end(): raise StopIteration
+#            else:
+#                self.kl_iterator.next()
+#                return self.kl_iterator.shape()
+#        
+    def iterator_gen(kl_iterator):
+        while not kl_iterator.at_end():
+            yield kl_iterator.shape()
+            kl_iterator.next()
+#        print('hello')
+#        print(iterator.at_end())
+    
+    iterator_dict = {}
+    for layer_idx in layout.layer_indices():
+        iterator = kl_cell.begin_shapes_rec(layer_idx)
+        iterator.shape_flags = shape_type
+        if depth is not None:
+            iterator.max_depth = depth
+        iterator_dict[layer_idx] = iterator_gen(iterator)
+#        iterator_dict[layer_idx] = iterator
+    
+    return iterator_dict
 
 
+def _get_kl_layer(gds_layer, gds_datatype):
+    layer_idx = layout.layer(gds_layer,gds_datatype)
+    layer_infos = layout.layer_infos()
+    return layer_idx, layer_infos[layer_idx]
 
-# First we set all the cell names in this layout to "" (from zeropdk)
-# so that imported cells don't have name collisions
-cell_dict = {cell.name: cell for cell in layout.each_cell()}
-used_names =  set(cell_dict.keys())
-for cell in cell_dict.values():
-    layout.rename_cell(cell.cell_index(), '')
+gds_layer, gds_datatype = _parse_layer(layer)
+kl_layer_idx, kl_layer =  _get_kl_layer(gds_layer, gds_datatype)
+new_gds_layer, new_gds_datatype = _parse_layer(new_layer)
+new_kl_layer_idx, new_kl_layer =  _get_kl_layer(new_gds_layer, new_gds_datatype)
 
-# Then we load the new cells from the file and get their names
-layout.read(filename)
-imported_cell_dict = {cell.name: cell for cell in layout.each_cell() if cell.name != ''}
+if include_labels == True:
+    shape_type = kdb.Shapes.SPolygons | kdb.Shapes.STexts
+else:
+    shape_type = kdb.Shapes.SPolygons
 
-# Find the top level cell from the
-top_level_cells = {cell.name:cell for cell in layout.top_cells() if cell.name != ''}
+iterator_dict = _kl_shape_iterator(D.kl_cell, shape_type = shape_type, depth = None)
+iterator = iterator_dict[kl_layer_idx]
+while not iterator.at_end():
+    print('hello')
+    print(iterator.at_end())
+    kl_shape = iterator.shape()
+    kl_shape.layer = new_kl_layer_idx
+    iterator.next()
+#    break
+    
+    
 
-# Correct any overlapping names by appending an integer to the end of the name
-for name, cell in imported_cell_dict.items():
-    new_name = name
-    n = 1
-    while new_name in used_names:
-        new_name = name + ('%0.1i' % n)
-        n += 1
-    layout.rename_cell(cell.cell_index(), new_name)
-    used_names.add(new_name)
-
-# Rename all the old cells back to their original names
-for name, cell in cell_dict.items():
-    layout.rename_cell(cell.cell_index(), name)
-
-# Verify that the topcell name specified exists or that there's only 
-# one topcell.  If not, delete the imported cells and raise a ValueError
-if cellname is not None:
-    if cellname not in top_level_cells:
-        [layout.delete_cell(cell.cell_index()) for cell in imported_cell_dict.values()]
-        raise ValueError('[PHIDL] import_gds() The requested cell (named %s)' +
-                    ' is not present in file %s' % (cellname,filename))
-    top_cell = top_level_cells[cellname]
-elif cellname is None and len(top_level_cells) == 1:
-    top_cell = list(top_level_cells.values())[0]
-elif cellname is None and len(top_level_cells) > 1:
-    [layout.delete_cell(cell.cell_index()) for cell in imported_cell_dict.values()]
-    raise ValueError('[PHIDL] import_gds() There are multiple top-level cells,' +
-                    ' you must specify `cellname` to select of one of them')
-
-# Create a new Device, but delete the klayout cell that is created
-# and replace it with the imported cell
-D = Device('import_gds')
-layout.delete_cell(D.kl_cell.cell_index())
-D.kl_cell = top_cell
+qp(D)
+#%%
 
 return D
 
