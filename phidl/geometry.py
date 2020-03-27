@@ -7,7 +7,7 @@ import klayout.db as kdb
 # from scipy.interpolate import interp1d
 
 from phidl.device_layout import Device, Port, CellArray, DeviceReference
-from phidl.device_layout import layout, _parse_layer, _get_kl_layer,_objects_to_kl_region
+from phidl.device_layout import layout, _parse_layer, _get_kl_layer,_objects_to_kl_region, _kl_shape_iterator
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -379,6 +379,11 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     D = Device('offset')
     layout.insert(D.kl_cell.cell_index(), kl_layer_idx, kl_region_result)
 
+    # Delete the regions so they don't hang around in memory
+    for r in [kl_region, kl_region_result]:
+        r.clear()
+        r._destroy()
+
     return D
 
 
@@ -429,6 +434,11 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     # Create the Device and add the polygons to it
     D = Device('boolean')
     layout.insert(D.kl_cell.cell_index(),kl_layer_idx, kl_region_result)
+
+    # Delete the regions so they don't hang around in memory
+    for r in [kl_region_A, kl_region_B, kl_region_result]:
+        r.clear()
+        r._destroy()
 
     return D
 
@@ -503,24 +513,30 @@ def xor_diff(A,B, precision = 1e-4):
 
 
 def union(D, by_layer = False, precision = 1e-4, join_first = True, max_points = 4000, layer = 0):
-    U = Device()
+    D_union = Device('union')
+
+    layer = _parse_layer(layer)
+    iterator_dict = _kl_shape_iterator(D.kl_cell, shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes,
+                           depth = None, python_iterator = False)
+    kl_region = kdb.Region()
 
     if by_layer == True:
-        all_polygons = D.get_polygons(by_spec = True)
-        for layer, polygons in all_polygons.items():
-            unioned_polygons = _union_polygons(polygons, precision = precision, max_points=max_points)
-            U.add_polygon(unioned_polygons, layer = layer)
-    else:
-        all_polygons = D.get_polygons(by_spec = False)
-        unioned_polygons = _union_polygons(all_polygons, precision = precision, max_points=max_points)
-        U.add_polygon(unioned_polygons, layer = layer)
-    return U
+        for layer_idx, kl_iterator in iterator_dict.items():
+            kl_region.insert(kl_iterator)
+            kl_region.merge()
+            D_union.kl_cell.shapes(layer_idx).insert(kl_region)
+            kl_region.clear()
+    elif by_layer == False:
+        for layer_idx, kl_iterator in iterator_dict.items():
+            kl_region.insert(kl_iterator)
+        kl_region.merge()
+        layer_idx, temp = _get_kl_layer(layer[0],layer[1])
+        D_union.kl_cell.shapes(layer_idx).insert(kl_region)
+        kl_region.clear()
+    kl_region.destroy()
 
-def _union_polygons(polygons, precision = 1e-4, max_points = 4000):
-    polygons = _merge_floating_point_errors(polygons, tol = precision/1000)
-    unioned = gdspy.boolean(polygons, [], operation = 'or',
-                                 precision=precision, max_points=max_points)
-    return unioned
+    return D_union
+
 
 
 def _merge_floating_point_errors(polygons, tol = 1e-10):
@@ -836,11 +852,10 @@ def extract(D, layers = [0,1]):
     D_extracted = Device('extract')
     if type(layers) not in (list, tuple):
         raise ValueError('[PHIDL] pg.extract() Argument `layers` needs to be passed a list or tuple')
-    poly_dict = D.get_polygons(by_spec = True)
-    parsed_layer_list = [_parse_layer(layer) for layer in layers]
-    for layer, polys in poly_dict.items():
-        if _parse_layer(layer) in parsed_layer_list:
-            D_extracted.add_polygon(polys, layer = layer)
+    for l in layers:
+        l = _parse_layer(l)
+        kl_layer_idx, temp =  _get_kl_layer(l[0], l[1])
+        D_extracted.kl_cell.shapes(kl_layer_idx).insert(D.kl_cell.begin_shapes_rec(kl_layer_idx))
     return D_extracted
 
 

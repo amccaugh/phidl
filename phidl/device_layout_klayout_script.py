@@ -126,62 +126,37 @@ from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer,
 layout.clear()
 phidl.reset()
 
-
-
-
+by_layer = False
+layer = 3
 
 D = Device()
-elements = [D << pg.snspd().rotate(30),pg.rectangle()]
-
-
-operation = 'A-B'
-distance = 0.1
-join_first = True
-precision = 1e-4
-num_divisions = [1,1]
-max_points=4000
-layer = 0
-
-if type(elements) not in (list,tuple): elements = [elements]
+D << pg.snspd(layer = 1)
+D << pg.snspd(layer = 2).rotate(45)
 
 layer = _parse_layer(layer)
-kl_region = _objects_to_kl_region(elements)
-kl_layer_idx, temp = _get_kl_layer(layer[0], layer[1])
+D_union = Device('union')
+iterator_dict = _kl_shape_iterator(D.kl_cell, shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes,
+                       depth = None, python_iterator = False)
 
-# Perform the offsetting operation (referred to as "sizing" in KLayout)
-kl_region.merged_semantics = join_first
-mode = 2 # https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
-d = round(distance / layout.dbu) # The distance in database units
-kl_region_result = kl_region.sized(d,d,mode)
+kl_region = kdb.Region()
+if by_layer == True:
+    for layer_idx, kl_iterator in iterator_dict.items():
+        kl_region.insert(kl_iterator)
+        kl_region.merge()
+        D_union.kl_cell.shapes(layer_idx).insert(kl_region)
+        kl_region.clear()
+elif by_layer == False:
+    for layer_idx, kl_iterator in iterator_dict.items():
+        kl_region.insert(kl_iterator)
+    kl_region.merge()
+    layer_idx, temp = _get_kl_layer(layer[0],layer[1])
+    D_union.kl_cell.shapes(layer_idx).insert(kl_region)
+    kl_region.clear()
+kl_region.destroy()
 
-# Create the Device and add the polygons to it
-D = Device('offset')
-layout.insert(D.kl_cell.cell_index(), kl_layer_idx, kl_region_result)
+return D_union
+qp(D_union)
 
-qp(D)
-
-#%% Convert Devices/DeviceReferences/Polygons to a big list of ShapeIterators
-
-import phidl
-import phidl.geometry as pg
-from phidl import Device, quickplot as qp
-import klayout.db as kdb
-from phidl.device_layout import DeviceReference
-from phidl.device_layout import layout
-from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer
-
-layout.clear()
-phidl.reset()
-
-D = Device()
-devicereference = D << pg.snspd()
-kl_region_result
-
-#%%
-
-
-
-cell_dict = {cell.name: cell for cell in layout.each_cell()}
 #%%
 
 layout.clear()

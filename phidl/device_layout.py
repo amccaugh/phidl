@@ -75,8 +75,9 @@ def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll,
     Scans through child cells recursively to a depth of `depth`
     shape_type is one of e.g. kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
     
-    # Python doesn't recognize the KLayout RecursiveShapeIterator as an Python iterator,
-    # so here we wrap it in a generator so we can use list() and use it in for-loops
+    # Python doesn't recognize the KLayout RecursiveShapeIterator as 
+    # a Python iterator, so here we wrap it in a generator so we can use
+    # list() and use it in for-loops (if python_iterator == True)
     def iterator_gen(kl_iterator):
         while not kl_iterator.at_end():
             yield kl_iterator.shape()
@@ -118,7 +119,7 @@ def _objects_to_kl_region(objects):
             kl_objects.append(o.kl_cell)
         elif isinstance(o, Polygon):
             kl_objects.append(o.kl_shape.polygon)
-        elif isinstance(o, (kdb.Shapes, kdb.Cell, kdb.Instance)):
+        elif isinstance(o, (kdb.Shapes, kdb.Cell, kdb.Instance, kdb.Region)):
             kl_objects.append(o)
         else:
             raise ValueError('[PHIDL] _objects_to_kl_region(): Received invalid object' +
@@ -126,7 +127,7 @@ def _objects_to_kl_region(objects):
         
     # Iterate through the KLayout objects add add each to the region
     for o in kl_objects:
-        if isinstance(o, (kdb.Shapes,kdb.Polygon)):
+        if isinstance(o, (kdb.Shapes,kdb.Polygon, kdb.Region)):
             kl_region.insert(o)
         elif isinstance(o, (kdb.Cell)):
             temp_cell.insert(kdb.DCellInstArray(o.cell_index(), kdb.DTrans()))
