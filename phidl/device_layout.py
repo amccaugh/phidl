@@ -940,28 +940,25 @@ class Device(_GeometryHelper):
 
     def flatten(self,  single_layer = None): # https://www.klayout.de/doc/code/class_Cell.html#method63
         self.kl_cell.flatten(False) # bool prune = False
-        # gds_layer, gds_datatype = _parse_layer(single_layer)
         del self.references[:]
-        # temp_polygons = list(self.polygons)
-        # self.references = []
-        # self.polygons = []
-        # [self.add_polygon(poly) for poly in temp_polygons]
         return self
 
 
-    # def absorb(self, reference):
-    #     """ Flattens and absorbs polygons from an underlying
-    #     DeviceReference into the Device, destroying the reference
-    #     in the process but keeping the polygon geometry """
-    #     if reference not in self.references:
-    #         raise ValueError("""[PHIDL] Device.absorb() failed -
-    #             the reference it was asked to absorb does not
-    #             exist in this Device. """)
-    #     ref_polygons = reference.get_polygons(by_spec = True)
-    #     for (layer, polys) in ref_polygons.items():
-    #         [self.add_polygon(points = p, layer = layer) for p in polys]
-    #     self.remove(reference)
-    #     return self
+    def absorb(self, reference):
+        """ Flattens and absorbs polygons from an underlying
+        DeviceReference into the Device, destroying the reference
+        in the process but keeping the polygon geometry """
+        if reference not in self.references:
+            raise ValueError("""[PHIDL] Device.absorb() failed -
+                the reference it was asked to absorb does not
+                exist in this Device. """)
+        temp_kl_cell = layout.create_cell('phidl_temp_cell')
+        temp_reference = temp_kl_cell.insert(reference.kl_instance)
+        temp_kl_cell.flatten(True)
+        self.kl_cell.copy_shapes(temp_kl_cell)
+        self.kl_cell.erase(reference.kl_instance)
+        layout.delete_cell(temp_kl_cell.cell_index())
+        return self
 
 
     def get_ports(self, depth = None):

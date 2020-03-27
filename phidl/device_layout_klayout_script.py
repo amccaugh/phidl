@@ -124,26 +124,24 @@ from phidl.device_layout import layout
 from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer
 
 layout.clear()
+phidl.reset()
 
 D = pg.snspd(layer = 7)
-D.add_ref(pg.ellipse(layer = 3))
+reference = D.add_ref(pg.snspd(layer = 3)).movex(20)
 p1 = D.add_polygon([[1,2],[4,5],[7,30]], layer = 4)
 p2 = D.add_polygon([[1,2],[4,5],[7,32]], layer = 8)
+
 self = D
 
-layers = (3,4,5)
-invert_selection = False
 
-# Convert layers to KLayout Layer indices
-layers = [_parse_layer(l) for l in layers]
-kl_layer_indices = [_get_kl_layer(l[0],l[1])[0] for l in layers]
+temp_kl_cell = layout.create_cell('phidl_temp_cell')
+temp_reference = temp_kl_cell.insert(reference.kl_instance)
+temp_kl_cell.flatten(True)
+self.kl_cell.copy_shapes(temp_kl_cell)
+self.kl_cell.erase(reference.kl_instance)
+layout.delete_cell(temp_kl_cell.cell_index())
 
-for kl_layer_idx in kl_layer_indices:
-    layout.clear_layer(kl_layer_idx)
-    layout.delete_layer(kl_layer_idx)
-
-
-qp(D)
+D.write_gds('test')
 
 
 #%%
