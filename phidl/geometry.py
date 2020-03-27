@@ -415,7 +415,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     if operation in {'a-b','not'}:
         boolean_function = kl_region_A.__sub__
     elif operation in {'b-a'}:
-        A, B = B, A
+        kl_region_A, kl_region_B = kl_region_B, kl_region_A
         boolean_function = kl_region_A.__sub__
     elif operation in {'a+b','or'}:
         boolean_function = kl_region_A.__add__
@@ -427,10 +427,6 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
         raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter" +
                          " not recognized, must be one of the following:  'not'," +
                          " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'")
-
-    #for layer_idx in layout.layer_indices():
-    #    kl_region_A.insert(A.kl_cell.begin_shapes_rec(layer_idx))
-    #    kl_region_B.insert(B.kl_cell.begin_shapes_rec(layer_idx))
 
     # Using the boolean function grabbed from the Region A object, call the function 
     # using Region B as the input (thus producing the resulting boolean-ed Region)
