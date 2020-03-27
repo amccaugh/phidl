@@ -3,10 +3,11 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
+import klayout.db as kdb
 # from scipy.interpolate import interp1d
 
 from phidl.device_layout import Device, Port, CellArray, DeviceReference
-from phidl.device_layout import _parse_layer, layout
+from phidl.device_layout import layout, _parse_layer, _get_kl_layer,_objects_to_kl_region
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -401,56 +402,44 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
-    D = Device('boolean')
 
-    A_polys = []
-    B_polys = []
-    if type(A) is not list: A = [A]
-    if type(B) is not list: B = [B]
-    for e in A:
-        if isinstance(e, Device): A_polys += e.get_polygons()
-        elif isinstance(e, DeviceReference): A_polys += e.get_polygons()
-    for e in B:
-        if isinstance(e, Device): B_polys += e.get_polygons()
-        elif isinstance(e, DeviceReference): B_polys += e.get_polygons()
+    if type(A) not in (list,tuple): A = [A]
+    if type(B) not in (list,tuple): B = [B]
 
-    gds_layer, gds_datatype = _parse_layer(layer)
+    layer = _parse_layer(layer)
+    kl_region_A = _objects_to_kl_region(A)
+    kl_region_B = _objects_to_kl_region(B)
+    kl_layer_idx, temp = _get_kl_layer(layer[0], layer[1])
 
     operation = operation.lower().replace(' ','')
-    if operation == 'a-b':
-        operation = 'not'
-    elif operation == 'b-a':
-        operation = 'not'
-        A_polys, B_polys = B_polys, A_polys
-    elif operation == 'a+b':
-        operation = 'or'
-    elif operation not in ['not', 'and', 'or', 'xor', 'a-b', 'b-a', 'a+b']:
-        raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter not recognized, must be one of the following:  'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'")
-
-    # Check for trivial solutions
-    if (len(A_polys) == 0) or (len(B_polys) == 0):
-        if (operation == 'not'):
-            if len(A_polys) == 0:   p = None
-            elif len(B_polys) == 0: p = A_polys
-        elif (operation == 'and'):
-            p = None
-        elif (operation == 'or') or (operation == 'xor'):
-            if (len(A_polys) == 0) and (len(B_polys) == 0): p = None
-            elif len(A_polys) == 0: p = B_polys
-            elif len(B_polys) == 0: p = A_polys
+    if operation in {'a-b','not'}:
+        boolean_function = kl_region_A.__sub__
+    elif operation in {'b-a'}:
+        A, B = B, A
+        boolean_function = kl_region_A.__sub__
+    elif operation in {'a+b','or'}:
+        boolean_function = kl_region_A.__add__
+    elif operation in {'a^b','xor'}:
+        boolean_function = kl_region_A.__xor__
+    elif operation in {'a&b','and'}:
+        boolean_function = kl_region_A.__and__
     else:
-        # If no trivial solutions, run boolean operation either in parallel or straight
-        if all(np.array(num_divisions) == np.array([1,1])):
-            p = gdspy.boolean(operand1 = A_polys, operand2 = B_polys, operation = operation, precision=precision,
-                         max_points=max_points, layer=gds_layer, datatype=gds_datatype)
-        else:
-            p = _boolean_polygons_parallel(polygons_A = A_polys, polygons_B = B_polys,
-                       num_divisions = num_divisions, operation = operation,
-                       precision = precision)
+        raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter" +
+                         " not recognized, must be one of the following:  'not'," +
+                         " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'")
 
-    if p is not None:
-        polygons = D.add_polygon(p, layer = layer)
-        [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
+    #for layer_idx in layout.layer_indices():
+    #    kl_region_A.insert(A.kl_cell.begin_shapes_rec(layer_idx))
+    #    kl_region_B.insert(B.kl_cell.begin_shapes_rec(layer_idx))
+
+    # Using the boolean function grabbed from the Region A object, call the function 
+    # using Region B as the input (thus producing the resulting boolean-ed Region)
+    kl_region_result = boolean_function(kl_region_B)
+
+    # Create the Device and add the polygons to it
+    D = Device('boolean')
+    layout.insert(D.kl_cell.cell_index(),kl_layer_idx, kl_region_result)
+
     return D
 
 

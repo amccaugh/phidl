@@ -9,6 +9,10 @@
     # Prefer saving as Polygon over Box 
 # - If you delete a layer, the leftover Polygon objects will have an invalid 
 #   kl_shape reference, so we should check for that with a try/except loop
+# - Check if Region.merge() needs to happen first in pg.boolean()
+# - Add num_divisions to pg.boolean()
+# - Make function which converts List-of-phidl-objects to a KLayout cell for
+#   for temporary processing (e.g. boolean) then an easy-to-delete function
 
     
 #==============================================================================
@@ -64,13 +68,14 @@ def _gather_kl_shapes(kl_cell, shape_type = kdb.Shapes.SAll):
         kl_shapes[layer_idx] = kl_cell.each_shape(layer_idx,shape_type)
     return kl_shapes
 
-def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll, depth = None): # Listed on https://www.klayout.de/doc-qt5/code/class_Shapes.html
+def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll,
+                       depth = None, python_iterator = True): 
     """ Returns a dictionary with keys = layer_idx and 
     values = an iterator which returns shapes of that type on that layer.
     Scans through child cells recursively to a depth of `depth`
     shape_type is one of e.g. kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
     
-    # Python doesn't recognize the KLayout RecursiveShapeIterator as an iterator,
+    # Python doesn't recognize the KLayout RecursiveShapeIterator as an Python iterator,
     # so here we wrap it in a generator so we can use list() and use it in for-loops
     def iterator_gen(kl_iterator):
         while not kl_iterator.at_end():
@@ -83,7 +88,11 @@ def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll, depth = None): # L
         kl_iterator.shape_flags = shape_type
         if depth is not None:
             kl_iterator.max_depth = depth
-        iterator_dict[layer_idx] = iterator_gen(kl_iterator)
+        if python_iterator == True:
+            iterator_dict[layer_idx] = iterator_gen(kl_iterator)
+        else:
+            iterator_dict[layer_idx] = kl_iterator
+
     
     return iterator_dict
 
@@ -93,6 +102,42 @@ def _get_kl_layer(gds_layer, gds_datatype):
     layer_idx = layout.layer(gds_layer,gds_datatype)
     layer_infos = layout.layer_infos()
     return layer_idx, layer_infos[layer_idx]
+
+def _objects_to_kl_region(objects):
+    """ Takes a list of KLayout or PHIDL objects (Cell, CellInst, Shape, etc)
+     and inserts all of them into a single KLayout Region for ease of manipulation """
+    kl_region = kdb.Region()
+    temp_cell = layout.create_cell('phidl_temp_cell')
+    kl_objects = []
+    
+    # Convert any PHIDL objects to KLayout objects
+    for o in objects:
+        if isinstance(o, DeviceReference):
+            kl_objects.append(o.kl_instance)
+        elif isinstance(o, Device):
+            kl_objects.append(o.kl_cell)
+        elif isinstance(o, Polygon):
+            kl_objects.append(o.kl_shape.polygon)
+        elif isinstance(o, (kdb.Shapes, kdb.Cell, kdb.Instance)):
+            kl_objects.append(o)
+        else:
+            raise ValueError('[PHIDL] _objects_to_kl_region(): Received invalid object' +
+                             '"%s" of (type "%s")'  % (str(o),type(o)))
+        
+    # Iterate through the KLayout objects add add each to the region
+    for o in kl_objects:
+        if isinstance(o, (kdb.Shapes,kdb.Polygon)):
+            kl_region.insert(o)
+        elif isinstance(o, (kdb.Cell)):
+            temp_cell.insert(kdb.DCellInstArray(o.cell_index(), kdb.DTrans()))
+        elif isinstance(o, kdb.Instance):
+            temp_cell.insert(o.dup())
+    for layer_idx in layout.layer_indices():
+        kl_region.insert(temp_cell.begin_shapes_rec(layer_idx))
+    
+    layout.delete_cell(temp_cell.cell_index())
+        
+    return kl_region
 
 #==============================================================================
 # Useful transformation functions
@@ -422,8 +467,8 @@ class Polygon(_GeometryHelper):
         self.kl_cell = device.kl_cell
         points = np.array(points, dtype  = np.float64)
         polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
-        self.kl_layer = layout.layer(gds_layer, gds_datatype)
-        self.kl_shape = device.kl_cell.shapes(self.kl_layer).insert(polygon)
+        self.kl_layer_idx = layout.layer(gds_layer, gds_datatype)
+        self.kl_shape = device.kl_cell.shapes(self.kl_layer_idx).insert(polygon)
     
     def _to_array(self):
         [ (pt.x,pt.y) for pt in self.kl_shape.each_point() ]
@@ -1088,7 +1133,7 @@ class DeviceReference(_GeometryHelper):
         self.kl_instance.transform(transformation)
 
     def get_polygons(self, by_spec = True, depth = None):
-        temp_device = Device('zxcbuypasdfu317468123asdfs3')
+        temp_device = Device('phidl_temp_cell')
         # self.temp_device = temp_device
         transformation = self.kl_instance.dcplx_trans
         kl_instance = temp_device.kl_cell.insert(kdb.DCellInstArray(self.parent.kl_cell.cell_index(), transformation))

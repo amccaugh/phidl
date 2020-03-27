@@ -693,61 +693,61 @@ D.write_gds('D_cluttered.gds')
 D.absorb(ref_cluttered)
 D.write_gds('D_de_cluttered.gds')
 
-
-#==============================================================================
-# Copying a Device
-#==============================================================================
-# Since copying a Device involves creating a new geometry, you can copy a
-# Device D using the pg.copy(D) or pg.deepcopy(D) function.  pg.copy(D)
-# maintains the underlying connections to other Device, so that newly-created
-# Device uses the same references as the original device.  Conversely,
-# pg.deepcopy() creates completely new copies of every underlying polygon and
-# reference, so that the newly-created Device shares no dependencies/references
-# with the original Device.  These functions are especially useful if
-# you want to flatten a geometry without damaging the structure of the
-# original Device.
-
-D = Device()
-E1 = pg.ellipse(layer = 1)
-E2 = pg.rectangle(layer = 2)
-D.add_ref(E1)
-D.add_ref(E2).movex(15)
-
-D_copied = pg.copy(D)
-qp(D_copied)
-
-# Observe that if we add geometry to D now, D_copied is unaffected
-D.add_ref(pg.circle())
-D.rotate(45)
-qp(D_copied)
-
-# However, note that if we now modify the underlying Devices (which
-# were referenced in D, and whose references were copied to D_copied), both
-# the original D and D_copied are affected:
-E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
-qp(D_copied)
-
-# If instead we use pg.deepcopy(), all of the underlying references are copied
-# and used in the new D_deepcopied device.  So if we change one of the old
-# references, the new D_deepcopied doesn't get affected
-D = Device()
-E1 = pg.ellipse(layer = 1)
-E2 = pg.rectangle(layer = 2)
-D.add_ref(E1)
-D.add_ref(E2).movex(15)
-
-D_deepcopied = pg.deepcopy(D)
-qp(D_deepcopied)
-
-# As before, if we add geometry to D now, D_deepcopied is unaffected
-D.add_ref(pg.circle())
-D.rotate(45)
-qp(D_deepcopied)
-
-# However, now if we mess with the underlying Devices of D, D_deepcopied
-# is not affected like it was before.
-E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
-qp(D_deepcopied)
+#
+##==============================================================================
+## Copying a Device
+##==============================================================================
+## Since copying a Device involves creating a new geometry, you can copy a
+## Device D using the pg.copy(D) or pg.deepcopy(D) function.  pg.copy(D)
+## maintains the underlying connections to other Device, so that newly-created
+## Device uses the same references as the original device.  Conversely,
+## pg.deepcopy() creates completely new copies of every underlying polygon and
+## reference, so that the newly-created Device shares no dependencies/references
+## with the original Device.  These functions are especially useful if
+## you want to flatten a geometry without damaging the structure of the
+## original Device.
+#
+#D = Device()
+#E1 = pg.ellipse(layer = 1)
+#E2 = pg.rectangle(layer = 2)
+#D.add_ref(E1)
+#D.add_ref(E2).movex(15)
+#
+#D_copied = pg.copy(D)
+#qp(D_copied)
+#
+## Observe that if we add geometry to D now, D_copied is unaffected
+#D.add_ref(pg.circle())
+#D.rotate(45)
+#qp(D_copied)
+#
+## However, note that if we now modify the underlying Devices (which
+## were referenced in D, and whose references were copied to D_copied), both
+## the original D and D_copied are affected:
+#E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
+#qp(D_copied)
+#
+## If instead we use pg.deepcopy(), all of the underlying references are copied
+## and used in the new D_deepcopied device.  So if we change one of the old
+## references, the new D_deepcopied doesn't get affected
+#D = Device()
+#E1 = pg.ellipse(layer = 1)
+#E2 = pg.rectangle(layer = 2)
+#D.add_ref(E1)
+#D.add_ref(E2).movex(15)
+#
+#D_deepcopied = pg.deepcopy(D)
+#qp(D_deepcopied)
+#
+## As before, if we add geometry to D now, D_deepcopied is unaffected
+#D.add_ref(pg.circle())
+#D.rotate(45)
+#qp(D_deepcopied)
+#
+## However, now if we mess with the underlying Devices of D, D_deepcopied
+## is not affected like it was before.
+#E1.add_polygon([[10,20,35], [1,60,40]], layer = 3)
+#qp(D_deepcopied)
 
 
 #==============================================================================
@@ -787,7 +787,7 @@ E2 = pg.ellipse().movex(15)
 E3 = pg.ellipse().movex(30)
 qp([E1, E2, E3])
 
-D2 = pg.boolean(A = [E1, E3], B = E2, operation = 'A-B')
+D2 = pg.boolean(A = E1, B = E2, operation = 'A-B')
 qp(D2)
 
 

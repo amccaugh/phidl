@@ -119,6 +119,109 @@ import phidl
 import phidl.geometry as pg
 from phidl import Device, quickplot as qp
 import klayout.db as kdb
+from phidl.device_layout import DeviceReference, Polygon
+from phidl.device_layout import layout
+from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer
+
+layout.clear()
+phidl.reset()
+
+
+def _objects_to_kl_region(objects):
+    """ Takes a list of KLayout or PHIDL objects (Cell, CellInst, Shape, etc)
+     and inserts all of them into a single KLayout Region for ease of manipulation """
+    kl_region = kdb.Region()
+    temp_cell = layout.create_cell('phidl_temp_cell')
+    kl_objects = []
+    
+    # Convert any PHIDL objects to KLayout objects
+    for o in objects:
+        if isinstance(o, DeviceReference):
+            kl_objects.append(o.kl_instance)
+        elif isinstance(o, Device):
+            kl_objects.append(o.kl_cell)
+        elif isinstance(o, Polygon):
+            kl_objects.append(o.kl_shape.polygon)
+        elif isinstance(o, (kdb.Shapes, kdb.Cell, kdb.Instance)):
+            kl_objects.append(o)
+        else:
+            raise ValueError('[PHIDL] _objects_to_kl_region(): Received invalid object' +
+                             '"%s" of (type "%s")'  % (str(o),type(o)))
+        
+    # Iterate through the KLayout objects add add each to the region
+    for o in kl_objects:
+        if isinstance(o, (kdb.Shapes,kdb.Polygon)):
+            kl_region.insert(o)
+        elif isinstance(o, (kdb.Cell)):
+            temp_cell.insert(kdb.DCellInstArray(o.cell_index(), kdb.DTrans()))
+        elif isinstance(o, kdb.Instance):
+            temp_cell.insert(o.dup())
+    for layer_idx in layout.layer_indices():
+        kl_region.insert(temp_cell.begin_shapes_rec(layer_idx))
+    
+    layout.delete_cell(temp_cell.cell_index())
+        
+    return kl_region
+
+
+
+
+
+D = Device()
+A = [D << pg.snspd(),pg.rectangle()]
+B = pg.ellipse().movey(-5)
+
+operation = 'A-B'
+precision = 1e-4
+num_divisions = [1,1]
+max_points=4000
+layer = 0
+
+if type(A) not in (list,tuple): A = [A]
+if type(B) not in (list,tuple): B = [B]
+
+layer = _parse_layer(layer)
+kl_region_A = _objects_to_kl_region(A)
+kl_region_B = _objects_to_kl_region(B)
+kl_layer_idx, temp = _get_kl_layer(layer[0], layer[1])
+
+operation = operation.lower().replace(' ','')
+if operation in {'a-b','not'}:
+    boolean_function = kl_region_A.__sub__
+elif operation in {'b-a'}:
+    A, B = B, A
+    boolean_function = kl_region_A.__sub__
+elif operation in {'a+b','or'}:
+    boolean_function = kl_region_A.__add__
+elif operation in {'a^b','xor'}:
+    boolean_function = kl_region_A.__xor__
+elif operation in {'a&b','and'}:
+    boolean_function = kl_region_A.__and__
+else:
+    raise ValueError("[PHIDL] phidl.geometry.boolean() `operation` parameter" +
+                     " not recognized, must be one of the following:  'not'," +
+                     " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'")
+
+#for layer_idx in layout.layer_indices():
+#    kl_region_A.insert(A.kl_cell.begin_shapes_rec(layer_idx))
+#    kl_region_B.insert(B.kl_cell.begin_shapes_rec(layer_idx))
+
+# Using the boolean function grabbed from the Region A object, call the function 
+# using Region B as the input (thus producing the resulting boolean-ed Region)
+kl_region_result = boolean_function(kl_region_B)
+
+# Create the Device and add the polygons to it
+D = Device('boolean')
+layout.insert(D.kl_cell.cell_index(),kl_layer_idx, kl_region_result)
+
+qp(D)
+
+#%% Convert Devices/DeviceReferences/Polygons to a big list of ShapeIterators
+
+import phidl
+import phidl.geometry as pg
+from phidl import Device, quickplot as qp
+import klayout.db as kdb
 from phidl.device_layout import DeviceReference
 from phidl.device_layout import layout
 from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer
@@ -126,23 +229,9 @@ from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer
 layout.clear()
 phidl.reset()
 
-D = pg.snspd(layer = 7)
-reference = D.add_ref(pg.snspd(layer = 3)).movex(20)
-p1 = D.add_polygon([[1,2],[4,5],[7,30]], layer = 4)
-p2 = D.add_polygon([[1,2],[4,5],[7,32]], layer = 8)
-
-self = D
-
-
-temp_kl_cell = layout.create_cell('phidl_temp_cell')
-temp_reference = temp_kl_cell.insert(reference.kl_instance)
-temp_kl_cell.flatten(True)
-self.kl_cell.copy_shapes(temp_kl_cell)
-self.kl_cell.erase(reference.kl_instance)
-layout.delete_cell(temp_kl_cell.cell_index())
-
-D.write_gds('test')
-
+D = Device()
+devicereference = D << pg.snspd()
+kl_region_result
 
 #%%
 
