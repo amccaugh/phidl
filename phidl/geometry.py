@@ -362,33 +362,23 @@ def C(width = 1, size = (10,20) , layer = 0):
 def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
         num_divisions = [1,1],  join='miter', tolerance=2,
         max_points = 4000, layer = 0):
-    if type(elements) is not list: elements = [elements]
-    polygons_to_offset = []
-    for e in elements:
-        if isinstance(e, (Device, DeviceReference)): polygons_to_offset += e.get_polygons(by_spec = False)
-        elif isinstance(e, (Polygon, gdspy.Polygon)): polygons_to_offset.append(e)
-    if len(polygons_to_offset) == 0:
-        return Device('offset')
-    polygons_to_offset = _merge_floating_point_errors(polygons_to_offset, tol = precision/1000)
-    gds_layer, gds_datatype = _parse_layer(layer)
-    if all(np.array(num_divisions) == np.array([1,1])):
-        p = gdspy.offset(polygons_to_offset, distance = distance, join=join, tolerance=tolerance,
-                         precision=precision, join_first=join_first,
-                         max_points=max_points, layer=gds_layer, datatype = gds_datatype)
-    else:
-        p = _offset_polygons_parallel(
-            polygons_to_offset,
-            distance = distance,
-            num_divisions = num_divisions,
-            join_first = join_first,
-            precision = precision,
-            join = join,
-            tolerance = tolerance,
-            )
+    if type(elements) not in (list,tuple): elements = [elements]
 
+    layer = _parse_layer(layer)
+    kl_region = _objects_to_kl_region(elements)
+    kl_region.merged_semantics = join_first
+    kl_layer_idx, temp = _get_kl_layer(layer[0], layer[1])
+
+    mode = 2 # https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    d = round(distance / layout.dbu) # The distance in database units
+
+    # Perform the offsetting operation (referred to as "sizing" in KLayout)
+    kl_region_result = kl_region.sized(d,d,mode)
+
+    # Create the Device and add the resulting offset region to it
     D = Device('offset')
-    polygons = D.add_polygon(p, layer=layer)
-    [polygon.fracture(max_points = max_points, precision = precision) for polygon in polygons]
+    layout.insert(D.kl_cell.cell_index(), kl_layer_idx, kl_region_result)
+
     return D
 
 
@@ -407,8 +397,12 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
     if type(B) not in (list,tuple): B = [B]
 
     layer = _parse_layer(layer)
-    kl_region_A = _objects_to_kl_region(A)
-    kl_region_B = _objects_to_kl_region(B)
+    try:
+        kl_region_A = _objects_to_kl_region(A)
+        kl_region_B = _objects_to_kl_region(B)
+    except: 
+        raise ValueError("[PHIDL] phidl.geometry.boolean() received an item" +
+                         " in its `A` or `B` argument that was not recognized")
     kl_layer_idx, temp = _get_kl_layer(layer[0], layer[1])
 
     operation = operation.lower().replace(' ','')
