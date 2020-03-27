@@ -64,6 +64,7 @@ def waveguide(width = 10, height = 1):
 # make a Device, we usually assign it a variable name with a capital letter
 D = Device('MultiWaveguide')
 
+
 # Now say we want to add a few waveguides to to our "Device" D.
 # First we create the waveguides.  As you can see from the waveguide() function
 # definition, the waveguide() function creates another Device ("WG").
@@ -543,9 +544,12 @@ qp(D)
 # wanted to move shapes on layer 5 to layer 99, and layer 6 to layer 77
 # but leave the other layers alone.  We can map layers 5->99, 6->77, and leave
 # any other layers alone by passing a dict to the `layermap` argument
+D.write_gds('test1.gds')
 D.remap_layers(layermap = {5: 99, 6:77})
+D.write_gds('test2.gds')
 qp(D)
 
+D = pg.import_gds(filename = 'MyLayerSetPreview.gds')
 
 
 #==============================================================================

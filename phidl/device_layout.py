@@ -4,7 +4,11 @@
 #==============================================================================
 # - Change Device.refernces to Device._references -- references is only there
 # to internally keep track of ports, and not be manipulated by the user
-# - Add https://www.klayout.de/doc/code/class_SaveLayoutOptions.html to write_gds() for max_points etc
+# - Setup write_gds() with https://www.klayout.de/doc/code/class_SaveLayoutOptions.html 
+    # Allow max_points
+    # Prefer saving as Polygon over Box 
+# - If you delete a layer, the leftover Polygon objects will have an invalid 
+#   kl_shape reference, so we should check for that with a try/except loop
 
     
 #==============================================================================
@@ -50,10 +54,11 @@ __version__ = '1.2.2'
 def _kl_polygon_to_array(kl_polygon):
     return [ (pt.x,pt.y) for pt in kl_polygon.each_point() ]
     
-def _gather_kl_shapes(kl_cell, shape_type = kdb.Shapes.SAll): # Listed on https://www.klayout.de/doc-qt5/code/class_Shapes.html
+def _gather_kl_shapes(kl_cell, shape_type = kdb.Shapes.SAll):
     """ Returns a dictionary with keys = layer_idx and 
     values = an iterator which returns shapes of that type on that layer.
-    shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
+    shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts
+    ( Listed on https://www.klayout.de/doc/code/class_Shapes.html )"""
     kl_shapes = {}
     for layer_idx in layout.layer_indices():
         kl_shapes[layer_idx] = kl_cell.each_shape(layer_idx,shape_type)
@@ -439,6 +444,15 @@ class Polygon(_GeometryHelper):
         bbox = ((b.left, b.bottom),(b.right, b.top))
         return bbox
 
+    # @property
+    # def kl_shape(self):
+    #     # if self._kl_shape.is_valid == False:
+
+    #     bbox = ((b.left, b.bottom),(b.right, b.top))
+    #     return bbox
+
+
+
     # # We cannot store kl_shape because the pointer may change over time
     # # So instead we search for it each time we want the polygon
     # @property
@@ -660,7 +674,7 @@ class Device(_GeometryHelper):
         if by_spec: polygons = {}
         else:       polygons = []
         # Loop through each layer in the layout collecting polygons
-        for layer_idx in layout.layer_indices():
+        for n, layer_idx in enumerate(layout.layer_indices()):
             layer_polygons = []
             all_polygons_iterator = self.kl_cell.begin_shapes_rec(layer_idx)
             if depth is not None: all_polygons_iterator.max_depth = int(depth)
@@ -677,7 +691,7 @@ class Device(_GeometryHelper):
             if not by_spec:
                 polygons += layer_polygons
             elif by_spec and (len(layer_polygons) > 0):
-                l = layer_infos[layer_idx]
+                l = layer_infos[n]
                 polygons[(l.layer, l.datatype)] = layer_polygons
         return polygons
         
@@ -859,54 +873,36 @@ class Device(_GeometryHelper):
         return filename
 
 
-    # def remap_layers(self, layermap = {}, include_labels = True):
-    #     layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
+    def remap_layers(self, layermap = {}, include_labels = True):
 
-    #     all_D = list(self.get_dependencies(True))
-    #     all_D += [self]
-    #     for D in all_D:
-    #         for p in D.polygons:
-    #             for n, layer in enumerate(p.layers):
-    #                 original_layer = (p.layers[n], p.datatypes[n])
-    #                 original_layer = _parse_layer(original_layer)
-    #                 if original_layer in layermap.keys():
-    #                     new_layer = layermap[original_layer]
-    #                     p.layers[n] = new_layer[0]
-    #                     p.datatypes[n] = new_layer[1]
-    #         if include_labels == True:
-    #             for l in D.labels:
-    #                 original_layer = (l.layer, l.texttype)
-    #                 original_layer = _parse_layer(original_layer)
-    #                 if original_layer in layermap.keys():
-    #                     new_layer = layermap[original_layer]
-    #                     l.layer = new_layer[0]
-    #                     l.texttype = new_layer[1]
-    #     return self
+        if include_labels == True:
+            shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes | kdb.Shapes.STexts
+        else:
+            shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes
 
-    # def remove_layers(self, layers = (), include_labels = True, invert_selection = False):
-    #     layers = [_parse_layer(l) for l in layers]
-    #     all_D = list(self.get_dependencies(True))
-    #     all_D += [self]
-    #     for D in all_D:
-    #         for polygonset in D.polygons:
-    #             polygon_layers = zip(polygonset.layers, polygonset.datatypes)
-    #             polygons_to_keep = [(pl in layers) for pl in polygon_layers]
-    #             if invert_selection == False: polygons_to_keep = [(not p) for p in polygons_to_keep]
-    #             polygonset.polygons =  [p for p,keep in zip(polygonset.polygons,  polygons_to_keep) if keep]
-    #             polygonset.layers =    [p for p,keep in zip(polygonset.layers,    polygons_to_keep) if keep]
-    #             polygonset.datatypes = [p for p,keep in zip(polygonset.datatypes, polygons_to_keep) if keep]
+        iterator_dict = _kl_shape_iterator(self.kl_cell, shape_type = shape_type, depth = None)
+        for old_layer, new_layer in layermap.items():
+            old_layer = _parse_layer(old_layer)
+            new_layer = _parse_layer(new_layer)
+            kl_layer_idx, temp =  _get_kl_layer(old_layer[0], old_layer[1])
+            new_kl_layer_idx, temp =  _get_kl_layer(new_layer[0], new_layer[1])
+            
+            if kl_layer_idx in iterator_dict:
+                for kl_shape in iterator_dict[kl_layer_idx]:
+                    kl_shape.layer = new_kl_layer_idx
+        return self
 
-    #         if include_labels == True:
-    #             new_labels = []
-    #             for l in D.labels:
-    #                 original_layer = (l.layer, l.texttype)
-    #                 original_layer = _parse_layer(original_layer)
-    #                 if invert_selection: keep_layer = (original_layer in layers)
-    #                 else:                keep_layer = (original_layer not in layers)
-    #                 if keep_layer:
-    #                     new_labels += [l]
-    #             D.labels = new_labels
-    #     return self
+    def remove_layers(self, layers = (), invert_selection = False):
+
+        # Convert layers to KLayout Layer indices
+        layers = [_parse_layer(l) for l in layers]
+        kl_layer_indices = [_get_kl_layer(l[0],l[1])[0] for l in layers]
+
+        for kl_layer_idx in kl_layer_indices:
+            layout.clear_layer(kl_layer_idx)
+            layout.delete_layer(kl_layer_idx)
+
+        return self
 
 
     # def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):

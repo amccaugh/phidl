@@ -121,47 +121,45 @@ from phidl import Device, quickplot as qp
 import klayout.db as kdb
 from phidl.device_layout import DeviceReference
 from phidl.device_layout import layout
-from phidl.device_layout import _parse_layer
-
-
-layer = (3,5)
-new_layer = (8,8)
-include_labels = True
-
+from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer
 
 layout.clear()
 
-D = pg.snspd(layer = (3,5))
+D = pg.snspd(layer = 7)
+D.add_ref(pg.ellipse(layer = 3))
+p1 = D.add_polygon([[1,2],[4,5],[7,30]], layer = 4)
+p2 = D.add_polygon([[1,2],[4,5],[7,32]], layer = 8)
+self = D
+
+layers = (3,4,5)
+invert_selection = False
+
+# Convert layers to KLayout Layer indices
+layers = [_parse_layer(l) for l in layers]
+kl_layer_indices = [_get_kl_layer(l[0],l[1])[0] for l in layers]
+
+for kl_layer_idx in kl_layer_indices:
+    layout.clear_layer(kl_layer_idx)
+    layout.delete_layer(kl_layer_idx)
+
+
+qp(D)
+
+
+#%%
+
+
+
+cell_dict = {cell.name: cell for cell in layout.each_cell()}
+#%%
+
+layout.clear()
+
 #D2 = pg.ellipse(layer = 77)
 
-def _kl_shape_iterator(kl_cell, shape_type = kdb.Shapes.SAll, depth = None): # Listed on https://www.klayout.de/doc-qt5/code/class_Shapes.html
-    """ Returns a dictionary with keys = layer_idx and 
-    values = an iterator which returns shapes of that type on that layer.
-    Scans through child cells recursively to a depth of `depth`
-    shape_type will likely be kdb.Shapes.SAll/SBoxes/SPolygons/STexts """
-    
-    # Python doesn't recognize the KLayout RecursiveShapeIterator as an iterator,
-    # so here we wrap it in a generator so we can use list() and use it in for-loops
-    def iterator_gen(kl_iterator):
-        while not kl_iterator.at_end():
-            yield kl_iterator.shape()
-            kl_iterator.next()
-    
-    iterator_dict = {}
-    for layer_idx in layout.layer_indices():
-        kl_iterator = kl_cell.begin_shapes_rec(layer_idx)
-        kl_iterator.shape_flags = shape_type
-        if depth is not None:
-            kl_iterator.max_depth = depth
-        iterator_dict[layer_idx] = iterator_gen(kl_iterator)
-    
-    return iterator_dict
+    def remap_layers(self, layermap = {}, include_labels = True):
+        layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
 
-
-def _get_kl_layer(gds_layer, gds_datatype):
-    layer_idx = layout.layer(gds_layer,gds_datatype)
-    layer_infos = layout.layer_infos()
-    return layer_idx, layer_infos[layer_idx]
 
 gds_layer, gds_datatype = _parse_layer(layer)
 kl_layer_idx, kl_layer =  _get_kl_layer(gds_layer, gds_datatype)
