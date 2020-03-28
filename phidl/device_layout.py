@@ -885,9 +885,9 @@ class Device(_GeometryHelper):
 
         return self
 
-    # def label(self, *args, **kwargs):
-    #     warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
-    #     return self.add_label(*args, **kwargs)
+    def label(self, *args, **kwargs):
+        warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
+        return self.add_label(*args, **kwargs)
 
 
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
