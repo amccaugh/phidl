@@ -860,8 +860,8 @@ X2 = pg.xor_diff(A = E1, B = E3)
 qp(X2) # In this case X2 is empty -- therefore E1 and E3 are identical!
 
 # We can double-check this by computing the area of each device
-print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area())
-print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area())
+print('E1 != E2 because X1 is not blank: it has total polygon area %s' % X1.area)
+print('E1 == E3 because X2 is blank: it has total polygon area %s' % X2.area)
 
 
 #==============================================================================

@@ -126,36 +126,19 @@ from phidl.device_layout import _parse_layer, _kl_shape_iterator, _get_kl_layer,
 layout.clear()
 phidl.reset()
 
-by_layer = False
-layer = 3
-
 D = Device()
-D << pg.snspd(layer = 1)
-D << pg.snspd(layer = 2).rotate(45)
+ref1 = D << pg.snspd(layer = 1).rotate(3)
+item = D << pg.snspd(layer = 2).rotate(45)
+polygon = D.add_polygon([[0,0],[1,2],[5,5]])
+item2 = D.add_label('test')
+self= D
 
-layer = _parse_layer(layer)
-D_union = Device('union')
-iterator_dict = _kl_shape_iterator(D.kl_cell, shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes,
-                       depth = None, python_iterator = False)
+#kl_shapes = item.kl_cell.shapes(item.kl_layer_idx)
+#kl_shapes.find(item.kl_shape)
+self.kl_cell.erase(item.kl_instance)
+item.kl_shape.is_valid()
 
-kl_region = kdb.Region()
-if by_layer == True:
-    for layer_idx, kl_iterator in iterator_dict.items():
-        kl_region.insert(kl_iterator)
-        kl_region.merge()
-        D_union.kl_cell.shapes(layer_idx).insert(kl_region)
-        kl_region.clear()
-elif by_layer == False:
-    for layer_idx, kl_iterator in iterator_dict.items():
-        kl_region.insert(kl_iterator)
-    kl_region.merge()
-    layer_idx, temp = _get_kl_layer(layer[0],layer[1])
-    D_union.kl_cell.shapes(layer_idx).insert(kl_region)
-    kl_region.clear()
-kl_region.destroy()
-
-return D_union
-qp(D_union)
+qp(D)
 
 #%%
 

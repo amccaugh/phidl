@@ -490,25 +490,22 @@ def xor_diff(A,B, precision = 1e-4):
     difference between A and B, and returns polygons representing
     the differences between A and B.
     """
-    D = Device()
-    A_polys = A.get_polygons(by_spec = True)
-    B_polys = B.get_polygons(by_spec = True)
-    A_layers = A_polys.keys()
-    B_layers = B_polys.keys()
-    all_layers = set()
-    all_layers.update(A_layers )
-    all_layers.update(B_layers)
-    for layer in all_layers:
-        if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.boolean(operand1 = A_polys[layer], operand2 = B_polys[layer],
-                                   operation = 'xor', precision=precision,
-                                   max_points=4000, layer=layer[0], datatype=layer[1])
-        elif (layer in A_layers):
-            p = A_polys[layer]
-        elif (layer in B_layers):
-            p = B_polys[layer]
-        if p is not None:
-            D.add_polygon(p, layer = layer)
+    D = Device('xor_diff')
+    iterator_dict_A = _kl_shape_iterator(A.kl_cell, shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes,
+                           depth = None, python_iterator = False)
+    iterator_dict_B = _kl_shape_iterator(B.kl_cell, shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes,
+                           depth = None, python_iterator = False)
+
+    kl_region_A = kdb.Region()
+    kl_region_B = kdb.Region()
+    for layer_idx in layout.layer_indices():
+        kl_region_A.insert(iterator_dict_A[layer_idx])
+        kl_region_B.insert(iterator_dict_B[layer_idx])
+        kl_region_result = kl_region_A ^ kl_region_B
+        D.kl_cell.shapes(layer_idx).insert(kl_region_result)
+        [r.clear() for r in (kl_region_A, kl_region_B, kl_region_result)]
+    [r.destroy() for r in (kl_region_A, kl_region_B, kl_region_result)]
+    
     return D
 
 

@@ -13,6 +13,7 @@
 # - Add num_divisions to pg.boolean()
 # - Make function which converts List-of-phidl-objects to a KLayout cell for
 #   for temporary processing (e.g. boolean) then an easy-to-delete function
+# - Fix arguments for pg.union(), boolean, offset, etc
 
     
 #==============================================================================
@@ -487,14 +488,14 @@ class Polygon(_GeometryHelper):
     @property
     def bbox(self):
         b = self.kl_shape.dbbox()
-        bbox = ((b.left, b.bottom),(b.right, b.top))
+        bbox = np.array(((b.left, b.bottom),(b.right, b.top)))
         return bbox
 
     # @property
     # def kl_shape(self):
     #     # if self._kl_shape.is_valid == False:
 
-    #     bbox = ((b.left, b.bottom),(b.right, b.top))
+    #     bbox = np.array(((b.left, b.bottom),(b.right, b.top)))
     #     return bbox
 
 
@@ -648,12 +649,20 @@ class Device(_GeometryHelper):
     # def polygons(self):
     #     return list(self.kl_cell.each_shape(new_layer))
 
+    @property
+    def area(self):
+        kl_region = _objects_to_kl_region([self.kl_cell])
+        area = float(kl_region.area()) * (layout.dbu**2)
+        kl_region.clear()
+        kl_region._destroy()
+        return area
+
 
 
     @property
     def bbox(self):
         b = self.kl_cell.dbbox()
-        bbox = ((b.left, b.bottom),(b.right, b.top))
+        bbox = np.array(((b.left, b.bottom),(b.right, b.top)))
         return bbox
 
     def add_ref(self, device, alias = None):
@@ -1035,30 +1044,30 @@ class Device(_GeometryHelper):
         return port_list
 
 
-    # def remove(self, items):
-    #     if not _is_iterable(items):  items = [items]
-    #     for item in items:
-    #         if isinstance(item, Port):
-    #             try:
-    #                 self.ports = { k:v for k, v in self.ports.items() if v != item}
-    #             except:
-    #                 raise ValueError("""[PHIDL] Device.remove() cannot find the Port
-    #                                  it was asked to remove in the Device: "%s".""" % (item))
-    #         else:
-    #             try:
-    #                 if isinstance(item, gdspy.PolygonSet):
-    #                     self.polygons.remove(item)
-    #                 if isinstance(item, gdspy.CellReference):
-    #                     self.references.remove(item)
-    #                 if isinstance(item, gdspy.Label):
-    #                     self.labels.remove(item)
-    #                 self.aliases = { k:v for k, v in self.aliases.items() if v != item}
-    #             except:
-    #                 raise ValueError("""[PHIDL] Device.remove() cannot find the item
-    #                                  it was asked to remove in the Device: "%s".""" % (item))
+    def remove(self, items):
+        if not _is_iterable(items):  items = [items]
+        for item in items:
+            if isinstance(item, Port):
+                try:
+                    self.ports = { k:v for k, v in self.ports.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the Port
+                                     it was asked to remove in the Device: "%s".""" % (item))
+            else:
+                try:
+                    if isinstance(item, (Polygon, Label)):
+                        kl_shapes = item.kl_shape.shapes() # Get the kdb.Shapes container, then
+                        kl_shapes.erase(item.kl_shape)     # delete the Shape (polygon or label)
+                    if isinstance(item, DeviceReference):
+                        self.references.remove(item)
+                        self.kl_cell.erase(item.kl_instance)
+                    self.aliases = { k:v for k, v in self.aliases.items() if v != item}
+                except:
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the item
+                                     it was asked to remove in the Device: "%s".""" % (item))
 
-    #     self._bb_valid = False
-    #     return self
+        self._bb_valid = False
+        return self
 
 
     # def hash_geometry(self, precision = 1e-4):
@@ -1255,7 +1264,7 @@ class DeviceReference(_GeometryHelper):
     @property
     def bbox(self):
         b = self.kl_instance.dbbox()
-        bbox = ((b.left, b.bottom),(b.right, b.top))
+        bbox = np.array(((b.left, b.bottom),(b.right, b.top)))
         return bbox
 
     @property
@@ -1351,7 +1360,7 @@ class CellArray(DeviceReference):
 #     def bbox(self):
 #         bbox = self.get_bounding_box()
 #         if bbox is None:  bbox = ((0,0),(0,0))
-#         return np.array(bbox)
+#         return bbox
 
 
 #     def move(self, origin = (0,0), destination = None, axis = None):
@@ -1452,7 +1461,7 @@ class Label(_GeometryHelper):
     @property
     def bbox(self):
         b = self.kl_text.dbbox()
-        bbox = ((b.left, b.bottom),(b.right, b.top))
+        bbox = np.array(((b.left, b.bottom),(b.right, b.top)))
         return bbox
 
 
