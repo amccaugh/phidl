@@ -136,7 +136,7 @@ self= D
 #kl_shapes = item.kl_cell.shapes(item.kl_layer_idx)
 #kl_shapes.find(item.kl_shape)
 self.kl_cell.erase(item.kl_instance)
-item.kl_shape.is_valid()
+item.kl_instance.is_valid()
 
 qp(D)
 
@@ -271,3 +271,68 @@ transformation = kdb.DCplxTrans(
     )
 d.kl_instance.transform(transformation)
 print(d.kl_instance)
+
+#%%
+
+import phidl
+import phidl.geometry as pg
+from phidl import Device, quickplot as qp
+
+R_size = [0.2, 0.2]
+nanowire_width = 17
+contact_y_setback = 1.5
+contact_size = [5,5]
+heater_offset_from_middle = 0
+nanowire_layer = 240
+resistor_layer = 241
+resistor_pad_layer = 242
+
+
+# Calculate sizes
+resistor_size = [contact_size[0], contact_y_setback*2 + R_size[1]]
+nanowire_y_size_extension = 6
+nanowire_size = (nanowire_width, resistor_size[1] + contact_size[1]*2 + nanowire_y_size_extension*2)
+
+# Create devices
+D = Device('ktron')
+Contact = pg.compass(size = contact_size, layer = {resistor_pad_layer, resistor_layer})
+Nanowire = pg.compass(size = nanowire_size, layer = nanowire_layer)
+
+# Coordinates of resistor shape
+theta = 45
+x1 = R_size[0]/2
+x2 = contact_size[0]/2
+y1 = R_size[1]/2
+y2 = y1 + (x2-x1)*np.tan(theta/180*np.pi)
+y3 = y1 +contact_size[1] * np.sin(theta/180*np.pi)#+ contact_y_setback
+
+r = D.add_polygon([(x1,y1), (x2,y2), (x2,y3), (-x2,y3),(-x2,y2),(-x1,y1),
+    (-x1,-y1),(-x2,-y2),(-x2,-y3),(x2,-y3),(x2,-y2),(x1,-y1)], layer = resistor_layer)
+r.rotate(90)
+
+
+# Add device references
+c_bot = D << Contact
+c_top = D << Contact
+nw = D << Nanowire
+
+# Move references around
+c_top.xmax = r.xmin
+c_bot.xmin = r.xmax
+c_top.y = r.y
+c_bot.y = r.y
+# r.xmin = c_top.xmin = c_bot.xmin
+# r.ymin = c_bot.ymax
+# c_top.ymin = r.ymax
+nw.y = r.y
+nw.x = r.x - heater_offset_from_middle
+
+
+D.add_port(port = nw.ports['N'], name = 3)
+D.add_port(port = nw.ports['S'], name = 4)
+D.add_port(port = c_top.ports['W'], name = 1)
+D.add_port(port = c_bot.ports['E'], name = 2)
+
+D.flatten()
+
+qp(D)

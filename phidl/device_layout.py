@@ -1121,13 +1121,23 @@ class DeviceReference(_GeometryHelper):
                 0, # X-displacement
                 0  # Y-displacement
                 )
-        self.kl_instance = owner_device.kl_cell.insert(kdb.DCellInstArray(device.kl_cell.cell_index(), transformation))
+        self._kl_instance = owner_device.kl_cell.insert(kdb.DCellInstArray(device.kl_cell.cell_index(), transformation))
         self.parent = device
+        self.owner = owner_device
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
         self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
 
+
+    @property
+    def kl_instance(self):
+        if not self._kl_instance.is_valid():
+            raise ReferenceError(
+                ('[PHIDL] The DeviceReference in Device "%s" (referencing Device "%s")' + 
+                ' is no longer valid, it has been removed or its owner cell has' +
+                ' been flattened.') % (self.parent, self.owner))
+        return self._kl_instance
 
     def _kl_transform(self, magnification, rotation, x_reflection, dx, dy):
         transformation = kdb.DCplxTrans(
