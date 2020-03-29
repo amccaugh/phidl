@@ -628,6 +628,12 @@ class Device(_GeometryHelper):
     def __lshift__(self, element):
         return self.add_ref(element)
 
+
+    def __del__(self):
+        """ We want to delete the cell from the KLayout database when the Device is 
+        deleted/garbage collected from Python """
+        layout.delete_cell(self.kl_cell.cell_index())
+
     def __setitem__(self, key, element):
         """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
         if isinstance(element, (DeviceReference,Polygon,CellArray)):
