@@ -665,22 +665,22 @@ class Device(_GeometryHelper):
         bbox = np.array(((b.left, b.bottom),(b.right, b.top)))
         return bbox
 
-    def add_ref(self, device, alias = None):
+    def add_array(self, device, columns = 2, rows = 2, spacing = (100,100), alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.  """
-        if _is_iterable(device):
-            return [self.add_ref(E) for E in device]
-        # print(type(device))
-#        if not isinstance(device, Device):
-#            raise TypeError("""[PHIDL] add_ref() was passed something that
-#            was not a Device object. """)
-        d = DeviceReference(device = device, owner_device = self)   # Create a DeviceReference (CellReference)
+        if not isinstance(device, Device):
+           raise TypeError('[PHIDL] add_ref() was passed something that' +
+            ' was not a Device object.')
+        d = DeviceReference(device = device, owner_device = self, columns = columns, rows = rows, spacing = spacing)   # Create a DeviceReference (CellReference)
         self.references.append(d)
 
         if alias is not None:
             self.aliases[alias] = d
         return d                # Return the DeviceReference (CellReference)
 
+
+    def add_ref(self, device, alias = None):
+        return self.add_array(device, columns = 1, rows = 1, spacing = (0,0), alias = alias)
 
     def add_polygon(self, points, layer = None):
         # Check if input a list of polygons by seeing if it's 3 levels deep
@@ -1113,7 +1113,7 @@ class Device(_GeometryHelper):
 
 
 class DeviceReference(_GeometryHelper):
-    def __init__(self, device, owner_device):
+    def __init__(self, device, owner_device, columns = 1, rows = 1, spacing = (100,100)):
         transformation = kdb.DCplxTrans(
                 1,  # Magnification
                 0,  # Rotation
@@ -1121,7 +1121,17 @@ class DeviceReference(_GeometryHelper):
                 0, # X-displacement
                 0  # Y-displacement
                 )
-        self._kl_instance = owner_device.kl_cell.insert(kdb.DCellInstArray(device.kl_cell.cell_index(), transformation))
+        a = kdb.DVector(float(spacing[0]),0)
+        b = kdb.DVector(0,float(spacing[1]))
+        kl_instance = kdb.DCellInstArray(
+            device.kl_cell.cell_index(),
+            transformation,
+            a,
+            b,
+            round(columns),
+            round(rows),
+            )
+        self._kl_instance = owner_device.kl_cell.insert(kl_instance)
         self.parent = device
         self.owner = owner_device
         # The ports of a DeviceReference have their own unique id (uid),
@@ -1228,23 +1238,8 @@ class DeviceReference(_GeometryHelper):
 
 
     def __getitem__(self, val):
-        """ This allows you to access an alias from the reference's parent, and receive
-        a copy of the reference which is correctly rotated and translated"""
-        try:
-            alias_device = self.parent[val]
-        except:
-            raise ValueError('[PHIDL] Tried to access alias "%s" from parent '
-                'Device "%s", which does not exist' % (val, self.parent.name))
-        new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
-
-        if self.x_reflection:
-            new_reference.reflect((1,0))
-        if self.rotation is not None:
-            new_reference.rotate(self.rotation)
-        if self.origin is not None:
-            new_reference.move(self.origin)
-
-        return new_reference
+        print(val)
+        return self
 
 
     @property
