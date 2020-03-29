@@ -14,6 +14,7 @@
 # - Make function which converts List-of-phidl-objects to a KLayout cell for
 #   for temporary processing (e.g. boolean) then an easy-to-delete function
 # - Fix arguments for pg.union(), boolean, offset, etc
+# - Allow DeviceReferenceArrays to be accessed like ref[1,2].ports['wgport1']
 
     
 #==============================================================================
@@ -751,17 +752,16 @@ class Device(_GeometryHelper):
         return polygons
         
 
-    # def add_array(self, device, columns = 2, rows = 2, spacing = (100,100), alias = None):
-    #     if not isinstance(device, Device):
-    #         raise TypeError("""[PHIDL] add_array() was passed something that
-    #         was not a Device object. """)
-    #     a = CellArray(device = device, columns = columns, rows = rows, spacing = spacing)
-    #     a.owner = self
-    #     self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
-    #     if alias is not None:
-    #         self.aliases[alias] = a
-    #     return a                # Return the CellArray
 
+    def get_dependencies(self, recursive = True):
+        """ Returns a set of all the PHIDL Devices referenced in this Device """
+        dependencies = set()
+        for reference in self.references:
+            if isinstance(reference.parent, Device):
+                if recursive:
+                    dependencies.update(reference.parent.get_dependencies(True))
+                dependencies.add(reference.parent)
+        return dependencies
 
     def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
         """ Can be called to copy an existing port like add_port(port = existing_port) or
