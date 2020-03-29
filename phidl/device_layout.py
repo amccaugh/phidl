@@ -16,6 +16,10 @@
 # - Fix arguments for pg.union(), boolean, offset, etc
 # - Allow DeviceReferenceArrays to be accessed like ref[1,2].ports['wgport1']
 
+#==============================================================================
+# KLayout backend known changes
+#==============================================================================
+# D.remap_layers() and D.remove_layers() no long has include_labels argument
     
 #==============================================================================
 # Major TODO
@@ -934,7 +938,7 @@ class Device(_GeometryHelper):
         return filename
 
 
-    def remap_layers(self, layermap = {}, include_labels = True):
+    def remap_layers(self, layermap = {}):
 
         if include_labels == True:
             shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes | kdb.Shapes.STexts
@@ -953,16 +957,25 @@ class Device(_GeometryHelper):
                     kl_shape.layer = new_kl_layer_idx
         return self
 
-    def remove_layers(self, layers = (), invert_selection = False):
+    def remove_layers(self, layers = (), invert_selection = False, recursive = True):
 
         # Convert layers to KLayout Layer indices
         layers = [_parse_layer(l) for l in layers]
-        kl_layer_indices = [_get_kl_layer(l[0],l[1])[0] for l in layers]
+        kl_layer_indices_to_delete = set([_get_kl_layer(l[0],l[1])[0] for l in layers])
+        kl_layer_indices_all = set(layout.layer_indices())
+        if invert_selection == True:
+            kl_layer_indices_to_delete = kl_layer_indices_all - kl_layer_indices_to_delete
 
-        for kl_layer_idx in kl_layer_indices:
-            layout.clear_layer(kl_layer_idx)
-            layout.delete_layer(kl_layer_idx)
+        # If recursive, compile a list of cells which are referenced by this one
+        if recursive:
+            kl_cells = [layout.cell(i) for i in self.kl_cell.called_cells()] + [self.kl_cell]
+        else:
+            kl_cells = [self.kl_cell]
 
+        # For each cell, iterate through each layer and clear the shapes
+        for kl_layer_idx in kl_layer_indices_to_delete:
+            for kl_cell in kl_cells:
+                kl_cell.clear(kl_layer_idx)
         return self
 
 
