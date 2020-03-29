@@ -938,12 +938,12 @@ class Device(_GeometryHelper):
         return filename
 
 
-    def remap_layers(self, layermap = {}, include_labels = True, recursive = True):
-        if include_labels == False:
+    def remap_layers(self, layermap = {}, include_labels = None, recursive = True):
+        if include_labels is not None:
             warnings.warn('[PHIDL] remap_layers(): The `include_labels` argument is' + 
-                ' deprecated and no longer functions, try moving layers to a different' +
-                ' layer or datatype')
-            
+                ' deprecated and no longer functions, try moving your labels to a ' +
+                ' different layer or datatype')
+
         layermap_kl_layer_idx = {}
         # iterator_dict = _kl_shape_iterator(self.kl_cell, shape_type = shape_type, depth = None)
         for old_layer, new_layer in layermap.items():
@@ -965,11 +965,11 @@ class Device(_GeometryHelper):
                 kl_cell.move(old_idx, new_idx)
         return self
 
-    def remove_layers(self, layers = (), invert_selection = False, include_labels = True, recursive = True):
-        if include_labels == False:
+    def remove_layers(self, layers = (), invert_selection = False, include_labels = None, recursive = True):
+        if include_labels is not None:
             warnings.warn('[PHIDL] remove_layers(): The `include_labels` argument is' + 
-                ' deprecated and no longer functions, try moving layers to a different' +
-                ' layer or datatype')
+                ' deprecated and no longer functions, try moving your labels to a ' +
+                ' different layer or datatype')
 
         # Convert layers to KLayout Layer indices
         layers = [_parse_layer(l) for l in layers]
