@@ -938,23 +938,27 @@ class Device(_GeometryHelper):
         return filename
 
 
-    def remap_layers(self, layermap = {}):
+    def remap_layers(self, layermap = {}, recursive = True):
 
-        if include_labels == True:
-            shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes | kdb.Shapes.STexts
-        else:
-            shape_type = kdb.Shapes.SPolygons | kdb.Shapes.SBoxes
-
-        iterator_dict = _kl_shape_iterator(self.kl_cell, shape_type = shape_type, depth = None)
+        layermap_kl_layer_idx = {}
+        # iterator_dict = _kl_shape_iterator(self.kl_cell, shape_type = shape_type, depth = None)
         for old_layer, new_layer in layermap.items():
             old_layer = _parse_layer(old_layer)
             new_layer = _parse_layer(new_layer)
-            kl_layer_idx, temp =  _get_kl_layer(old_layer[0], old_layer[1])
-            new_kl_layer_idx, temp =  _get_kl_layer(new_layer[0], new_layer[1])
+            old_idx, temp =  _get_kl_layer(old_layer[0], old_layer[1])
+            new_idx, temp =  _get_kl_layer(new_layer[0], new_layer[1])
+            layermap_kl_layer_idx[old_idx] = new_idx
             
-            if kl_layer_idx in iterator_dict:
-                for kl_shape in iterator_dict[kl_layer_idx]:
-                    kl_shape.layer = new_kl_layer_idx
+        # If recursive, compile a list of cells which are referenced by this one
+        if recursive:
+            kl_cells = [layout.cell(i) for i in self.kl_cell.called_cells()] + [self.kl_cell]
+        else:
+            kl_cells = [self.kl_cell]
+
+        # For each cell, iterate through each layer and clear the shapes
+        for old_idx, new_idx in layermap_kl_layer_idx.items():
+            for kl_cell in kl_cells:
+                kl_cell.move(old_idx, new_idx)
         return self
 
     def remove_layers(self, layers = (), invert_selection = False, recursive = True):
