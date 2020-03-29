@@ -85,7 +85,7 @@ transformation = kdb.CplxTrans(
         10.0, # X-displacement
         20.0  # Y-displacement
         )
-x = kl_cell.insert(kdb.DCellInstArray(ref_cell.cell_index(), transformation))
+x = kl_cell.insert(kdb.DCellInstArray(ref_cell.cell_index(), transformation, kdb.Vector))
 x2 = kl_cell.insert(kdb.DCellInstArray(ref_cell.cell_index(), transformation*transformation))
 x3 = kl_cell.insert(kdb.DCellInstArray(ref_cell.cell_index(), transformation*transformation*transformation))
 
@@ -127,18 +127,12 @@ layout.clear()
 phidl.reset()
 
 D = Device()
-ref1 = D << pg.snspd(layer = 1).rotate(3)
+D[1] = D << pg.snspd(layer = 1).rotate(3)
 item = D << pg.snspd(layer = 2).rotate(45)
 polygon = D.add_polygon([[0,0],[1,2],[5,5]])
 item2 = D.add_label('test')
-self= D
 
-#kl_shapes = item.kl_cell.shapes(item.kl_layer_idx)
-#kl_shapes.find(item.kl_shape)
-self.kl_cell.erase(item.kl_instance)
-item.kl_instance.is_valid()
 
-qp(D)
 
 #%%
 
