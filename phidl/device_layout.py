@@ -146,6 +146,16 @@ def _objects_to_kl_region(objects):
         
     return kl_region
 
+
+def _rename_kl_cell(kl_cell, name):
+    if kl_cell.destroyed() == False:
+        kl_cell.name = name
+
+
+def _delete_kl_cell(kl_cell):
+    if kl_cell.destroyed() == False:
+        layout.delete_cell(kl_cell.cell_index())
+
 #==============================================================================
 # Useful transformation functions
 #==============================================================================

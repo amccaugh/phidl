@@ -7,7 +7,7 @@ import klayout.db as kdb
 # from scipy.interpolate import interp1d
 
 from phidl.device_layout import Device, Port, CellArray, DeviceReference
-from phidl.device_layout import layout, _parse_layer, _get_kl_layer,_objects_to_kl_region, _kl_shape_iterator
+from phidl.device_layout import layout, _parse_layer, _get_kl_layer,_objects_to_kl_region, _kl_shape_iterator, _rename_kl_cell, _delete_kl_cell
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -906,7 +906,7 @@ def import_gds(filename, cellname = None, flatten = False):
     cell_dict = {cell.name: cell for cell in layout.each_cell()}
     used_names =  set(cell_dict.keys())
     for cell in cell_dict.values():
-        layout.rename_cell(cell.cell_index(), '')
+        _rename_kl_cell(cell, '')
 
     # Then we load the new cells from the file and get their names
     layout.read(filename)
@@ -922,12 +922,12 @@ def import_gds(filename, cellname = None, flatten = False):
         while new_name in used_names:
             new_name = name + ('%0.1i' % n)
             n += 1
-        layout.rename_cell(cell.cell_index(), new_name)
+        _rename_kl_cell(cell, new_name)
         used_names.add(new_name)
 
     # Rename all the old cells back to their original names
     for name, cell in cell_dict.items():
-        layout.rename_cell(cell.cell_index(), name)
+        _rename_kl_cell(cell, name)
 
     # Verify that the topcell name specified exists or that there's only 
     # one topcell.  If not, delete the imported cells and raise a ValueError
