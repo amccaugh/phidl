@@ -229,14 +229,29 @@ D.kl_cell.write("both.gds")
 #%%
 
 
-
+include_labels = True,
 
 #%%
 import phidl
 import phidl.geometry as pg
-from phidl import quickplot as qp
+from phidl import quickplot as qp, Device
 import klayout.db as kdb
+from phidl.device_layout import layout
 
-%timeit -n10 -r10 pg.text('hello123')
+D = Device()
+D << pg.text(layer  = 1).movey(5)
+D << pg.text(layer  = 2).movey(15)
+D << pg.text(layer  = 2).movey(20)
+D << pg.snspd(layer = 3).movey(25)
+D << pg.snspd(layer = 4).movey(35)
 
-print([cell.name for cell in layout.each_cell()])
+print(layout.cells())
+#%timeit -n10 -r100 pg.text('hello123')
+#print(layout.cleanup(0))
+print(layout.cells())
+D.remap_layers({1:2})
+qp(D)
+
+print(len([cell for cell in layout.each_cell()]))
+
+list(D.kl_cell.called_cells())
