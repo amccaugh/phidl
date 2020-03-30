@@ -959,7 +959,7 @@ class Device(_GeometryHelper):
         else:
             kl_cells = [self.kl_cell]
 
-        # For each cell, iterate through each layer and clear the shapes
+        # For each cell, iterate through each layer and move the shapes to the new layer
         for old_idx, new_idx in layermap_kl_layer_idx.items():
             for kl_cell in kl_cells:
                 kl_cell.move(old_idx, new_idx)
