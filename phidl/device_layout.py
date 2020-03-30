@@ -480,7 +480,7 @@ class Polygon(_GeometryHelper):
     def __del__(self):
         """ We want to delete the cell from the KLayout database when the Device is 
         deleted/garbage collected from Python """
-        if self.kl_shape.destroyed == False:
+        if self.kl_shape.destroyed() == False:
             self.kl_shape._destroy()
 
     def _to_array(self):
@@ -643,7 +643,7 @@ class Device(_GeometryHelper):
     def __del__(self):
         """ We want to delete the cell from the KLayout database when the Device is 
         deleted/garbage collected from Python """
-        if self.kl_cell.destroyed == False:
+        if self.kl_cell.destroyed() == False:
             self.kl_cell.delete()
 
     def __setitem__(self, key, element):
@@ -1034,7 +1034,7 @@ class Device(_GeometryHelper):
 
 
     def flatten(self,  single_layer = None): # https://www.klayout.de/doc/code/class_Cell.html#method63
-        self.kl_cell.flatten(True) # bool prune = False
+        self.kl_cell.flatten(False) # bool prune = False
         del self.references[:]
         return self
 
@@ -1182,7 +1182,7 @@ class DeviceReference(_GeometryHelper):
     def __del__(self):
         """ We want to delete the cell from the KLayout database when the Device is 
         deleted/garbage collected from Python """
-        if self._kl_instance.destroyed == False:
+        if self._kl_instance.destroyed() == False:
             self._kl_instance._destroy()
 
     @property
