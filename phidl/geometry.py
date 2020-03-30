@@ -932,11 +932,11 @@ def import_gds(filename, cellname = None, flatten = False):
     # Verify that the topcell name specified exists or that there's only 
     # one topcell.  If not, delete the imported cells and raise a ValueError
     if cellname is not None:
-        if cellname not in top_level_cells:
+        if cellname not in imported_cell_dict:
             [layout.delete_cell(cell.cell_index()) for cell in imported_cell_dict.values()]
-            raise ValueError('[PHIDL] import_gds() The requested cell (named %s)' +
-                        ' is not present in file %s' % (cellname,filename))
-        top_cell = top_level_cells[cellname]
+            raise ValueError(('[PHIDL] import_gds() The requested cell (named %s)' +
+                        ' is not present in file %s') % (cellname,filename))
+        top_cell = imported_cell_dict[cellname]
     elif cellname is None and len(top_level_cells) == 1:
         top_cell = list(top_level_cells.values())[0]
     elif cellname is None and len(top_level_cells) > 1:
@@ -1460,6 +1460,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 
     def arc_tapered(radius = 10, width1 = 1, width2 = 2, theta = 45, angle_resolution = 2.5, layer = 0):
         D = Device('arctaper')
+        import gdspy
         path1 = gdspy.Path(width = width1, initial_point = (0, 0))
         path1.turn(radius = radius, angle = theta*np.pi/180, number_of_points=int(abs(2*theta/angle_resolution)), final_width = width2)
         [D.add_polygon(p, layer = layer) for p in path1.polygons]
