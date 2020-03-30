@@ -249,9 +249,81 @@ print(layout.cells())
 #%timeit -n10 -r100 pg.text('hello123')
 #print(layout.cleanup(0))
 print(layout.cells())
-D.remap_layers({1:2})
+D.remap_layers({2:1,3:4})
 qp(D)
 
 print(len([cell for cell in layout.each_cell()]))
 
 list(D.kl_cell.called_cells())
+
+#%%
+
+import phidl
+import phidl.geometry as pg
+from phidl import quickplot as qp, Device
+import klayout.db as kdb
+from phidl.device_layout import layout, _kl_shape_iterator
+
+layout.clear()
+
+def report_numbers():
+    num_cells = 0
+    all_layers = set()
+    num_layers = 0
+    num_polygons = 0
+    for cell in layout.each_cell():
+        num_cells += 1
+        for layer_idx in layout.layer_indices():
+            num_layers += 1
+            all_layers |= {layer_idx}
+            num_polygons += len(list(cell.each_shape(layer_idx)))
+            
+#    iterator_dict = _kl_shape_iterator(layout, shape_type = kdb.Shapes.SAll,
+#                           depth = None, python_iterator = True)
+#    polygons_in_layout = sum([len(i) for i in iterator_dict.values()])
+#    print('Polygons in layout = %s' % polygons_in_layout)
+    print('Polygons in accessible cells = %s' % num_polygons)
+    print('Cells in layout = %s' % num_cells)
+    print('Layers in layout = %s' % len(all_layers))
+    print('Topcells in layout = %s'  % len(layout.top_cells()))
+
+
+print('\n----------------'); 
+report_numbers()
+%timeit -n10 -r10 pg.text('hello123')
+print('\n----------------'); 
+
+x = [pg.text('hello123\nasdfg\nasdftgusadf245') for n in range(1000)]
+
+print('\n----------------'); 
+report_numbers()
+%timeit -n10 -r10 pg.text('hello123')
+print('\n----------------'); 
+
+
+from nc_devices import *
+
+
+print('\n----------------'); 
+report_numbers()
+%timeit -n10 -r10 pg.text('hello123')
+print('\n----------------'); 
+
+
+[cell.prune_subcells() for cell in layout.each_cell()]
+
+
+print('\n----------------'); 
+report_numbers()
+%timeit -n10 -r10 pg.text('hello123')
+print('\n----------------'); 
+
+#%%
+
+# TODO: 
+# Collect metrics about layout database
+# - # of valid polygons
+# - # of valid cells
+print(len([cell for cell in layout.each_cell()]))
+
+        
