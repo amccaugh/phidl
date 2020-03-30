@@ -142,7 +142,7 @@ def _objects_to_kl_region(objects):
     for layer_idx in layout.layer_indices():
         kl_region.insert(temp_cell.begin_shapes_rec(layer_idx))
     
-    layout.delete_cell(temp_cell.cell_index())
+    temp_cell.delete()
         
     return kl_region
 
@@ -154,7 +154,7 @@ def _rename_kl_cell(kl_cell, name):
 
 def _delete_kl_cell(kl_cell):
     if kl_cell.destroyed() == False:
-        layout.delete_cell(kl_cell.cell_index())
+        kl_cell.delete()
 
 #==============================================================================
 # Useful transformation functions
@@ -1062,7 +1062,7 @@ class Device(_GeometryHelper):
         temp_kl_cell.flatten(True)
         self.kl_cell.copy_shapes(temp_kl_cell)
         self.kl_cell.erase(reference.kl_instance)
-        layout.delete_cell(temp_kl_cell.cell_index())
+        temp_kl_cell.delete()
         return self
 
 
@@ -1223,7 +1223,7 @@ class DeviceReference(_GeometryHelper):
         transformation = self.kl_instance.dcplx_trans
         kl_instance = temp_device.kl_cell.insert(kdb.DCellInstArray(self.parent.kl_cell.cell_index(), transformation))
         polygons = temp_device.get_polygons(by_spec = by_spec, depth = depth)
-        layout.delete_cell(temp_device.kl_cell.cell_index()) # Use this instead of _destroy()!
+        temp_device.kl_cell.delete() # Use this instead of _destroy()!
         return polygons
 
 
@@ -1344,7 +1344,7 @@ class DeviceReference(_GeometryHelper):
 
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations to a port (x_ref)
-        new_point = np.array(point)
+        new_point = np.asarray(point)
         new_orientation = orientation
 
         if x_reflection:
