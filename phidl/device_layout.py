@@ -471,12 +471,13 @@ class Port(object):
 class Polygon(_GeometryHelper):
 
     def __init__(self, points, device, gds_layer, gds_datatype):
-        self.kl_cell = device.kl_cell
+        # self.kl_cell = device.kl_cell
         points = np.array(points, dtype  = np.float64)
         polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
         self.kl_layer_idx = layout.layer(gds_layer, gds_datatype)
         self.kl_shape = device.kl_cell.shapes(self.kl_layer_idx).insert(polygon)
     
+
     def _to_array(self):
         [ (pt.x,pt.y) for pt in self.kl_shape.each_point() ]
 
@@ -609,6 +610,7 @@ class Device(_GeometryHelper):
         gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
         self.kl_cell = layout.create_cell(gds_name)
         self.references = []
+        self.polygons = []
         Device._next_uid += 1
 
 
@@ -636,6 +638,7 @@ class Device(_GeometryHelper):
     def __del__(self):
         """ We want to delete the cell from the KLayout database when the Device is 
         deleted/garbage collected from Python """
+        # if self.kl_cell.destroyed == False:
         layout.delete_cell(self.kl_cell.cell_index())
 
     def __setitem__(self, key, element):
@@ -728,6 +731,7 @@ class Device(_GeometryHelper):
         points = np.array(points, dtype  = np.float64)
 
         polygon = Polygon(points = points, device = self, gds_layer = gds_layer, gds_datatype = gds_datatype)
+        self.polygons.append(polygon)
         return polygon 
 
         # polygon = kdb.DSimplePolygon([kdb.DPoint(x, y) for x, y in points]) # x and y must be floats
@@ -991,25 +995,25 @@ class Device(_GeometryHelper):
         return self
 
 
-    # def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):
-    #     if direction not in (['+x','-x','x','+y','-y','y']):
-    #         raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
+    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):
+        if direction not in (['+x','-x','x','+y','-y','y']):
+            raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of {'+x','-x','x','+y','-y','y'}")
 
-    #     if elements == 'all': elements = (self.polygons + self.references)
+        if elements == 'all': elements = (self.polygons + self.references)
 
-    #     if direction == 'x': direction = '+x'
-    #     elif direction == 'y': direction = '+y'
+        if direction == 'x': direction = '+x'
+        elif direction == 'y': direction = '+y'
 
-    #     sizes = [e.size for e in elements]
-    #     xy = elements[0].center
-    #     for n, e in enumerate(elements[:-1]):
-    #         e.center = xy
-    #         if direction == '+x':  xy[0] += spacing + separation*(sizes[n] + sizes[n+1])[0]/2
-    #         if direction == '-x':  xy[0] -= spacing + separation*(sizes[n] + sizes[n+1])[0]/2
-    #         if direction == '+y':  xy[1] += spacing + separation*(sizes[n] + sizes[n+1])[1]/2
-    #         if direction == '-y':  xy[1] -= spacing + separation*(sizes[n] + sizes[n+1])[1]/2
-    #     elements[-1].center = xy
-    #     return self
+        sizes = [e.size for e in elements]
+        xy = elements[0].center
+        for n, e in enumerate(elements[:-1]):
+            e.center = xy
+            if direction == '+x':  xy[0] += spacing + separation*(sizes[n] + sizes[n+1])[0]/2
+            if direction == '-x':  xy[0] -= spacing + separation*(sizes[n] + sizes[n+1])[0]/2
+            if direction == '+y':  xy[1] += spacing + separation*(sizes[n] + sizes[n+1])[1]/2
+            if direction == '-y':  xy[1] -= spacing + separation*(sizes[n] + sizes[n+1])[1]/2
+        elements[-1].center = xy
+        return self
 
 
     # def align(self, elements = 'all', alignment = 'ymax'):
@@ -1169,7 +1173,6 @@ class DeviceReference(_GeometryHelper):
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
         self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
-
 
     @property
     def kl_instance(self):
