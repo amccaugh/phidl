@@ -477,6 +477,11 @@ class Polygon(_GeometryHelper):
         self.kl_layer_idx = layout.layer(gds_layer, gds_datatype)
         self.kl_shape = device.kl_cell.shapes(self.kl_layer_idx).insert(polygon)
     
+    def __del__(self):
+        """ We want to delete the cell from the KLayout database when the Device is 
+        deleted/garbage collected from Python """
+        if self.kl_shape.destroyed == False:
+            self.kl_shape._destroy()
 
     def _to_array(self):
         [ (pt.x,pt.y) for pt in self.kl_shape.each_point() ]
@@ -1173,6 +1178,12 @@ class DeviceReference(_GeometryHelper):
         # since two DeviceReferences of the same parent Device can be
         # in different locations and thus do not represent the same port
         self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
+
+    def __del__(self):
+        """ We want to delete the cell from the KLayout database when the Device is 
+        deleted/garbage collected from Python """
+        if self._kl_instance.destroyed == False:
+            self._kl_instance._destroy()
 
     @property
     def kl_instance(self):
