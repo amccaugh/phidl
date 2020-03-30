@@ -477,6 +477,11 @@ class Port(object):
         self.midpoint = _rotate_points(self.midpoint, angle = angle, center = center)
         return self
 
+    def reflect(self, p1, p2):
+        self.midpoint = _reflect_points(self.midpoint, p1, p2)
+        phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
+        self.orientation = 2*phi - self.orientation
+
 
 class Polygon(_GeometryHelper):
 
