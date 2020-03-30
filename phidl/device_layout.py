@@ -478,8 +478,8 @@ class Polygon(_GeometryHelper):
         self.kl_shape = device.kl_cell.shapes(self.kl_layer_idx).insert(polygon)
     
     def __del__(self):
-        """ We want to delete the cell from the KLayout database when the Device is 
-        deleted/garbage collected from Python """
+        """ We want to delete the Polygon (kdb.Shape) from the KLayout database 
+        it's deleted/garbage collected from Python """
         if self.kl_shape.destroyed() == False:
             self.kl_shape._destroy()
 
@@ -1180,8 +1180,8 @@ class DeviceReference(_GeometryHelper):
         self._local_ports = {name:port._copy(new_uid = True) for name, port in device.ports.items()}
 
     def __del__(self):
-        """ We want to delete the cell from the KLayout database when the Device is 
-        deleted/garbage collected from Python """
+        """ We want to delete the DeviceReference (kdb.Instance) from the
+        KLayout database when it's deleted/garbage collected from Python """
         if self._kl_instance.destroyed() == False:
             self._kl_instance._destroy()
 
