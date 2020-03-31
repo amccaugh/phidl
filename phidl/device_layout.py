@@ -845,19 +845,21 @@ class Device(_GeometryHelper):
         kl_shapes = []
         # Collect shapes (polygons + labels) from each layer in the layout
         for layer_idx in layout.layer_indices():
-            kl_shapes += self.kl_cell.each_shape(layer_idx)
+            kl_shapes.append(self.kl_cell.shapes(layer_idx))
         # Transform shapes
-        for klp in kl_shapes:
-            if klp.is_text():
-                # The movement of label position has to be calculated manually
-                # because the kdb.text object only allows "Simple" transformations
-                x,y = klp.text_dpos.x, klp.text_dpos.y
-                x,y = _rotate_points((x,y), angle = transformation.angle, center = (0,0))
-                x +=  transformation.disp.x
-                y +=  transformation.disp.y
-                klp.text_dpos = kdb.DVector(x,y)
-            elif klp.is_polygon():
-                klp.transform(transformation)
+        for kl_shape in kl_shapes:
+            kl_shape.transform(transformation)
+        # for klp in kl_shapes:
+        #     if klp.is_text():
+        #         # The movement of label position has to be calculated manually
+        #         # because the kdb.text object only allows "Simple" transformations
+        #         x,y = klp.text_dpos.x, klp.text_dpos.y
+        #         x,y = _rotate_points((x,y), angle = transformation.angle, center = (0,0))
+        #         x +=  transformation.disp.x
+        #         y +=  transformation.disp.y
+        #         klp.text_dpos = kdb.DVector(x,y)
+        #     elif klp.is_polygon():
+        #         klp.transform(transformation)
 
 
     def rotate(self, angle = 45, center = (0,0)):
@@ -916,6 +918,9 @@ class Device(_GeometryHelper):
         klt *= self._kl_transform(magnification = 1, rotation = -theta, x_reflection = False, dx = 0, dy = 0)
         klt *= self._kl_transform(magnification = 1, rotation = 0, x_reflection = False, dx = -p1[0], dy = -p1[1])
         self._apply_kl_transform(klt)
+
+        for p in self.ports.values():
+            p.reflect(p1 = p1, p2 = p2)
 
         return self
 
