@@ -1354,7 +1354,7 @@ class DeviceReference(_GeometryHelper):
 
     def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
         # Apply GDS-type transformations to a port (x_ref)
-        new_point = np.asarray(point)
+        new_point = np.array(point) # Make a new copy of point so we don't modify the old
         new_orientation = orientation
 
         if x_reflection:
