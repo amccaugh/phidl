@@ -15,10 +15,9 @@ import gdspy
 try:
     from matplotlib import pyplot as plt
     from matplotlib.collections import PolyCollection
+    matplotlib_imported = True
 except:
-    warnings.warn("""PHIDL tried to import matplotlib but it failed. PHIDL
-                     will still work but quickplot() may not.  Try using
-                     quickplot2() instead (see note in tutorial) """)
+    matplotlib_imported = False
 
 try:
     from PyQt5 import QtCore, QtGui
@@ -29,18 +28,22 @@ try:
     PORT_COLOR = QColor(190,0,0)
     SUBPORT_COLOR = QColor(0,135,135)
     OUTLINE_PEN = QColor(200,200,200)
+    qt_imported = True
 except:
     QMainWindow = object
     QGraphicsView = object
-    warnings.warn("""PHIDL tried to import PyQt5 but it failed. PHIDL will
-                     still work but quickplot2() may not.  Try using
-                     quickplot() instead (based on matplotlib) """)
+    qt_imported = False
 
 
 def quickplot(items, show_ports = True, show_subports = False,
               label_ports = True, label_aliases = False, new_window = False):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
+    if matplotlib_imported == False:
+        raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL" + 
+              "will still work but quickplot() will not.  Try using" +
+              "quickplot2() instead (see note in tutorial) ")
+
     if new_window: 
         fig, ax = plt.subplots(1)
         ax.autoscale(enable = True, tight = True)
@@ -651,6 +654,11 @@ class Viewer(QGraphicsView):
 
 
 def quickplot2(item_list, *args, **kwargs):
+    if qt_imported == False:
+        raise ImportError("PHIDL tried to import PyQt5 but it failed. PHIDL will" + 
+              "still work but quickplot2() may not.  Try using" +
+              "quickplot() instead (based on matplotlib)")
+        
     global app
     if QCoreApplication.instance() is None:
         app = QApplication(sys.argv)
