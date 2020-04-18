@@ -1970,7 +1970,6 @@ def _pack_single_bin(
     # Repeatedly run the rectangle-packing algorithm with increasingly larger
     # areas until everything fits or we've reached the maximum size
     while True:
-        
         # Create the packer object
         rect_packer = rectpack.newPacker(
                                     mode = rectpack.PackingMode.Offline,
@@ -1984,12 +1983,10 @@ def _pack_single_bin(
             rect_packer.add_rect(width = r[0], height = r[1], rid = rid)
         rect_packer.add_bin(width = box_size[0], height = box_size[1])
         rect_packer.pack()
-        num_packed_rects = len(rect_packer.rect_list())
         
         # Adjust the box size for next time
         box_size *= 1.2  # Increase area to try to fit
         box_size = np.clip(box_size, None, max_size)
-        print(box_size)
         
         # Quit the loop if we've packed all the rectangles or reached the max size
         if (len(rect_packer.rect_list()) == len(rect_dict)) or all(box_size >= max_size):

@@ -360,6 +360,36 @@ D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
              unit = 1e-3, precision = 1e-2)
 
 
+#==============================================================================
+# Advanced: Packing several 
+#==============================================================================
+# The pg.packer() function is a convenient way to fit several shapes together
+# into as small an area as possible. It takes a list of Devices as an input.
+# Here we generate several random shapes then pack them together 
+# automatically.  Note solving the packing problem is NP-hard,
+# so packer() may be slow if there are more than a few hundred Devices to pack. 
+# Requires the "rectpack" python package
+
+np.random.seed(5)
+D_list = [pg.ellipse(radii = np.random.rand(2)*20+2) for n in range(20)]
+D_list += [pg.rectangle(size = np.random.rand(2)*20+2) for n in range(20)]
+D_packed_list = pg.packer(
+        D_list,       # Must be a list or tuple of Devices
+        spacing = 1.5, # Minimum distance between adjacent shapes
+        aspect_ratio = (1,1), # Shape of the box
+        max_size = (None,200), # Limits the size into which the shapes will be packed
+        sort_by_area = True, # Pre-sorts the shapes by area, may help packing
+        )
+# The function will return a list of packed Devices.  If not all the Devices
+# in D_list can fit in the area `max_size`, it will fill up the first box to
+# capacity then create another, repeating until all the shapes are packed 
+# into boxes of max_size.  (`max_size` can be (None, None))
+# of `max_size` as is necessary
+
+qp(D_packed_list)
+
+
+
 
 #==============================================================================
 # Advanced: Acquiring port information
