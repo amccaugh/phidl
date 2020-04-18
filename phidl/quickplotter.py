@@ -40,8 +40,8 @@ def quickplot(items, show_ports = True, show_subports = False,
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if matplotlib_imported == False:
-        raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL" + 
-              "will still work but quickplot() will not.  Try using" +
+        raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL " + 
+              "will still work but quickplot() will not.  Try using " +
               "quickplot2() instead (see note in tutorial) ")
 
     if new_window: 
