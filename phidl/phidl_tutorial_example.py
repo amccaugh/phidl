@@ -94,15 +94,24 @@ qp(D) # quickplot it!
 #==============================================================================
 # Create and add a polygon from separate lists of x points and y points
 # e.g. [(x1, x2, x3, ...), (y1, y2, y3, ...)]
-poly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
+poly1 = D.add_polygon( [(8,6,7,9), (6,8,9,5)], layer = 0)
 
 # Alternatively, create and add a polygon from a list of points
 # e.g. [(x1,y1), (x2,y2), (x3,y3), ...] using the same function
-poly2 = D.add_polygon( [(0, 0), (1, 1), (1, 3), (-3, 3)] )
+poly2 = D.add_polygon( [(-5, 3), (-4, 4), (-4, 6), (-8, 6)], layer = 1)
+
+# As a third option, use functions from the built-in geometry library
+# (more examples below in section "Using the built-in geometry library")
+# and a listing is available at http://phidl.readthedocs.io/ )
+D << pg.ellipse(radii = (3,1.5), layer = 1).move([10,-4])
+D << pg.cross(length = 3, width = 0.2, layer = 0).move([10,-8])
+D << pg.rectangle(size = (4,2), layer = 3).move([-10,-5])
+D << pg.litho_steps(line_widths = [.1,.2,.4,.8], line_spacing = 1, height = 6, layer = 0).move([0,-5])
+
 
 qp(D) # quickplot it!
 
-
+#%%
 
 #==============================================================================
 # Manipulating geometry 1 - Basic movement and rotation
@@ -271,6 +280,52 @@ qp(D2)
 
 
 #==============================================================================
+# Using the built-in geometry library (phidl.geometry)
+#==============================================================================
+# Usually at the beginning of a phidl file we import the phidl.geometry module
+# as ``pg``, like this:
+import phidl.geometry as pg
+
+# The ``pg`` module contains dozens of premade shapes and structures, ranging
+# from simple ones like ellipses to complex photonic structures.  Let's create
+# a few simple structures and plot them
+D = Device()
+G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
+G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
+G3 = pg.rectangle(size = (10,5), layer = 3)
+g1 = D.add_ref(G1)
+g2 = D.add_ref(G2)
+g3 = D.add_ref(G3)
+g1.xmin = g2.xmax + 5
+g3.xmin = g1.xmax + 5
+qp(D)
+
+# There are dozens of these types of structures.  See the /phidl/geometry.py
+# file for a full geometry list.  Note some of the more complex shapes are
+# experimental and may change with time.
+
+
+# Let's save this file so we can practice importing it in the next step
+D.write_gds('MyNewGDS.gds')
+
+
+#==============================================================================
+# Premade geometry: Lithography shapes
+#==============================================================================
+# PHIDL comes with a set of handy functions for creating standard lithographic
+# test structures, such as calipers (for detecting fabrication-layer-offsets),
+# stars, and positive + negative-tone steps
+D = Device()
+d1 = D << pg.litho_calipers(notch_size = [3,10], notch_spacing = 2, num_notches = 7,
+        offset_per_notch = 0.2, row_spacing = 0, layer1 = 1, layer2 = 2).rotate(90)
+d2 = D << pg.litho_steps(line_widths = [1,2,4,8,16], line_spacing = 10, height = 80, layer = 0).movex(80)
+d3 = D << pg.litho_star(num_lines = 16, line_width = 3, diameter = 80, layer = 4).movex(240)
+d1.y = d2.y = d3.y
+qp(D)
+D.write_gds('LithographyTestStructuresMetrics.gds')
+
+
+#==============================================================================
 # Labeling
 #==============================================================================
 # We can also label (annotate) our devices, in order to record information
@@ -346,51 +401,6 @@ a = D.add_array(R, columns = 7, rows = 5,  spacing = (31, 21))
 a.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]] 
 qp(D)
 
-
-#==============================================================================
-# Adding premade geometry with phidl.geometry
-#==============================================================================
-# Usually at the beginning of a phidl file we import the phidl.geometry module
-# as ``pg``, like this:
-import phidl.geometry as pg
-
-# The ``pg`` module contains dozens of premade shapes and structures, ranging
-# from simple ones like ellipses to complex photonic structures.  Let's create
-# a few simple structures and plot them
-D = Device()
-G1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
-G2 = pg.snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8), layer = 2)
-G3 = pg.rectangle(size = (10,5), layer = 3)
-g1 = D.add_ref(G1)
-g2 = D.add_ref(G2)
-g3 = D.add_ref(G3)
-g1.xmin = g2.xmax + 5
-g3.xmin = g1.xmax + 5
-qp(D)
-
-# There are dozens of these types of structures.  See the /phidl/geometry.py
-# file for a full geometry list.  Note some of the more complex shapes are
-# experimental and may change with time.
-
-
-# Let's save this file so we can practice importing it in the next step
-D.write_gds('MyNewGDS.gds')
-
-
-#==============================================================================
-# Premade geometry: Lithography shapes
-#==============================================================================
-# PHIDL comes with a set of handy functions for creating standard lithographic
-# test structures, such as calipers (for detecting fabrication-layer-offsets),
-# stars, and positive + negative-tone steps
-D = Device()
-d1 = D << pg.litho_calipers(notch_size = [3,10], notch_spacing = 2, num_notches = 7,
-        offset_per_notch = 0.2, row_spacing = 0, layer1 = 1, layer2 = 2).rotate(90)
-d2 = D << pg.litho_steps(line_widths = [1,2,4,8,16], line_spacing = 10, height = 80, layer = 0).movex(80)
-d3 = D << pg.litho_star(num_lines = 16, line_width = 3, diameter = 80, layer = 4).movex(240)
-d1.y = d2.y = d3.y
-qp(D)
-D.write_gds('LithographyTestStructuresMetrics.gds')
 
 
 
