@@ -28,7 +28,7 @@ from functools import update_wrapper
 # Text
 # Wafer / Die
 # Waveguide
-# Fill tool
+# Packer tool / Fill tool
 # Photonics
 # Optimal (current-crowding) curves
 # Superconducting devices
@@ -1930,9 +1930,126 @@ def _racetrack_gradual_parametric(t, R, N):
 
 #==============================================================================
 #
-# Fill
+# Packing and fill
 #
 #==============================================================================
+
+
+def _pack_single_bin(
+    rect_dict,
+    aspect_ratio,
+    max_size,
+    sort_by_area,
+    ):
+    """ Takes a `rect_dict` argument of the form {id:(w,h)} and tries to 
+    pack it into a bin as small as possible with aspect ratio `aspect_ratio`
+    Will iteratively grow the bin size until everything fits or the bin size 
+    reaches `max_size`.  Returns a dictionary of of the packed rectangles
+    in the form {id:(x,y,w,h)}, and a dictionary of remaining unpacked rects """
+
+    try:
+        import rectpack
+    except:
+        raise ImportError('[PHIDL] The packer() function requires the module "rectpack"' + 
+              "to operate.  Please retry after installing rectpack:" +
+              "\n\n$ pip install rectpack")
+
+    # Compute total area and use it for an initial estimate of the bin size
+    total_area = 0
+    for r in rect_dict.values():
+        total_area += r[0]*r[1]
+    aspect_ratio = np.asarray(aspect_ratio)
+    
+    # Setup variables
+    box_size = np.asarray(aspect_ratio*np.sqrt(total_area), dtype = float)
+    box_size = np.clip(box_size, None, max_size)
+    if sort_by_area == True: rp_sort = rectpack.SORT_AREA
+    else:                    rp_sort = rectpack.SORT_NONE
+    
+    
+    # Repeatedly run the rectangle-packing algorithm with increasingly larger
+    # areas until everything fits or we've reached the maximum size
+    while True:
+        
+        # Create the packer object
+        rect_packer = rectpack.newPacker(
+                                    mode = rectpack.PackingMode.Offline,
+                                    rotation=False,
+                                    pack_algo = rectpack.MaxRectsBlsf,
+                                    sort_algo = rp_sort,
+                                    bin_algo = rectpack.PackingBin.Global,)
+        
+        # Add each rectangle to the packer, create a single bin, and pack
+        for rid, r in rect_dict.items():
+            rect_packer.add_rect(width = r[0], height = r[1], rid = rid)
+        rect_packer.add_bin(width = box_size[0], height = box_size[1])
+        rect_packer.pack()
+        num_packed_rects = len(rect_packer.rect_list())
+        
+        # Adjust the box size for next time
+        box_size *= 1.2  # Increase area to try to fit
+        box_size = np.clip(box_size, None, max_size)
+        print(box_size)
+        
+        # Quit the loop if we've packed all the rectangles or reached the max size
+        if (len(rect_packer.rect_list()) == len(rect_dict)) or all(box_size >= max_size):
+            break
+
+    
+    # Separate packed from unpacked rectangles, make dicts of form {id:(x,y,w,h)}
+    packed_rect_dict = {r[-1]:r[:-1] for r in rect_packer[0].rect_list()}
+    unpacked_rect_dict = {}
+    for k,v in rect_dict.items():
+        if k not in packed_rect_dict:
+            unpacked_rect_dict[k] = v
+            
+    return (packed_rect_dict, unpacked_rect_dict)
+
+
+
+def packer(
+        D_list,
+        spacing = 10,
+        aspect_ratio = (1,1),
+        max_size = (None,None),
+        sort_by_area = True,
+        ):
+    
+    # Santize max_size variable
+    max_size = [np.inf if v is None else v for v in max_size]
+    max_size = np.asarray(max_size, dtype = float) # In case it's integers
+    
+    # Convert Devices to rectangles
+    rect_dict = {}
+    for n, D in enumerate(D_list):
+        w,h = D.size + spacing
+        if (w > max_size[0]) or (h > max_size[1]):
+            raise ValueError("[PHIDL] packer() failed because one of the objects " + 
+                  "in `D_list` is has an x or y dimension larger than `max_size` and " +
+                  "so cannot be packed")
+        rect_dict[n] = (w,h)
+        
+    packed_list = []
+    while len(rect_dict) > 0:
+        (packed_rect_dict, rect_dict) = _pack_single_bin(rect_dict,
+                                                         aspect_ratio = aspect_ratio,
+                                                         max_size = max_size,
+                                                         sort_by_area = sort_by_area)
+        packed_list.append(packed_rect_dict)
+    
+    D_packed_list = []
+    for rect_dict in packed_list:
+        D_packed = Device()
+        for n, rect in rect_dict.items():
+            x, y, w, h = rect
+            xcenter = x + w/2 + spacing/2
+            ycenter = y + h/2 + spacing/2
+            d = D_packed.add_ref(D_list[n])
+            d.center = (xcenter,ycenter)
+        D_packed_list.append(D_packed)
+
+    return D_packed_list
+
 
 
 def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
