@@ -410,12 +410,15 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _reflect_points(points, p1, p2)
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        return self.mirror(p1, p2)
 
 
 
@@ -881,7 +884,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         for e in (self.polygons+self.references+self.labels):
             e.reflect(p1, p2)
         for p in self.ports.values():
@@ -890,6 +893,9 @@ class Device(gdspy.Cell, _GeometryHelper):
             p.orientation = 2*phi - p.orientation
         self._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        return self.mirror(p1, p2)
 
 
     def hash_geometry(self, precision = 1e-4):
@@ -1073,7 +1079,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         if type(p1) is Port:  p1 = p1.midpoint
         if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
@@ -1098,6 +1104,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        return self.mirror(p1, p2)
 
 
     def connect(self, port, destination, overlap = 0):
@@ -1184,7 +1193,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         if type(p1) is Port:  p1 = p1.midpoint
         if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
@@ -1209,6 +1218,9 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        return self.mirror(p1, p2)
 
 
 
@@ -1240,6 +1252,9 @@ class Label(gdspy.Label, _GeometryHelper):
         self.position += np.array(d) - o
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         self.position = _reflect_points(self.position, p1, p2)
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        return self.mirror(p1, p2)
