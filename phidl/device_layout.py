@@ -886,7 +886,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def mirror(self, p1 = (0,1), p2 = (0,0)):
         for e in (self.polygons+self.references+self.labels):
-            e.reflect(p1, p2)
+            e.mirror(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
@@ -977,7 +977,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
 
         if self.x_reflection:
-            new_reference.reflect((1,0))
+            new_reference.mirror((1,0))
         if self.rotation is not None:
             new_reference.rotate(self.rotation)
         if self.origin is not None:

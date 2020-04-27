@@ -82,18 +82,18 @@ def _gradual_bend(
     #clone the half-curve into two objects and connect for a 90 deg bend.
     D1 = Total.add_ref(D)
     D2 = Total.add_ref(D)
-    D2.reflect(p1=[0,0],p2=[1,1])
+    D2.mirror(p1=[0,0],p2=[1,1])
     D2.connect(port=2,destination=D1.ports[2])
     Total.xmin=0
     Total.ymin=0
 
     #orient to default settings...
-    Total.reflect(p1=[0,0],p2=[1,1])
-    Total.reflect(p1=[0,0],p2=[1,0])
+    Total.mirror(p1=[0,0],p2=[1,1])
+    Total.mirror(p1=[0,0],p2=[1,0])
 
     #orient to user-provided settings
     if direction == 'cw':
-        Total.reflect(p1=[0,0],p2=[1,0])
+        Total.mirror(p1=[0,0],p2=[1,0])
     Total.rotate(angle=start_angle,center=Total.center)
     Total.center=[0,0]
     Total.add_port(name=1,port=D1.ports[1])

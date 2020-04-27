@@ -129,7 +129,7 @@ wg3.movex(30,40) # Moves "from" x=30 "to" x=40 (e.g. shifts wg3 by +10 in the x-
 wg1.rotate(45) # Rotate the first waveguide by 45 degrees around (0,0)
 wg2.rotate(30, center = [1,1]) # Rotate the second waveguide by 30 degrees around (1,1)
 
-wg1.reflect(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 and p2
+wg1.mirror(p1 = [1,1], p2 = [1,3]) # Reflects wg3 across the line formed by p1 and p2
 
 
 
@@ -175,7 +175,7 @@ wg3.move(origin = wg3.ports['wgport1'], destination = [0,0])
 wg2.move(origin = wg2.ports['wgport1'], destination = wg3.ports['wgport2'])
 # Several functions beyond just move() can take Ports as inputs
 wg1.rotate(angle = -60, center = wg1.ports['wgport2'])
-wg3.reflect(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
+wg3.mirror(p1 = wg3.ports['wgport1'].midpoint, p2 = wg3.ports['wgport1'].midpoint + np.array([1,0]))
 
 qp(D) # quickplot it!
 
