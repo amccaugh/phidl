@@ -1940,6 +1940,9 @@ def _pack_single_bin(
     aspect_ratio,
     max_size,
     sort_by_area,
+    density,
+    precision,
+    verbose,
     ):
     """ Takes a `rect_dict` argument of the form {id:(w,h)} and tries to 
     pack it into a bin as small as possible with aspect ratio `aspect_ratio`
@@ -1958,7 +1961,7 @@ def _pack_single_bin(
     total_area = 0
     for r in rect_dict.values():
         total_area += r[0]*r[1]
-    aspect_ratio = np.asarray(aspect_ratio)
+    aspect_ratio = np.asarray(aspect_ratio)/np.linalg.norm(aspect_ratio) # Normalize
     
     # Setup variables
     box_size = np.asarray(aspect_ratio*np.sqrt(total_area), dtype = float)
@@ -1973,10 +1976,10 @@ def _pack_single_bin(
         # Create the packer object
         rect_packer = rectpack.newPacker(
                                     mode = rectpack.PackingMode.Offline,
-                                    rotation=False,
                                     pack_algo = rectpack.MaxRectsBlsf,
                                     sort_algo = rp_sort,
-                                    bin_algo = rectpack.PackingBin.Global,)
+                                    bin_algo= rectpack.PackingBin.BBF,
+                                    rotation=False,)
         
         # Add each rectangle to the packer, create a single bin, and pack
         for rid, r in rect_dict.items():
@@ -1985,11 +1988,16 @@ def _pack_single_bin(
         rect_packer.pack()
         
         # Adjust the box size for next time
-        box_size *= 1.2  # Increase area to try to fit
+        box_size *= density  # Increase area to try to fit
         box_size = np.clip(box_size, None, max_size)
+        if verbose == True:  print('Trying to pack in bin size %s' % (box_size*precision))
         
         # Quit the loop if we've packed all the rectangles or reached the max size
-        if (len(rect_packer.rect_list()) == len(rect_dict)) or all(box_size >= max_size):
+        if (len(rect_packer.rect_list()) == len(rect_dict)):
+            if verbose == True: print('Success!')
+            break
+        elif all(box_size >= max_size):
+            if verbose == True: print('Reached max_size, creating an additional bin')
             break
 
     
@@ -2010,16 +2018,21 @@ def packer(
         aspect_ratio = (1,1),
         max_size = (None,None),
         sort_by_area = True,
+        density = 1.2,
+        precision = 1e-2,
+        verbose = False,
         ):
     
     # Santize max_size variable
     max_size = [np.inf if v is None else v for v in max_size]
     max_size = np.asarray(max_size, dtype = float) # In case it's integers
+    max_size = max_size/precision
     
     # Convert Devices to rectangles
     rect_dict = {}
     for n, D in enumerate(D_list):
-        w,h = D.size + spacing
+        w,h = (D.size + spacing)/precision
+        w,h = int(w), int(h)
         if (w > max_size[0]) or (h > max_size[1]):
             raise ValueError("[PHIDL] packer() failed because one of the objects " + 
                   "in `D_list` is has an x or y dimension larger than `max_size` and " +
@@ -2031,7 +2044,10 @@ def packer(
         (packed_rect_dict, rect_dict) = _pack_single_bin(rect_dict,
                                                          aspect_ratio = aspect_ratio,
                                                          max_size = max_size,
-                                                         sort_by_area = sort_by_area)
+                                                         sort_by_area = sort_by_area,
+                                                         density = density,
+                                                         precision = precision,
+                                                         verbose = verbose,)
         packed_list.append(packed_rect_dict)
     
     D_packed_list = []
@@ -2042,7 +2058,7 @@ def packer(
             xcenter = x + w/2 + spacing/2
             ycenter = y + h/2 + spacing/2
             d = D_packed.add_ref(D_list[n])
-            d.center = (xcenter,ycenter)
+            d.center = (xcenter*precision,ycenter*precision)
         D_packed_list.append(D_packed)
 
     return D_packed_list
