@@ -1964,7 +1964,7 @@ def _pack_single_bin(
     aspect_ratio = np.asarray(aspect_ratio)/np.linalg.norm(aspect_ratio) # Normalize
     
     # Setup variables
-    box_size = np.asarray(aspect_ratio*np.sqrt(total_area), dtype = float)
+    box_size = np.asarray(aspect_ratio*np.sqrt(total_area), dtype = np.float64)
     box_size = np.clip(box_size, None, max_size)
     if sort_by_area == True: rp_sort = rectpack.SORT_AREA
     else:                    rp_sort = rectpack.SORT_NONE
@@ -1990,7 +1990,7 @@ def _pack_single_bin(
         # Adjust the box size for next time
         box_size *= density  # Increase area to try to fit
         box_size = np.clip(box_size, None, max_size)
-        if verbose == True:  print('Trying to pack in bin size %s' % (box_size*precision))
+        if verbose == True:  print('Trying to pack in bin size (%0.2f, %0.2f)' % tuple(box_size*precision))
         
         # Quit the loop if we've packed all the rectangles or reached the max size
         if (len(rect_packer.rect_list()) == len(rect_dict)):
@@ -2025,7 +2025,7 @@ def packer(
     
     # Santize max_size variable
     max_size = [np.inf if v is None else v for v in max_size]
-    max_size = np.asarray(max_size, dtype = float) # In case it's integers
+    max_size = np.asarray(max_size, dtype = np.float64) # In case it's integers
     max_size = max_size/precision
     
     # Convert Devices to rectangles
@@ -2672,7 +2672,7 @@ def test_res(pad_size = [50,50],
 
     # Compensating for weird edge cases
     if squares_in_row < 1:
-        num_rows = round(num_rows / 2) - 2
+        num_rows = int(round(num_rows / 2) - 2)
         squares_in_row = 1
     if width * 2 > z:
         num_rows = 1
