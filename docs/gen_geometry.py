@@ -585,6 +585,8 @@ create_image(F, 'packer2')
 
 
 # example-distribute1
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
@@ -596,6 +598,8 @@ create_image(D, 'distribute1')
 
 
 # example-distribute2
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
@@ -611,6 +615,8 @@ qp(D) # quickplot the geometry
 create_image(D, 'distribute2')
 
 # example-distribute3
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
@@ -622,6 +628,8 @@ qp(D) # quickplot the geometry
 create_image(D, 'distribute3')
 
 # example-distribute4
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
@@ -634,6 +642,8 @@ create_image(D, 'distribute4')
 
 
 # example-align1
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
@@ -646,6 +656,8 @@ create_image(D, 'align1')
 
 
 # example-align2
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
@@ -660,6 +672,8 @@ qp(D) # quickplot the geometry
 create_image(D, 'align2')
 
 # example-align3
+import phidl.geometry as pg
+from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
