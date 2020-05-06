@@ -6,7 +6,6 @@ install_requires=[
    'gdspy>=1.5',
    'numpy',
    'matplotlib',
-   'webcolors',
 ]
 
 setup(name='phidl',
