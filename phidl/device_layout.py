@@ -716,24 +716,39 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
 
-    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):
-        if direction not in (['+x','-x','x','+y','-y','y']):
-            raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
+    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True, edge = 'center'):
+        if direction not in ({'x','y'}):
+            raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
+        if (edge not in ({'min', 'center', 'max'})) and (separation == False):
+            raise ValueError("[PHIDL] distribute(): When `separation` is False," +
+                " the `edge` argument must be one of {'min', 'center', 'max'}")
 
         if elements == 'all': elements = (self.polygons + self.references)
 
-        if direction == 'x': direction = '+x'
-        elif direction == 'y': direction = '+y'
+        if (direction == 'y'): sizes = [e.ysize for e in elements]
+        if (direction == 'x'): sizes = [e.xsize for e in elements]
 
-        sizes = [e.size for e in elements]
-        xy = elements[0].center
-        for n, e in enumerate(elements[:-1]):
-            e.center = xy
-            if direction == '+x':  xy[0] += spacing + separation*(sizes[n] + sizes[n+1])[0]/2
-            if direction == '-x':  xy[0] -= spacing + separation*(sizes[n] + sizes[n+1])[0]/2
-            if direction == '+y':  xy[1] += spacing + separation*(sizes[n] + sizes[n+1])[1]/2
-            if direction == '-y':  xy[1] -= spacing + separation*(sizes[n] + sizes[n+1])[1]/2
-        elements[-1].center = xy
+        spacing = np.array([spacing]*len(elements))
+
+        if separation == True: # Then `edge` doesn't apply
+            if direction == 'x': edge = 'xmin'
+            if direction == 'y': edge = 'ymin'
+        else:
+            sizes = np.zeros(len(spacing))
+            if direction == 'x':
+                if   edge == 'min': edge = 'xmin'
+                elif edge == 'max': edge = 'xmax'
+                elif edge == 'center': edge = 'x'
+            if direction == 'y': 
+                if   edge == 'min': edge = 'ymin'
+                elif edge == 'max': edge = 'ymax'
+                elif edge == 'center': edge = 'y'
+
+        # Calculate new positions and move each element
+        start = elements[0].__getattribute__(edge)
+        positions = np.cumsum(np.concatenate(([start], (spacing + sizes))))
+        for n, e in enumerate(elements):
+            e.__setattr__(edge, positions[n])
         return self
 
 
