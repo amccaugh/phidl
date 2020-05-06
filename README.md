@@ -111,10 +111,6 @@ You can also do things like create a backing fill to make sure the resist develo
 - Small under-the-hood optimizations
 
 
-### Bugfixes
-- Fixed rare bug with `pg.import_gds()` causing cell name collisions
-- `pg.boolean()` no longer errors when passed empty geometries
-
 ## 1.2.2 (January 17, 2020)
 
 ### Bugfixes
