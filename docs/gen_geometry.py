@@ -562,6 +562,7 @@ create_image(D, 'packer1')
 # example-packer2
 import phidl.geometry as pg
 from phidl import quickplot as qp
+from phidl import Device
 import numpy as np
 
 np.random.seed(1)
