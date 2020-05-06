@@ -540,6 +540,7 @@ create_image(D, 'snspd_expanded')
 # example-packer1
 import phidl.geometry as pg
 from phidl import quickplot as qp
+import numpy as np
 
 np.random.seed(5)
 D_list = [pg.ellipse(radii = np.random.rand(2)*n+2) for n in range(50)]
@@ -561,6 +562,7 @@ create_image(D, 'packer1')
 # example-packer2
 import phidl.geometry as pg
 from phidl import quickplot as qp
+import numpy as np
 
 np.random.seed(1)
 D_list = [pg.ellipse(radii = np.random.rand(2)*n+2) for n in range(120)]
