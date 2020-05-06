@@ -1,8 +1,7 @@
-
-import phidl.utilities as pu
 from phidl import Device
 import phidl
 from matplotlib import pyplot as plt
+import numpy as np
 #def qp(*args):return None # Dummy quickplot
 
 
@@ -536,3 +535,49 @@ D = pg.snspd_expanded(wire_width = 0.3, wire_pitch = 0.6, size = (10,8),
             turn_ratio = 4, terminals_same_side = False, layer = 0)
 qp(D) # quickplot the geometry
 create_image(D, 'snspd_expanded')
+
+
+# example-packer1
+import phidl.geometry as pg
+from phidl import quickplot as qp
+
+np.random.seed(5)
+D_list = [pg.ellipse(radii = np.random.rand(2)*n+2) for n in range(50)]
+D_list += [pg.rectangle(size = np.random.rand(2)*n+2) for n in range(50)]
+
+D_packed_list = pg.packer(
+        D_list,                 # Must be a list or tuple of Devices
+        spacing = 1.25,         # Minimum distance between adjacent shapes
+        aspect_ratio = (2,1),   # Shape of the box
+        max_size = (None,None), # Limits the size into which the shapes will be packed
+        density = 1.1,          # Values closer to 1 pack tighter but require more computation
+        sort_by_area = True,    # Pre-sorts the shapes by area
+        verbose = False,
+        )
+D = D_packed_list[0] # Only one bin was created, so we plot that
+qp(D) # quickplot the geometry
+create_image(D, 'packer1')
+
+# example-packer2
+import phidl.geometry as pg
+from phidl import quickplot as qp
+
+np.random.seed(1)
+D_list = [pg.ellipse(radii = np.random.rand(2)*n+2) for n in range(120)]
+D_list += [pg.rectangle(size = np.random.rand(2)*n+2) for n in range(120)]
+
+D_packed_list = pg.packer(
+        D_list,                 # Must be a list or tuple of Devices
+        spacing = 4,         # Minimum distance between adjacent shapes
+        aspect_ratio = (1,1),   # Shape of the box
+        max_size = (500,500),   # Limits the size into which the shapes will be packed
+        density = 1.05,         # Values closer to 1 pack tighter but require more computation
+        sort_by_area = True,    # Pre-sorts the shapes by area
+        verbose = False,
+        )
+
+# Put all packed bins into a single device and spread them out with distribute()
+F = Device()
+[F.add_ref(D) for D in D_packed_list]
+F.distribute(elements = 'all', direction = 'x', spacing = 100, separation = True)
+qp(F)

@@ -523,6 +523,52 @@ The following structures are meant to reduce "current crowding" in superconducti
    :align: center
 
 
+###############
+Packer / align / distribute
+###############
+
+
+***********
+Packer
+***********
+
+The `pg.packer()` function is able to pack geometries together into a small area.  The algorithm tries to compress them into rectangular bin with aspect ratio `aspect_ratio`.  If a `max_size` is specified, the function will create as many bins as is necessary to pack all the geometries and then return a list of the filled-bin Devices.  The `density` parameter controls how aggressively the algorithm tries to pack the shapes - values closer to 1 pack tighter but require more computation time.
+
+Here we generate several random shapes then pack them together automatically. We allow the bin to be as large as needed to fit all the Devices by specifying `max_size = (None, None)`
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-packer1
+   :end-before: create_image
+
+.. image:: _static/packer1.png
+   :align: center
+
+Here we do the same thing, but this time we want to pack all our geometries into fixed-size die of `max_size = (500,500)`.
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-packer2
+   :end-before: create_image
+
+.. image:: _static/packer2.png
+   :align: center
+
+Note that the packing problem is an NP-complete problem, so `pg.packer()` may be slow if there are more than a few hundred Devices to pack (in that case, try pre-packing a few dozen at a time then packing the resulting bins). Requires the `rectpack` python package.
+
+
+***********
+Distribute
+***********
+
+
+***********
+Align
+***********
+
+
 
 ###############
 Copying and extracting geometry

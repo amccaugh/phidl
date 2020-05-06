@@ -176,3 +176,26 @@ def test_write_and_import_gds():
     Dimport = pg.import_gds('temp.gds', flatten = False)
     h2 = Dimport.hash_geometry(precision = precision)
     assert(h1 == h2)
+
+def test_packer():
+    np.random.seed(5)
+    D_list = [pg.ellipse(radii = np.random.rand(2)*n+2).move(np.random.rand(2)*100+2) for n in range(50)]
+    D_list += [pg.rectangle(size = np.random.rand(2)*n+2).move(np.random.rand(2)*1000+2) for n in range(50)]
+
+    D_packed_list = pg.packer(
+            D_list,       # Must be a list or tuple of Devices
+            spacing = 1.25, # Minimum distance between adjacent shapes
+            aspect_ratio = (1,2), # Shape of the box
+            max_size = (None,None), # Limits the size into which the shapes will be packed
+            density = 1.5,
+            sort_by_area = True, # Pre-sorts the shapes by area
+            verbose = False,
+            )
+    # The function will return a list of packed Devices.  If not all the Devices
+    # in D_list can fit in the area `max_size`, it will fill up the first box to
+    # capacity then create another, repeating until all the shapes are packed 
+    # into boxes of max_size.  (`max_size` can be (None, None))
+    # of `max_size` as is necessary
+    D = D_packed_list[0]
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'd90e43693a5840bdc21eae85f56fdaa57fdb88b2')
