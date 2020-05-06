@@ -96,11 +96,8 @@ You can also do things like create a backing fill to make sure the resist develo
 
 ### New features
 - Now introducing the automatic `pg.packer()` geometry-packing tool:
-
 ![phidl example image](https://amccaugh.github.io/phidl/packer.png)
-
 - New documentation for `pg.packer()`, `align()`, and `distribute()`.  See [**Geometry + function documentation**](https://phidl.readthedocs.io/)
-- 
 
 ### Changes
 - Configurable toplevel `cellname` argument in `write_gds()`
