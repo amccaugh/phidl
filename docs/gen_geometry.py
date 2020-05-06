@@ -548,9 +548,9 @@ D_list += [pg.rectangle(size = np.random.rand(2)*n+2) for n in range(50)]
 D_packed_list = pg.packer(
         D_list,                 # Must be a list or tuple of Devices
         spacing = 1.25,         # Minimum distance between adjacent shapes
-        aspect_ratio = (2,1),   # Shape of the box
+        aspect_ratio = (2,1),   # (width, height) ratio of the rectangular bin
         max_size = (None,None), # Limits the size into which the shapes will be packed
-        density = 1.1,          # Values closer to 1 pack tighter but require more computation
+        density = 1.05,          # Values closer to 1 pack tighter but require more computation
         sort_by_area = True,    # Pre-sorts the shapes by area
         verbose = False,
         )
@@ -581,3 +581,94 @@ F = Device()
 [F.add_ref(D) for D in D_packed_list]
 F.distribute(elements = 'all', direction = 'x', spacing = 100, separation = True)
 qp(F)
+create_image(F, 'packer2')
+
+
+# example-distribute1
+from phidl import Device
+
+D = Device()
+# Create differents-sized rectangles and add them to D
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+
+qp(D) # quickplot the geometry
+create_image(D, 'distribute1')
+
+
+# example-distribute2
+from phidl import Device
+
+D = Device()
+# Create differents-sized rectangles and add them to D
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+# Distribute all the rectangles in D along the x-direction with a separation of 5
+D.distribute(elements = 'all',   # either 'all' or a list of objects
+             direction = 'x',    # 'x' or 'y'
+             spacing = 5,
+             separation = True)
+
+qp(D) # quickplot the geometry
+create_image(D, 'distribute2')
+
+# example-distribute3
+from phidl import Device
+
+D = Device()
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
+             edge = 'min') # edge must be either 'min', 'max', or 'center'
+
+qp(D) # quickplot the geometry
+create_image(D, 'distribute3')
+
+# example-distribute4
+from phidl import Device
+
+D = Device()
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n-10,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
+             edge = 'center')  # edge must be either 'min', 'max', or 'center'
+
+qp(D) # quickplot the geometry
+create_image(D, 'distribute4')
+
+
+# example-align1
+from phidl import Device
+
+D = Device()
+# Create differents-sized rectangles and add them to D then distribute them
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+
+qp(D) # quickplot the geometry
+create_image(D, 'align1')
+
+
+# example-align2
+from phidl import Device
+
+D = Device()
+# Create differents-sized rectangles and add them to D then distribute them
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+
+# Align top edges
+D.align(elements = 'all', alignment = 'ymax')
+
+qp(D) # quickplot the geometry
+create_image(D, 'align2')
+
+# example-align3
+from phidl import Device
+
+D = Device()
+# Create differents-sized rectangles and add them to D then distribute them
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+
+# Align top edges
+D.align(elements = 'all', alignment = 'y')
+
+qp(D) # quickplot the geometry
+create_image(D, 'align3')
