@@ -1808,7 +1808,7 @@ def packer(
         aspect_ratio = (1,1),
         max_size = (None,None),
         sort_by_area = True,
-        density = 1.2,
+        density = 1.1,
         precision = 1e-2,
         verbose = False,
         ):
