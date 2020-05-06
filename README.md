@@ -8,8 +8,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 - [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
 - [Changelog](#changelog) (latest update 1.3.0 (May 5, 2020))
-
-Now introducing the automatic `pg.packer()` geometry-packing tool:
+  - Now introducing the automatic `pg.packer()` geometry-packing tool:
 
 `pg.packer(D_list, spacing = 1.25, aspect_ratio = (2,1))`
 
