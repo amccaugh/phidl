@@ -186,6 +186,144 @@ PHIDL has an implementation of the DEPLOF font with the majority of english ASCI
    :align: center
 
 
+
+###############
+Packer / align / distribute
+###############
+
+
+***********
+Packer
+***********
+
+The `pg.packer()` function is able to pack geometries together into rectangular bins. If a `max_size` is specified, the function will create as many bins as is necessary to pack all the geometries and then return a list of the filled-bin Devices.
+
+Here we generate several random shapes then pack them together automatically. We allow the bin to be as large as needed to fit all the Devices by specifying `max_size = (None, None)`.  By setting `aspect_ratio = (2,1)`, we specify the rectangular bin it tries to pack them into should be twice as wide as it is tall:
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-packer1
+   :end-before: create_image
+
+.. image:: _static/packer1.png
+   :align: center
+
+Say we need to pack many shapes into multiple 500x500 unit die. If we set `max_size = (500,500)` the shapes will be packed into as many 500x500 unit die as required to fit them all:
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-packer2
+   :end-before: create_image
+
+.. image:: _static/packer2.png
+   :align: center
+
+Note that the packing problem is an NP-complete problem, so `pg.packer()` may be slow if there are more than a few hundred Devices to pack (in that case, try pre-packing a few dozen at a time then packing the resulting bins). Requires the `rectpack` python package.
+
+
+***********
+Distribute
+***********
+
+The `distribute()` function allows you to space out elements within a Device evenly in the x or y direction.  It is meant to duplicate the distribute functionality present in Inkscape / Adobe Illustrator:
+
+.. image:: _static/inkscape_distribute.png
+   :align: center
+
+Say we start out with a few random-sized rectangles we want to space out:
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-distribute1
+   :end-before: create_image
+
+.. image:: _static/distribute1.png
+   :align: center
+
+Oftentimes, we want to guarantee some distance between the objects.  By setting `separation = True` we move each object such that there is `spacing` distance between them:
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-distribute2
+   :end-before: create_image
+
+.. image:: _static/distribute2.png
+   :align: center
+
+Alternatively, we can spread them out on a fixed grid by setting `separation = False`. Here we align the left edge (`edge = 'min'`) of each object along a grid spacing of 100:
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-distribute3
+   :end-before: create_image
+
+.. image:: _static/distribute3.png
+   :align: center
+
+The alignment can be done along the right edge as well by setting `edge = 'max'`, or along the center by setting `edge = 'center'` like in the following:
+
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-distribute4
+   :end-before: create_image
+
+.. image:: _static/distribute4.png
+   :align: center
+
+
+
+
+***********
+Align
+***********
+
+The `align()` function allows you to elements within a Device horizontally or vertically.  It is meant to duplicate the alignment functionality present in Inkscape / Adobe Illustrator:
+
+.. image:: _static/inkscape_align.png
+   :align: center
+
+Say we `distribute()` a few objects, but they're all misaligned:
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-align1
+   :end-before: create_image
+
+.. image:: _static/align1.png
+   :align: center
+
+we can use the `align()` function to align their top edges (`alignment = 'ymax'):
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-align2
+   :end-before: create_image
+
+.. image:: _static/align2.png
+   :align: center
+
+or align their centers (`alignment = 'y'):
+
+.. literalinclude:: gen_geometry.py
+   :language: python
+   :dedent: 0
+   :start-after: example-align3
+   :end-before: create_image
+
+.. image:: _static/align3.png
+   :align: center
+
+other valid alignment options include `'xmin', 'x', 'xmax', 'ymin', 'y', and 'ymax'`
+
 ###############
 Boolean / outline / offset / invert
 ###############
