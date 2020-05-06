@@ -300,10 +300,9 @@ g1.xmin = g2.xmax + 5
 g3.xmin = g1.xmax + 5
 qp(D)
 
-# There are dozens of these types of structures.  See the /phidl/geometry.py
-# file for a full geometry list.  Note some of the more complex shapes are
-# experimental and may change with time.
-
+# There are dozens of these types of structures.  Visit the documentation 
+# at https://phidl.readthedocs.io/ or see  the /phidl/geometry.py
+# file for a full geometry list.
 
 # Let's save this file so we can practice importing it in the next step
 D.write_gds('MyNewGDS.gds')
@@ -361,34 +360,138 @@ D2.write_gds('MultiMultiWaveguideTutorialNewUnits.gds',
 
 
 #==============================================================================
-# Advanced: Packing several 
+# Packing shapes into a rectangular bin
 #==============================================================================
-# The pg.packer() function is a convenient way to fit several shapes together
-# into as small an area as possible. It takes a list of Devices as an input.
-# Here we generate several random shapes then pack them together 
-# automatically.  Note solving the packing problem is NP-hard,
-# so packer() may be slow if there are more than a few hundred Devices to pack. 
-# Requires the "rectpack" python package
+
+# The `pg.packer()` function is able to pack geometries together into
+# rectangular bins. If a `max_size` is specified, the function will create as
+# many bins as is necessary to pack all the geometries and then return a list
+# of the filled-bin Devices.
+
+# Here we generate several random shapes then compress them together
+# automatically. We allow the bin to be as large as needed to fit all the
+# Devices by specifying `max_size = (None, None)`.  By setting `aspect_ratio =
+# (2,1)`, we specify the rectangular bin it tries to pack them into should be
+# twice as wide as it is tall:
 
 np.random.seed(5)
-D_list = [pg.ellipse(radii = np.random.rand(2)*20+2) for n in range(20)]
-D_list += [pg.rectangle(size = np.random.rand(2)*20+2) for n in range(20)]
+D_list = [pg.ellipse(radii = np.random.rand(2)*n+2) for n in range(50)]
+D_list += [pg.rectangle(size = np.random.rand(2)*n+2) for n in range(50)]
+
 D_packed_list = pg.packer(
-        D_list,       # Must be a list or tuple of Devices
-        spacing = 1.5, # Minimum distance between adjacent shapes
-        aspect_ratio = (1,1), # Shape of the box
-        max_size = (None,200), # Limits the size into which the shapes will be packed
-        sort_by_area = True, # Pre-sorts the shapes by area, may help packing
+        D_list,                 # Must be a list or tuple of Devices
+        spacing = 1.25,         # Minimum distance between adjacent shapes
+        aspect_ratio = (2,1),   # (width, height) ratio of the rectangular bin
+        max_size = (None,None), # Limits the size into which the shapes will be packed
+        density = 1.05,          # Values closer to 1 pack tighter but require more computation
+        sort_by_area = True,    # Pre-sorts the shapes by area
+        verbose = False,
         )
-# The function will return a list of packed Devices.  If not all the Devices
-# in D_list can fit in the area `max_size`, it will fill up the first box to
-# capacity then create another, repeating until all the shapes are packed 
-# into boxes of max_size.  (`max_size` can be (None, None))
-# of `max_size` as is necessary
+D = D_packed_list[0] # Only one bin was created, so we plot that
+qp(D) # quickplot the geometry
 
-qp(D_packed_list)
+# Say we need to pack many shapes into multiple 500x500 unit die. If we set
+# `max_size = (500,500)` the shapes will be packed into as many 500x500 unit
+# die as required to fit them all:
+
+np.random.seed(1)
+D_list = [pg.ellipse(radii = np.random.rand(2)*n+2) for n in range(120)]
+D_list += [pg.rectangle(size = np.random.rand(2)*n+2) for n in range(120)]
+
+D_packed_list = pg.packer(
+        D_list,                 # Must be a list or tuple of Devices
+        spacing = 4,         # Minimum distance between adjacent shapes
+        aspect_ratio = (1,1),   # Shape of the box
+        max_size = (500,500),   # Limits the size into which the shapes will be packed
+        density = 1.05,         # Values closer to 1 pack tighter but require more computation
+        sort_by_area = True,    # Pre-sorts the shapes by area
+        verbose = False,
+        )
+
+# Put all packed bins into a single device and spread them out with distribute()
+F = Device()
+[F.add_ref(D) for D in D_packed_list]
+F.distribute(elements = 'all', direction = 'x', spacing = 100, separation = True)
+qp(F)
+
+# Note that the packing problem is an NP-complete problem, so `pg.packer()`
+# may be slow if there are more than a few hundred Devices to pack (in that
+# case, try pre-packing a few dozen at a time then packing the resulting
+# bins). Requires the `rectpack` python package.
 
 
+
+#==============================================================================
+# Distributing shapes
+#==============================================================================
+# The `distribute()` function allows you to space out elements within a Device
+# evenly in the x or y direction.  It is meant to duplicate the distribute
+# functionality present in Inkscape / Adobe Illustrator
+
+# Say we start out with a few random-sized rectangles we want to space out
+# and we want to guarantee some distance between the objects.  By
+# setting `separation = True` we move each object such that there is `spacing`
+# distance between them:
+
+D = Device()
+# Create differents-sized rectangles and add them to D
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+# Distribute all the rectangles in D along the x-direction with a separation of 5
+D.distribute(elements = 'all',   # either 'all' or a list of objects
+             direction = 'x',    # 'x' or 'y'
+             spacing = 5,
+             separation = True)
+
+# Alternatively, we can spread them out on a fixed grid by setting `separation
+# = False`. Here we align the left edge (`edge = 'min'`) of each object along
+# a grid spacing of 100:
+
+D = Device()
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
+             edge = 'min') # edge must be either 'min', 'max', or 'center'
+
+qp(D) # quickplot the geometry
+
+# The alignment can also be done along the right edge as well by setting 
+# `edge = 'max'`, or along the center by setting `edge = 'center'`
+
+
+
+#==============================================================================
+# Aligning shapes
+#==============================================================================
+
+# The `align()` function allows you to elements within a Device horizontally
+# or vertically.  It is meant to duplicate the alignment functionality present
+# in Inkscape / Adobe Illustrator:
+
+# Say we `distribute()` a few objects, but they're all misaligned.
+# we can use the `align()` function to align their top edges (`alignment = 'ymax'):
+
+D = Device()
+# Create differents-sized rectangles and add them to D then distribute them
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+
+# Align top edges
+D.align(elements = 'all', alignment = 'ymax')
+
+qp(D) # quickplot the geometry
+
+
+# or align their centers (`alignment = 'y'):
+D = Device()
+# Create differents-sized rectangles and add them to D then distribute them
+[D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+
+# Align top edges
+D.align(elements = 'all', alignment = 'y')
+
+qp(D) # quickplot the geometry
+
+# other valid alignment options include `'xmin', 'x', 'xmax', 'ymin', 'y', and 'ymax'`
 
 
 #==============================================================================
