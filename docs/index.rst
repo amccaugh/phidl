@@ -234,12 +234,6 @@ The `distribute()` function allows you to space out elements within a Device eve
 
 Say we start out with a few random-sized rectangles we want to space out:
 
-.. literalinclude:: gen_geometry.py
-   :language: python
-   :dedent: 0
-   :start-after: example-distribute1
-   :end-before: create_image
-
 .. image:: _static/distribute1.png
    :align: center
 
@@ -290,12 +284,6 @@ The `align()` function allows you to elements within a Device horizontally or ve
    :align: center
 
 Say we `distribute()` a few objects, but they're all misaligned:
-
-.. literalinclude:: gen_geometry.py
-   :language: python
-   :dedent: 0
-   :start-after: example-align1
-   :end-before: create_image
 
 .. image:: _static/align1.png
    :align: center

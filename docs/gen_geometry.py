@@ -593,7 +593,7 @@ from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
-# Create differents-sized rectangles and add them to D
+# Create different-sized rectangles and add them to D
 [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
 
 qp(D) # quickplot the geometry
@@ -606,7 +606,7 @@ from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
-# Create differents-sized rectangles and add them to D
+# Create different-sized rectangles and add them to D
 [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
 # Distribute all the rectangles in D along the x-direction with a separation of 5
 D.distribute(elements = 'all',   # either 'all' or a list of objects
@@ -650,7 +650,7 @@ from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
-# Create differents-sized rectangles and add them to D then distribute them
+# Create different-sized rectangles and add them to D then distribute them
 [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
 D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
 
@@ -664,7 +664,7 @@ from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
-# Create differents-sized rectangles and add them to D then distribute them
+# Create different-sized rectangles and add them to D then distribute them
 [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
 D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
 
@@ -680,7 +680,7 @@ from phidl import quickplot as qp
 from phidl import Device
 
 D = Device()
-# Create differents-sized rectangles and add them to D then distribute them
+# Create different-sized rectangles and add them to D then distribute them
 [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
 D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
 
