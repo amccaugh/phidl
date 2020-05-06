@@ -196,7 +196,7 @@ Packer / align / distribute
 Packer
 ***********
 
-The `pg.packer()` function is able to pack geometries together into a rectangular bins. If a `max_size` is specified, the function will create as many bins as is necessary to pack all the geometries and then return a list of the filled-bin Devices.
+The `pg.packer()` function is able to pack geometries together into rectangular bins. If a `max_size` is specified, the function will create as many bins as is necessary to pack all the geometries and then return a list of the filled-bin Devices.
 
 Here we generate several random shapes then pack them together automatically. We allow the bin to be as large as needed to fit all the Devices by specifying `max_size = (None, None)`.  By setting `aspect_ratio = (2,1)`, we specify the rectangular bin it tries to pack them into should be twice as wide as it is tall:
 
