@@ -476,7 +476,8 @@ DL.add_ref( pg.text('Layer1', size = 10, layer = 1) )
 DL.add_ref( pg.text('Layer2', size = 10, layer = [2,5]) ).movey(-20)
 
 # 3) as a Layer object
-my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads', description = 'Gold pads liftoff')
+my_gold_layer = Layer(gds_layer = 3, gds_datatype = 0, name = 'goldpads',
+                      color = (0.1,.5,.9), description = 'Gold pads liftoff')
 my_unused_layer = Layer(240,1) # Creates a Layer for GDS layer 240 (dataype 1)
 DL.add_ref( pg.text('Layer3', size = 10, layer = my_gold_layer) ).movey(-40)
 

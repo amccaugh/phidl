@@ -27,9 +27,9 @@ from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
-import webcolors
 import warnings
 import hashlib
+from phidl.constants import _CSS3_NAMES_TO_HEX
 
 # Remove this once gdspy fully deprecates current_library
 import gdspy.library
@@ -150,18 +150,21 @@ class Layer(object):
             if color is None: # not specified
                 self.color = None
             elif np.size(color) == 3: # in format (0.5, 0.5, 0.5)
-                self.color = webcolors.rgb_to_hex(np.array( np.array(color)*255, dtype = int))
+                color = np.array(color)
+                if np.any(color > 1) or np.any(color < 0): raise ValueError
+                color = np.array(np.round(color*255), dtype = int)
+                self.color = "#{:02x}{:02x}{:02x}".format(*color)
             elif color[0] == '#': # in format #1d2e3f
-                self.color = webcolors.hex_to_rgb(color)
-                self.color = webcolors.rgb_to_hex(self.color)
+                if len(color) != 7: raise ValueError
+                int(color[1:],16) # Will throw error if not hex format
+                self.color = color
             else: # in named format 'gold'
-                self.color = webcolors.name_to_hex(color)
+                self.color = _CSS3_NAMES_TO_HEX[color]
         except:
-            raise ValueError("""[PHIDL] Layer() color must be specified as a
-            0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex  color
-            (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or
-            see http://www.w3schools.com/colors/colors_names.asp )
-            """)
+            raise ValueError("[PHIDL] Layer() color must be specified as a " +
+            "0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex color string " +
+            "(e.g. '#a31df4'), or a CSS3 color name (e.g. 'gold' or " +
+            "see http://www.w3schools.com/colors/colors_names.asp )")
 
         Layer.layer_dict[(gds_layer, gds_datatype)] = self
 
