@@ -40,8 +40,8 @@ create_image(D, 'rectangle')
 # example-bbox
 import phidl.geometry as pg
 from phidl import quickplot as qp
-
 from phidl import Device
+
 D = Device()
 arc = D << pg.arc(radius = 10, width = 0.5, theta = 85, layer = 1).rotate(25)
  # Draw a rectangle around the arc we created by using the arc's bounding box
@@ -116,8 +116,8 @@ create_image(D, 'C')
 # example-offset
 import phidl.geometry as pg
 from phidl import quickplot as qp
-
 from phidl import Device
+
 # Create `T`, an ellipse and rectangle which will be offset (expanded / contracted)
 T = Device()
 e = T << pg.ellipse(radii = (10,5), layer = 1)
@@ -150,8 +150,8 @@ create_image(D, 'invert')
 # example-boolean
 import phidl.geometry as pg
 from phidl import quickplot as qp
-
 from phidl import Device
+
 E = pg.ellipse(radii = (10,5), layer = 1)
 R = pg.rectangle(size = [15,5], layer = 2).movey(-1.5)
 C = pg.boolean(A = E, B = R, operation = 'not', precision = 1e-6, num_divisions = [1,1], layer = 0)
@@ -168,8 +168,8 @@ create_image(D, 'boolean')
 # example-outline
 import phidl.geometry as pg
 from phidl import quickplot as qp
-
 from phidl import Device
+
 # Create a blank device and add two shapes
 X = Device()
 X.add_ref(pg.cross(length = 25, width = 1, layer = 1))
