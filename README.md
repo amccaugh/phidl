@@ -26,7 +26,7 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 
 *fiddle (verb) - /ˈfidl/ - to make minor manual movements, especially to adjust something*
 
-PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 which extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy).  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) which are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) which allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__geometry library reference__](https://phidl.readthedocs.io/) and a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) which will walk you through the process of getting acquainted with PHIDL.
+PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 that extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy).  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) that are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) that allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__geometry library reference__](https://phidl.readthedocs.io/) and a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) that will walk you through the process of getting acquainted with PHIDL.
 
 The goal is to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a geometry you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
 
@@ -43,7 +43,7 @@ There's a few dozen shortcuts like this that make life easier built into PHIDL--
 ![phidl example image](https://amccaugh.github.io/phidl/readme_1.png)
 
 
-There's also a "port" functionality which allows you to snap together geometry like Legos without caring about where exactly the absolute coordinates of either geometry is.  For instance, connecting the above misaligned rectangles is a two-line command:
+There's also a "port" functionality that allows you to snap together geometry like Legos without caring about where exactly the absolute coordinates of either geometry is.  For instance, connecting the above misaligned rectangles is a two-line command:
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_2.png)
 
@@ -81,6 +81,6 @@ pg.packer(D_list, spacing = 1.25, aspect_ratio = (2,1))
 
 ![phidl example image](https://amccaugh.github.io/phidl/packer.png)
 
-You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device which needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
+You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device that needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_6.png)
