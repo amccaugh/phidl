@@ -3,6 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root ``toctree`` directive.
 
+###############
+PHIDL Geometry and Function Reference
+###############
+
 Geometry and function reference for `PHIDL <https://github.com/amccaugh/phidl>`_, an open-source Python GDS layout and CAD geometry creation tool
 
 Note: This is still a work-in-progress. For a more complete tutorial please see  `the tutorial here <https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py>`_
