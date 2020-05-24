@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/amccaugh/phidl)
 
 # PHIDL
-PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
+GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
@@ -25,6 +25,8 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 # About PHIDL
 
 *fiddle (verb) - /ˈfidl/ - to make minor manual movements, especially to adjust something*
+
+PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
 PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 that extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy).  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) that are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) that allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__geometry library reference__](https://phidl.readthedocs.io/) and a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) that will walk you through the process of getting acquainted with PHIDL.
 
