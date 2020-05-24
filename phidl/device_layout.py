@@ -7,12 +7,10 @@
 # Minor TODO
 #==============================================================================
 # Replace write_gds() with GdsLibrary.write_gds()
-# geometry: Add packer(), make option to limit die size
 # add wire_basic to phidl.routing.  also add endcap parameter
-# make “elements to polygons” general function
-# fix boolean with empty device
-# make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
 # check that aliases show up properly in quickplot2
+# phidl add autoarray_xy to pg.geometry()
+# Make get-info which returns a dict of Devices and their Info
 
 #==============================================================================
 # Imports
