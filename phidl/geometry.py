@@ -2631,8 +2631,12 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
         reverse = False
 
     if start_width == end_width: # Just return a square
-        ypts = [0, start_width, start_width,           0]
-        xpts = [0,           0, start_width, start_width]
+        if symmetric == True:
+            ypts = [-start_width/2, start_width/2, start_width/2, -start_width/2]
+            xpts = [0,           0, start_width, start_width]
+        if symmetric == False:
+            ypts = [0, start_width, start_width,           0]
+            xpts = [0,           0, start_width, start_width]
     else:
         xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
         xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
