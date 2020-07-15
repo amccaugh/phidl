@@ -320,7 +320,7 @@ class Port(object):
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
-        self.orientation = np.arctan2(dx,dy)*180/pi
+        self.orientation = np.arctan2(dx,-dy)*180/pi
         self.width = sqrt(dx**2 + dy**2)
 
     @property
