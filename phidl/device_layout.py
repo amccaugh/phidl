@@ -95,7 +95,48 @@ def _parse_move(origin, destination, axis):
 
         return dx,dy
 
+def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
+    """ Takes a list of elements and distributes them either (1: suparation==False) equally
+    along a grid or (2: separation==True) with a fixed spacing between them """
+    if direction not in ({'x','y'}):
+        raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
+    if (edge not in ({'min', 'center', 'max'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` is False," +
+            " the `edge` argument must be one of {'min', 'center', 'max'}")
 
+    if (direction == 'y'): sizes = [e.ysize for e in elements]
+    if (direction == 'x'): sizes = [e.xsize for e in elements]
+
+    spacing = np.array([spacing]*len(elements))
+
+    if separation == True: # Then `edge` doesn't apply
+        if direction == 'x': edge = 'xmin'
+        if direction == 'y': edge = 'ymin'
+    else:
+        sizes = np.zeros(len(spacing))
+        if direction == 'x':
+            if   edge == 'min': edge = 'xmin'
+            elif edge == 'max': edge = 'xmax'
+            elif edge == 'center': edge = 'x'
+        if direction == 'y': 
+            if   edge == 'min': edge = 'ymin'
+            elif edge == 'max': edge = 'ymax'
+            elif edge == 'center': edge = 'y'
+
+    # Calculate new positions and move each element
+    start = elements[0].__getattribute__(edge)
+    positions = np.cumsum(np.concatenate(([start], (spacing + sizes))))
+    for n, e in enumerate(elements):
+        e.__setattr__(edge, positions[n])
+    return elements
+
+def _align(elements, alignment = 'ymax'):
+    if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
+        raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
+    value = Group(elements).__getattribute__(alignment)
+    for e in elements:
+        e.__setattr__(alignment, value)
+    return elements
 
 def reset():
     Layer.layer_dict = {}
@@ -720,50 +761,15 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True, edge = 'center'):
-        if direction not in ({'x','y'}):
-            raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
-        if (edge not in ({'min', 'center', 'max'})) and (separation == False):
-            raise ValueError("[PHIDL] distribute(): When `separation` is False," +
-                " the `edge` argument must be one of {'min', 'center', 'max'}")
-
         if elements == 'all': elements = (self.polygons + self.references)
-
-        if (direction == 'y'): sizes = [e.ysize for e in elements]
-        if (direction == 'x'): sizes = [e.xsize for e in elements]
-
-        spacing = np.array([spacing]*len(elements))
-
-        if separation == True: # Then `edge` doesn't apply
-            if direction == 'x': edge = 'xmin'
-            if direction == 'y': edge = 'ymin'
-        else:
-            sizes = np.zeros(len(spacing))
-            if direction == 'x':
-                if   edge == 'min': edge = 'xmin'
-                elif edge == 'max': edge = 'xmax'
-                elif edge == 'center': edge = 'x'
-            if direction == 'y': 
-                if   edge == 'min': edge = 'ymin'
-                elif edge == 'max': edge = 'ymax'
-                elif edge == 'center': edge = 'y'
-
-        # Calculate new positions and move each element
-        start = elements[0].__getattribute__(edge)
-        positions = np.cumsum(np.concatenate(([start], (spacing + sizes))))
-        for n, e in enumerate(elements):
-            e.__setattr__(edge, positions[n])
+        _distribute(elements = elements, direction = direction, spacing = spacing,
+                    separation = separation, edge = edge)
         return self
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
         if elements == 'all': elements = (self.polygons + self.references)
-        if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
-            raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
-        if elements is None:
-            elements = (self.polygons + self.references)
-        value = self.__getattribute__(alignment)
-        for e in elements:
-            e.__setattr__(alignment, value)
+        _align(elements, alignment = alignment)
         return self
 
 
@@ -1252,8 +1258,8 @@ class Group(_GeometryHelper):
         elif isinstance(element, PHIDL_ELEMENTS):
             self.elements.add(element)
         else:
-            raise ValueError('[PHIDL] add() Could not add element to group, the only ' \
-                             ' allowed element types are ' \
+            raise ValueError('[PHIDL] add() Could not add element to Group, the only ' \
+                             'allowed element types are ' \
                              '(Device, DeviceReference, Port, Polygon, CellArray, Label, Group)')
         return self
             
@@ -1270,4 +1276,13 @@ class Group(_GeometryHelper):
     def mirror(self, p1 = (0,1), p2 = (0,0)):
         for e in self.elements:
             e.mirror(p1 = p1, p2 = p2)
+        return self
+
+    def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
+        _distribute(elements = self.elements, direction = direction, spacing = spacing,
+                    separation = separation, edge = edge)
+        return self
+
+    def align(self, alignment = 'ymax'):
+        _align(elements = self.elements, alignment = alignment)
         return self
