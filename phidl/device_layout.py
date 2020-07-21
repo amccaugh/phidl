@@ -1198,17 +1198,8 @@ class Label(gdspy.Label, _GeometryHelper):
         return self
 
     def move(self, origin = (0,0), destination = None, axis = None):
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        o = _parse_coordinate(origin)
-        d = _parse_coordinate(destination)
-
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        self.position += np.array(d) - o
+        dx,dy = _parse_move(origin, destination, axis)
+        self.position += np.asarray((dx,dy))
         return self
 
     def mirror(self, p1 = (0,1), p2 = (0,0)):
