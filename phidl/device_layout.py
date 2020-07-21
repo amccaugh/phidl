@@ -1209,3 +1209,55 @@ class Label(gdspy.Label, _GeometryHelper):
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
+
+class Group(_GeometryHelper):
+    """ Groups objects together so they can be manipulated as though 
+    they were a single object (move/rotate/mirror) """
+    def __init__(self, *args):
+        self.elements = set()
+        self.add(args)
+    
+    def __repr__(self):
+        return ('Group (%s elements total)' % (len(self.elements)))
+    
+    def __iadd__(self, element):
+        return self.add(element)
+
+    @property
+    def bbox(self):
+        bboxes = np.empty([len(self.elements),4])
+        for n,e in enumerate(self.elements):
+            bboxes[n] = e.bbox.flatten()
+
+        bbox = ( (bboxes[:,0].min(), bboxes[:,1].min()),
+                 (bboxes[:,2].max(), bboxes[:,3].max()) )
+        return np.array(bbox)
+                                            
+    def add(self, element):
+        if _is_iterable(element):
+            [self.add(e) for e in element]
+        elif isinstance(element, PHIDL_ELEMENTS):
+            self.elements.add(element)
+        else:
+            raise ValueError('[PHIDL] add() Could not add element to group, the only ' \
+                             ' allowed element types are ' \
+                             '(Device, DeviceReference, Port, Polygon, CellArray, Label, Group)')
+        return self
+            
+    def rotate(self, angle = 45, center = (0,0)):
+        for e in self.elements:
+            e.rotate(angle = angle, center = center)
+        return self
+        
+    def move(self, origin = (0,0), destination = None, axis = None):
+        for e in self.elements:
+            e.move(origin = origin, destination = destination, axis = axis)
+        return self
+        
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
+        for e in self.elements:
+            e.mirror(p1 = p1, p2 = p2)
+        return self
+
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)

@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from phidl import Device#, Layer, LayerSet, make_device, Port
-# import phidl.geometry as pg
+from phidl import Device, Group#, Layer, LayerSet, make_device, Port
+import phidl.geometry as pg
 # import phidl.routing as pr
 # import phidl.utilities as pu
 
@@ -204,3 +204,48 @@ def test_remove_layers():
     D.remove_layers(layers = [13,(14,0)])
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'bb81ec3b3a6be2372a7ffc32f57121a9f1a97b34')
+
+def test_group():
+    # Test all types
+    D = Device()
+    E1 = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0)
+    E2 = pg.rectangle(size = (4,2), layer = 0).movex(15)
+    e1 = D << E1
+    e2 = D << E2
+    e3 = D << E2
+    e4 = D.add_label('hello', position = (1.5,-1.5))
+    e5 = pg.snspd()
+    e6 = D.add_polygon( [(8,6,7,9,7,0), (6,8,9,5,7,0)] )
+    e7 = D.add_array(pg.cross())
+    e2verify = D << E2
+
+    # Test creation and addition
+    G = Group()
+    G.add(e1)
+    G.add(e2)
+    G.add([e3,e4,e5])
+    G += (e6,e7)
+    assert np.allclose(G.bbox.flatten(), np.array([-10. ,  -8.5, 105. , 105. ]))
+
+    # Test movement
+    G.move((2,7))
+    e2verify.move((2,7))
+    assert np.allclose(G.bbox.flatten(), np.array([ -8. ,  -1.5, 107. , 112. ]))
+    assert all(e2.center == e2verify.center)
+    assert e2.rotation == e2verify.rotation
+
+    # Test rotation
+    G.rotate(90, center = (5,5))
+    e2verify.rotate(90, center = (5,5))
+    assert np.allclose(G.bbox.flatten(), np.array([-102. ,   -8. ,   11.5,  107. ]))
+    assert all(e2.center == e2verify.center)
+    assert e2.rotation == e2verify.rotation
+
+    # Test mirroring
+    G.mirror(p1 = (1,1), p2 = (-1,1))
+    e2verify.mirror(p1 = (1,1), p2 = (-1,1))
+    assert np.allclose(G.bbox.flatten(), np.array([-102. , -105. ,   11.5,   10. ]))
+    assert all(e2.center == e2verify.center)
+    assert e2.rotation == e2verify.rotation
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '3964acb3971771c6e70ceb587c2ae8b37f2ed112')
