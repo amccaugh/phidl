@@ -1210,6 +1210,9 @@ class Label(gdspy.Label, _GeometryHelper):
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label)
+
 class Group(_GeometryHelper):
     """ Groups objects together so they can be manipulated as though 
     they were a single object (move/rotate/mirror) """
@@ -1220,8 +1223,17 @@ class Group(_GeometryHelper):
     def __repr__(self):
         return ('Group (%s elements total)' % (len(self.elements)))
     
+    def __len__(self):
+        return len(self.elements)
+
     def __iadd__(self, element):
         return self.add(element)
+
+    def __add__(self, element):
+        G = Group()
+        G.add(self)
+        G.add(element)
+        return G
 
     @property
     def bbox(self):
@@ -1234,7 +1246,9 @@ class Group(_GeometryHelper):
         return np.array(bbox)
                                             
     def add(self, element):
-        if _is_iterable(element):
+        if isinstance(element, Group):
+            [self.add(e) for e in element.elements]
+        elif _is_iterable(element):
             [self.add(e) for e in element]
         elif isinstance(element, PHIDL_ELEMENTS):
             self.elements.add(element)
@@ -1258,6 +1272,3 @@ class Group(_GeometryHelper):
         for e in self.elements:
             e.mirror(p1 = p1, p2 = p2)
         return self
-
-
-PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
