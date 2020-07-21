@@ -300,6 +300,11 @@ class _GeometryHelper(object):
         self.move(origin = (0,origin), destination = (0,destination))
         return self
 
+    def __add__(self, element):
+        G = Group()
+        G.add(self)
+        G.add(element)
+        return G
 
 
 class Port(object):
@@ -1228,12 +1233,6 @@ class Group(_GeometryHelper):
 
     def __iadd__(self, element):
         return self.add(element)
-
-    def __add__(self, element):
-        G = Group()
-        G.add(self)
-        G.add(element)
-        return G
 
     @property
     def bbox(self):
