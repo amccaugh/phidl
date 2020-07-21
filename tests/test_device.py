@@ -249,3 +249,43 @@ def test_group():
     assert e2.rotation == e2verify.rotation
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '3964acb3971771c6e70ceb587c2ae8b37f2ed112')
+
+
+def test_distribute():
+    D = Device()
+    # Create different-sized rectangles and add them to D
+    [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+    # Distribute all the rectangles in D along the x-direction with a separation of 5
+    D.distribute(elements = 'all',   # either 'all' or a list of objects
+                 direction = 'x',    # 'x' or 'y'
+                 spacing = 5,
+                 separation = True)
+
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '1aa688d7dfb59e94d28dd0d9b8f324ff30281d70')
+
+    D = Device()
+    [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+    D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
+                 edge = 'min') # edge must be either 'min', 'max', or 'center'
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '18be0ef1db78095233d2f3ae5f065d9f453a6c07')
+
+def test_align():
+    D = Device()
+    # Create different-sized rectangles and add them to D then distribute them
+    [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+    D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+    # Align top edges
+    D.align(elements = 'all', alignment = 'ymax')
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '38025959a80e46e47eabcf3f096c6273427dabc3')
+
+    D = Device()
+    # Create different-sized rectangles and add them to D then distribute them
+    [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
+    D.distribute(elements = 'all', direction = 'x', spacing = 5, separation = True)
+    # Align top edges
+    D.align(elements = 'all', alignment = 'y')
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'ed32ee1ce1f3da8f6216020877d6c1b64097c600')
