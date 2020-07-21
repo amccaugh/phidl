@@ -11,6 +11,7 @@
 # check that aliases show up properly in quickplot2
 # phidl add autoarray_xy to pg.geometry()
 # Make get-info which returns a dict of Devices and their Info
+# Allow connect(overlap) to be a tuple (0, 0.7)
 
 #==============================================================================
 # Imports
@@ -79,6 +80,20 @@ def _parse_coordinate(c):
         return c
     else:
         raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
+
+def _parse_move(origin, destination, axis):
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        d = _parse_coordinate(destination)
+        o = _parse_coordinate(origin)
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+        dx,dy = np.array(d) - o
+
+        return dx,dy
 
 
 
@@ -385,25 +400,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:        d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
-
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        dx,dy = np.array(d) - o
+        dx,dy = _parse_move(origin, destination, axis)
 
         super(Polygon, self).translate(dx, dy)
         if self.parent is not None:
@@ -868,35 +865,17 @@ class Device(gdspy.Cell, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:        d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
-
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        dx,dy = np.array(d) - o
+        dx,dy = _parse_move(origin, destination, axis)
 
         # Move geometries
         for e in self.polygons:
             e.translate(dx,dy)
         for e in self.references:
-            e.move(destination = d, origin = o)
+            e.move(destination = destination, origin = origin)
         for e in self.labels:
-            e.move(destination = d, origin = o)
+            e.move(destination = destination, origin = origin)
         for p in self.ports.values():
-            p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+            p.midpoint = np.array(p.midpoint) + np.array((dx,dy))
 
         self._bb_valid = False
         return self
@@ -1058,28 +1037,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device_ref """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = (0,0)
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:   d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
-
-        # Lock one axis if necessary
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        # This needs to be done in two steps otherwise floating point errors can accrue
-        dxdy = np.array(d) - np.array(o)
-        self.origin = np.array(self.origin) + dxdy
+        dx,dy = _parse_move(origin, destination, axis)
+        self.origin = np.array(self.origin) + np.array((dx,dy))
 
         if self.owner is not None:
             self.owner._bb_valid = False
@@ -1174,28 +1133,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device_ref """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = (0,0)
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[CellArray.move()] ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:   d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[CellArray.move()] ``destination`` not array-like, a port, or port name')
-
-        # Lock one axis if necessary
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        # This needs to be done in two steps otherwise floating point errors can accrue
-        dxdy = np.array(d) - np.array(o)
-        self.origin = np.array(self.origin) + dxdy
+        dx,dy = _parse_move(origin, destination, axis)
+        self.origin = np.array(self.origin) + np.array((dx,dy))
 
         if self.owner is not None:
             self.owner._bb_valid = False
