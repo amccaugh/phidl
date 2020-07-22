@@ -1279,7 +1279,7 @@ class Group(_GeometryHelper):
         return self
 
     def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
-        _distribute(elements = self.elements, direction = direction, spacing = spacing,
+        _distribute(elements = list(self.elements), direction = direction, spacing = spacing,
                     separation = separation, edge = edge)
         return self
 
