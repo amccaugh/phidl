@@ -1228,7 +1228,7 @@ class Group(_GeometryHelper):
     """ Groups objects together so they can be manipulated as though 
     they were a single object (move/rotate/mirror) """
     def __init__(self, *args):
-        self.elements = set()
+        self.elements = []
         self.add(args)
     
     def __repr__(self):
@@ -1256,11 +1256,14 @@ class Group(_GeometryHelper):
         elif _is_iterable(element):
             [self.add(e) for e in element]
         elif isinstance(element, PHIDL_ELEMENTS):
-            self.elements.add(element)
+            self.elements.append(element)
         else:
             raise ValueError('[PHIDL] add() Could not add element to Group, the only ' \
                              'allowed element types are ' \
                              '(Device, DeviceReference, Port, Polygon, CellArray, Label, Group)')
+        # Remove non-unique entries
+        used = set()
+        self.elements = [x for x in self.elements if x not in used and (used.add(x) or True)]
         return self
             
     def rotate(self, angle = 45, center = (0,0)):
@@ -1279,7 +1282,7 @@ class Group(_GeometryHelper):
         return self
 
     def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
-        _distribute(elements = list(self.elements), direction = direction, spacing = spacing,
+        _distribute(elements = self.elements, direction = direction, spacing = spacing,
                     separation = separation, edge = edge)
         return self
 
