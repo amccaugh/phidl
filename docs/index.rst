@@ -18,7 +18,7 @@ Homepage here:  `PHIDL <https://github.com/amccaugh/phidl>`_
    :caption: Contents:
 
    geometry
-   examples/example1
+   examples
 
 
 
