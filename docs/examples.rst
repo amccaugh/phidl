@@ -12,5 +12,6 @@ Geometry and function reference for `PHIDL <https://github.com/amccaugh/phidl>`_
    :caption: Contents:
 
    examples/quickstart
+   examples/movement
    examples/group
 
