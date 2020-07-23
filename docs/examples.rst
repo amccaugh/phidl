@@ -8,6 +8,7 @@ Geometry and function reference for `PHIDL <https://github.com/amccaugh/phidl>`_
 
 .. toctree::
    :maxdepth: 2
+   :titlesonly:
    :caption: Contents:
 
    examples/quickstart
