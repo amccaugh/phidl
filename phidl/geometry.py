@@ -1720,9 +1720,82 @@ def _racetrack_gradual_parametric(t, R, N):
 
 #==============================================================================
 #
-# Packing and fill
+# Arange, packing and fill
 #
 #==============================================================================
+
+def grid(device_list,
+         spacing = 5,
+         shape = None,
+         grid_size = None,
+         equal_column = False,
+         equal_row = False,
+         expand_list = True
+        ):
+    """ Places the devices in the `device_list` (1D or 2D) on a grid.
+    
+    If `shape` (needs to be 2 items e.g. (1, -1)) is given `device_list` is reshaped (see np.reshape). If no shape is given and the list is 1D, 
+    the output is as if np.reshape was run with (1, -1).
+    If there are too few items in the `device_list` for the `shape`, the matrix is expanded with empty items (None) unless disabled with `expand_list`.
+    The grid center points of each element can either be set by giving a tuple `grid_size` with the width and height of the column and row.
+    If the grid_size element is None or a tuple (None, None), `equal_column` sets all columns to the same width and `equal_row` sets all rows of the grid 
+    to the same height. The `spacing` parameter allows to set a gap between adjacent elements and can be a tuple for different distances in height and width.
+    """
+    device_array = np.array(device_list)
+    if device_array.ndim > 2 or device_array.ndim == 0:
+        raise ValueError("The device_list needs to be 1D or 2D.")
+    
+    if shape is not None:
+        if 0 < shape[0] * shape[1] < device_array.size:
+            raise ValueError("The shape is too small for all the items in device_list")
+
+        if np.min(shape) == -1:
+            remainder = np.max(shape) - device_array.size % np.max(shape)
+        else:
+            remainder = shape[0]*shape[1] - device_array.size
+            
+        if remainder != 0:
+            if not expand_list:
+                raise ValueError("The device_list does not fit in a matrix with {}x{}".format(shape[0], shape[1]))
+            device_array = np.append(device_array, [None,]*remainder)
+    elif device_array.ndim == 1:
+        shape = (1, -1)
+
+    device_array = np.reshape(device_array, shape)
+
+    spacing = np.broadcast_to(spacing, (2,))
+    grid_size = np.broadcast_to(grid_size, (2,)).copy()
+
+    def _devsize(device):
+        if device is None:
+            return None
+        else:
+            return device.size
+    device_size = np.vectorize(_devsize, signature='()->(n)')
+    device_sizes = device_size(device_array)
+
+    max_dim_columns = np.nanmax(device_sizes, axis=0)
+    max_dim_rows = np.nanmax(device_sizes, axis=1)
+
+    if equal_row and grid_size[1] is None:
+        grid_size[1] = max_dim_rows[:, 1].max()
+    
+    if equal_column and grid_size[0] is None:
+        grid_size[0] = max_dim_columns[:, 0].max()
+
+    device_matrix = Device()
+    
+    y_center = 0
+    x_center = 0
+    for j, row in enumerate(device_array):
+        for k, item in enumerate(row):
+            if item is not None:
+                d = device_matrix.add_ref(item)
+                d.center = (x_center, y_center)
+            x_center = x_center + spacing[0] + (grid_size[0] or max_dim_columns[k, 0])
+        x_center = 0
+        y_center = y_center + spacing[1] + (grid_size[1] or max_dim_rows[j, 1])
+    return device_matrix
 
 
 def _pack_single_bin(
