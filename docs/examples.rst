@@ -10,5 +10,6 @@ Geometry and function reference for `PHIDL <https://github.com/amccaugh/phidl>`_
    :maxdepth: 2
    :caption: Contents:
 
+   examples/quickstart
    examples/group
 
