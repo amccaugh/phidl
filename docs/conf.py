@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'phidl'
-copyright = '2019, Adam N. McCaughan'
+copyright = '2020, Adam N. McCaughan'
 author = 'Adam N. McCaughan'
 
 # The short X.Y version
