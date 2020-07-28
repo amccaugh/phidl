@@ -63,7 +63,7 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
-    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
+    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2)
     if np.asarray(points).ndim == 1:
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(points-p1))/norm(p2-p1)**2) - points
     if np.asarray(points).ndim == 2:
@@ -1252,6 +1252,8 @@ class Group(_GeometryHelper):
     def add(self, element):
         if _is_iterable(element):
             [self.add(e) for e in element]
+        elif element is None:
+            return self
         elif isinstance(element, PHIDL_ELEMENTS):
             self.elements.append(element)
         else:
