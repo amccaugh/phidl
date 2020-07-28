@@ -41,7 +41,7 @@ from phidl.constants import _glyph,_width,_indent
 
 
 def rectangle(size = (4,2), layer = 0):
-    """Generate rectangle geometry.
+    """ Generates a rectangle geometry.
 
     Parameters
     ----------
@@ -53,7 +53,7 @@ def rectangle(size = (4,2), layer = 0):
     Returns
     -------
     D : Device
-        A Device with a single rectangle in it.
+        A Device containing a single rectangle polygon.
     """
 
     D = Device(name = 'rectangle')
@@ -76,7 +76,7 @@ def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
     Returns
     -------
     D : Device
-        A Device with a single rectangle in it.
+        A Device containing a single rectangle polygon.
 
     Examples
     --------
@@ -91,7 +91,7 @@ def bbox(bbox = [(-1,-1),(3,4)], layer = 0):
 
 
 def cross(length = 10, width = 3, layer = 0):
-    """Generates a right-angle cross (+ shape, symmetric) from two
+    """ Generates a right-angle cross (+ shape, symmetric) from two
     rectangles of specified length and width.
 
     Parameters
@@ -106,7 +106,7 @@ def cross(length = 10, width = 3, layer = 0):
     Returns
     -------
     D: Device
-        A Device with a cross in it.
+        A Device containing a cross polygon.
     """
 
     D = Device(name = 'cross')
@@ -119,7 +119,7 @@ def cross(length = 10, width = 3, layer = 0):
 
 
 def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
-    """Generate an ellipse geometry.
+    """ Generates an ellipse geometry.
 
     Parameters
     ----------
@@ -133,7 +133,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
     Returns
     -------
     D : Device
-        A Device with an ellipse polygon in it.
+        A Device containing an ellipse polygon.
     """
 
     D = Device(name = 'ellipse')
@@ -148,7 +148,7 @@ def ellipse(radii = (10,5), angle_resolution = 2.5, layer = 0):
 
 
 def circle(radius = 10, angle_resolution = 2.5, layer = 0):
-    """Generate a circle geometry.
+    """ Generates a circle geometry.
 
     Parameters
     ----------
@@ -162,7 +162,7 @@ def circle(radius = 10, angle_resolution = 2.5, layer = 0):
     Returns
     -------
     D : Device
-        A Device with a circle polygon in it.
+        A Device containing a circle polygon.
     """
 
     D = Device(name = 'circle')
@@ -174,7 +174,7 @@ def circle(radius = 10, angle_resolution = 2.5, layer = 0):
 
 
 def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
-    """Generate a ring geometry.
+    """ Generates a ring geometry.
 
     Parameters
     ----------
@@ -190,7 +190,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     Returns
     -------
     D : Device
-        A Device with an ring polygon in it.
+        A Device containing a ring polygon.
 
     Notes
     -----
@@ -235,7 +235,7 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
     Returns
     -------
     D : Device
-        A Device with an arc polygon in it, and two ports (`1` and `2`) on either end.
+        A Device containing an arc polygon and two ports (`1` and `2`) on either end.
 
     Notes
     -----
@@ -264,12 +264,12 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution 
 
 
 def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
-    """ Starting from a port, creates an arc which connects to the specified port.
+    """ Starting from a port, creates an arc which connects to the specified port on one end.
 
     Parameters
     ----------
-    port : FIXME fill
-
+    port : Port
+        Port to anchor arc to.
     radius : int or float
         Radius of the arc centerline.
     angle : int or float
@@ -282,13 +282,13 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
     Returns
     -------
     D : Device
-        A Device with an arc polygon in it, and two ports (`1` and `2`) on either end.
+        A Device containing an arc polygon and two ports (`1` and `2`) on either end.
 
     Notes
     -----
     Angle = 0 is located along the positive x-axis relative to the center of the arc.
     Ports are added to each end of the arc to facilitate connecting those ends to other geometries.
-    Port `2` is aligned to connect to the specified port. FIXME check
+    Port `2` is aligned to connect to the specified port.
     """
 
     D = arc(radius = radius, width = port.width, theta = angle, start_angle = 0,
@@ -299,7 +299,7 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
 
 
 def straight(size = (4,2), layer = 0):
-    """Generates a rectangular wire geometry with ports on the length edges.
+    """ Generates a rectangular wire geometry with ports on the length edges.
 
     Parameters
     ----------
@@ -311,7 +311,7 @@ def straight(size = (4,2), layer = 0):
     Returns
     -------
     D : Device
-        A Device with an rectangle polygon in it, and two ports (`1` and `2`) on either end.
+        A Device containing a rectangle polygon and two ports (`1` and `2`) on either end.
 
     Notes
     -----
@@ -327,12 +327,12 @@ def straight(size = (4,2), layer = 0):
 
 
 def L(width = 1, size = (10,20) , layer = 0):
-    """Generates an "L" geometry with ports on both ends.
+    """ Generates an 'L' geometry with ports on both ends.
 
     Parameters
     ----------
     width : int or float
-        Width of the L.
+        Thickness of the line forming the L.
     size : tuple of int or float
         Lengths of the base and height of the L, respectively.
     layer : int, array-like[2], or set
@@ -341,7 +341,7 @@ def L(width = 1, size = (10,20) , layer = 0):
     Returns
     -------
     D : Device
-        A Device with an L-shaped polygon in it, and two ports (`1` and `2`) on either end of the L.
+        A Device containing an L-shaped polygon and two ports (`1` and `2`) on either end of the L.
     """
 
     D = Device(name = 'L')
@@ -355,12 +355,12 @@ def L(width = 1, size = (10,20) , layer = 0):
 
 
 def C(width = 1, size = (10,20) , layer = 0):
-    """Generates a "C" geometry with ports on both ends.
+    """ Generates a 'C' geometry with ports on both ends.
 
     Parameters
     ----------
     width : int or float
-        Width of the C.
+        Thickness of the line forming the C.
     size : tuple of int or float
         Lengths of the base + top edges and the height of the C, respectively.
     layer : int, array-like[2], or set
@@ -369,7 +369,7 @@ def C(width = 1, size = (10,20) , layer = 0):
     Returns
     -------
     D : Device
-        A Device with a [-bracket-shaped polygon in it, and two ports (`1` and `2`) on either end of the [ shape.
+        A Device containing a [-bracket-shaped polygon and two ports (`1` and `2`) on either end of the [ shape.
     """
 
     D = Device(name = 'C')
@@ -392,11 +392,11 @@ def C(width = 1, size = (10,20) , layer = 0):
 def offset(elements, distance = 0.1, join_first = True, precision = 1e-4, 
         num_divisions = [1,1],  join='miter', tolerance=2,
         max_points = 4000, layer = 0):
-    """ FIXME fill
-
+    """ Shrinks or expands a polygon or set of polygons.
+    FIXME fill (elements, join_first, num_divisions, tolerance)
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference
+    elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
 
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
@@ -411,14 +411,14 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     tolerance : int or float
         . Must be greater than or equal to 2 if join is 'miter'.
     max_points : int
-
-    layer : int, array_like[2], or set
+        The maximum number of vertices within the resulting polygon.
+    layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
     Returns
     -------
     D : Device
-        A Device with the specified offset applied.
+        A Device containing a polygon(s) with the specified offset applied.
     """
     if type(elements) is not list: elements = [elements]
     polygons_to_offset = []
@@ -452,35 +452,36 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
 
 def boolean(A, B, operation, precision = 1e-4, num_divisions = [1,1],
             max_points=4000, layer = 0):
-    """
-    Performs boolean operations between 2 Device/DeviceReference objects,
+    """ Performs boolean operations between 2 Device/DeviceReference objects
     or lists of Devices/DeviceReferences.
-
-    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.  
-    Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
-    'B-A' is equivalent to 'not' with the operands switched
-
+    FIXME fill (num_divisions)
     Parameters
     ----------
-    A : Device/DeviceReference or list of Device/DeviceReference
-
-    B : Device/DeviceReference or list of Device/DeviceReference
-
-    operation : string
+    A : Device/DeviceReference or list of Device/DeviceReference or Polygon
+        Input Device operand 1.
+    B : Device/DeviceReference or list of Device/DeviceReference or Polygon
+        Input Device operand 2.
+    operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
         Boolean operation to perform.
     precision : float
         Precision of vertex coordinates.
     num_divisions : 
 
     max_points : int
-
-    layer : int, array_like[2], or set
+        The maximum number of vertices within the resulting polygon.
+    layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
     Returns
     -------
     D: Device
-        A Device with the result of the boolean operations between the 2 input Devices performed.
+        A Device containing a polygon(s) with the boolean operations between the 2 input Devices performed.
+
+    Notes
+    -----
+    'A+B' is equivalent to 'or'
+    'A-B' is equivalent to 'not'
+    'B-A' is equivalent to 'not' with the operands switched
     """
     D = Device('boolean')
 
@@ -540,9 +541,10 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
     """ Creates an outline around all the polygons passed in the `elements`
     argument.  `elements` may be a Device, Polygon, or list of Devices.
 
+    FIXME fill (elements, distance, num_divisions, tolerance, join_first)
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference
+    elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
 
     distance : int or float
 
@@ -550,21 +552,21 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
         Precision of vertex coordinates.
     num_divisions : list of int
 
-    join : string
-
+    join : {'miter', 'bevel', 'round'}
+        Type of join used to create the offset polygon.
     tolerance : 
 
     join_first : bool
 
     max_points : int
-
-    layer : int, array_like[2], or set
+        The maximum number of vertices within the resulting polygon.
+    layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
     Returns
     -------
-    D: Device
-
+    D : Device
+        A Device containing the outlined polygon(s).
     """
     D = Device('outline')
     if type(elements) is not list: elements = [elements]
@@ -589,28 +591,27 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], max_p
     """ Creates an inverted version of the input shapes with an additional
     border around the edges.
     
-    FIXME fill
+    FIXME fill (num_divisions)
 
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference
+    elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
         A Device containing the polygons to invert.
-    border : 
-
+    border : int or float
+        Size of the border around the inverted shape (border value is the distance from the edges of the boundary box defining the inverted shape to the border, and is applied to all 4 sides of the shape).
     precision : float
-        Precision of vertex coordinates
+        Precision of vertex coordinates.
     num_divisions : list of int
 
     max_points : int
         The maximum number of vertices within the resulting polygon.
-    layer : int, array_like[2], or set
+    layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
     Returns
     -------
     D : Device
-        A Device
-
+        A Device containing the inverted version of the input shape(s) and the corresponding border(s).
     """
     Temp = Device()
     if type(elements) is not list: elements = [elements]
@@ -629,24 +630,22 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1], max_p
 
 def xor_diff(A,B, precision = 1e-4):
     """ Given two Devices A and B, performs the layer-by-layer XOR
-    difference between A and B, and returns polygons representing
-    the differences between A and B.
-
-    FIXME fill
+    difference between A and B and returns polygons representing the
+    differences between A and B.
 
     Parameters
     ----------
     A : Device/DeviceReference or list of Device/DeviceReference
-        A Device with a polygon in it.
+        A Device containing a polygon(s).
     B : Device/DeviceReference or list of Device/DeviceReference
-        A Device with a polygon in it.
+        A Device containing a polygon(s).
     precision : float
         Precision of vertex coordinates.
 
     Returns
     ------
     D: Device
-        A Device with polygons defined by the XOR difference result between A and B.
+        A Device containing a polygon(s) defined by the XOR difference result between A and B.
     """
     D = Device()
     A_polys = A.get_polygons(by_spec = True)
@@ -671,29 +670,28 @@ def xor_diff(A,B, precision = 1e-4):
 
 
 def union(D, by_layer = False, precision = 1e-4, join_first = True, max_points = 4000, layer = 0):
-    """ Performs the union of all polygons within a Device. FIXME check
-    FIXME fill
+    """ Performs the union of all polygons within a Device.
+    FIXME fill (by_Layer, join_first)
 
     Parameters
     ----------
     D : Device/DeviceReference or list of Device/DeviceReference
-
+        A Device containing polygons to perform a union on.
     by_Layer : bool
 
     precision : float
-
+        Precision of vertex coordinates.
     join_first : bool
 
     max_points : int
-
-    layer : int, array_like[2], or set
+        The maximum number of vertices within the resulting polygon.
+    layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     U : Device
-        A Device containing the union of 
+        A Device containing the union of the polygons within the input Device.
     """
     U = Device()
 
@@ -709,21 +707,21 @@ def union(D, by_layer = False, precision = 1e-4, join_first = True, max_points =
     return U
 
 def _union_polygons(polygons, precision = 1e-4, max_points = 4000):
-    """ FIXME fill
+    """ Performs the union of all polygons within a PolygonSet or list of polygons.
 
     Parameters
     ----------
-    polygons : 
-
-    precision : 
-
-    max_points : 
-
+    polygons : PolygonSet or list of polygons
+        A set containing the input polygons.
+    precision : float
+        Precision of vertex coordinates.
+    max_points : int
+        The maximum number of vertices within the resulting polygon. 
 
     Returns
     -------
-    unioned : 
-
+    unioned : polygon
+        The result of the union of all the polygons within the input PolygonSet.
     """
     polygons = _merge_floating_point_errors(polygons, tol = precision/1000)
     unioned = gdspy.boolean(polygons, [], operation = 'or',
@@ -732,19 +730,19 @@ def _union_polygons(polygons, precision = 1e-4, max_points = 4000):
 
 
 def _merge_floating_point_errors(polygons, tol = 1e-10):
-    """ FIXME fill
+    """ Fixes floating point errors in the input polygon(s) by merging values within the tolerance `tol`. See _merge_nearby_floating_points for specifics.
 
     Parameters
     ----------
-    polygons : 
-
-    tol : 
-
+    polygons : PolygonSet or list of polygons
+        Set of polygons with floating point errors.
+    tol : float
+        Tolerance within which points will be merged.
 
     Returns
     -------
-    polygons_fixed : 
-
+    polygons_fixed : PolygonSet
+        Set of corrected polygons.
     """
     stacked_polygons = np.vstack(polygons)
     x = stacked_polygons[:,0]
@@ -759,25 +757,28 @@ def _merge_floating_point_errors(polygons, tol = 1e-10):
 
 
 def _merge_nearby_floating_points(x, tol = 1e-10):
-    """ Takes an array `x` and merges any values within the tolerance `tol`
-    So if given
-    >>> x = [-2, -1, 0, 1.0001, 1.0002, 1.0003, 4, 5, 5.003, 6, 7, 8]
-    >>> _merge_nearby_floating_points(x, tol = 1e-3)
-    will then return:
-    >>> [-2, -1, 0, 1.0001, 1.0001, 1.0001, 4, 5, 5.003, 6, 7, 8].
+    """ Takes an array `x` and merges any values within the tolerance `tol`.
 
     Parameters
     ----------
     FIXME fill
-    x : 
-
-    tol : 
-
+    x : list of int or float
+        Array of values with floating point errors.
+    tol : float
+        Tolerance within which points will be merged.
 
     Returns
     -------
-    xsort : 
+    xsort : list of int or float
+        Corrected and sorted array.
 
+    Examples
+    --------
+    If given:
+    >>> x = [-2, -1, 0, 1.0001, 1.0002, 1.0003, 4, 5, 5.003, 6, 7, 8]
+    >>> _merge_nearby_floating_points(x, tol = 1e-3)
+    Will return:
+    >>> [-2, -1, 0, 1.0001, 1.0001, 1.0001, 4, 5, 5.003, 6, 7, 8].
     """
     xargsort = np.argsort(x)
     xargunsort = np.argsort(xargsort)
@@ -798,24 +799,23 @@ def _crop_region(polygons, left, bottom, right, top, precision):
 
     Parameters
     ----------
-    FIXME fill
-    polygons : 
-
-    left : 
-
-    bottom : 
-
-    right : 
-
-    top : 
-
-    precision : 
-
+    polygons : PolygonSet or list of polygons
+        Set or list of polygons to be cropped.
+    left : int or float
+        The x-coordinate of the lefthand boundary.
+    bottom : int or float
+        The y-coordinate of the bottom boundary.
+    right : int or float
+        The x-coordinate of the righthand boundary.
+    top : int or float
+        The y-coordinate of the top boundary.
+    precision : float
+        Precision of vertex coordinates.
 
     Returns
     -------
-    cropped_polygons : 
-
+    cropped_polygons : PolygonSet or list of polygons
+        Set or list of polygons that are cropped according to the specified boundary.
     """
     cropped_polygons = []
     for p in polygons:
@@ -834,26 +834,25 @@ def _crop_edge_polygons(all_polygons, bboxes, left, bottom, right, top, precisio
 
     Parameters
     ----------
-    FIXME fill
-    all_polygons : 
-    
-    bboxes : 
-
-    left : 
-
-    bottom : 
-
-    right : 
-
-    top : 
-
-    precision : 
-
+    all_polygons : PolygonSet or list of polygons
+        Set or list of polygons to be cropped.
+    bboxes : list
+        List of all the bboxes of the polygons in all_polygons.
+    left : int or float
+        The x-coordinate of the lefthand boundary.
+    bottom : int or float
+        The y-coordinate of the bottom boundary.
+    right : int or float
+        The x-coordinate of the righthand boundary.
+    top : int or float
+        The y-coordinate of the top boundary.
+    precision : float
+        Precision of vertex coordinates.
 
     Returns
     -------
-    polygons_to_process : 
-
+    polygons_to_process : PolygonSet or list of polygons
+        Set or list of polygons with crop applied to edge polygons.
     """
     polygons_in_rect_i = _find_bboxes_in_rect(bboxes, left, bottom, right, top)
     polygons_edge_i = _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top)
@@ -872,19 +871,19 @@ def _find_bboxes_in_rect(bboxes, left, bottom, right, top):
     left/bottom/right/top, this function returns those polygons which overlap
     the rectangle.
 
+    FIXME fill (result)
     Parameters
     ----------
-    FIXME fill
-    bboxes : 
-
-    left : 
-
-    bottom : 
-
-    right : 
-
-    top : 
-
+    bboxes : list
+        List of all polygon bboxes.
+    left : int or float
+        The x-coordinate of the lefthand boundary.
+    bottom : int or float
+        The y-coordinate of the bottom boundary.
+    right : int or float
+        The x-coordinate of the righthand boundary.
+    top : int or float
+        The y-coordinate of the top boundary.
 
     Returns
     -------
@@ -901,19 +900,19 @@ def _find_bboxes_on_rect_edge(bboxes, left, bottom, right, top):
     defined by left/bottom/right/top, this function returns those polygons
     which intersect the rectangular boundary.
 
+    FIXME fill (result)
     Parameters
     ----------
-    FIXME fill
-    bboxes : 
-
-    left : 
-
-    bottom : 
-    
-    right : 
-
-    top : 
-
+    bboxes : list
+        List of all polygon bboxes.
+    left : int or float
+        The x-coordinate of the lefthand boundary.
+    bottom : int or float
+        The y-coordinate of the bottom boundary.
+    right : int or float
+        The x-coordinate of the righthand boundary.
+    top : int or float
+        The y-coordinate of the top boundary.
 
     Returns
     -------
@@ -935,9 +934,9 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
                 join = 'miter',
                 tolerance = 2,
                 ):
-    """ Taking a region of e.g. size (x,y) which needs to be offset by distance
+    """ Taking a region of e.g. size (x, y) which needs to be offset by distance
     d, this function crops out a region (x+2*d, y+2*d) large, offsets that
-    region, then crops it back to size (x,y) to create a valid result.
+    region, then crops it back to size (x, y) to create a valid result.
 
     Parameters
     ----------
@@ -958,10 +957,10 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
 
     join_first : 
 
-    precision : 
-
-    join : 
-
+    precision : float
+        Precision of vertex coordinates.
+    join : {'miter', 'bevel', 'round'}
+        Type of join used to create the offset polygon.
     tolerance : 
 
 
@@ -985,17 +984,17 @@ def _offset_region(all_polygons, bboxes, left, bottom, right, top,
 
 
 def _polygons_to_bboxes(polygons):
-    """ FIXME fill
+    """ Generates the bboxes of all input polygons.
 
     Parameters
     ----------
-    polygons : 
-
+    polygons : PolygonSet or list of polygons
+        Set or list of polygons to generate bboxes of.
 
     Returns
     -------
-    bboxes : 
-
+    bboxes : list
+        List of bboxes of all input polygons.
     """
 #    Build bounding boxes
     bboxes = np.empty([len(polygons),4])
@@ -1030,9 +1029,10 @@ def _offset_polygons_parallel(
 
     join_first : 
 
-    precision : 
-
-    join : 
+    precision : float
+        Precision of vertex coordinates.
+    join : {'miter', 'bevel', 'round'}
+        Type of join used to create the offset polygon.
 
     tolerance : 
 
@@ -1108,8 +1108,8 @@ def _boolean_region(all_polygons_A, all_polygons_B,
 
     operation : 
 
-    precision : 
-
+    precision : float
+        Precision of vertex coordinates.
 
     Returns
     -------
@@ -1143,8 +1143,8 @@ def _boolean_polygons_parallel(
 
     operation : 
 
-    precision : 
-
+    precision : float
+        Precision of vertex coordinates.
 
     Returns
     -------
@@ -1210,7 +1210,8 @@ def litho_steps(
 
     height : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1254,7 +1255,8 @@ def litho_star(
 
     diameter : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1424,9 +1426,11 @@ def copy_layer(D, layer = 1, new_layer = 2):
     ----------
     D : Device
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
-    new_layer : 
+    new_layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1636,7 +1640,8 @@ def _convert_port_to_geometry(port, layer = 0):
     FIXME fill
     port : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1707,7 +1712,8 @@ def _convert_geometry_to_port(label, layer = 0):
     FIXME fill
     label : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1731,7 +1737,8 @@ def ports_to_geometry(device, layer = 0):
     FIXME fill
     device : Device
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1759,7 +1766,8 @@ def geometry_to_ports(device, layer = 0):
     FIXME fill
     device : Device
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1793,7 +1801,7 @@ def connector(midpoint = (0,0), width = 1, orientation = 0):
     FIXME fill
     midpoint : 
 
-    width : 
+    width : int or float 
 
     orientation : 
 
@@ -1826,7 +1834,8 @@ def compass(size = (4,2), layer = 0):
     FIXME fill
     size : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1860,7 +1869,8 @@ def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0):
 
     ports : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1915,7 +1925,8 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
 
     taper_type : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -1969,7 +1980,8 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
 
     taper_type : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -2048,7 +2060,8 @@ def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     
     port : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -2082,7 +2095,8 @@ def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
 
     width2 : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -2324,7 +2338,8 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
 
     num_pts : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -2392,7 +2407,8 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 
     min_spacing : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -2489,7 +2505,8 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
 
     justify : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -2575,7 +2592,8 @@ def basic_die(
 
     text_location : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
     draw_bbox : 
 
@@ -2650,13 +2668,14 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
 
     Parameters
     ----------
-    width : 
+    width : int or float 
 
     R : 
 
     N : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on. 
 
 
     Returns
@@ -2861,8 +2880,8 @@ def _pack_single_bin(
 
     density : 
 
-    precision : 
-
+    precision : float
+        Precision of vertex coordinates.
     verbose : 
 
 
@@ -2959,8 +2978,8 @@ def packer(
 
     density : 
 
-    precision : 
-
+    precision : float
+        Precision of vertex coordinates.
     verbose : 
 
 
@@ -3295,7 +3314,8 @@ def polygon_ports(xpts=[-1,-1, 0, 0],
 
     ypts : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on. 
 
 
     Returns
@@ -3346,7 +3366,7 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
 
     length_taper : 
 
-    width : 
+    width : int or float 
     
     partial_etch : 
 
@@ -4064,7 +4084,8 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
     symmetric : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on. 
 
 
     Returns
@@ -4189,7 +4210,8 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
 
     length_adjust : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on. 
 
 
     Returns
@@ -4274,7 +4296,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
     terminals_same_side : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -4367,7 +4390,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
     terminals_same_side : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
@@ -4426,7 +4450,8 @@ def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
 
     theta_resolution : 
 
-    layer : 
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
 
 
     Returns
