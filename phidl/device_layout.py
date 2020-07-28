@@ -1222,7 +1222,6 @@ class Label(gdspy.Label, _GeometryHelper):
         return self.mirror(p1, p2)
 
 
-PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label)
 
 class Group(_GeometryHelper):
     """ Groups objects together so they can be manipulated as though 
@@ -1251,9 +1250,7 @@ class Group(_GeometryHelper):
         return np.array(bbox)
                                             
     def add(self, element):
-        if isinstance(element, Group):
-            [self.add(e) for e in element.elements]
-        elif _is_iterable(element):
+        if _is_iterable(element):
             [self.add(e) for e in element]
         elif isinstance(element, PHIDL_ELEMENTS):
             self.elements.append(element)
@@ -1289,3 +1286,5 @@ class Group(_GeometryHelper):
     def align(self, alignment = 'ymax'):
         _align(elements = self.elements, alignment = alignment)
         return self
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
