@@ -43,8 +43,20 @@ __version__ = '1.3.0'
 #==============================================================================
 
 def _rotate_points(points, angle = 45, center = (0,0)):
-    """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be
-    input as either single points [1,2] or array-like[N][2], and will return in kind
+    """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be input as either single points [1,2] or array-like[N][2], and will return in kind.
+
+    Parameters
+    ----------
+    points : 
+
+    angle : 
+
+    center : 
+
+
+    Returns
+    -------
+
     """
     if angle == 0:
          return points
@@ -60,7 +72,20 @@ def _rotate_points(points, angle = 45, center = (0,0)):
 
 def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
-    input as either single points [1,2] or array-like[N][2], and will return in kind
+    input as either single points [1,2] or array-like[N][2], and will return in kind.
+
+    Parameters
+    ----------
+    points : 
+
+    p1 : 
+
+    p2 : 
+
+
+    Returns
+    -------
+
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
@@ -70,10 +95,31 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
 def _is_iterable(items):
+    """ FIXME fill
+
+    Parameters
+    ----------
+    items : 
+
+
+    Returns
+    -------
+
+    """
     return isinstance(items, (list, tuple, set, np.ndarray))
 
 def _parse_coordinate(c):
-    """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate """
+    """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate.
+    
+    Parameters
+    ----------
+    c : 
+
+
+    Returns
+    -------
+
+    """
     if isinstance(c, Port):
         return c.midpoint
     elif np.array(c).size == 2:
@@ -82,6 +128,24 @@ def _parse_coordinate(c):
         raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
 
 def _parse_move(origin, destination, axis):
+    """ FIXME fill
+
+    Parameters
+    ----------
+    origin : 
+
+    destination : 
+
+    axis : 
+
+
+    Returns
+    -------
+    dx : 
+
+    dy : 
+
+    """
         # If only one set of coordinates is defined, make sure it's used to move things
         if destination is None:
             destination = origin
@@ -97,7 +161,26 @@ def _parse_move(origin, destination, axis):
 
 def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
     """ Takes a list of elements and distributes them either (1: suparation==False) equally
-    along a grid or (2: separation==True) with a fixed spacing between them """
+    along a grid or (2: separation==True) with a fixed spacing between them.
+    
+    Parameters
+    ----------
+    elements : 
+
+    direction : 
+
+    spacing : 
+
+    separation : 
+
+    edge : 
+
+
+    Returns
+    -------
+    elements : 
+
+    """
     if direction not in ({'x','y'}):
         raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
     if (edge not in ({'min', 'center', 'max'})) and (separation == False):
@@ -131,6 +214,20 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     return elements
 
 def _align(elements, alignment = 'ymax'):
+    """ FIXME fill
+
+    Parameters
+    ----------
+    elements : 
+
+    alignment : 
+
+
+    Returns
+    -------
+    elements : 
+
+    """
     if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
         raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
     value = Group(elements).__getattribute__(alignment)
@@ -139,13 +236,13 @@ def _align(elements, alignment = 'ymax'):
     return elements
 
 def reset():
+    """ FIXME fill """
     Layer.layer_dict = {}
     Device._next_uid = 0
 
 
 
 class LayerSet(object):
-
     def __init__(self):
         self._layers = {}
 
@@ -172,7 +269,6 @@ class LayerSet(object):
 
     def __repr__(self):
         return ('LayerSet (%s layers total)' % (len(self._layers)))
-
 
 
 class Layer(object):
@@ -229,7 +325,19 @@ class Layer(object):
 
 def _parse_layer(layer):
     """ Check if the variable layer is a Layer object, a 2-element list like
-    [0,1] representing layer=0 and datatype=1, or just a layer number """
+    [0,1] representing layer=0 and datatype=1, or just a layer number.
+    
+    Parameters
+    ----------
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+
+    Returns
+    -------
+    (gds_layer, gds_datatype) : tuple
+    
+    """
     if isinstance(layer, Layer):
         gds_layer, gds_datatype = layer.gds_layer, layer.gds_datatype
     elif np.shape(layer) == (2,): # In form [3,0]
@@ -252,7 +360,7 @@ class _GeometryHelper(object):
     the functions move() and the property ``bbox`` (as in self.bbox).  It uses
     that function+property to enable you to do things like check what the center
     of the bounding box is (self.center), and also to do things like move the
-    bounding box such that its maximum x value is 5.2 (self.xmax = 5.2) """
+    bounding box such that its maximum x value is 5.2 (self.xmax = 5.2)."""
 
     @property
     def center(self):
@@ -424,7 +532,6 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
-
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer=gds_layer,
@@ -468,6 +575,20 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
 
 def make_device(fun, config = None, **kwargs):
+    """ FIXME fill
+
+    Parameters
+    ----------
+    fun : 
+
+    config : 
+
+
+    Returns
+    -------
+    D : Device
+
+    """
     config_dict = {}
     if type(config) is dict:
         config_dict = dict(config)
@@ -488,7 +609,6 @@ def make_device(fun, config = None, **kwargs):
 
 
 class Device(gdspy.Cell, _GeometryHelper):
-
     _next_uid = 0
 
     def __init__(self, *args, **kwargs):
