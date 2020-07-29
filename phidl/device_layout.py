@@ -95,14 +95,17 @@ def _parse_move(origin, destination, axis):
 
         return dx,dy
 
-def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
+def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
     """ Takes a list of elements and distributes them either (1: suparation==False) equally
     along a grid or (2: separation==True) with a fixed spacing between them """
     if direction not in ({'x','y'}):
         raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
-    if (edge not in ({'min', 'center', 'max'})) and (separation == False):
-        raise ValueError("[PHIDL] distribute(): When `separation` is False," +
-            " the `edge` argument must be one of {'min', 'center', 'max'}")
+    if (direction == 'x') and (edge not in ({'x', 'xmin', 'xmax'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` == False and direction == 'x'," +
+            " the `edge` argument must be one of {'x', 'xmin', 'xmax'}")
+    if (direction == 'y') and (edge not in ({'y', 'ymin', 'ymax'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` == False and direction == 'y'," +
+            " the `edge` argument must be one of {'y', 'ymin', 'ymax'}")
 
     if (direction == 'y'): sizes = [e.ysize for e in elements]
     if (direction == 'x'): sizes = [e.xsize for e in elements]
@@ -114,14 +117,6 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
         if direction == 'y': edge = 'ymin'
     else:
         sizes = np.zeros(len(spacing))
-        if direction == 'x':
-            if   edge == 'min': edge = 'xmin'
-            elif edge == 'max': edge = 'xmax'
-            elif edge == 'center': edge = 'x'
-        if direction == 'y': 
-            if   edge == 'min': edge = 'ymin'
-            elif edge == 'max': edge = 'ymax'
-            elif edge == 'center': edge = 'y'
 
     # Calculate new positions and move each element
     start = elements[0].__getattribute__(edge)
@@ -132,7 +127,7 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
 
 def _align(elements, alignment = 'ymax'):
     if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
-        raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
+        raise ValueError("[PHIDL] 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
     value = Group(elements).__getattribute__(alignment)
     for e in elements:
         e.__setattr__(alignment, value)
