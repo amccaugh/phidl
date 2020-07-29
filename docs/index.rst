@@ -17,7 +17,7 @@ Homepage here:  `PHIDL <https://github.com/amccaugh/phidl>`_
    :maxdepth: 2
    :caption: Contents:
 
-   geometry
+   geometry_reference
    examples
 
 
