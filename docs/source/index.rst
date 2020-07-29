@@ -12,14 +12,12 @@ Geometry and function reference for PHIDL, an open-source Python GDS (GDSII) lay
 
 Homepage here:  `PHIDL <https://github.com/amccaugh/phidl>`_
 
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   geometry
-   examples
-
+   phidl
+   modules
 
 
 Indices and tables

@@ -146,18 +146,18 @@ def _parse_move(origin, destination, axis):
     dy : 
 
     """
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
+    # If only one set of coordinates is defined, make sure it's used to move things
+    if destination is None:
+        destination = origin
+        origin = [0,0]
 
-        d = _parse_coordinate(destination)
-        o = _parse_coordinate(origin)
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-        dx,dy = np.array(d) - o
+    d = _parse_coordinate(destination)
+    o = _parse_coordinate(origin)
+    if axis == 'x': d = (d[0], o[1])
+    if axis == 'y': d = (o[0], d[1])
+    dx,dy = np.array(d) - o
 
-        return dx,dy
+    return dx,dy
 
 def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
     """ Takes a list of elements and distributes them either (1: suparation==False) equally

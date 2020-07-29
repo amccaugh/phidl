@@ -1,4 +1,0 @@
-- Change directory to phidl/docs/
-- Run "python gen_geometry.py" to build images
-- Run "make html" to build docs
-- Open the index.html in the phidl/docs/html folder
