@@ -2202,7 +2202,7 @@ def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
     u = wire_width / dielectric_thickness
     eta = 376.73 # Vacuum impedance
 
-    a = 1 + log((u**4 + (u/52)**2) / (u**4 + 0.432)) / 49
+    a = 1 + log((u**4 + (u/52)**2) / (u**4 + 0.432)) / 49 \
           + log(1 + (u/18.1)**3) / 18.7;
     b = 0.564*((eps_r-0.9) / (eps_r+3))**0.053;
     F = 6 + (2*pi - 6) * exp(-(30.666/u)**0.7528);
