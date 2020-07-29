@@ -7,7 +7,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 
 import gdspy
 from gdspy import clipper
-from phidl.device_layout import Device, Port, Polygon, CellArray
+from phidl.device_layout import Device, Port, Polygon, CellArray, Group
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
@@ -1725,77 +1725,74 @@ def _racetrack_gradual_parametric(t, R, N):
 #==============================================================================
 
 def grid(device_list,
-         spacing = 5,
-         shape = None,
-         grid_size = None,
-         equal_column = False,
-         equal_row = False,
-         expand_list = True
+    spacing = (5,10),
+    separation = True,
+    shape = None,
+    align_x = 'x',
+    align_y = 'y',
+    edge_x = 'x',
+    edge_y = 'ymax',
         ):
-    """ Places the devices in the `device_list` (1D or 2D) on a grid.
-    
-    If `shape` (needs to be 2 items e.g. (1, -1)) is given `device_list` is reshaped (see np.reshape). If no shape is given and the list is 1D, 
-    the output is as if np.reshape was run with (1, -1).
-    If there are too few items in the `device_list` for the `shape`, the matrix is expanded with empty items (None) unless disabled with `expand_list`.
-    The grid center points of each element can either be set by giving a tuple `grid_size` with the width and height of the column and row.
-    If the grid_size element is None or a tuple (None, None), `equal_column` sets all columns to the same width and `equal_row` sets all rows of the grid 
-    to the same height. The `spacing` parameter allows to set a gap between adjacent elements and can be a tuple for different distances in height and width.
+    """ Places a list/array of devices on a grid (the array may be 1D or 2D).  
+    If separation==False the devices are spaced on an fixed grid defined by `spacing`.
+    If separation==True, the grid the devices are arranged such that every row and 
+    column is separated by `spacing` distance.  The `align` and `edge` arguments are
+    used to determine the relative position of the devices within their rows/columns
+    (note that the `edge` arguments are unused if separation==True)   If `shape` 
+    is given, the device_list will be reshaped according to shape == (x_columns, y_rows).
+    The reshaping is done according to numpy.reshape().
     """
-    device_array = np.array(device_list)
-    if device_array.ndim > 2 or device_array.ndim == 0:
-        raise ValueError("The device_list needs to be 1D or 2D.")
-    
-    if shape is not None:
-        if 0 < shape[0] * shape[1] < device_array.size:
-            raise ValueError("The shape is too small for all the items in device_list")
 
+    device_array = np.asarray(device_list)
+    # Check arguments
+    if device_array.ndim not in (1,2):
+        raise ValueError("[PHIDL] grid() The device_list needs to be 1D or 2D.")
+    if shape is not None and len(shape) != 2:
+        raise ValueError("[PHIDL] grid() shape argument must be None or" +
+                        " have a length of 2, for example shape=(4,6)")
+
+    # Check that shape is valid and reshape array if needed
+    if (shape is None) and (device_array.ndim == 2): # Already in desired shape
+        shape = device_array.shape
+    elif (shape is None) and (device_array.ndim == 1):
+        shape = (device_array.size, -1)
+    elif 0 < shape[0] * shape[1] < device_array.size:
+        raise ValueError("[PHIDL] grid() The shape is too small for all the items in device_list")
+    else:
         if np.min(shape) == -1:
             remainder = np.max(shape) - device_array.size % np.max(shape)
         else:
             remainder = shape[0]*shape[1] - device_array.size
-            
         if remainder != 0:
-            if not expand_list:
-                raise ValueError("The device_list does not fit in a matrix with {}x{}".format(shape[0], shape[1]))
             device_array = np.append(device_array, [None,]*remainder)
-    elif device_array.ndim == 1:
-        shape = (1, -1)
-
     device_array = np.reshape(device_array, shape)
 
-    spacing = np.broadcast_to(spacing, (2,))
-    grid_size = np.broadcast_to(grid_size, (2,)).copy()
-
-    def _devsize(device):
-        if device is None:
-            return None
+    # Create a blank Device and reference all the Devices in it
+    D = Device('grid')
+    ref_array = np.empty(device_array.shape, dtype = np.object)
+    dummy = Device()
+    for idx, d in np.ndenumerate(device_array):
+        if d is not None:
+            ref_array[idx] = D << d
         else:
-            return device.size
-    device_size = np.vectorize(_devsize, signature='()->(n)')
-    device_sizes = device_size(device_array)
+            ref_array[idx] = D << dummy # Create dummy devices
 
-    max_dim_columns = np.nanmax(device_sizes, axis=0)
-    max_dim_rows = np.nanmax(device_sizes, axis=1)
 
-    if equal_row and grid_size[1] is None:
-        grid_size[1] = max_dim_rows[:, 1].max()
-    
-    if equal_column and grid_size[0] is None:
-        grid_size[0] = max_dim_columns[:, 0].max()
+    rows = [Group(ref_array[n,:]) for n in range(ref_array.shape[0])]
+    cols = [Group(ref_array[:,n]) for n in range(ref_array.shape[1])]
 
-    device_matrix = Device()
-    
-    y_center = 0
-    x_center = 0
-    for j, row in enumerate(device_array):
-        for k, item in enumerate(row):
-            if item is not None:
-                d = device_matrix.add_ref(item)
-                d.center = (x_center, y_center)
-            x_center = x_center + spacing[0] + (grid_size[0] or max_dim_columns[k, 0])
-        x_center = 0
-        y_center = y_center + spacing[1] + (grid_size[1] or max_dim_rows[j, 1])
-    return device_matrix
+    # Align rows and columns independently
+    for n,r in enumerate(rows):
+        r.align(alignment = align_y)
+    for n,c in enumerate(cols):
+        c.align(alignment = align_x)
+
+    # Distribute rows and columns
+    Group(cols).distribute(direction = 'x', spacing = spacing[0], separation = separation, edge = edge_x)
+    Group(rows[::-1]).distribute(direction = 'y', spacing = spacing[1], separation = separation, edge = edge_y)
+
+    # return device_matrix
+    return D
 
 
 def _pack_single_bin(
