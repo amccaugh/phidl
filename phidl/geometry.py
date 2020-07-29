@@ -1373,24 +1373,25 @@ def litho_calipers(notch_size = [2, 5],
 #
 #==============================================================================
 
-def extract(D, layers = [0,1]):
-    """ FIXME fill description
+def extract(D, layers = [0, 1]):
+    """ Extracts polygons from a given Device.
 
     Parameters
     ----------
     D : Device
-
-    layers : int, array-like[2], or set
-        Specific layer(s) to put polygon geometry on.
+        Device to extract polygons from.
+    layers : array-like[2] or set
+        Specific layer(s) to extract polygon geometry from.
 
     Returns
     -------
     D_extracted : Device
-
+        A Device containing the extracted polygons.
     """
     D_extracted = Device('extract')
     if type(layers) not in (list, tuple):
-        raise ValueError('[PHIDL] pg.extract() Argument `layers` needs to be passed a list or tuple')
+        raise ValueError('[PHIDL] pg.extract() Argument `layers` needs to be '
+                         'passed a list or tuple')
     poly_dict = D.get_polygons(by_spec = True)
     parsed_layer_list = [_parse_layer(layer) for layer in layers]
     for layer, polys in poly_dict.items():
@@ -1425,11 +1426,12 @@ def copy(D):
         for alias_name, alias_ref in D.aliases.items():
             if alias_ref == ref: D_copy.aliases[alias_name] = new_ref
 
-    for port in D.ports.values():      D_copy.add_port(port = port)
-    for poly in D.polygons:   D_copy.add_polygon(poly)
-    for label in D.labels:    D_copy.add_label(text = label.text,
-                                           position = label.position,
-                                           layer = (label.layer, label.texttype))
+    for port in D.ports.values(): D_copy.add_port(port = port)
+    for poly in D.polygons: D_copy.add_polygon(poly)
+    for label in D.labels: D_copy.add_label(text = label.text,
+                                            position = label.position,
+                                            layer = (label.layer,
+                                                     label.texttype))
     return D_copy
 
 
@@ -1450,7 +1452,8 @@ def deepcopy(D):
     D_copy.uid = Device._next_uid
     Device._next_uid += 1
     D_copy._internal_name = D._internal_name
-    D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid) # Write name e.g. 'Unnamed000005'
+    # Write name e.g. 'Unnamed000005'
+    D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid) 
     # Make sure _bb_valid is set to false for these new objects so new
     # bounding boxes are created in the cache
     for D in D_copy.get_dependencies(True):
@@ -1507,14 +1510,17 @@ def import_gds(filename, cellname = None, flatten = False):
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
         if cellname not in gdsii_lib.cells:
-            raise ValueError('[PHIDL] import_gds() The requested cell (named %s) \
-                        is not present in file %s' % (cellname,filename))
+            raise ValueError('[PHIDL] import_gds() The requested cell '
+                             '(named %s) \
+                              is not present in file %s' % (cellname,filename))
         topcell = gdsii_lib.cells[cellname]
     elif cellname is None and len(top_level_cells) == 1:
         topcell = top_level_cells[0]
     elif cellname is None and len(top_level_cells) > 1:
-        raise ValueError('[PHIDL] import_gds() There are multiple top-level cells, \
-                        you must specify `cellname` to select of one of them')
+        raise ValueError('[PHIDL] import_gds() There are multiple top-level '
+                         'cells, \
+                          you must specify `cellname` to select of one of '
+                         'them')
 
     if flatten == False:
         D_list = []
@@ -1539,7 +1545,7 @@ def import_gds(filename, cellname = None, flatten = False):
                         origin = e.origin,
                         rotation = e.rotation,
                         magnification = e.magnification,
-                        x_reflection = e.x_reflection,
+                        x_reflection = e.x_reflection
                         )
                     dr.owner = D
                     converted_references.append(dr)
@@ -1596,9 +1602,10 @@ def _translate_cell(c):
                 D.add_polygon(points = points, layer = polygon_layer)
         elif isinstance(e, gdspy.CellReference):
             dr = DeviceReference(device = _translate_cell(e.ref_cell),
-                            origin = e.origin,
-                            rotation = e.rotation, magnification = None,
-                            x_reflection = e.x_reflection)
+                                 origin = e.origin,
+                                 rotation = e.rotation,
+                                 magnification = None,
+                                 x_reflection = e.x_reflection)
             D.elements.append(dr)
     D.labels = c.labels
     return D
@@ -1628,20 +1635,23 @@ def preview_layerset(ls, size = 100, spacing = 100):
     scale = size/100
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
-    sorted_layers = sorted(ls._layers.values(), key = lambda x: (x.gds_layer, x.gds_datatype))
+    sorted_layers = sorted(ls._layers.values(),
+                           key = lambda x: (x.gds_layer, x.gds_datatype))
     for n, layer in enumerate(sorted_layers):
         R = rectangle(size = (100*scale, 100*scale), layer = layer)
-        T = text(
-                text = '%s\n%s / %s' % (layer.name, layer.gds_layer, layer.gds_datatype),
-                size = 20*scale,
-                justify = 'center',
-                layer = layer)
+        T = text(text = '%s\n%s / %s'\
+                        % (layer.name, layer.gds_layer, layer.gds_datatype),
+                 size = 20*scale,
+                 justify = 'center',
+                 layer = layer)
 
-        T.move((50*scale,-20*scale))
+        T.move((50*scale, -20*scale))
         xloc = n % matrix_size
         yloc = int(n // matrix_size)
-        D.add_ref(R).movex((100+spacing) * xloc *scale).movey(-(100+spacing) * yloc*scale)
-        D.add_ref(T).movex((100+spacing) * xloc *scale).movey(-(100+spacing) * yloc*scale)
+        D.add_ref(R)\
+        .movex((100+spacing) * xloc*scale).movey(-(100+spacing) * yloc*scale)
+        D.add_ref(T)\
+        .movex((100+spacing) * xloc*scale).movey(-(100+spacing) * yloc*scale)
     return D
 
 class device_lru_cache:
@@ -1691,7 +1701,8 @@ def _convert_port_to_geometry(port, layer = 0):
     The Port must start with a parent.
     """
     if port.parent is None:
-        raise ValueError('Port {}: Port needs a parent in which to draw'.format(port.name))
+        raise ValueError('Port {}: Port needs a parent in which to draw'\
+                         .format(port.name))
     if isinstance(port.parent, DeviceReference):
         device = port.parent.parent
     else:
@@ -1701,7 +1712,8 @@ def _convert_port_to_geometry(port, layer = 0):
     triangle_points = [[0, 0]] * 3
     triangle_points[0] = port.endpoints[0]
     triangle_points[1] = port.endpoints[1]
-    triangle_points[2] = (port.midpoint + (port.normal - port.midpoint) * port.width / 10)[1]
+    triangle_points[2] = (port.midpoint + (port.normal - port.midpoint)
+                          * port.width / 10)[1]
     device.add_polygon(triangle_points, layer)
 
     # Label carrying actual information that will be recovered
@@ -1737,8 +1749,8 @@ def _calculate_label_offset(port):
     offset_position : array-like
         Coordinates of new port position.
     """
-    offset_position = np.array((-np.cos(np.pi / 180 * port.orientation),
-                                -np.sin(np.pi / 180 * port.orientation)))
+    offset_position = np.array((-cos(pi/180 * port.orientation),
+                                -sin(pi/180 * port.orientation)))
     offset_position *= port.width * 0.05
     return offset_position
 
@@ -1799,25 +1811,24 @@ def geometry_to_ports(device, layer = 0):
     Parameters
     ----------
     device : Device
-
+        Device containing geometry representing ports to convert.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     temp_device : Device
-
+        A Device with all geometry representing ports converted to Ports and removed.
     """
     temp_device = deepcopy(device)
-    all_cells = list(temp_device.get_dependencies(recursive=True))
+    all_cells = list(temp_device.get_dependencies(recursive = True))
     all_cells.append(temp_device)
     for subcell in all_cells: # Walk through cells
         for lab in subcell.labels:
             if lab.layer == layer:
                 the_port = _convert_geometry_to_port(lab)
-                subcell.add_port(name=the_port.name, port=the_port)
-    temp_device.remove_layers(layers=[layer], include_labels=True)
+                subcell.add_port(name = the_port.name, port = the_port)
+    temp_device.remove_layers(layers = [layer], include_labels = True)
     return temp_device
 
 
@@ -1827,29 +1838,29 @@ def geometry_to_ports(device, layer = 0):
 #
 #==============================================================================
 
-def connector(midpoint = (0,0), width = 1, orientation = 0):
-    """ Creates a Device which has back-to-back ports
+def connector(midpoint = (0, 0), width = 1, orientation = 0):
+    """ Creates a Device which has back-to-back ports.
 
     Parameters
     ----------
-    FIXME fill
-    midpoint : 
-
-    width : int or float 
-
-    orientation : 
-
+    midpoint : array-like
+        Coordinates of Device midpoint.
+    width : int or float
+        Width of connector on non-port axis.
+    orientation : int or float
+        Orientation of the ports.
 
     Returns
     -------
     D : Device
-
+        A Device containing a back-to-back port geometry.
     """
     D = Device(name = 'connector')
-    D.add_port(name = 1, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation)
-    D.add_port(name = 2, midpoint = [midpoint[0], midpoint[1]],  width = width, orientation = orientation-180)
+    D.add_port(name = 1, midpoint = [midpoint[0], midpoint[1]],
+               width = width, orientation = orientation)
+    D.add_port(name = 2, midpoint = [midpoint[0], midpoint[1]],
+               width = width, orientation = orientation - 180)
     return D
-
 
 
 #==============================================================================
@@ -1858,110 +1869,115 @@ def connector(midpoint = (0,0), width = 1, orientation = 0):
 #
 #==============================================================================
 
-
-def compass(size = (4,2), layer = 0):
+def compass(size = (4, 2), layer = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west).
 
     Parameters
     ----------
-    FIXME fill
-    size : 
-
+    size : array_like
+        Dimensions of the rectangular contact pad.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     D : Device
-
+        A Device containing a rectangular contact pad with centered ports.
     """
-
     D = Device(name = 'compass')
-    r = D.add_ref( rectangle(size, layer = layer) )
-    r.center = (0,0)
+    r = D.add_ref(rectangle(size, layer = layer))
+    r.center = (0, 0)
 
     dx = size[0]
     dy = size[1]
-    D.add_port(name = 'N', midpoint = [0, dy/2],  width = dx, orientation = 90)
-    D.add_port(name = 'S', midpoint = [0, -dy/2], width = dx, orientation = -90)
-    D.add_port(name = 'E', midpoint = [dx/2, 0],  width = dy, orientation = 0)
-    D.add_port(name = 'W', midpoint = [-dx/2, 0], width = dy, orientation = 180)
+    D.add_port(name = 'N', midpoint = [0, dy/2],
+               width = dx, orientation = 90)
+    D.add_port(name = 'S', midpoint = [0, -dy/2],
+               width = dx, orientation = -90)
+    D.add_port(name = 'E', midpoint = [dx/2, 0],
+               width = dy, orientation = 0)
+    D.add_port(name = 'W', midpoint = [-dx/2, 0],
+               width = dy, orientation = 180)
 
     return D
 
 
-def compass_multi(size = (4,2), ports = {'N':3,'S':4}, layer = 0):
+def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, layer = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
 
     Parameters
     ----------
-    FIXME fill
-    size : 
-
-    ports : 
-
+    size : array_like
+        Dimensions of the rectangular contact pad.
+    ports : dict
+        Number of ports on each edge of the rectangle.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     D : Device
-
+        A Device containing a rectangular contact pad with multiple ports.
     """
-
     D = Device(name = 'compass_multi')
-    r = D.add_ref( rectangle(size, layer = layer) )
-    r.center = (0,0)
+    r = D.add_ref(rectangle(size, layer = layer))
+    r.center = (0, 0)
 
     dx = size[0]/2
     dy = size[1]/2
 
     if 'N' in ports:
         num_ports = ports['N']
-        m = dx-dx/num_ports
+        m = dx - dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],  width = dx/num_ports*2, orientation = 90) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],
+                    width = dx/num_ports * 2, orientation = 90)
+         for n, p in enumerate(p_list)]
     if 'S' in ports:
         num_ports = ports['S']
-        m = dx-dx/num_ports
+        m = dx - dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],  width = dx/num_ports*2, orientation = -90) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],
+                    width = dx/num_ports * 2, orientation = -90)
+         for n, p in enumerate(p_list)]
     if 'E' in ports:
         num_ports = ports['E']
-        m = dy-dy/num_ports
+        m = dy - dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],  width = dy/num_ports*2, orientation = 0) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],
+                    width = dy/num_ports * 2, orientation = 0)
+         for n, p in enumerate(p_list)]
     if 'W' in ports:
         num_ports = ports['W']
-        m = dy-dy/num_ports
+        m = dy - dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],  width = dy/num_ports*2, orientation = 180) for n,p in enumerate(p_list)]
+        [D.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],
+                    width = dy/num_ports * 2, orientation = 180)
+         for n, p in enumerate(p_list)]
 
     return D
 
 
-
 # TODO: Fix the fillet here, right now only goes halfway down
-def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straight', layer = 0):
-    """ FIXME fill
+def flagpole(size = (4, 2), stub_size = (2, 1), shape = 'p',
+             taper_type = 'straight', layer = 0):
+    """ FIXME fill description
 
+    FIXME fill (size, stub_size, shape, taper_type, D)
     Parameters
     ----------
-    size : 
+    size : array-like
 
-    stub_size : 
+    stub_size : array-like
 
-    shape : 
+    shape : {'p', 'q', 'b', 'd'}
 
-    taper_type : 
+    taper_type : {'straight', 'fillet', None}
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
@@ -1973,9 +1989,11 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     shape = shape.lower()
 
     assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
-    assert taper_type in ['straight','fillet',None], '[DEVICE]  flagpole() taper_type must "straight" or "fillet" or None'
+    assert taper_type in ['straight','fillet',None],
+                          '[DEVICE]  flagpole() taper_type must "straight" or '
+                          '"fillet" or None'
 
-    if shape ==   'p':
+    if shape == 'p':
         orientation = -90
     elif shape == 'q':
         f[0], p[0] = -size[0], -stub_size[0]
@@ -1991,32 +2009,33 @@ def flagpole(size = (4,2), stub_size = (2,1), shape = 'p', taper_type = 'straigh
     ypts = [0, f[1], f[1], 0, 0, -p[1], -p[1]]
 
     D = Device(name = 'flagpole')
-    pad_poly = D.add_polygon([xpts,ypts], layer = layer)
+    pad_poly = D.add_polygon([xpts, ypts], layer = layer)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
-        pad_poly.fillet([0,0,0,0,taper_amount,0,0])
+        pad_poly.fillet([0, 0, 0, 0, taper_amount, 0, 0])
     elif taper_type == 'straight':
-        D.add_polygon([xpts[3:6],ypts[3:6]], layer = layer)
+        D.add_polygon([xpts[3:6], ypts[3:6]], layer = layer)
 
-    D.add_port(name = 1, midpoint = [p[0]/2, -p[1]],  width = abs(p[0]), orientation = orientation)
-    D.add_port(name = 2, midpoint = [f[0]/2, f[1]],  width = abs(f[0]), orientation = orientation-180)
+    D.add_port(name = 1, midpoint = [p[0]/2, -p[1]],
+               width = abs(p[0]), orientation = orientation)
+    D.add_port(name = 2, midpoint = [f[0]/2, f[1]],
+               width = abs(f[0]), orientation = orientation - 180)
     return D
 
 
-def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
-    """ FIXME fill
+def tee(size = (4, 2), stub_size = (2, 1), taper_type = None, layer = 0):
+    """ FIXME fill description
 
     Parameters
     ----------
-    size : 
+    size : array-like
 
-    stub_size : 
+    stub_size : array-like
 
-    taper_type : 
+    taper_type : {'straight', 'fillet', None}
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
@@ -2033,14 +2052,17 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
     pad_poly = D.add_polygon([xpts,ypts], layer = layer)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
-        pad_poly.fillet([0,0,taper_amount,0,0,taper_amount,0,0])
+        pad_poly.fillet([0, 0, taper_amount, 0, 0, taper_amount, 0, 0])
     elif taper_type == 'straight':
-        taper_poly1 = D.add_polygon([xpts[1:4],ypts[1:4]], layer = layer)
-        taper_poly2 = D.add_polygon([xpts[4:7],ypts[4:7]], layer = layer)
+        taper_poly1 = D.add_polygon([xpts[1:4], ypts[1:4]], layer = layer)
+        taper_poly2 = D.add_polygon([xpts[4:7], ypts[4:7]], layer = layer)
 
-    D.add_port(name = 1, midpoint = [f[0]/2, f[1]/2],  width = f[1], orientation = 0)
-    D.add_port(name = 2, midpoint = [-f[0]/2, f[1]/2],  width = f[1], orientation = 180)
-    D.add_port(name = 3, midpoint = [0, -p[1]],  width = p[0], orientation = -90)
+    D.add_port(name = 1, midpoint = [f[0]/2, f[1]/2],
+               width = f[1], orientation = 0)
+    D.add_port(name = 2, midpoint = [-f[0]/2, f[1]/2],
+               width = f[1], orientation = 180)
+    D.add_port(name = 3, midpoint = [0, -p[1]],
+               width = p[0], orientation = -90)
     return D
 
 
@@ -2082,26 +2104,25 @@ def tee(size = (4,2), stub_size = (2,1), taper_type = None, layer = 0):
 
 # TODO change this so "width1" and "width2" arguments can accept Port directly
 def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
-    """ FIXME fill
+    """ FIXME fill description
 
     Parameters
     ----------
-    length : 
-
-    width1 : 
-
-    width2 : 
-    
-    port : 
-
+    length : int or float
+        Length of the taper section.
+    width1 : int or float or None
+        Width of end 1 of the taper section (width is equal to the port width if Port is not None and width1 is None).
+    width2 : int or float or None
+        Width of end 2 of the taper section (width is equal to the port width if Port is not None and width2 is None).
+    port : Port or None
+        Port with which to match the width of the taper ends.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     D: Device
-
+        A Device containing a taper geometry.
     """
     if type(port) is Port and width1 is None: width1 = port.width
     if width2 is None: width2 = width1
@@ -2109,195 +2130,239 @@ def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     ypts = [width1/2, width2/2, -width2/2, -width1/2]
 
     D = Device('taper')
-    D.add_polygon([xpts,ypts], layer = layer)
-    D.add_port(name = 1, midpoint = [0, 0], width = width1, orientation = 180)
-    D.add_port(name = 2, midpoint = [length, 0], width = width2, orientation = 0)
+    D.add_polygon([xpts, ypts], layer = layer)
+    D.add_port(name = 1, midpoint = [0, 0],
+               width = width1, orientation = 180)
+    D.add_port(name = 2, midpoint = [length, 0],
+               width = width2, orientation = 0)
     if type(port) is Port:
-        D.rotate(angle = port.orientation, center = [0,0])
-        D.move(origin = [0,0], destination = port.midpoint)
+        D.rotate(angle = port.orientation, center = [0, 0])
+        D.move(origin = [0, 0], destination = port.midpoint)
     return D
 
 
 def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
-    """ FIXME fill
+    """ FIXME fill description
 
     Parameters
     ----------
-    length : 
-
-    width1 : 
-
-    width2 : 
-
+    length : int or float
+        Length of the ramp section.
+    width1 : int or float
+        Width of the start of the ramp section.
+    width2 : int or float or None
+        Width of the end of the ramp section (if width2 is None, width2 becomes the same as width1).
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     D : Device
-
+        A Device containing a ramp geometry.
     """
     if width2 is None: width2 = width1
     xpts = [0, length, length, 0]
     ypts = [width1, width2, 0, 0]
     D = Device('ramp')
-    D.add_polygon([xpts,ypts], layer = layer)
-    D.add_port(name = 1, midpoint = [0, width1/2], width = width1, orientation = 180)
-    D.add_port(name = 2, midpoint = [length, width2/2], width = width2, orientation = 0)
+    D.add_polygon([xpts, ypts], layer = layer)
+    D.add_port(name = 1, midpoint = [0, width1/2],
+               width = width1, orientation = 180)
+    D.add_port(name = 2, midpoint = [length, width2/2],
+               width = width2, orientation = 0)
     return D
 
 
-# Equations taken from
-# Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
-# Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
 def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
-    """ FIXME fill
+    """ Calculates the impedance of a microstrip given the wire width and dielectric thickness and constant.
 
     Parameters
     ----------
-    wire_width : 
-
-    dielectric_thickness : 
-
-    eps_r : 
-
+    wire_width : int or float
+        Width of the conducting strip.
+    dielectric_thickness : int or float
+        Thickness of the substrate.
+    eps_r : int or float
+        Dielectric constant of the substrate.
 
     Returns
     -------
-    Z : 
+    Z : float
+        Impedance of the microstrip.
+    eps_eff : float
+        Effective dielectric constant of the microstrip.
+    
+    Notes
+    -----
+    Equations taken from:
+        Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+        Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
 
-    eps_eff : 
-
+    These equations can be further corrected for thick films (Hammerstad Eqs 6-9) and also for frequency since microstrips are dispersive (Hammerstad Eqs 10-12)
     """
-    # Note these equations can be further corrected for thick films (Hammersted Eqs 6-9)
-    # and also for frequency since microstrips are dispersive  (Hammersted Eqs 10-12)
-
-    u = wire_width/dielectric_thickness
+    u = wire_width / dielectric_thickness
     eta = 376.73 # Vacuum impedance
 
-    a = 1 + log((u**4 + (u/52)**2)/(u**4 + 0.432))/49 + log(1 + (u/18.1)**3)/18.7;
-    b = 0.564*((eps_r-0.9)/(eps_r+3))**0.053;
-    F = 6 + (2*pi-6)*exp(-(30.666/u)**0.7528);
+    a = 1 + log((u**4 + (u/52)**2) / (u**4 + 0.432)) / 49
+          + log(1 + (u/18.1)**3) / 18.7;
+    b = 0.564*((eps_r-0.9) / (eps_r+3))**0.053;
+    F = 6 + (2*pi - 6) * exp(-(30.666/u)**0.7528);
     eps_eff = 0.5*(eps_r+1) + 0.5*(eps_r-1)*(1 + 10/u)**(-a*b);
-    Z = eta/(2*pi) * log(F/u + sqrt(1+(2/u)**2)) /sqrt(eps_eff);
-    return Z,eps_eff
+    Z = eta/(2*pi) * log(F/u + sqrt(1 + (2/u)**2)) / sqrt(eps_eff);
+    return Z, eps_eff
 
 
 def _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r):
-    """ FIXME fill
+    """ Calculates the inductance and capacitance per meter of a microstrip given wire width and dielectric thickness and constant.
 
     Parameters
     ----------
-    wire_width : 
-
-    dielectric_thickness : 
-
-    eps_r : 
-
+    wire_width : int or float
+        Width of the conducting strip.
+    dielectric_thickness : int or float
+        Thickness of the substrate.
+    eps_r : int or float
+        Dielectric constant of the substrate.
 
     Returns
     -------
-    L_m : 
+    L_m : float
+        Inductance per meter of the microstrip.
+    C_m : float
+        Capacitance per meter of the microstrip.
 
-    C_m : 
+    Notes
+    -----
+    Equations taken from:
+        Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+        Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
 
+    These equations can be further corrected for thick films (Hammerstad Eqs 6-9) and also for frequency since microstrips are dispersive (Hammerstad Eqs 10-12)
     """
     # Use the fact that v = 1/sqrt(L_m*C_m) = 1/sqrt(eps*mu) and
     # Z = sqrt(L_m/C_m)   [Where L_m is inductance per meter]
-
-    Z, eps_eff =  _microstrip_Z(wire_width, dielectric_thickness, eps_r)
-    eps0 =  8.854e-12
+    Z, eps_eff = _microstrip_Z(wire_width, dielectric_thickness, eps_r)
+    eps0 = 8.854e-12
     mu0 = 4*pi*1e-7
 
     eps = eps_eff*eps0
     mu = mu0
-    L_m = sqrt(eps*mu)*Z
-    C_m = sqrt(eps*mu)/Z
+    L_m = sqrt(eps*mu) * Z
+    C_m = sqrt(eps*mu) / Z
     return L_m, C_m
 
 
 def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
-    """ FIXME fill
+    """ Calculates the impedance of a microstrip given wire width, dielectric thickness and constant, and kinetic inductance per square.
 
     Parameters
     ----------
-    wire_width : 
-
-    dielectric_thickness : 
-
-    eps_r : 
-
-    Lk_per_sq : 
-
+    wire_width : int or float
+        Width of the conducting strip.
+    dielectric_thickness : int or float
+        Thickness of the substrate.
+    eps_r : int or float
+        Dielectric constant of the substrate.
+    Lk_per_sq : int or float
+        Kinetic inductance per square of the microstrip.
 
     Returns
     -------
-    Z : 
+    Z : float
+        Impedance of the microstrip.
 
+    Notes
+    -----
+    Equations taken from:
+        Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+        Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
+
+    These equations can be further corrected for thick films (Hammerstad Eqs 6-9) and also for frequency since microstrips are dispersive (Hammerstad Eqs 10-12)
     """
     # Add a kinetic inductance and recalculate the impedance, be careful
     # to input Lk as a per-meter inductance
-
-    L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
-    Lk_m = Lk_per_sq*(1.0/wire_width)
-    Z = sqrt((L_m+Lk_m)/C_m)
+    L_m, C_m = _microstrip_LC_per_meter(wire_width,
+                                        dielectric_thickness,
+                                        eps_r)
+    Lk_m = Lk_per_sq * (1.0/wire_width)
+    Z = sqrt((L_m+Lk_m) / C_m)
     return Z
 
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
-    """ FIXME fill
+    """ FIXME fill description
 
+    FIXME fill (v)
     Parameters
     ----------
-    wire_width : 
-
-    dielectric_thickness : 
-    
-    eps_r : 
-
-    Lk_per_sq : 
-
+    wire_width : int or float
+        Width of the conducting strip.
+    dielectric_thickness : int or float
+        Thickness of the substrate. 
+    eps_r : int or float
+        Dielectric constant of the substrate.
+    Lk_per_sq : int or float
+        Kinetic inductance per square of the microstrip.
 
     Returns
     -------
     v : 
 
+    Notes
+    -----
+    Equations taken from:
+        Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+        Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
+
+    These equations can be further corrected for thick films (Hammerstad Eqs 6-9) and also for frequency since microstrips are dispersive (Hammerstad Eqs 10-12)
     """
-    L_m, C_m = _microstrip_LC_per_meter(wire_width, dielectric_thickness, eps_r)
-    Lk_m = Lk_per_sq*(1.0/wire_width)
-    v = 1/sqrt((L_m+Lk_m)*C_m)
+    L_m, C_m = _microstrip_LC_per_meter(wire_width,
+                                        dielectric_thickness,
+                                        eps_r)
+    Lk_m = Lk_per_sq * (1.0/wire_width)
+    v = 1 / sqrt((L_m+Lk_m) * C_m)
     return v
 
-def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq):
-    """ FIXME fill
+def _find_microstrip_wire_width(Z_target, dielectric_thickness,
+                                eps_r, Lk_per_sq):
+    """ Calculates the wire width of a microstrip given a target impedance, dielectric thickness and constant, and kinetic inductance per square.
 
     Parameters
     ----------
-    Z_target : 
-
-    dielectric_thickness : 
-
-    eps_r : 
-
-    Lk_per_sq : 
-
+    Z_target : int or float
+        Target impedance of the microstrip.
+    dielectric_thickness : int or float
+        Thickness of the substrate.
+    eps_r : int or float
+        Dielectric constant of the substrate.
+    Lk_per_sq : int or float
+        Kinetic inductance per square of the microstrip.
 
     Returns
     -------
+    w[0] : float
+        Wire width of the microstrip.
 
+    Notes
+    -----
+    Equations taken from:
+        Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+        Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
+
+    These equations can be further corrected for thick films (Hammerstad Eqs 6-9) and also for frequency since microstrips are dispersive (Hammerstad Eqs 10-12)
     """
 
     def error_fun(wire_width):
-        Z_guessed = _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq)
+        Z_guessed = _microstrip_Z_with_Lk(wire_width, dielectric_thickness,
+                                          eps_r, Lk_per_sq)
         return (Z_guessed-Z_target)**2 # The error
 
     x0 = dielectric_thickness
     try:
         from scipy.optimize import fmin
     except:
-        raise ImportError(""" [PHIDL] To run the microsctrip functions you need scipy,
-          please install it with `pip install scipy` """)
-    w = fmin(error_fun, x0, args=(), disp=False)
+        raise ImportError(' [PHIDL] To run the microstrip functions you '
+                          'need scipy,\
+                           please install it with `pip install scipy`')
+    w = fmin(error_fun, x0, args = (), disp = False)
     return w[0]
 
 def _G_integrand(xip, B):
