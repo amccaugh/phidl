@@ -267,7 +267,7 @@ def test_distribute():
     D = Device()
     [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
     D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
-                 edge = 'min') # edge must be either 'min', 'max', or 'center'
+                 edge = 'xmin')
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '18be0ef1db78095233d2f3ae5f065d9f453a6c07')
 
