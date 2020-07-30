@@ -31,7 +31,6 @@ extensions = [
     'nbsphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx.ext.autosectionlabel'
     #,'rinoh.frontend.sphinx'
 ]
 
