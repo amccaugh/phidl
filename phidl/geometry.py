@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
@@ -189,9 +189,12 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
 
     Notes
     -----
-    The ring is formed by taking the radius out to the specified value, and then constructing the thickness by dividing the width in half and adding that value to either side of the radius.
+    The ring is formed by taking the radius out to the specified value, and 
+    then constructing the thickness by dividing the width in half and adding 
+    that value to either side of the radius.
 
-    The angle_resolution alters the precision of the curve of the ring. Larger values yield lower resolution.
+    The angle_resolution alters the precision of the curve of the ring. Larger 
+    values yield lower resolution.
     """
     D = Device(name = 'ring')
     inner_radius = radius - width/2
@@ -210,7 +213,8 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
 
 def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0,
         angle_resolution = 2.5, layer = 0):
-    """ Creates an arc of arclength ``theta`` starting at angle ``start_angle``.
+    """ Creates an arc of arclength ``theta`` starting at angle 
+    ``start_angle``.
 
     Parameters
     ----------
@@ -230,12 +234,16 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0,
     Returns
     -------
     D : Device
-        A Device containing an arc polygon and two ports (`1` and `2`) on either end.
+        A Device containing an arc polygon and two ports (`1` and `2`) on 
+        either end.
 
     Notes
     -----
-    Theta = 0 is located along the positive x-axis relative to the center of the arc.
-    Ports are added to each end of the arc to facilitate connecting those ends to other geometries.
+    Theta = 0 is located along the positive x-axis relative to the center of 
+    the arc.
+
+    Ports are added to each end of the arc to facilitate connecting those ends 
+    to other geometries.
     """
     inner_radius = radius - width/2
     outer_radius = radius + width/2
@@ -264,7 +272,8 @@ def arc(radius = 10, width = 0.5, theta = 45, start_angle = 0,
 
 
 def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
-    """ Starting from a port, creates an arc which connects to the specified port on one end.
+    """ Starting from a port, creates an arc which connects to the specified 
+    port on one end.
 
     Parameters
     ----------
@@ -282,12 +291,15 @@ def turn(port, radius = 10, angle = 270, angle_resolution = 2.5, layer = 0):
     Returns
     -------
     D : Device
-        A Device containing an arc polygon and two ports (`1` and `2`) on either end.
+        A Device containing an arc polygon and two ports (`1` and `2`) on 
+        either end.
 
     Notes
     -----
-    Angle = 0 is located along the positive x-axis relative to the center of the arc.
-    Ports are added to each end of the arc to facilitate connecting those ends to other geometries.
+    Angle = 0 is located along the positive x-axis relative to the center of 
+    the arc.
+    Ports are added to each end of the arc to facilitate connecting those ends 
+    to other geometries.
     Port `2` is aligned to connect to the specified port.
     """
     D = arc(radius = radius, width = port.width, theta = angle,
@@ -312,11 +324,13 @@ def straight(size = (4,2), layer = 0):
     Returns
     -------
     D : Device
-        A Device containing a rectangle polygon and two ports (`1` and `2`) on either end.
+        A Device containing a rectangle polygon and two ports (`1` and `2`) on 
+        either end.
 
     Notes
     -----
-    Ports are included on both sides of the length edge (i.e. size[0]) of the geometry.
+    Ports are included on both sides of the length edge (i.e. size[0]) of the 
+    geometry.
     """
     D = Device(name = 'wire')
     points = [[size[0], size[1]], [size[0], 0], [0, 0], [0, size[1]]]
@@ -343,7 +357,8 @@ def L(width = 1, size = (10,20), layer = 0):
     Returns
     -------
     D : Device
-        A Device containing an L-shaped polygon and two ports (`1` and `2`) on either end of the L.
+        A Device containing an L-shaped polygon and two ports (`1` and `2`) on 
+        either end of the L.
     """
     D = Device(name = 'L')
     w = width/2
@@ -370,7 +385,8 @@ def C(width = 1, size = (10,20), layer = 0):
     Returns
     -------
     D : Device
-        A Device containing a [-bracket-shaped polygon and two ports (`1` and `2`) on either end of the [ shape.
+        A Device containing a [-bracket-shaped polygon and two ports (`1` and 
+        `2`) on either end of the [ shape.
     """
     D = Device(name = 'C')
     w = width/2
@@ -394,6 +410,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
            num_divisions = [1,1], join = 'miter', tolerance = 2,
            max_points = 4000, layer = 0):
     """ Shrinks or expands a polygon or set of polygons.
+
     FIXME fill (num_divisions)
     Parameters
     ----------
@@ -408,7 +425,11 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     join : {'miter', 'bevel', 'round'}
         Type of join used to create the offset polygon.
     tolerance : int or float
-        For miter joints, this number must be at least 2 and it represents the maximal distance in multiples of offset between new vertices and their original position before beveling to avoid spikes at acute joints. For round joints, it indicates the curvature resolution in number of points per full circle.
+        For miter joints, this number must be at least 2 and it represents the 
+        maximal distance in multiples of offset between new vertices and their 
+        original position before beveling to avoid spikes at acute joints. For 
+        round joints, it indicates the curvature resolution in number of 
+        points per full circle.
     max_points : int
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
@@ -468,10 +489,8 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
     FIXME fill (num_divisions)
     Parameters
     ----------
-    A : Device/DeviceReference or list of Device/DeviceReference or Polygon
-        Input Device operand 1.
-    B : Device/DeviceReference or list of Device/DeviceReference or Polygon
-        Input Device operand 2.
+    A, B : Device/DeviceReference or list of Device/DeviceReference or Polygon
+        Input Devices.
     operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
         Boolean operation to perform.
     precision : float
@@ -486,7 +505,8 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
     Returns
     -------
     D: Device
-        A Device containing a polygon(s) with the boolean operations between the 2 input Devices performed.
+        A Device containing a polygon(s) with the boolean operations between 
+        the 2 input Devices performed.
 
     Notes
     -----
@@ -565,7 +585,8 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
     FIXME fill (num_divisions)
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
+    elements : Device/DeviceReference or list of Device/DeviceReference or 
+    Polygon
         Polygons to outline or Device containing polygons to outline.
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
@@ -576,9 +597,14 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
     join : {'miter', 'bevel', 'round'}
         Type of join used to create the offset polygon.
     tolerance : int or float
-        For miter joints, this number must be at least 2 and it represents the maximal distance in multiples of offset between new vertices and their original position before beveling to avoid spikes at acute joints. For round joints, it indicates the curvature resolution in number of points per full circle.
+        For miter joints, this number must be at least 2 and it represents the 
+        maximal distance in multiples of offset between new vertices and their 
+        original position before beveling to avoid spikes at acute joints. For 
+        round joints, it indicates the curvature resolution in number of 
+        points per full circle.
     join_first : bool
-        Join all paths before offsetting to avoid unnecessary joins in adjacent polygon sides.
+        Join all paths before offsetting to avoid unnecessary joins in 
+        adjacent polygon sides.
     max_points : int
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
@@ -620,10 +646,13 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1],
     FIXME fill (num_divisions)
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
+    elements : Device/DeviceReference or list of Device/DeviceReference or 
+    Polygon
         A Device containing the polygons to invert.
     border : int or float
-        Size of the border around the inverted shape (border value is the distance from the edges of the boundary box defining the inverted shape to the border, and is applied to all 4 sides of the shape).
+        Size of the border around the inverted shape (border value is the 
+        distance from the edges of the boundary box defining the inverted 
+        shape to the border, and is applied to all 4 sides of the shape).
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : list of int
@@ -636,7 +665,8 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1],
     Returns
     -------
     D : Device
-        A Device containing the inverted version of the input shape(s) and the corresponding border(s).
+        A Device containing the inverted version of the input shape(s) and the 
+        corresponding border(s).
     """
     Temp = Device()
     if type(elements) is not list: elements = [elements]
@@ -671,7 +701,8 @@ def xor_diff(A, B, precision = 1e-4):
     Returns
     ------
     D: Device
-        A Device containing a polygon(s) defined by the XOR difference result between A and B.
+        A Device containing a polygon(s) defined by the XOR difference result 
+        between A and B.
     """
     D = Device()
     A_polys = A.get_polygons(by_spec = True)
@@ -2203,11 +2234,11 @@ def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
     eta = 376.73 # Vacuum impedance
 
     a = 1 + log((u**4 + (u/52)**2) / (u**4 + 0.432)) / 49 \
-          + log(1 + (u/18.1)**3) / 18.7;
-    b = 0.564*((eps_r-0.9) / (eps_r+3))**0.053;
-    F = 6 + (2*pi - 6) * exp(-(30.666/u)**0.7528);
-    eps_eff = 0.5*(eps_r+1) + 0.5*(eps_r-1)*(1 + 10/u)**(-a*b);
-    Z = eta/(2*pi) * log(F/u + sqrt(1 + (2/u)**2)) / sqrt(eps_eff);
+          + log(1 + (u/18.1)**3) / 18.7
+    b = 0.564*((eps_r-0.9) / (eps_r+3))**0.053
+    F = 6 + (2*pi - 6) * exp(-(30.666/u)**0.7528)
+    eps_eff = 0.5*(eps_r+1) + 0.5*(eps_r-1)*(1 + 10/u)**(-a*b)
+    Z = eta/(2*pi) * log(F/u + sqrt(1 + (2/u)**2)) / sqrt(eps_eff)
     return Z, eps_eff
 
 
@@ -2864,13 +2895,6 @@ def grid(device_list,
         ):
     """ Places the devices in the `device_list` (1D or 2D) on a grid.
     
-    If `shape` (needs to be 2 items e.g. (1, -1)) is given `device_list` is reshaped (see np.reshape). If no shape is given and the list is 1D, 
-    the output is as if np.reshape was run with (1, -1).
-    If there are too few items in the `device_list` for the `shape`, the matrix is expanded with empty items (None) unless disabled with `expand_list`.
-    The grid center points of each element can either be set by giving a tuple `grid_size` with the width and height of the column and row.
-    If the grid_size element is None or a tuple (None, None), `equal_column` sets all columns to the same width and `equal_row` sets all rows of the grid 
-    to the same height. The `spacing` parameter allows to set a gap between adjacent elements and can be a tuple for different distances in height and width.
-
     Parameters
     ----------
     FIXME fill
@@ -2878,7 +2902,7 @@ def grid(device_list,
 
     spacing : 
 
-    shape : 
+    shape : array-like[2]
 
     grid_size : 
 
@@ -2893,14 +2917,34 @@ def grid(device_list,
     -------
     device_matrix : 
 
+    Notes
+    -----
+    If `shape` (needs to be 2 items e.g. (1, -1)) is given, `device_list` is 
+    reshaped (see np.reshape). If no shape is given and the list is 1D, the 
+    output is as if np.reshape were run with (1, -1).
+
+    If there are too few items in the `device_list` for the `shape`, the 
+    matrix is expanded with empty items (None) unless disabled with 
+    `expand_list`.
+
+    The grid center points of each element can be set by giving a tuple 
+    `grid_size` with the width and height of the column and row.
+
+    If the grid_size element is None or a tuple (None, None), `equal_column` 
+    sets all columns to the same width and `equal_row` sets all rows of the 
+    grid to the same height.
+    
+    The `spacing` parameter allows to set a gap between adjacent elements and 
+    can be a tuple for different distances in height and width.
     """
     device_array = np.array(device_list)
     if device_array.ndim > 2 or device_array.ndim == 0:
-        raise ValueError("The device_list needs to be 1D or 2D.")
+        raise ValueError('The device_list needs to be 1D or 2D.')
     
     if shape is not None:
         if 0 < shape[0] * shape[1] < device_array.size:
-            raise ValueError("The shape is too small for all the items in device_list")
+            raise ValueError('The shape is too small for all the items '
+                             'in device_list')
 
         if np.min(shape) == -1:
             remainder = np.max(shape) - device_array.size % np.max(shape)
@@ -2909,7 +2953,9 @@ def grid(device_list,
             
         if remainder != 0:
             if not expand_list:
-                raise ValueError("The device_list does not fit in a matrix with {}x{}".format(shape[0], shape[1]))
+                raise ValueError('The device_list does not fit in a '
+                                 'matrix with {}x{}' \
+                                 .format(shape[0], shape[1]))
             device_array = np.append(device_array, [None,]*remainder)
     elif device_array.ndim == 1:
         shape = (1, -1)
@@ -2920,15 +2966,14 @@ def grid(device_list,
     grid_size = np.broadcast_to(grid_size, (2,)).copy()
 
     def _devsize(device):
-        if device is None:
-            return None
-        else:
-            return device.size
-    device_size = np.vectorize(_devsize, signature='()->(n)')
+        if device is None: return None
+        else: return device.size
+
+    device_size = np.vectorize(_devsize, signature = '()->(n)')
     device_sizes = device_size(device_array)
 
-    max_dim_columns = np.nanmax(device_sizes, axis=0)
-    max_dim_rows = np.nanmax(device_sizes, axis=1)
+    max_dim_columns = np.nanmax(device_sizes, axis = 0)
+    max_dim_rows = np.nanmax(device_sizes, axis = 1)
 
     if equal_row and grid_size[1] is None:
         grid_size[1] = max_dim_rows[:, 1].max()
@@ -2951,24 +2996,22 @@ def grid(device_list,
     return device_matrix
 
 
-def _pack_single_bin(
-    rect_dict,
-    aspect_ratio,
-    max_size,
-    sort_by_area,
-    density,
-    precision,
-    verbose,
-    ):
-    """ Takes a `rect_dict` argument of the form {id:(w,h)} and tries to 
-    pack it into a bin as small as possible with aspect ratio `aspect_ratio`
+def _pack_single_bin(rect_dict,
+                     aspect_ratio,
+                     max_size,
+                     sort_by_area,
+                     density,
+                     precision,
+                     verbose):
+    """ Takes a `rect_dict` argument of the form {id:(w, h)} and tries to 
+    pack it into a bin as small as possible with aspect ratio `aspect_ratio`. 
     Will iteratively grow the bin size until everything fits or the bin size 
-    reaches `max_size`.  Returns a dictionary of of the packed rectangles
-    in the form {id:(x,y,w,h)}, and a dictionary of remaining unpacked rects
+    reaches `max_size`. Returns a dictionary of the packed rectanglesn in the 
+    form {id:(x, y, w, h)}, and a dictionary of remaining unpacked rects.
 
+    FIXME fill (rect_dict, aspect_ratio, max_size, sort_by_area, density, verbose, RETURN)
     Parameters
     ----------
-    FIXME fill
     rect_dict : 
 
     aspect_ratio : 
@@ -2986,21 +3029,23 @@ def _pack_single_bin(
 
     Returns
     -------
-    (packed_rect_dict, unpacked_rect_dict) : tuple
+    (packed_rect_dict, unpacked_rect_dict) : array-like
 
     """
     try:
         import rectpack
     except:
-        raise ImportError('[PHIDL] The packer() function requires the module "rectpack"' + 
-              "to operate.  Please retry after installing rectpack:" +
-              "\n\n$ pip install rectpack")
+        raise ImportError('[PHIDL] The packer() function requires the '
+                          'module "rectpack" to operate.  Please retry '
+                          'after installing rectpack:\n\n'
+                          '$ pip install rectpack')
 
     # Compute total area and use it for an initial estimate of the bin size
     total_area = 0
     for r in rect_dict.values():
         total_area += r[0]*r[1]
-    aspect_ratio = np.asarray(aspect_ratio)/np.linalg.norm(aspect_ratio) # Normalize
+    # Normalize
+    aspect_ratio = np.asarray(aspect_ratio)/np.linalg.norm(aspect_ratio) 
     
     # Setup variables
     box_size = np.asarray(aspect_ratio*np.sqrt(total_area), dtype = np.float64)
@@ -3008,17 +3053,15 @@ def _pack_single_bin(
     if sort_by_area == True: rp_sort = rectpack.SORT_AREA
     else:                    rp_sort = rectpack.SORT_NONE
     
-    
     # Repeatedly run the rectangle-packing algorithm with increasingly larger
     # areas until everything fits or we've reached the maximum size
     while True:
         # Create the packer object
-        rect_packer = rectpack.newPacker(
-                                    mode = rectpack.PackingMode.Offline,
-                                    pack_algo = rectpack.MaxRectsBlsf,
-                                    sort_algo = rp_sort,
-                                    bin_algo= rectpack.PackingBin.BBF,
-                                    rotation=False,)
+        rect_packer = rectpack.newPacker(mode = rectpack.PackingMode.Offline,
+                                         pack_algo = rectpack.MaxRectsBlsf,
+                                         sort_algo = rp_sort,
+                                         bin_algo = rectpack.PackingBin.BBF,
+                                         rotation = False,)
         
         # Add each rectangle to the packer, create a single bin, and pack
         for rid, r in rect_dict.items():
@@ -3029,18 +3072,21 @@ def _pack_single_bin(
         # Adjust the box size for next time
         box_size *= density  # Increase area to try to fit
         box_size = np.clip(box_size, None, max_size)
-        if verbose == True:  print('Trying to pack in bin size (%0.2f, %0.2f)' % tuple(box_size*precision))
+        if verbose == True: print('Trying to pack in bin size '
+                                  '(%0.2f, %0.2f)' % tuple(box_size*precision))
         
-        # Quit the loop if we've packed all the rectangles or reached the max size
+        # Quit the loop if we've packed all the rectangles 
+        # or reached the max size
         if (len(rect_packer.rect_list()) == len(rect_dict)):
             if verbose == True: print('Success!')
             break
         elif all(box_size >= max_size):
-            if verbose == True: print('Reached max_size, creating an additional bin')
+            if verbose == True: print('Reached max_size, creating '
+                                      'an additional bin')
             break
 
-    
-    # Separate packed from unpacked rectangles, make dicts of form {id:(x,y,w,h)}
+    # Separate packed from unpacked rectangles, make dicts of form 
+    # {id:(x,y,w,h)}
     packed_rect_dict = {r[-1]:r[:-1] for r in rect_packer[0].rect_list()}
     unpacked_rect_dict = {}
     for k,v in rect_dict.items():
@@ -3051,45 +3097,53 @@ def _pack_single_bin(
 
 
 
-def packer(
-        D_list,
-        spacing = 10,
-        aspect_ratio = (1,1),
-        max_size = (None,None),
-        sort_by_area = True,
-        density = 1.1,
-        precision = 1e-2,
-        verbose = False,
-        ):
-    """ FIXME fill
+def packer(D_list,
+           spacing = 10,
+           aspect_ratio = (1, 1),
+           max_size = (None, None),
+           sort_by_area = True,
+           density = 1.1,
+           precision = 1e-2,
+           verbose = False):
+    """ Packs geometries together into rectangular bins.
 
+    FIXME fill (verbose)
     Parameters
     ----------
-    D_list : 
-
-    spacing : 
-
-    aspect_ratio : 
-
-    max_size : 
-
-    sort_by_area : 
-
-    density : 
-
+    D_list : array-like of Devices
+        Input Devices to be packed.
+    spacing : int or float
+        The minimum distance between adjacent shapes.
+    aspect_ratio : array-like
+        The (width, height) ratio of the rectangular bin.
+    max_size : array-like
+        Limits the size into which the shapes will be packed.
+    sort_by_area : bool
+        If true, pre-sorts the shapes by area.
+    density : int or float
+        Density of packing. Values closer to 1 pack tighter but require more 
+        computation.
     precision : float
         Desired precision for rounding vertex coordinates.
-    verbose : 
+    verbose : bool
 
 
     Returns
     -------
-    D_packed_list : 
+    D_packed_list : Device or list of Devices
+        A Device or list of Devices containing all the packed rectangular 
+        bins generated.
 
+    Notes
+    -----
+    If a max-size is specified, the function will create as many bins as 
+    necessary to pack all the geometries and then return a list of the 
+    filled-bin Devices.
     """
     if density < 1.01:
-        raise ValueError("[PHIDL] packer() was given a `density` argument that is" + 
-              " too small.  The density argument must be >= 1.01")
+        raise ValueError('[PHIDL] packer() was given a `density` argument '
+                         'that is too small.  The density argument must be '
+                         '>= 1.01')
 
     # Santize max_size variable
     max_size = [np.inf if v is None else v for v in max_size]
@@ -3099,23 +3153,26 @@ def packer(
     # Convert Devices to rectangles
     rect_dict = {}
     for n, D in enumerate(D_list):
-        w,h = (D.size + spacing)/precision
-        w,h = int(w), int(h)
+        w, h = (D.size + spacing)/precision
+        w, h = int(w), int(h)
         if (w > max_size[0]) or (h > max_size[1]):
-            raise ValueError("[PHIDL] packer() failed because one of the objects " + 
-                  "in `D_list` is has an x or y dimension larger than `max_size` and " +
-                  "so cannot be packed")
-        rect_dict[n] = (w,h)
+            raise ValueError('[PHIDL] packer() failed because one of '
+                             'the objects in `D_list` is has an x or '
+                             'y dimension larger than `max_size` and '
+                             'so cannot be packed')
+        rect_dict[n] = (w, h)
         
     packed_list = []
     while len(rect_dict) > 0:
-        (packed_rect_dict, rect_dict) = _pack_single_bin(rect_dict,
-                                                         aspect_ratio = aspect_ratio,
-                                                         max_size = max_size,
-                                                         sort_by_area = sort_by_area,
-                                                         density = density,
-                                                         precision = precision,
-                                                         verbose = verbose,)
+        (packed_rect_dict, rect_dict) = _pack_single_bin(
+                                            rect_dict,
+                                            aspect_ratio = aspect_ratio,
+                                            max_size = max_size,
+                                            sort_by_area = sort_by_area,
+                                            density = density,
+                                            precision = precision,
+                                            verbose = verbose
+                                            )
         packed_list.append(packed_rect_dict)
     
     D_packed_list = []
@@ -3126,16 +3183,17 @@ def packer(
             xcenter = x + w/2 + spacing/2
             ycenter = y + h/2 + spacing/2
             d = D_packed.add_ref(D_list[n])
-            d.center = (xcenter*precision,ycenter*precision)
+            d.center = (xcenter*precision, ycenter*precision)
         D_packed_list.append(D_packed)
 
     return D_packed_list
 
 
+def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]],
+                        dx = 1, dy = 1):
+    """ FIXME fill description
 
-def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
-    """ FIXME fill
-
+    FIXME fill (polygons, bounds, dy, dy, raster)
     Parameters
     ----------
     polygons : 
@@ -3155,12 +3213,10 @@ def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, d
     try:
         from skimage import draw
     except:
-        raise ImportError("""
-            The fill function requires the module "scikit-image"
-            to operate.  Please retry after installing scikit-image:
-
-            $ pip install --upgrade scikit-image """)
-
+        raise ImportError('The fill function requires the module '
+                          '"scikit-image" to operate.  Please retry '
+                          'after installing scikit-image:\n\n'
+                          '$ pip install --upgrade scikit-image')
 
     # Prepare polygon array by shifting all points into the first quadrant and
     # separating points into x and y lists
@@ -3168,39 +3224,42 @@ def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]], dx = 1, d
     ypts = []
     for p in polygons:
         p_array = np.asarray(p)
-        x = p_array[:,0]
-        y = p_array[:,1]
-        xpts.append((x-bounds[0][0])/dx-0.5)
-        ypts.append((y-bounds[0][1])/dy-0.5)
+        x = p_array[:, 0]
+        y = p_array[:, 1]
+        xpts.append((x-bounds[0][0])/dx - 0.5)
+        ypts.append((y-bounds[0][1])/dy - 0.5)
 
     # Initialize the raster matrix we'll be writing to
     xsize = int(np.ceil((bounds[1][0]-bounds[0][0]))/dx)
     ysize = int(np.ceil((bounds[1][1]-bounds[0][1]))/dy)
-    raster = np.zeros((ysize, xsize), dtype=np.bool)
+    raster = np.zeros((ysize, xsize), dtype = np.bool)
 
     # TODO: Replace polygon_perimeter with the supercover version
     for n in range(len(xpts)):
-        rr, cc = draw.polygon(ypts[n], xpts[n], shape=raster.shape)
-        rrp, ccp = draw.polygon_perimeter(ypts[n], xpts[n], shape=raster.shape, clip=False)
+        rr, cc = draw.polygon(ypts[n], xpts[n], shape = raster.shape)
+        rrp, ccp = draw.polygon_perimeter(ypts[n], xpts[n],
+                                          shape = raster.shape, clip = False)
         raster[rr, cc] = 1
         raster[rrp, ccp] = 1
 
     return raster
 
-def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, dy = 1):
-    """ FIXME fill
+def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]],
+                            dx = 1, dy = 1):
+    """ FIXME fill description
 
+    FIXME fill (i, j, bounds, dx, dy, x, y)
     Parameters
     ----------
-    i : 
+    i : int or float
 
-    j : 
+    j : int or float
 
-    bounds : 
+    bounds : array-like
 
-    dx : 
+    dx : int or float
 
-    dy : 
+    dy : int or float
 
 
     Returns
@@ -3212,17 +3271,18 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]], dx = 1, d
     """
     x = (j+0.5)*dx + bounds[0][0]
     y = (i+0.5)*dy + bounds[0][1]
-    return x,y
+    return x, y
 
 
-def _expand_raster(raster, distance = (4,2)):
-    """ FIXME fill
+def _expand_raster(raster, distance = (4, 2)):
+    """ FIXME fill description
 
+    FIXME fill (raster, distance)
     Parameters
     ----------
     raster : 
 
-    distance : 
+    distance : array-like
 
 
     Returns
@@ -3232,48 +3292,51 @@ def _expand_raster(raster, distance = (4,2)):
     try:
         from skimage import draw, morphology
     except:
-        raise ImportError("""
-            The fill function requires the module "scikit-image"
-            to operate.  Please retry after installing scikit-image:
-
-            $ pip install --upgrade scikit-image """)
+        raise ImportError('The fill function requires the module '
+                          '"scikit-image" to operate.  Please retry '
+                          'after installing scikit-image:\n\n'
+                          '$ pip install --upgrade scikit-image')
     if distance[0] <= 0.5 and distance[1] <= 0.5: return raster
 
     num_pixels = np.array(np.ceil(distance), dtype = int)
-    neighborhood = np.zeros((num_pixels[1]*2+1, num_pixels[0]*2+1), dtype=np.bool)
-    rr, cc = draw.ellipse(num_pixels[1], num_pixels[0], distance[1]+0.5, distance[0]+0.5)
+    neighborhood = np.zeros((num_pixels[1]*2 + 1, num_pixels[0]*2 + 1),
+                            dtype = np.bool)
+    rr, cc = draw.ellipse(num_pixels[1], num_pixels[0],
+                          distance[1]+0.5, distance[0]+0.5)
     neighborhood[rr, cc] = 1
 
-    return morphology.binary_dilation(image = raster, selem=neighborhood)
+    return morphology.binary_dilation(image = raster, selem = neighborhood)
 
 
-
-def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
-                         densities = (0.5, 0.25, 0.7), inverted = (False, False, False)):
-    """ FIXME fill
+def _fill_cell_rectangle(size = (20, 20), layers = (0, 1, 3),
+                         densities = (0.5, 0.25, 0.7),
+                         inverted = (False, False, False)):
+    """ FIXME fill description
 
     Parameters
     ----------
-    size : 
-
-    layers : 
-
-    densities : 
-
-    inverted : 
-
+    size : array-like of int or float
+        x, y dimensions of the fill area for all layers.
+    layers : int, array-like[2], or set
+        Specific layer(s) to put fill cell rectangle geometry on.
+    densities : array-like of int or float
+        Fill densities for each layer specified in ``layers``. Must be the same
+        size as ``layers``.
+    inverted : array-like or bool
+        If true, inverts the fill area for corresponding layer. Must be the
+        same size as ``layers``.
 
     Returns
     -------
     D : Device
-
+        A Device containing filled cell rectangles.
     """
     D = Device('fillcell')
     for layer, density, inv in zip(layers, densities, inverted):
-        rectangle_size = np.array(size)*np.sqrt(density)
+        rectangle_size = np.array(size) * sqrt(density)
 #        r = D.add_ref(rectangle(size = rectangle_size, layer = layer))
         R = rectangle(size = rectangle_size, layer = layer)
-        R.center = (0,0)
+        R.center = (0, 0)
         if inv is True:
             A = rectangle(size = size)
             A.center = (0,0)
@@ -3288,17 +3351,17 @@ def _fill_cell_rectangle(size = (20,20), layers = (0,1,3),
 def _loop_over(var):
     """ Checks if a variable is in the form of an iterable (list/tuple)
     and if not, returns it as a list.  Useful for allowing argument
-    inputs to be either lists (e.g. [1,3,4]) or single-valued (e.g. 3).
+    inputs to be either lists (e.g. [1, 3, 4]) or single-valued (e.g. 3).
 
     Parameters
     ----------
-    var : 
-
+    var : int or float or list
+        Variable to check for iterability.
 
     Returns
     -------
     var : list
-
+        Variable converted to list if single-valued input.
     """
 
     if hasattr(var,"__iter__"):
@@ -3306,11 +3369,13 @@ def _loop_over(var):
     else:
         return [var]
 
-def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers = None,
-                    margin = 100, fill_layers = (0,1,3),
-                   fill_densities = (0.5, 0.25, 0.7), fill_inverted = None, bbox = None):
-    """ FIXME fill
+def fill_rectangle(D, fill_size = (40, 10), avoid_layers = 'all',
+                   include_layers = None, margin = 100,
+                   fill_layers = (0, 1, 3), fill_densities = (0.5, 0.25, 0.7), 
+                   fill_inverted = None, bbox = None):
+    """ FIXME fill description
 
+    FIXME fill (D, fill_size, avoid_layers, include_layers, margin, fill_layers, fill_densities, fill_inverted, bbox, F)
     Parameters
     ----------
     D : Device
@@ -3337,62 +3402,69 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
     F : Device
 
     """
-
-    # Create the fill cell.  If fill_inverted is not specified, assume all False
+    # Create the fill cell. 
+    # If fill_inverted is not specified, assume all False
     fill_layers = _loop_over(fill_layers)
     fill_densities = _loop_over(fill_densities)
     if fill_inverted is None: fill_inverted = [False]*len(fill_layers)
     fill_inverted = _loop_over(fill_inverted)
     if len(fill_layers) != len(fill_densities):
-        raise ValueError("[PHIDL] phidl.geometry.fill_rectangle() `fill_layers` and" +
-        " `fill_densities` parameters must be lists of the same length")
+        raise ValueError('[PHIDL] phidl.geometry.fill_rectangle() '
+                         '`fill_layers` and `fill_densities` parameters '
+                         'must be lists of the same length')
     if len(fill_layers) != len(fill_inverted):
-        raise ValueError("[PHIDL] phidl.geometry.fill_rectangle() `fill_layers` and" +
-        " `fill_inverted` parameters must be lists of the same length")
+        raise ValueError('[PHIDL] phidl.geometry.fill_rectangle() '
+                         '`fill_layers` and `fill_inverted` parameters must '
+                         'be lists of the same length')
 
     fill_cell = _fill_cell_rectangle(size = fill_size, layers = fill_layers,
-                                     densities = fill_densities, inverted = fill_inverted)
+                                     densities = fill_densities,
+                                     inverted = fill_inverted)
     F = Device(name = 'fill_pattern')
 
     if avoid_layers == 'all':
-        exclude_polys = D.get_polygons(by_spec=False, depth=None)
+        exclude_polys = D.get_polygons(by_spec = False, depth = None)
     else:
         avoid_layers = [_parse_layer(l) for l in _loop_over(avoid_layers)]
-        exclude_polys = D.get_polygons(by_spec=True, depth=None)
-        exclude_polys = {key:exclude_polys[key] for key in exclude_polys if key in avoid_layers}
+        exclude_polys = D.get_polygons(by_spec = True, depth = None)
+        exclude_polys = {key:exclude_polys[key]
+                         for key in exclude_polys if key in avoid_layers}
         exclude_polys = itertools.chain.from_iterable(exclude_polys.values())
 
     if include_layers is None:
         include_polys = []
     else:
         include_layers = [_parse_layer(l) for l in _loop_over(include_layers)]
-        include_polys = D.get_polygons(by_spec=True, depth=None)
-        include_polys = {key:include_polys[key] for key in include_polys if key in include_layers}
+        include_polys = D.get_polygons(by_spec = True, depth = None)
+        include_polys = {key:include_polys[key] 
+                         for key in include_polys if key in include_layers}
         include_polys = itertools.chain.from_iterable(include_polys.values())
 
+    if bbox is None: bbox = D.bbox
 
-
-    if bbox is None:  bbox = D.bbox
-
-    raster = _rasterize_polygons(polygons = exclude_polys, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
-    raster = raster & ~_rasterize_polygons(polygons = include_polys, bounds = bbox, dx = fill_size[0], dy = fill_size[1])
+    raster = _rasterize_polygons(polygons = exclude_polys, bounds = bbox,
+                                 dx = fill_size[0], dy = fill_size[1])
+    raster = raster & ~_rasterize_polygons(polygons = include_polys,
+                                           bounds = bbox, dx = fill_size[0],
+                                           dy = fill_size[1])
     raster = _expand_raster(raster, distance = margin/np.array(fill_size))
 
-    for i in range(np.size(raster,0)):
+    for i in range(np.size(raster, 0)):
         sub_rasters = [list(g) for k, g in itertools.groupby(raster[i])]
         j = 0
         for s in sub_rasters:
             if s[0] == 0:
-                x,y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
-                # F.add(gdspy.CellArray(ref_cell = fill_cell, columns = len(s), rows = 1, spacing = fill_size, ))
-                a = F.add_array(fill_cell, columns = len(s), rows = 1, spacing = fill_size)
+                x, y = _raster_index_to_coords(i, j, bbox, fill_size[0], 
+                                               fill_size[1])
+                # F.add(gdspy.CellArray(ref_cell = fill_cell,
+                #                       columns = len(s), rows = 1,
+                #                       spacing = fill_size, ))
+                a = F.add_array(fill_cell, columns = len(s), rows = 1,
+                                spacing = fill_size)
                 a.move((x, y))
             j += len(s)
 
     return F
-
-
-
 
 
 #==============================================================================
@@ -3401,26 +3473,25 @@ def fill_rectangle(D, fill_size = (40,10), avoid_layers = 'all', include_layers 
 #
 #==============================================================================
 
+def polygon_ports(xpts = [-1, -1, 0, 0],
+                  ypts = [0, 1, 1, 0],
+                  layer = 0):
+    """ FIXME fill description
 
-def polygon_ports(xpts=[-1,-1, 0, 0],
-            ypts = [0, 1, 1, 0],
-            layer = 0):
-    """ FIXME fill
-
+    FIXME fill (xpts, ypts)
     Parameters
     ----------
-    xpts : 
+    xpts : array-like
 
-    ypts : 
+    ypts : array-like
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
-
     Returns
     -------
     P : Device
-
+        A Device containing a polygon with ports on all edges.
     """
     # returns a polygon with ports on all edges
     P = Device('polygon')
@@ -3430,14 +3501,16 @@ def polygon_ports(xpts=[-1,-1, 0, 0],
     ypts.append(ypts[0])
     #determine if clockwise or counterclockwise
     cc = 0
-    for i in range(0,n):
-        cc += ((xpts[i+1]-xpts[i])*(ypts[i+1]+ypts[i]))
+    for i in range(0, n):
+        cc += ((xpts[i+1] - xpts[i]) * (ypts[i+1] + ypts[i]))
 
     for i in range(0,n):
-        midpoint_n = [(xpts[i+1]+xpts[i])/2, (ypts[i+1]+ypts[i])/2]
-        orientation_n = np.arctan2(np.sign(cc)*(xpts[i+1]-xpts[i]),np.sign(cc)*(ypts[i]-ypts[i+1]))*180/np.pi
-        width_n = np.abs(np.sqrt((xpts[i+1]-xpts[i])**2+(ypts[i+1]-ypts[i])**2))
-        P.add_port(name = str(i+1), midpoint = midpoint_n, width = width_n, orientation = orientation_n)
+        midpoint_n = [(xpts[i+1] + xpts[i])/2, (ypts[i+1] + ypts[i])/2]
+        orientation_n = np.arctan2(np.sign(cc) * (xpts[i+1]-xpts[i]),
+                                   np.sign(cc) * (ypts[i]-ypts[i+1])) * 180/pi
+        width_n = np.abs(sqrt((xpts[i+1]-xpts[i])**2 + (ypts[i+1]-ypts[i])**2))
+        P.add_port(name = str(i+1), midpoint = midpoint_n, width = width_n,
+                   orientation = orientation_n)
 
     return P
 
@@ -3450,9 +3523,12 @@ def polygon_ports(xpts=[-1,-1, 0, 0],
 
 
 @device_lru_cache
-def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 5, length_taper = 10, width = 0.4, partial_etch = False):
-    """ FIXME fill
+def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
+            width_grating = 5, length_taper = 10, width = 0.4,
+            partial_etch = False):
+    """ FIXME fill description
 
+    FIXME fill (num_period, period, fill_factor, width_grating, length_taper, width, partial_etch)
     Parameters
     ----------
     num_periods : 
@@ -3461,56 +3537,68 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
 
     fill_factor : 
 
-    width_grating : 
+    width_grating : int or float
 
-    length_taper : 
+    length_taper : int or float
 
     width : int or float 
     
-    partial_etch : 
+    partial_etch : bool
 
 
     Returns
     -------
     G : Device
-
+        A Device containing a fiber grating geometry.
     """
     #returns a fiber grating
     G = Device('grating')
 
-# make the deep etched grating
+    # make the deep etched grating
     if partial_etch is False:
         # make the grating teeth
         for i in range(num_periods):
-            cgrating = G.add_ref(compass(size=[period*fill_factor,width_grating], layer = 0))
-            cgrating.x+=i*period
+            cgrating = G.add_ref(compass(size = [period*fill_factor,      
+                                                 width_grating],
+                                         layer = 0))
+            cgrating.x += i*period
 
         # make the taper
-        tgrating = G.add_ref(taper(length = length_taper, width1 = width_grating, width2 = width, port = None, layer = 0))
+        tgrating = G.add_ref(taper(length = length_taper,
+                                   width1 = width_grating,
+                                   width2 = width,
+                                   port = None, layer = 0))
         tgrating.xmin = cgrating.xmax
         # define the port of the grating
         p = G.add_port(port = tgrating.ports[2], name = 1)
-# make a partially etched grating
+    # make a partially etched grating
     if partial_etch is True:
         # hard coded overlap
-            partetch_overhang = 5
-            # make the etched areas (opposite to teeth)
-            for i in range(num_periods):
-                cgrating = G.add_ref(compass(size=[period*(1-fill_factor),width_grating+partetch_overhang*2]), layer = 1)
-                cgrating.x+=i*period
-                        # define the port of the grating
-            p = G.add_port(port = cgrating.ports['E'], name = 1)
-            p.midpoint=p.midpoint+np.array([(1-fill_factor)*period,0])
+        partetch_overhang = 5
+        # make the etched areas (opposite to teeth)
+        for i in range(num_periods):
+            cgrating = G.add_ref(
+                compass(size = [period * (1-fill_factor),
+                                width_grating + partetch_overhang*2]),
+                layer = 1)
+            cgrating.x += i*period
+        # define the port of the grating
+        p = G.add_port(port = cgrating.ports['E'], name = 1)
+        p.midpoint = p.midpoint + np.array([(1-fill_factor)*period, 0])
 
         #draw the deep etched square around the grating
-            deepbox = G.add_ref(compass(size=[num_periods*period, width_grating]), layer=0)
+        deepbox = G.add_ref(compass(size = [num_periods*period,
+                                            width_grating]),
+                                    layer = 0)
     return G
 
 #==============================================================================
 # Example code
 #==============================================================================
 
-# G = grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 20, length_taper = 10, width = 0.4, partial_etch = False)
+# G = grating(num_periods = 20, period = 0.75, fill_factor = 0.5, 
+#             width_grating = 20, length_taper = 10, width = 0.4,
+#             partial_etch = False)
 # quickplot(G)
 
 
@@ -3524,7 +3612,8 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5, width_grating = 
 
 
 # Via Route ----------------------------------------
-def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, via_width):
+def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer,
+                  via_layer, via_width):
     """ FIXME fill
 
     Parameters
@@ -3700,62 +3789,64 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15, via_spacing = 40, 
 def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
               comb_layer = 0, overlap_zigzag_layer = 1,
               comb_pad_layer = None, comb_gnd_layer = None, overlap_pad_layer = None):
-    """ FIXME fill
+    """ FIXME fill description
 
     Parameters
     ----------
-    pad_size : 
-
-    wire_width : 
-
-    wire_gap : 
-
-    comb_layer : 
-
-    overlap_zigzag_layer : 
-
-    comb_pad_layer : 
-
-    comb_gnd_layer : 
-
-    overlap_pad_layer : 
-
+    pad_size : array-like
+        x and y dimensions of the comb pads.
+    wire_width : int or float
+        Width of the test comb teeth.
+    wire_gap : int or float
+        Size of the gap between comb teeth.
+    comb_layer : int, array-like[2], or set
+        Specific layer(s) to put comb geometry on. 
+    overlap_zigzag_layer : int, array-like[2], or set
+        Specific layer(s) to put overlap zigzag geometry on. 
+    comb_pad_layer : int, array-like[2], or set
+        Specific layer(s) to put comb pads on. 
+    comb_gnd_layer : int, array-like[2], or set
+        Specific layer(s) to put the comb ground on. 
+    overlap_pad_layer : int, array-like[2], or set
+        Specific layer(s) to put overlap pads on. 
 
     Returns
     -------
     CI : Device
+        A Device containing a test comb geometry.
 
-
-    Usage
+    Notes
     -----
-    Call comb_insulation_test_structure() with any of the
-    parameters shown below which you'd like to change. You
-    only need to supply the parameters which you intend on
-    changing You can alternatively call it with no parameters
-    and it will take all the default alues shown below.
+    Call comb_insulation_test_structure() with any of the parameters shown
+    below which you'd like to change. You only need to supply the parameters
+    which you intend on changing You can alternatively call it with no
+    parameters and it will take all the default values shown below.
+
     Ex::
-
         comb_insulation_test_structure(pad_size=(175,175), wire_width=2, wire_gap=5)
-
     - or -::
-
         comb_insulation_test_structure()
     """
     CI = Device("test_comb")
 
-    if comb_pad_layer is None:  comb_pad_layer = comb_layer
-    if comb_gnd_layer is None:  comb_gnd_layer = comb_layer
-    if overlap_pad_layer is None:  overlap_pad_layer = overlap_zigzag_layer
+    if comb_pad_layer is None: comb_pad_layer = comb_layer
+    if comb_gnd_layer is None: comb_gnd_layer = comb_layer
+    if overlap_pad_layer is None: overlap_pad_layer = overlap_zigzag_layer
     wire_spacing = wire_width + wire_gap*2
 
-
-
-    #%% pad overlays
-    overlay_padb = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=overlap_pad_layer))
-    overlay_padl = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_pad_layer ) )
-    overlay_padt = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_pad_layer ) )
-    overlay_padr = CI.add_ref(rectangle(size=(pad_size[0]*9/10,pad_size[1]*9/10), layer=comb_gnd_layer))
-
+    # pad overlays
+    overlay_padb = CI.add_ref(rectangle(size = (pad_size[0]*9 / 10,
+                                                pad_size[1]*9 / 10),
+                                        layer = overlap_pad_layer))
+    overlay_padl = CI.add_ref(rectangle(size = (pad_size[0]*9 / 10,
+                                                pad_size[1]*9 / 10),
+                                        layer = comb_pad_layer))
+    overlay_padt = CI.add_ref(rectangle(size = (pad_size[0]*9 / 10,
+                                                pad_size[1]*9 / 10),
+                                        layer = comb_pad_layer))
+    overlay_padr = CI.add_ref(rectangle(size = (pad_size[0]*9 / 10,
+                                                pad_size[1]*9 / 10),
+                                        layer = comb_gnd_layer))
     overlay_padl.xmin = 0
     overlay_padl.ymin = 0
     overlay_padb.ymax = 0
@@ -3765,103 +3856,125 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     overlay_padt.xmin = overlay_padl.xmax + pad_size[1]/5
     overlay_padt.ymin = overlay_padl.ymax
 
-    #%% pads
-    padl = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
-    padt = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
-    padr = CI.add_ref(rectangle(size=pad_size, layer=comb_layer))
-    padb = CI.add_ref(rectangle(size=pad_size, layer=overlap_zigzag_layer))
-    padl_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
-    padr_nub = CI.add_ref(rectangle(size=(pad_size[0]/4,pad_size[1]/2), layer=comb_layer))
-
+    # pads
+    padl = CI.add_ref(rectangle(size = pad_size, layer = comb_layer))
+    padt = CI.add_ref(rectangle(size = pad_size, layer = comb_layer))
+    padr = CI.add_ref(rectangle(size = pad_size, layer = comb_layer))
+    padb = CI.add_ref(rectangle(size = pad_size, layer = overlap_zigzag_layer))
+    padl_nub = CI.add_ref(rectangle(size = (pad_size[0]/4,
+                                            pad_size[1]/2),
+                                    layer = comb_layer))
+    padr_nub = CI.add_ref(rectangle(size = (pad_size[0]/4,
+                                            pad_size[1]/2),
+                                    layer = comb_layer))
     padl.xmin = overlay_padl.xmin
-    padl.center = [padl.center[0],overlay_padl.center[1]]
+    padl.center = [padl.center[0], overlay_padl.center[1]]
     padt.ymax = overlay_padt.ymax
-    padt.center = [overlay_padt.center[0],padt.center[1]]
+    padt.center = [overlay_padt.center[0], padt.center[1]]
     padr.xmax = overlay_padr.xmax
-    padr.center = [padr.center[0],overlay_padr.center[1]]
+    padr.center = [padr.center[0], overlay_padr.center[1]]
     padb.ymin = overlay_padb.ymin
-    padb.center = [overlay_padb.center[0],padb.center[1]]
+    padb.center = [overlay_padb.center[0], padb.center[1]]
     padl_nub.xmin = padl.xmax
-    padl_nub.center = [padl_nub.center[0],padl.center[1]]
+    padl_nub.center = [padl_nub.center[0], padl.center[1]]
     padr_nub.xmax = padr.xmin
-    padr_nub.center = [padr_nub.center[0],padr.center[1]]
+    padr_nub.center = [padr_nub.center[0], padr.center[1]]
 
-    #%% connected zig
-
-    head = CI.add_ref(compass(size=(pad_size[0]/12, wire_width), layer=comb_layer))
+    # connected zig
+    head = CI.add_ref(compass(size = (pad_size[0]/12, wire_width),    
+                              layer = comb_layer))
     head.xmin = padl_nub.xmax
     head.ymax = padl_nub.ymax
-    connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
-    connector.connect(port = 'W', destination=head.ports['E'])
+    connector = CI.add_ref(compass(size = (wire_width, wire_width), 
+                                   layer = comb_layer))
+    connector.connect(port = 'W', destination = head.ports['E'])
     old_port = connector.ports['S']
     top = True
     obj = connector
     while(obj.xmax + pad_size[0]/12 < padr_nub.xmin):
-        #long zig zag rectangle
-        obj = CI.add_ref(compass(size=(pad_size[1]/2 - 2*wire_width, wire_width), layer=comb_layer))
-        obj.connect(port = 'W', destination=old_port)
+        # long zig zag rectangle
+        obj = CI.add_ref(compass(size = (pad_size[1]/2 - 2*wire_width,
+                                         wire_width),
+                                 layer = comb_layer))
+        obj.connect(port = 'W', destination = old_port)
         old_port = obj.ports['E']
         if(top):
-            #zig zag edge rectangle
-            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
-            obj.connect(port = 'N', destination=old_port)
+            # zig zag edge rectangle
+            obj = CI.add_ref(compass(size = (wire_width, wire_width),
+                                     layer = comb_layer))
+            obj.connect(port = 'N', destination = old_port)
             top = False
         else:
-            #zig zag edge rectangle
-            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
-            obj.connect(port = 'S', destination=old_port)
+            # zig zag edge rectangle
+            obj = CI.add_ref(compass(size = (wire_width, wire_width),
+                                     layer = comb_layer))
+            obj.connect(port = 'S', destination = old_port)
             top = True
             # comb rectange
-            comb = CI.add_ref(rectangle(size=((padt.ymin-head.ymax)+pad_size[1]/2  - (wire_spacing + wire_width)/2, wire_width), layer=comb_layer))
+            comb = CI.add_ref(rectangle(
+                size = ((padt.ymin - head.ymax) + pad_size[1]/2 \
+                        - (wire_spacing + wire_width)/2, wire_width),
+                layer = comb_layer))
             comb.rotate(90)
             comb.ymax = padt.ymin
-            comb.xmax = obj.xmax - (wire_spacing+wire_width)/2
+            comb.xmax = obj.xmax - (wire_spacing + wire_width)/2
         old_port = obj.ports['E']
-        obj = CI.add_ref(compass(size=(wire_spacing, wire_width), layer=comb_layer))
-        obj.connect(port = 'W', destination=old_port)
+        obj = CI.add_ref(compass(size = (wire_spacing, wire_width),
+                                 layer = comb_layer))
+        obj.connect(port = 'W', destination = old_port)
         old_port = obj.ports['E']
-        obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
-        obj.connect(port = 'W', destination=old_port)
-        if(top):
-            old_port = obj.ports['S']
-        else:
-            old_port = obj.ports['N']
+        obj = CI.add_ref(compass(size = (wire_width, wire_width),
+                                 layer = comb_layer))
+        obj.connect(port = 'W', destination = old_port)
+        if(top): old_port = obj.ports['S']
+        else: old_port = obj.ports['N']
     old_port = obj.ports['E']
     if(padr_nub.xmin-obj.xmax > 0):
-        tail = CI.add_ref(compass(size=(padr_nub.xmin-obj.xmax, wire_width), layer=comb_layer))
+        tail = CI.add_ref(compass(size = (padr_nub.xmin-obj.xmax, wire_width),
+                                  layer = comb_layer))
     else:
-        tail = CI.add_ref(compass(size=(wire_width, wire_width), layer=comb_layer))
-    tail.connect(port = 'W', destination=old_port)
+        tail = CI.add_ref(compass(size = (wire_width, wire_width),
+                                  layer = comb_layer))
+    tail.connect(port = 'W', destination = old_port)
 
-    #%% disconnected zig
-
-    dhead = CI.add_ref(compass(size=(padr_nub.ymin -padb.ymax - wire_width, wire_width), layer=overlap_zigzag_layer))
+    # disconnected zig
+    dhead = CI.add_ref(compass(size = (padr_nub.ymin - padb.ymax - wire_width,
+                                       wire_width),
+                               layer = overlap_zigzag_layer))
     dhead.rotate(90)
     dhead.ymin = padb.ymax
-    dhead.xmax = tail.xmin-(wire_spacing+wire_width)/2
-    connector = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
-    connector.connect(port = 'S', destination=dhead.ports['E'])
+    dhead.xmax = tail.xmin - (wire_spacing+wire_width)/2
+    connector = CI.add_ref(compass(size = (wire_width, wire_width),
+                                   layer = overlap_zigzag_layer))
+    connector.connect(port = 'S', destination = dhead.ports['E'])
     old_port = connector.ports['N']
     right = True
     obj = connector
     while(obj.ymax + wire_spacing + wire_width < head.ymax):
-        obj = CI.add_ref(compass(size=(wire_spacing, wire_width), layer=overlap_zigzag_layer))
-        obj.connect(port = 'W', destination=old_port)
+        obj = CI.add_ref(compass(size = (wire_spacing, wire_width),
+                                 layer = overlap_zigzag_layer))
+        obj.connect(port = 'W', destination = old_port)
         old_port = obj.ports['E']
         if(right):
-            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
-            obj.connect(port = 'W', destination=old_port)
+            obj = CI.add_ref(compass(size = (wire_width, wire_width),
+                                     layer = overlap_zigzag_layer))
+            obj.connect(port = 'W', destination = old_port)
             right = False
         else:
-            obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
-            obj.connect(port = 'E', destination=old_port)
+            obj = CI.add_ref(compass(size = (wire_width, wire_width),
+                                     layer = overlap_zigzag_layer))
+            obj.connect(port = 'E', destination = old_port)
             right = True
         old_port = obj.ports['N']
-        obj = CI.add_ref(compass(size=(dhead.xmin-(head.xmax+head.xmin+wire_width)/2, wire_width), layer=overlap_zigzag_layer))
-        obj.connect(port = 'E', destination=old_port)
+        obj = CI.add_ref(compass(
+            size = (dhead.xmin - (head.xmax+head.xmin+wire_width)/2,
+                    wire_width),
+            layer = overlap_zigzag_layer))
+        obj.connect(port = 'E', destination = old_port)
         old_port = obj.ports['W']
-        obj = CI.add_ref(compass(size=(wire_width, wire_width), layer=overlap_zigzag_layer))
-        obj.connect(port = 'S', destination=old_port)
+        obj = CI.add_ref(compass(size = (wire_width, wire_width),
+                                 layer = overlap_zigzag_layer))
+        obj.connect(port = 'S', destination = old_port)
         if(right):
             old_port = obj.ports['W']
         else:
@@ -3870,20 +3983,18 @@ def test_comb(pad_size = (200,200), wire_width = 1, wire_gap = 3,
     return CI
 
 
-
-
-#This is a helper function to make the Ic step wire structure
 def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
-    """ FIXME fill
+    """ Helper function used to make the IC step wire structure.
 
+    FIXME fill (thick_width, thin_width)
     Parameters
     ----------
     thick_width : 
 
     thin_width : 
 
-    wire_layer : 
-
+    wire_layer : int, array-like[2], or set
+        Specific layer(s) to put wire geometry on. 
 
     Returns
     -------
@@ -3891,10 +4002,14 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
 
     """
     WS4 = Device('test_ic_step')
-    wire_stepa = WS4.add_ref(optimal_step(thick_width/2, thin_width/2, layer=wire_layer))
-    wire_stepb = WS4.add_ref(optimal_step(thin_width/2, thick_width/2, layer=wire_layer))
-    wire_stepc = WS4.add_ref(optimal_step(thick_width/2, thin_width/2, layer=wire_layer))
-    wire_stepd = WS4.add_ref(optimal_step(thin_width/2, thick_width/2, layer=wire_layer))
+    wire_stepa = WS4.add_ref(optimal_step(thick_width/2, thin_width/2,
+                                          layer = wire_layer))
+    wire_stepb = WS4.add_ref(optimal_step(thin_width/2, thick_width/2,
+                                          layer = wire_layer))
+    wire_stepc = WS4.add_ref(optimal_step(thick_width/2, thin_width/2,
+                                          layer = wire_layer))
+    wire_stepd = WS4.add_ref(optimal_step(thin_width/2, thick_width/2,
+                                          layer = wire_layer))
     wire_stepb.rotate(180)
     wire_stepb.xmin = wire_stepa.xmin
     wire_stepc.rotate(180)
@@ -3903,10 +4018,11 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
     return WS4
 
 
-def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200,200), pad_gap=75,
-            wire_layer = 0, pad_layer = 1, gnd_layer = None):
-    """ FIXME fill
+def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
+            wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200, 200), pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = None):
+    """ FIXME fill description
 
+    FIXME fill (wire_widths, wire_widths_wide, pad_size, pad_gap, wire_layer, pad_layer, gnd_layer)
     Parameters
     ----------
     wire_widths : 
@@ -3929,19 +4045,20 @@ def test_ic(wire_widths = [0.25, 0.5,1,2,4], wire_widths_wide = [0.75, 1.5, 3, 4
     ICS : Device
 
 
-    Usage
+    Notes
     -----
-    Call ic_test_structure() with either a list of widths for the thickest part of each wire to test and a list for the
-    thinnest parts of each wire. Alternatively, specify a list of widths for the thinnest part of each wire and ignore the
-    wire_widths parameter. Instead you should specify the width_growth_factor which indicates by what factor the thick
-    part of the wire will be larger than the thin part.
+    Call ic_test_structure() with either a list of widths for the thickest part of each wire to test and a list for the thinnest parts of each wire.
+    Alternatively, specify a list of widths for the thinnest part of each wire and ignore the wire_widths parameter.
+    Instead you should specify the width_growth_factor which indicates by what factor the thick part of the wire will be larger than the thin part.
     Ex::
 
-        ic_test_structure(wire_widths = [5,10,10,10,10], thin_width=[0.5,1,2,3,4])
+        ic_test_structure(wire_widths = [5, 10, 10, 10, 10],
+                          thin_width = [0.5, 1, 2, 3, 4])
 
     - or -::
 
-        ic_test_structure(width_growth_factor = 5, thin_width=[0.5,1,2,3,4])
+        ic_test_structure(width_growth_factor = 5,
+                          thin_width = [0.5, 1, 2, 3, 4])
     """
     ICS = Device('test_ic')
 
@@ -4001,7 +4118,6 @@ def test_res(pad_size = [50,50],
     P : Device
 
     """
-
     x = pad_size[0]
     z = pad_size[1]
 
@@ -4058,7 +4174,7 @@ def test_res(pad_size = [50,50],
 
     # Creating pads
     P = Device('pads')
-    Pad1 = rectangle(size = (x,z), layer = pad_layer)
+    Pad1 = rectangle(size = (x, z), layer = pad_layer)
     Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
     Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
     Gnd2 = offset(Pad2, distance = -5, layer = gnd_layer)
@@ -4081,36 +4197,36 @@ def test_res(pad_size = [50,50],
 
 
 @device_lru_cache
-def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
-    turn_ratio = 4, num_pts = 50, layer = 0):
-    """ FIXME fill
+def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
+                    num_pts = 50, layer = 0):
+    """ Creates an optimally-rounded hairpin geometry, with a 180 degree turn on the right end of the polygon connected to two prongs extending towards ports on the left end.
 
+    FIXME fill (width, pitch, turn_ratio, num_pts)
     Parameters
     ----------
-    width : 
+    width : int or float
 
-    pitch : 
+    pitch : int or float
 
-    length : 
-
+    length : int or float
+        Length of the hairpin from the connectors to the opposite end of the curve.
     turn_ratio : 
 
-    num_pts : 
+    num_pts : int
 
-    layers : 
-
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on. 
 
     Returns
     -------
     D : Device
-
+        A Device containing an optimally-rounded hairpin geometry.
 
     Notes
     -----
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
-    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
-
+        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     #==========================================================================
     #  Create the basic geometry
@@ -4124,14 +4240,14 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     # Get points of ideal curve from conformal mapping
     # TODO This is an inefficient way of finding points that you need
     xpts = [x]; ypts = [y]
-    while (y < 0) & (n<1e6):
+    while (y < 0) & (n < 1e6):
         s = x + 1j*y
-        w = np.sqrt(1 - np.exp(pi*s/a))
+        w = sqrt(1 - np.exp(pi*s / a))
         wx = np.real(w); wy = np.imag(w)
-        wx = wx/np.sqrt(wx**2+wy**2); wy = wy/np.sqrt(wx**2+wy**2)
+        wx = wx / sqrt(wx**2 + wy**2); wy = wy / sqrt(wx**2 + wy**2)
         x = x + wx*dl; y = y + wy*dl
         xpts.append(x); ypts.append(y)
-        n = n+1
+        n = n + 1
     ypts[-1] = 0 # Set last point be on the x=0 axis for sake of cleanliness
     ds_factor = int(len(xpts)/num_pts) # Downsample the total number of points
     xpts = xpts[::-ds_factor]; xpts = xpts[::-1]    # This looks confusing, but it's just flipping the arrays around
@@ -4152,51 +4268,54 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10,
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'hairpin')
-    D.add_polygon([xpts,ypts], layer = layer)
-    D.add_polygon([xpts,-ypts], layer = layer)
+    D.add_polygon([xpts, ypts], layer = layer)
+    D.add_polygon([xpts, -ypts], layer = layer)
 
     xports = min(xpts)
     yports = -a + width/2
-    D.add_port(name = 1, midpoint = [xports,-yports], width = width, orientation = 180)
-    D.add_port(name = 2, midpoint = [xports,yports], width = width, orientation = 180)
+    D.add_port(name = 1, midpoint = [xports, -yports],
+               width = width, orientation = 180)
+    D.add_port(name = 2, midpoint = [xports, yports],
+               width = width, orientation = 180)
 
     return D
 
 
 # TODO Include parameter which specifies "half" (one edge flat) vs "full" (both edges curved)
 @device_lru_cache
-def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-3,
-                 anticrowding_factor = 1.2, symmetric = False, layer = 0):
-    """ FIXME fill
+def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
+                 width_tol = 1e-3, anticrowding_factor = 1.2,
+                 symmetric = False, layer = 0):
+    """ Creates an optimally-rounded step geometry.
 
+    FIXME fill (num_pts, width_tol, anticrowding_factor, symmetric)
     Parameters
     ----------
-    start_width : 
+    start_width : int or float
+        Width of the connector on the left end of the step.
+    end_width : int or float
+        Width of the connector on the right end of the step.
+    num_pts : int
 
-    end_width : 
+    width_tol : float
 
-    num_pts : 
+    anticrowding_factor : int or float
 
-    width_tol : 
-
-    anticrowding_factor : 
-
-    symmetric : 
+    symmetric : bool
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
-
     Returns
     -------
     D : Device
-
+        A Device containing an optimally-rounded step.
 
     Notes
     -----
-    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
-    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
-    # superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     #==========================================================================
     #  Create the basic geometry
@@ -4210,31 +4329,32 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
         W = np.complex(W)
         a = np.complex(a)
 
-        gamma = (a*a + W*W)/(a*a - W*W)
+        gamma = (a*a + W*W) / (a*a - W*W)
 
         w = np.exp(1j*eta)
 
-        zeta = 4*1j/pi*(W*np.arctan(np.sqrt((w-gamma)/(gamma+1))) \
-                           + a*np.arctan(np.sqrt((gamma-1)/(w-gamma))))
+        zeta = 4 * 1j/pi * (W*np.arctan(sqrt((w-gamma) / (gamma+1))) \
+                            + a*np.arctan(sqrt((gamma-1) / (w-gamma))))
 
         x = np.real(zeta)
         y = np.imag(zeta)
-        return x,y
+        return x, y
 
 
     def invert_step_point(x_desired = -10, y_desired = None, W = 1, a = 2):
         # Finds the eta associated with the value x_desired along the optimal curve
         def fh(eta):
             guessed_x, guessed_y = step_points(eta, W = W, a = a)
-            if y_desired is None:   return (guessed_x-x_desired)**2 # The error
-            else:                   return (guessed_y-y_desired)**2
+            if y_desired is None: return (guessed_x - x_desired)**2 # The error
+            else: return (guessed_y - y_desired)**2
 
         try:
             from scipy.optimize import fminbound
         except:
-            raise ImportError(""" [PHIDL] To run the optimal-curve geometry functions you need scipy,
-              please install it with `pip install scipy` """)
-        found_eta = fminbound(fh, x1 = 0, x2 = pi, args=())
+            raise ImportError(' [PHIDL] To run the optimal-curve geometry '
+                              'functions you need scipy, please install '
+                              'it with `pip install scipy`')
+        found_eta = fminbound(fh, x1 = 0, x2 = pi, args = ())
         return step_points(found_eta, W = W, a = a)
 
     if start_width > end_width:
@@ -4245,23 +4365,27 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
 
     if start_width == end_width: # Just return a square
         if symmetric == True:
-            ypts = [-start_width/2, start_width/2, start_width/2, -start_width/2]
-            xpts = [0,           0, start_width, start_width]
+            ypts = [-start_width/2, start_width/2,
+                    start_width/2, -start_width/2]
+            xpts = [0, 0, start_width, start_width]
         if symmetric == False:
-            ypts = [0, start_width, start_width,           0]
-            xpts = [0,           0, start_width, start_width]
+            ypts = [0, start_width, start_width, 0]
+            xpts = [0, 0, start_width, start_width]
     else:
-        xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
-        xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)
+        xmin, ymin = invert_step_point(y_desired = start_width*(1+width_tol),
+                                       W = start_width, a = end_width)
+        xmax, ymax = invert_step_point(y_desired = end_width*(1-width_tol),
+                                       W = start_width, a = end_width)
 
         xpts = np.linspace(xmin, xmax, num_pts).tolist()
         ypts = []
         for x in xpts:
-            x,y = invert_step_point(x_desired = x, W = start_width, a = end_width)
+            x, y = invert_step_point(x_desired = x, W = start_width,
+                                     a = end_width)
             ypts.append(y)
 
         ypts[-1] = end_width
-        ypts[0] =  start_width
+        ypts[0] = start_width
         if symmetric == False:
             xpts.append(xpts[-1])
             ypts.append(0)
@@ -4286,50 +4410,53 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
     D = Device(name = 'step')
-    D.add_polygon([xpts,ypts], layer = layer)
+    D.add_polygon([xpts, ypts], layer = layer)
 
     if symmetric == False:
-        D.add_port(name = 1, midpoint = [min(xpts),start_width/2], width = start_width, orientation = 180)
-        D.add_port(name = 2, midpoint = [max(xpts),end_width/2], width = end_width, orientation = 0)
+        D.add_port(name = 1, midpoint = [min(xpts), start_width/2],
+                   width = start_width, orientation = 180)
+        D.add_port(name = 2, midpoint = [max(xpts), end_width/2],
+                   width = end_width, orientation = 0)
     if symmetric == True:
-        D.add_port(name = 1, midpoint = [min(xpts),0], width = start_width, orientation = 180)
-        D.add_port(name = 2, midpoint = [max(xpts),0], width = end_width, orientation = 0)
+        D.add_port(name = 1, midpoint = [min(xpts), 0], width = start_width,
+                   orientation = 180)
+        D.add_port(name = 2, midpoint = [max(xpts), 0], width = end_width,
+                   orientation = 0)
 
     return D
 
 
 def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
-    """ FIXME fill
+    """ Creates an optimally-rounded 90 degree bend that is sharp on the outer corner.
 
     Parameters
     ----------
-    width : 
-
-    num_pts : 
+    width : int or float
+        Width of the ports on either side of the bend.
+    num_pts : int
 
     length_adjust : 
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
-
     Returns
     -------
     D : Device
-
+        A Device containing an optimally-rounded 90 degree bend.
 
     Notes
     -----
-    # Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
-    # Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
-    # superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
+    Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
+        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     D = Device()
 
     # Get points of ideal curve
     a = 2*width
-    v = np.logspace(-length_adjust,length_adjust,num_pts)
-    xi = a/2.0*((1+2/np.pi*np.arcsinh(1/v)) + 1j*(1+2/np.pi*np.arcsinh(v)))
+    v = np.logspace(-length_adjust, length_adjust, num_pts)
+    xi = a / 2.0*((1 + 2/pi * np.arcsinh(1/v)) + 1j*(1 + 2/pi * np.arcsinh(v)))
     xpts = list(np.real(xi)); ypts = list(np.imag(xi))
 
     # Add points for the rest of curve
@@ -4343,8 +4470,8 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
 
     D.add_polygon([xpts, ypts], layer = layer)
 
-    D.add_port(name = 1, midpoint = [a/4,d], width = a/2, orientation = 90)
-    D.add_port(name = 2, midpoint = [d,a/4], width = a/2, orientation = 0)
+    D.add_port(name = 1, midpoint = [a/4, d], width = a/2, orientation = 90)
+    D.add_port(name = 2, midpoint = [d, a/4], width = a/2, orientation = 0)
     return D
 
 
@@ -4377,50 +4504,51 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
 
 @device_lru_cache
 def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-        num_squares = None, turn_ratio = 4,
-        terminals_same_side = False, layer = 0):
-    """ FIXME fill
+          num_squares = None, turn_ratio = 4, terminals_same_side = False,
+          layer = 0):
+    """ Creates an optimally-rounded SNSPD.
 
+    FIXME fill (wire_width, wire_pitch, num_squares, turn_ratio, terminals_same_side)
     Parameters
     ----------
-    wire_width : 
+    wire_width : int or float
 
-    wire_pitch : 
+    wire_pitch : int or float
 
-    size : 
-
-    num_squares : 
+    size : array-like
+        x, y size of the rectangle formed by the outer boundary of the SNSPD.
+    num_squares : int or None
 
     turn_ratio : 
 
-    terminals_same_side : 
+    terminals_same_side : bool
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
-
     Returns
     -------
     D : Device
-
+        A Device containing an optimally-rounded SNSPD.
     """
     # Convenience tests to auto-shape the size based
     # on the number of squares
-    if num_squares is not None and ((size is None) or ((size[0] is None) and (size[1]) is None)):
+    if num_squares is not None and ((size is None) or ((size[0] is None) \
+        and (size[1]) is None)):
         xy = np.sqrt(num_squares*wire_pitch*wire_width)
-        size = [xy,xy]
+        size = [xy, xy]
         num_squares = None
     if ([size[0], size[1], num_squares].count(None) != 1):
-        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of' +
-                         ' the arguments ``num_squares`` and ``size`` be None'+
-                         ' to prevent overconstraining, for example:\n' +
+        raise ValueError('[PHIDL] snspd() requires that exactly ONE value of '
+                         'the arguments ``num_squares`` and ``size`` be None '
+                         'to prevent overconstraining, for example:\n'
                          '>>> snspd(size = (3, None), num_squares = 2000)')
     if size[0] is None:
         ysize = size[1]
-        xsize = num_squares*wire_pitch*wire_width/ysize
+        xsize = num_squares*wire_pitch*wire_width / ysize
     elif size[1] is None:
         xsize = size[0]
-        ysize = num_squares*wire_pitch*wire_width/xsize
+        ysize = num_squares*wire_pitch*wire_width / xsize
     else:
         xsize = size[0]
         ysize = size[1]
@@ -4429,7 +4557,8 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
     D = Device(name = 'snspd')
     hairpin = optimal_hairpin(width = wire_width, pitch = wire_pitch,
-        turn_ratio = turn_ratio, length = xsize/2, num_pts = 20, layer = layer)
+                              turn_ratio = turn_ratio, length = xsize/2,
+                              num_pts = 20, layer = layer)
 
 
     if (terminals_same_side is False) and ((num_meanders % 2) == 0):
@@ -4442,7 +4571,7 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     hp_prev = D.add_ref(hairpin)
     hp_prev.connect(1, start_nw.ports['E'])
     alternate = True
-    for n in range(2,num_meanders):
+    for n in range(2, num_meanders):
         hp = D.add_ref(hairpin)
         if alternate:
             hp.connect(2, hp_prev.ports[2])
@@ -4453,7 +4582,7 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         hp_prev = hp
         alternate = not alternate
 
-    finish_se = D.add_ref(compass(size = [xsize/2 ,wire_width], layer = layer))
+    finish_se = D.add_ref(compass(size = [xsize/2, wire_width], layer = layer))
     finish_se.connect('E', last_port)
 
     D.add_port(port = start_nw.ports['W'], name = 1)
@@ -4467,45 +4596,49 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 
 
 def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
-           num_squares = None, connector_width = 1, connector_symmetric = False,
-            turn_ratio = 4, terminals_same_side = False, layer = 0):
+                   num_squares = None, connector_width = 1,
+                   connector_symmetric = False, turn_ratio = 4,
+                   terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand.
     
+    FIXME fill (wire_width, wire_pitch, num_squares, connector_width, connector_symmetric, turn_ratio)
     Parameters
     ----------
-    wire_width : 
+    wire_width : int or float
 
-    wire_pitch : 
+    wire_pitch : int or float
 
-    size : 
+    size : array-like
+        x, y size of the rectangle formed by the outer boundary of the SNSPD, not including the input and output wires.
+    num_squares : int or None
 
-    num_squares : 
+    connector_width : int or float
 
-    connector_width : 
-
-    connector_symmetric : 
-
+    connector_symmetric : bool
+    
     turn_ratio : 
 
-    terminals_same_side : 
-
+    terminals_same_side : bool
+        If true, terminals are placed on the same side of the SNSPD.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
     D : Device
-
+        A Device containing an optimally-rounded SNSPD with expanding input/output wires.
     """
     D = Device('snspd_expanded')
-    S = snspd(wire_width = wire_width, wire_pitch = wire_pitch,
-                        size = size, num_squares = num_squares, turn_ratio = turn_ratio,
-                        terminals_same_side = terminals_same_side, layer = layer)
+    S = snspd(wire_width = wire_width, wire_pitch = wire_pitch, size = size,
+              num_squares = num_squares, turn_ratio = turn_ratio,
+              terminals_same_side = terminals_same_side, layer = layer)
     s = D.add_ref(S)
-    step_device = optimal_step(start_width = wire_width, end_width = connector_width,
-                            num_pts = 100, anticrowding_factor = 2, width_tol = 1e-3,
-                            symmetric = connector_symmetric, layer = layer)
+    step_device = optimal_step(start_width = wire_width,
+                               end_width = connector_width,
+                               num_pts = 100, anticrowding_factor = 2,
+                               width_tol = 1e-3,
+                               symmetric = connector_symmetric,
+                               layer = layer)
     step1 = D.add_ref(step_device)
     step2 = D.add_ref(step_device)
     step1.connect(port = 1, destination = s.ports[1])
@@ -4533,25 +4666,25 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
                 arm_widths = (200, 200), theta = 2.5, theta_resolution = 10,
                 layer = 0):
-    """ FIXME fill
+    """ FIXME fill description
 
+    FIXME fill (rho, arm_lengths, source_length, arm_widths, theta, theta_resolution, D)
     Parameters
     ----------
-    rho : 
+    rho : int or float
 
-    arm_lengths : 
+    arm_lengths : array-like
 
-    source_length : 
+    source_length : array-like
 
-    arm_widths : 
+    arm_widths : array-like
 
-    theta : 
+    theta : int or float
 
-    theta_resolution : 
+    theta_resolution : int or float
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
