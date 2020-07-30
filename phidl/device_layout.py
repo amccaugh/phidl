@@ -98,6 +98,7 @@ def _parse_move(origin, destination, axis):
 def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
     """ Takes a list of elements and distributes them either (1: suparation==False) equally
     along a grid or (2: separation==True) with a fixed spacing between them """
+    if len(elements) == 0: return elements
     if direction not in ({'x','y'}):
         raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
     if (direction == 'x') and (edge not in ({'x', 'xmin', 'xmax'})) and (separation == False):
@@ -126,6 +127,7 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     return elements
 
 def _align(elements, alignment = 'ymax'):
+    if len(elements) == 0: return elements
     if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
         raise ValueError("[PHIDL] 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
     value = Group(elements).__getattribute__(alignment)
@@ -1236,7 +1238,8 @@ class Group(_GeometryHelper):
 
     @property
     def bbox(self):
-        bboxes = np.empty([len(self.elements),4])
+        if len(self.elements) == 0:
+            raise ValueError('[PHIDL] Group is empty, no bbox is available')
         for n,e in enumerate(self.elements):
             bboxes[n] = e.bbox.flatten()
 
