@@ -1,4 +1,3 @@
-#%%
 import os
 from os.path import join, dirname
 from operator import itemgetter
@@ -104,6 +103,7 @@ def write_docstring(main_path, source_path,
                      .format(name[0]))
     fw.close()
 
+#%%
 main_path = join(dirname(dirname(dirname(__file__))), 'phidl')
 source_path = dirname(__file__)
 fwrite = 'API.rst'
