@@ -410,6 +410,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
            num_divisions = [1,1], join = 'miter', tolerance = 2,
            max_points = 4000, layer = 0):
     """ Shrinks or expands a polygon or set of polygons.
+    
     FIXME fill (num_divisions)
 
     Parameters
@@ -485,6 +486,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
             max_points = 4000, layer = 0):
     """ Performs boolean operations between 2 Device/DeviceReference objects
     or lists of Devices/DeviceReferences.
+
     FIXME fill (num_divisions)
 
     Parameters
@@ -581,6 +583,7 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
             max_points = 4000, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
+
     FIXME fill (num_divisions)
 
     Parameters
@@ -642,6 +645,7 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1],
            max_points = 4000, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges.
+
     FIXME fill (num_divisions)
 
     Parameters
@@ -731,6 +735,7 @@ def xor_diff(A, B, precision = 1e-4):
 def union(D, by_layer = False, precision = 1e-4, join_first = True,
           max_points = 4000, layer = 0):
     """ Performs the union of all polygons within a Device.
+
     FIXME fill (by_Layer, join_first)
 
     Parameters
@@ -1003,6 +1008,7 @@ def _offset_region(all_polygons, bboxes,
     """ Taking a region of e.g. size (x, y) which needs to be offset by distance
     d, this function crops out a region (x+2*d, y+2*d) large, offsets that
     region, then crops it back to size (x, y) to create a valid result.
+
     FIXME fill (polygons_offset_cropped)
 
     Parameters
@@ -1086,6 +1092,7 @@ def _offset_polygons_parallel(polygons,
                               join = 'miter',
                               tolerance = 2):
     """ FIXME fill description
+
     FIXME fill (polygons, num_divisions, offset_polygons)
 
     Parameters
@@ -1201,6 +1208,7 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
                                operation = 'and',
                                precision = 1e-4):
     """ FIXME fill description
+
     FIXME fill (num_divisions, boolean_polygons)
 
     Parameters
@@ -1351,9 +1359,10 @@ def litho_calipers(notch_size = [2, 5],
                    layer2 = 2):
     """ Creates a vernier caliper structure for lithography alignment
     tests. Vernier structure is made horizontally.
+
     FIXME fill (notch_size, notch_spacing, num_notches, offset_per_notch, 
     row_spacing, D)
-    
+
     Parameters
     ----------
     notch_size : 
@@ -1522,6 +1531,7 @@ def import_gds(filename, cellname = None, flatten = False):
     """ FIXME fill description
 
     FIXME fill (filename, cellname, flatten, topdevice, D)
+
     Parameters
     ----------
     filename : str
@@ -1618,6 +1628,7 @@ def _translate_cell(c):
     """ FIXME fill description
 
     FIXME fill (c, D)
+
     Parameters
     ----------
     c : Device
@@ -1650,6 +1661,7 @@ def preview_layerset(ls, size = 100, spacing = 100):
     files.
 
     FIXME fill (ls, size, spacing, D)
+
     Parameters
     ----------
     ls : LayerSet
@@ -1772,6 +1784,7 @@ def _calculate_label_offset(port):
     and substracted when extracting.
 
     FIXME fill (port, offset_position)
+
     Parameters
     ----------
     port : Port
@@ -1999,6 +2012,7 @@ def flagpole(size = (4, 2), stub_size = (2, 1), shape = 'p',
     """ FIXME fill description
 
     FIXME fill (size, stub_size, shape, taper_type, D)
+
     Parameters
     ----------
     size : array-like
@@ -2324,6 +2338,7 @@ def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     """ FIXME fill description
 
     FIXME fill (v)
+
     Parameters
     ----------
     wire_width : int or float
@@ -2402,7 +2417,8 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness,
 def _G_integrand(xip, B):
     """ FIXME fill description
 
-    FIXME fill vars
+    FIXME fill (xip, B)
+
     Parameters
     ----------
     xip : 
@@ -2426,7 +2442,8 @@ def _G_integrand(xip, B):
 def _G(xi, B):
     """ FIXME fill description
 
-    FIXME fill vars
+    FIXME fill (xi, B)
+
     Parameters
     ----------
     xi : 
@@ -2451,7 +2468,9 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25,
                  width1 = None, width2 = None, num_pts = 100, layer = 0):
     """ FIXME fill description
 
-    FIXME fill vars
+    FIXME fill (length, B, dielectric_thickness, eps_r, Lk_per_sq, Z1, Z2, 
+    width1, width2, num_pts, D)
+
     Parameters
     ----------
     length : int or float
@@ -2530,7 +2549,9 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
     """ FIXME fill description
 
-    FIXME fill vars
+    FIXME fill (x_taper, w_taper, meander_length, spacing_factor, min_spacing, 
+    D)
+
     Parameters
     ----------
     x_taper : 
@@ -2997,7 +3018,8 @@ def _pack_single_bin(rect_dict,
     reaches `max_size`. Returns a dictionary of the packed rectanglesn in the 
     form {id:(x, y, w, h)}, and a dictionary of remaining unpacked rects.
 
-    FIXME fill (rect_dict, aspect_ratio, max_size, sort_by_area, density, verbose, RETURN)
+    FIXME fill [rect_dict, aspect_ratio, max_size, sort_by_area, density, verbose, RETURN]
+
     Parameters
     ----------
     rect_dict : 
@@ -3096,6 +3118,7 @@ def packer(D_list,
     """ Packs geometries together into rectangular bins.
 
     FIXME fill (verbose)
+
     Parameters
     ----------
     D_list : array-like of Devices
@@ -3182,6 +3205,7 @@ def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]],
     """ FIXME fill description
 
     FIXME fill (polygons, bounds, dy, dy, raster)
+    
     Parameters
     ----------
     polygons : 
@@ -3237,6 +3261,7 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]],
     """ FIXME fill description
 
     FIXME fill (i, j, bounds, dx, dy, x, y)
+
     Parameters
     ----------
     i : int or float
@@ -3266,6 +3291,7 @@ def _expand_raster(raster, distance = (4, 2)):
     """ FIXME fill description
 
     FIXME fill (raster, distance)
+
     Parameters
     ----------
     raster : 
@@ -3363,7 +3389,9 @@ def fill_rectangle(D, fill_size = (40, 10), avoid_layers = 'all',
                    fill_inverted = None, bbox = None):
     """ FIXME fill description
 
-    FIXME fill (D, fill_size, avoid_layers, include_layers, margin, fill_layers, fill_densities, fill_inverted, bbox, F)
+    FIXME fill (D, fill_size, avoid_layers, include_layers, margin, 
+    fill_layers, fill_densities, fill_inverted, bbox, F)
+
     Parameters
     ----------
     D : Device
@@ -3467,6 +3495,7 @@ def polygon_ports(xpts = [-1, -1, 0, 0],
     """ FIXME fill description
 
     FIXME fill (xpts, ypts)
+
     Parameters
     ----------
     xpts : array-like
@@ -3516,7 +3545,9 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
             partial_etch = False):
     """ FIXME fill description
 
-    FIXME fill (num_period, period, fill_factor, width_grating, length_taper, width, partial_etch)
+    FIXME fill (num_period, period, fill_factor, width_grating, length_taper, 
+    width, partial_etch)
+
     Parameters
     ----------
     num_periods : 
@@ -3975,6 +4006,7 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
     """ Helper function used to make the IC step wire structure.
 
     FIXME fill (thick_width, thin_width)
+
     Parameters
     ----------
     thick_width : 
@@ -4010,7 +4042,9 @@ def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
             wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200, 200), pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = None):
     """ FIXME fill description
 
-    FIXME fill (wire_widths, wire_widths_wide, pad_size, pad_gap, wire_layer, pad_layer, gnd_layer)
+    FIXME fill (wire_widths, wire_widths_wide, pad_size, pad_gap, wire_layer, 
+    pad_layer, gnd_layer)
+
     Parameters
     ----------
     wire_widths : 
@@ -4190,6 +4224,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
     """ Creates an optimally-rounded hairpin geometry, with a 180 degree turn on the right end of the polygon connected to two prongs extending towards ports on the left end.
 
     FIXME fill (width, pitch, turn_ratio, num_pts)
+
     Parameters
     ----------
     width : int or float
@@ -4277,6 +4312,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
     """ Creates an optimally-rounded step geometry.
 
     FIXME fill (num_pts, width_tol, anticrowding_factor, symmetric)
+
     Parameters
     ----------
     start_width : int or float
@@ -4496,7 +4532,9 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
           layer = 0):
     """ Creates an optimally-rounded SNSPD.
 
-    FIXME fill (wire_width, wire_pitch, num_squares, turn_ratio, terminals_same_side)
+    FIXME fill (wire_width, wire_pitch, num_squares, turn_ratio, 
+    terminals_same_side)
+
     Parameters
     ----------
     wire_width : int or float
@@ -4589,7 +4627,9 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
                    terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that expand.
     
-    FIXME fill (wire_width, wire_pitch, num_squares, connector_width, connector_symmetric, turn_ratio)
+    FIXME fill (wire_width, wire_pitch, num_squares, connector_width, 
+    connector_symmetric, turn_ratio)
+
     Parameters
     ----------
     wire_width : int or float
@@ -4656,7 +4696,9 @@ def ytron_round(rho = 1, arm_lengths = (500,300),  source_length = 500,
                 layer = 0):
     """ FIXME fill description
 
-    FIXME fill (rho, arm_lengths, source_length, arm_widths, theta, theta_resolution, D)
+    FIXME fill (rho, arm_lengths, source_length, arm_widths, theta, 
+    theta_resolution, D)
+
     Parameters
     ----------
     rho : int or float
