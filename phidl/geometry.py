@@ -411,7 +411,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
            max_points = 4000, layer = 0):
     """ Shrinks or expands a polygon or set of polygons.
 
-    FIXME fill (num_divisions)
+    FIXME fill vars
     Parameters
     ----------
     elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
@@ -486,7 +486,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
     """ Performs boolean operations between 2 Device/DeviceReference objects
     or lists of Devices/DeviceReferences.
 
-    FIXME fill (num_divisions)
+    FIXME fill vars
     Parameters
     ----------
     A, B : Device/DeviceReference or list of Device/DeviceReference or Polygon
@@ -582,7 +582,7 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
 
-    FIXME fill (num_divisions)
+    FIXME fill vars
     Parameters
     ----------
     elements : Device/DeviceReference or list of Device/DeviceReference or 
@@ -643,7 +643,7 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1],
     """ Creates an inverted version of the input shapes with an additional
     border around the edges.
     
-    FIXME fill (num_divisions)
+    FIXME fill vars
     Parameters
     ----------
     elements : Device/DeviceReference or list of Device/DeviceReference or 
@@ -732,7 +732,7 @@ def union(D, by_layer = False, precision = 1e-4, join_first = True,
           max_points = 4000, layer = 0):
     """ Performs the union of all polygons within a Device.
 
-    FIXME fill (by_Layer, join_first)
+    FIXME fill vars
     Parameters
     ----------
     D : Device/DeviceReference or list of Device/DeviceReference
@@ -1004,7 +1004,7 @@ def _offset_region(all_polygons, bboxes,
     d, this function crops out a region (x+2*d, y+2*d) large, offsets that
     region, then crops it back to size (x, y) to create a valid result.
 
-    FIXME fill (polygons_offset_cropped)
+    FIXME fill vars
     Parameters
     ----------
     all_polygons : PolygonSet or list of polygons
@@ -1087,7 +1087,7 @@ def _offset_polygons_parallel(polygons,
                               tolerance = 2):
     """ FIXME fill description
 
-    FIXME fill (polygons, num_divisions, offset_polygons)
+    FIXME fill vars
     Parameters
     ----------
     polygons : PolygonSet or list of polygons
@@ -1202,7 +1202,7 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
                                precision = 1e-4):
     """ FIXME fill description
 
-    FIXME fill (num_divisions, boolean_polygons)
+    FIXME fill vars
     Parameters
     ----------
     polygons_A : PolygonSet or list of polygons
@@ -1272,7 +1272,7 @@ def litho_steps(line_widths = [1, 2, 4, 8, 16],
     """ Produces a positive + negative tone linewidth test, used for
     lithography resolution test patterning.
 
-    FIXME fill (line_widths, line_spacing, height, D)
+    FIXME fill line_widths, line_spacing, height, D
     Parameters
     ----------
     line_widths : list of int or float
@@ -2321,7 +2321,7 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     """ FIXME fill description
 
-    FIXME fill (v)
+    FIXME fill vars
     Parameters
     ----------
     wire_width : int or float
@@ -2351,6 +2351,7 @@ def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     Lk_m = Lk_per_sq * (1.0/wire_width)
     v = 1 / sqrt((L_m+Lk_m) * C_m)
     return v
+
 
 def _find_microstrip_wire_width(Z_target, dielectric_thickness,
                                 eps_r, Lk_per_sq):
@@ -2397,8 +2398,9 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness,
     return w[0]
 
 def _G_integrand(xip, B):
-    """ FIXME fill
+    """ FIXME fill description
 
+    FIXME fill vars
     Parameters
     ----------
     xip : 
@@ -2420,8 +2422,9 @@ def _G_integrand(xip, B):
 
 
 def _G(xi, B):
-    """ FIXME fill
+    """ FIXME fill description
 
+    FIXME fill vars
     Parameters
     ----------
     xi : 
@@ -2441,36 +2444,36 @@ def _G(xi, B):
     return B/sinh(B)*scipy.integrate.quad(_G_integrand, 0, xi, args = (B))[0]
 
 @device_lru_cache
-def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 2,
-                 Lk_per_sq = 250e-12, Z1 = None, Z2 = None, width1 = None, width2 = None,
-                 num_pts = 100, layer = 0):
-    """ FIXME fill
+def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25,
+                 eps_r = 2, Lk_per_sq = 250e-12, Z1 = None, Z2 = None,
+                 width1 = None, width2 = None, num_pts = 100, layer = 0):
+    """ FIXME fill description
 
+    FIXME fill vars
     Parameters
     ----------
-    length : 
+    length : int or float
     
-    B : 
+    B : int or float
 
-    dielectric_thickness : 
+    dielectric_thickness : int or float
 
-    eps_r : 
+    eps_r : int or float
 
-    Lk_per_sq : 
+    Lk_per_sq : float
 
-    Z1 : 
+    Z1 : int, float, or None
 
-    Z2 : 
+    Z2 : int, float, or None
 
-    width1 : 
+    width1 : int, float, or None
 
-    width2 : 
+    width2 : int, float, or None
 
-    num_pts : 
+    num_pts : int
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
 
     Returns
     -------
@@ -2523,8 +2526,9 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25, eps_r = 
 @device_lru_cache
 def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
-    """ FIXME fill
+    """ FIXME fill description
 
+    FIXME fill vars
     Parameters
     ----------
     x_taper : 
@@ -2596,6 +2600,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 
     return D
 
+
 #==============================================================================
 # Example code
 #==============================================================================
@@ -2614,38 +2619,34 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 #plt.axis('equal')
 
 
-
-
-
 #==============================================================================
 #
 # Text
 #
 #==============================================================================
 
-
 def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
-    """ FIXME fill
+    """ Creates geometries of text written with the majority of English ASCII 
+    characters available.
 
     Parameters
     ----------
-    text : 
-
-    size : 
-
-    justify : 
-
+    text : str
+        Text string to be written.
+    size : int or float
+        Size of the text
+    justify : {'left', 'right', 'center'}
+        Justification of the text.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
-
     Returns
     -------
-    t : 
-
+    t : Device
+        A Device containing the text geometry.
     """
     scaling = size/1000
-    position = (0,0)
+    position = (0, 0)
     xoffset = 0
     yoffset = 0
     t = Device('text')
@@ -2657,9 +2658,10 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
                 xoffset += 500*scaling
             elif (33 <= ascii_val <= 126) or (ascii_val == 181):
                 for poly in _glyph[ascii_val]:
-                    xpts = np.array(poly)[:,0]*scaling
-                    ypts = np.array(poly)[:,1]*scaling
-                    l.add_polygon([xpts + xoffset,ypts + yoffset], layer=layer)
+                    xpts = np.array(poly)[:, 0]*scaling
+                    ypts = np.array(poly)[:, 1]*scaling
+                    l.add_polygon([xpts + xoffset, ypts + yoffset],
+                                  layer=layer)
                 xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
             else:
                 valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
@@ -2670,9 +2672,10 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
         xoffset = position[0]
     justify = justify.lower()
     for l in t.references:
-        if justify == 'left':   pass
-        if justify == 'right':  l.xmax = position[0]
-        if justify == 'center': l.move(origin = l.center, destination = position, axis = 'x')
+        if justify == 'left': pass
+        if justify == 'right': l.xmax = position[0]
+        if justify == 'center': l.move(origin = l.center,
+                                       destination = position, axis = 'x')
     t.flatten()
     return t
 
@@ -2685,18 +2688,13 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
 #quickplot(D)
 
 
-
-
 #==============================================================================
 #
 # Wafer and die
 #
 #==============================================================================
 
-
-
-def basic_die(
-              size = (10000, 10000),
+def basic_die(size = (10000, 10000),
               street_width = 100,
               street_length = 1000,
               die_name = 'chip99',
@@ -2704,36 +2702,35 @@ def basic_die(
               text_location = 'SW',
               layer = 0,
               draw_bbox = True,
-              bbox_layer = 99,
-              ):
-    """ FIXME fill
+              bbox_layer = 99):
+    """ Creates a basic chip/die template, with 4 right angle corners marking
+    the boundary of the chip/die and a label with the name of the die.
 
     Parameters
     ----------
-    size : 
-
-    street_width : 
-
-    street_length : 
-
-    die_name : 
-
-    text_size : 
-
-    text_location : 
-
-    layer : int, array-like[2], or set
+    size : array_like[2] of int or float
+        x, y dimensions of the die.
+    street_width : int or float
+        Width of the corner marks for die-sawing.
+    street_length : int or float
+        Length of the corner marks for die-sawing.
+    die_name : str
+        Label text.
+    text_size : int or float
+        Label text size.
+    text_location : {'NW', 'N', 'NE', 'SW', 'S', 'SE'}
+        Label text compass location.
+    layer : int
         Specific layer(s) to put polygon geometry on.
-
-    draw_bbox : 
-
-    bbox_layer : 
-
+    draw_bbox : bool
+        If true, drawns a bbox around the chip die geometry.
+    bbox_layer : int
+        Layer on which bbox is placed if ``draw_bbox`` is true.
 
     Returns
     -------
     D : Device
-
+        A Device containing a basic die geometry.
     """
     D = Device(name = 'die')
     sx, sy = size[0]/2, size[1]/2
@@ -2747,9 +2744,10 @@ def basic_die(
     D.add_polygon([-xpts,-ypts], layer = layer)
 
     if draw_bbox is True:
-        D.add_polygon([[sx,sy], [sx,-sy],[-sx,-sy],[-sx,sy]], layer = bbox_layer)
-    D.center = (0,0)
-    t = D.add_ref(text(text = die_name, size = text_size, layer=layer))
+        D.add_polygon([[sx,sy], [sx,-sy], [-sx,-sy], [-sx,sy]],
+                      layer = bbox_layer)
+    D.center = (0, 0)
+    t = D.add_ref(text(text = die_name, size = text_size, layer = layer))
 
     d = street_width + 20
     if type(text_location) is str:
@@ -2772,7 +2770,6 @@ def basic_die(
     return D
 
 
-
 #==============================================================================
 # Example code
 #==============================================================================
@@ -2783,15 +2780,11 @@ def basic_die(
 # quickplot(D)
 
 
-
-
-
 #==============================================================================
 #
 # Waveguide curves
 #
 #==============================================================================
-
 
 def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     """ FIXME fill
@@ -2799,7 +2792,7 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     Parameters
     ----------
     width : int or float 
-
+        Width of the track.
     R : 
 
     N : 
@@ -2807,16 +2800,16 @@ def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
-
     Returns
     -------
     D : Device
 
     """
     curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
-    route_path = gdspy.Path(width = width, initial_point = [0,0])
-    route_path.parametric(curve_fun, number_of_evaluations=99,\
-            max_points=4000,  final_distance=None, layer=layer)
+    route_path = gdspy.Path(width = width, initial_point = [0, 0])
+    route_path.parametric(curve_fun, number_of_evaluations = 99,
+                          max_points = 4000, final_distance = None,
+                          layer = layer)
     D = Device('racetrack')
     D.add(route_path)
     return D
@@ -2858,7 +2851,6 @@ def _racetrack_gradual_parametric(t, R, N):
     return x,y
 
 
-
 #==============================================================================
 # Example code
 #==============================================================================
@@ -2872,11 +2864,6 @@ def _racetrack_gradual_parametric(t, R, N):
 # x,y = _racetrack_gradual_parametric(t, R = 5, N = 3)
 # plt.plot(x,y)
 # plt.axis('equal')
-
-
-
-
-
 
 
 #==============================================================================
@@ -2897,7 +2884,6 @@ def grid(device_list,
     
     Parameters
     ----------
-    FIXME fill
     device_list : 
 
     spacing : 
