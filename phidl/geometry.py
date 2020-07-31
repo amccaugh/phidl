@@ -410,7 +410,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
            num_divisions = [1,1], join = 'miter', tolerance = 2,
            max_points = 4000, layer = 0):
     """ Shrinks or expands a polygon or set of polygons.
-    
+
     FIXME fill (num_divisions)
 
     Parameters
@@ -1408,7 +1408,6 @@ def litho_calipers(notch_size = [2, 5],
     return(D)
 
 
-
 #==============================================================================
 #
 # Utility functions
@@ -1459,10 +1458,10 @@ def copy(D):
     D_copy.info = python_copy.deepcopy(D.info)
     for ref in D.references:
         new_ref = DeviceReference(device = ref.parent,
-                                origin = ref.origin,
-                                rotation = ref.rotation,
-                                magnification = ref.magnification,
-                                x_reflection = ref.x_reflection)
+                                  origin = ref.origin,
+                                  rotation = ref.rotation,
+                                  magnification = ref.magnification,
+                                  x_reflection = ref.x_reflection)
         new_ref.owner = D_copy
         D_copy.add(new_ref)
         for alias_name, alias_ref in D.aliases.items():
@@ -1712,7 +1711,8 @@ class device_lru_cache:
         if pickle_str not in self.memo.keys():
             new_cache_item = self.fn(*args, **kwargs)
             if not isinstance(new_cache_item, Device):
-                raise ValueError('[PHIDL] @device_lru_cache can only be used on functions which return a Device')
+                raise ValueError('[PHIDL] @device_lru_cache can only be '
+                                 'used on functions which return a Device')
             if len(self.memo) > self.maxsize:
                 self.memo.popitem(last = False) # Remove oldest item from cache
             # Add a deepcopy of new item to cache so that if we change the
@@ -1736,10 +1736,6 @@ def _convert_port_to_geometry(port, layer = 0):
         Port to be converted.
     layer : int, array-like[2], or set
         Specific layer(s) to put label and geometry on.
-
-    Returns
-    -------
-    None
 
     Notes
     -----
@@ -1782,8 +1778,6 @@ def _convert_port_to_geometry(port, layer = 0):
 def _calculate_label_offset(port):
     """ Used to put the label in a pretty position. It is added when drawing
     and substracted when extracting.
-
-    FIXME fill (port, offset_position)
 
     Parameters
     ----------
