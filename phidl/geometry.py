@@ -2003,18 +2003,20 @@ def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, layer = 0):
 # TODO: Fix the fillet here, right now only goes halfway down
 def flagpole(size = (4, 2), stub_size = (2, 1), shape = 'p',
              taper_type = 'straight', layer = 0):
-    """ FIXME fill description
+    """ Creates a flagpole geometry of one of four configurations, all 
+    involving a vertical central column and a outward-pointing stub.
 
-    FIXME fill (size, stub_size, shape, taper_type, D)
+    FIXME fill (taper_type)
 
     Parameters
     ----------
     size : array-like
-
+        (width, height) of the central column of the flagpole.
     stub_size : array-like
-
+        (width, height) of the stub.
     shape : {'p', 'q', 'b', 'd'}
-
+        Configuration of the flagpole, where the curved portion of the 
+        letters represents the flag and the straight portion the pole.
     taper_type : {'straight', 'fillet', None}
 
     layer : int, array-like[2], or set
@@ -2023,15 +2025,15 @@ def flagpole(size = (4, 2), stub_size = (2, 1), shape = 'p',
     Returns
     -------
     D : Device
-
+        A Device containing a flagpole geometry.
     """
     f = np.array(size)
     p = np.array(stub_size)
     shape = shape.lower()
 
     assert shape in 'pqbd', '[DEVICE]  flagpole() shape must be p, q, b, or d'
-    assert taper_type in ['straight','fillet',None],\
-                          '[DEVICE]  flagpole() taper_type must "straight" '\
+    assert taper_type in ['straight','fillet',None], \
+                          '[DEVICE]  flagpole() taper_type must "straight" ' \
                           ' or "fillet" or None'
 
     if shape == 'p':
@@ -2090,7 +2092,7 @@ def tee(size = (4, 2), stub_size = (2, 1), taper_type = None, layer = 0):
     ypts = [f[1], 0, 0, -p[1], -p[1], 0, 0, f[1]]
 
     D = Device(name = 'tee')
-    pad_poly = D.add_polygon([xpts,ypts], layer = layer)
+    pad_poly = D.add_polygon([xpts, ypts], layer = layer)
     if taper_type == 'fillet':
         taper_amount = min([abs(f[0]-p[0]), abs(p[1])])
         pad_poly.fillet([0, 0, taper_amount, 0, 0, taper_amount, 0, 0])
@@ -2132,11 +2134,6 @@ def tee(size = (4, 2), stub_size = (2, 1), taper_type = None, layer = 0):
 #quickplot(tp)
 
 
-
-
-
-
-
 #==============================================================================
 #
 # Tapers
@@ -2151,9 +2148,9 @@ def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     ----------
     length : int or float
         Length of the taper section.
-    width1 : int or float or None
+    width1 : int, float, or None
         Width of end 1 of the taper section (width is equal to the port width if Port is not None and width1 is None).
-    width2 : int or float or None
+    width2 : int, float, or None
         Width of end 2 of the taper section (width is equal to the port width if Port is not None and width2 is None).
     port : Port or None
         Port with which to match the width of the taper ends.
@@ -2191,8 +2188,9 @@ def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
         Length of the ramp section.
     width1 : int or float
         Width of the start of the ramp section.
-    width2 : int or float or None
-        Width of the end of the ramp section (if width2 is None, width2 becomes the same as width1).
+    width2 : int, float, or None
+        Width of the end of the ramp section (if width2 is None, width2 
+        becomes the same as width1).
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -2214,7 +2212,8 @@ def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
 
 
 def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
-    """ Calculates the impedance of a microstrip given the wire width and dielectric thickness and constant.
+    """ Calculates the impedance of a microstrip given the wire width and 
+    dielectric thickness and constant.
 
     Parameters
     ----------
@@ -2234,11 +2233,16 @@ def _microstrip_Z(wire_width, dielectric_thickness, eps_r):
     
     Notes
     -----
-    Equations taken from:
-        Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
-        Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
+    Equations taken from [1]_.
 
-    These equations can be further corrected for thick films (Hammerstad Eqs 6-9) and also for frequency since microstrips are dispersive (Hammerstad Eqs 10-12)
+    These equations can be further corrected for thick films (Hammerstad Eqs. 
+    6-9) and also for frequency since microstrips are dispersive (Hammerstad 
+    Eqs. 10-12)
+
+    References
+    ----------
+    .. [1] Hammerstad, E., & Jensen, O. (1980). Accurate Models for Microstrip
+       Computer-Aided Design.  http://doi.org/10.1109/MWSYM.1980.1124303
     """
     u = wire_width / dielectric_thickness
     eta = 376.73 # Vacuum impedance

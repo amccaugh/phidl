@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'PHIDLTest'
+project = 'PHIDL'
 copyright = '2020, Adam McCaughan'
 author = 'Adam McCaughan'
 
@@ -34,8 +34,6 @@ extensions = [
     #,'rinoh.frontend.sphinx'
 ]
 
-autosummary_generate = True
-
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
@@ -46,7 +44,7 @@ napoleon_use_admonition_for_notes = True
 napoleon_use_admonition_for_references = False
 napoleon_use_ivar = True
 napoleon_use_param = True
-napoleon_use_rtype = True
+napoleon_use_rtype = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

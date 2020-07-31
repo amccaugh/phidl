@@ -3,9 +3,9 @@ API Reference
 #############
 
 
-********
-Geometry
-********
+****************
+Geometry Library
+****************
 
 device_lru_cache
 ================

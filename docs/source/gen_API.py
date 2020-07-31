@@ -1,3 +1,4 @@
+#%%
 import os
 from os.path import join, dirname
 from operator import itemgetter
@@ -113,3 +114,6 @@ except: pass
 
 write_docstring(main_path = main_path, source_path = source_path,
                 fname = 'geometry.py', fwrite = fwrite)
+
+
+# %%
