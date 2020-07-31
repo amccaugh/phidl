@@ -1271,8 +1271,8 @@ def litho_steps(line_widths = [1, 2, 4, 8, 16],
                 layer = 0):
     """ Produces a positive + negative tone linewidth test, used for
     lithography resolution test patterning.
+    FIXME fill (line_widths, line_spacing, height, D)
 
-    FIXME fill line_widths, line_spacing, height, D
     Parameters
     ----------
     line_widths : list of int or float
