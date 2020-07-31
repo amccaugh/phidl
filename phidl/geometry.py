@@ -410,8 +410,8 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
            num_divisions = [1,1], join = 'miter', tolerance = 2,
            max_points = 4000, layer = 0):
     """ Shrinks or expands a polygon or set of polygons.
+    FIXME fill (num_divisions)
 
-    FIXME fill vars
     Parameters
     ----------
     elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
@@ -485,8 +485,8 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
             max_points = 4000, layer = 0):
     """ Performs boolean operations between 2 Device/DeviceReference objects
     or lists of Devices/DeviceReferences.
+    FIXME fill (num_divisions)
 
-    FIXME fill vars
     Parameters
     ----------
     A, B : Device/DeviceReference or list of Device/DeviceReference or Polygon
@@ -581,8 +581,8 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1,1],
             max_points = 4000, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
+    FIXME fill (num_divisions)
 
-    FIXME fill vars
     Parameters
     ----------
     elements : Device/DeviceReference or list of Device/DeviceReference or 
@@ -642,8 +642,8 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1,1],
            max_points = 4000, layer = 0):
     """ Creates an inverted version of the input shapes with an additional
     border around the edges.
-    
-    FIXME fill vars
+    FIXME fill (num_divisions)
+
     Parameters
     ----------
     elements : Device/DeviceReference or list of Device/DeviceReference or 
@@ -731,8 +731,8 @@ def xor_diff(A, B, precision = 1e-4):
 def union(D, by_layer = False, precision = 1e-4, join_first = True,
           max_points = 4000, layer = 0):
     """ Performs the union of all polygons within a Device.
+    FIXME fill (by_Layer, join_first)
 
-    FIXME fill vars
     Parameters
     ----------
     D : Device/DeviceReference or list of Device/DeviceReference
@@ -1003,8 +1003,8 @@ def _offset_region(all_polygons, bboxes,
     """ Taking a region of e.g. size (x, y) which needs to be offset by distance
     d, this function crops out a region (x+2*d, y+2*d) large, offsets that
     region, then crops it back to size (x, y) to create a valid result.
+    FIXME fill (polygons_offset_cropped)
 
-    FIXME fill vars
     Parameters
     ----------
     all_polygons : PolygonSet or list of polygons
@@ -1086,8 +1086,8 @@ def _offset_polygons_parallel(polygons,
                               join = 'miter',
                               tolerance = 2):
     """ FIXME fill description
+    FIXME fill (polygons, num_divisions, offset_polygons)
 
-    FIXME fill vars
     Parameters
     ----------
     polygons : PolygonSet or list of polygons
@@ -1201,8 +1201,8 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
                                operation = 'and',
                                precision = 1e-4):
     """ FIXME fill description
+    FIXME fill (num_divisions, boolean_polygons)
 
-    FIXME fill vars
     Parameters
     ----------
     polygons_A : PolygonSet or list of polygons
@@ -1271,6 +1271,7 @@ def litho_steps(line_widths = [1, 2, 4, 8, 16],
                 layer = 0):
     """ Produces a positive + negative tone linewidth test, used for
     lithography resolution test patterning.
+
     FIXME fill (line_widths, line_spacing, height, D)
 
     Parameters
@@ -1350,8 +1351,9 @@ def litho_calipers(notch_size = [2, 5],
                    layer2 = 2):
     """ Creates a vernier caliper structure for lithography alignment
     tests. Vernier structure is made horizontally.
-
-    FIXME fill (notch_size, notch_spacing, num_notches, offset_per_notch, row_spacing, D)
+    FIXME fill (notch_size, notch_spacing, num_notches, offset_per_notch, 
+    row_spacing, D)
+    
     Parameters
     ----------
     notch_size : 
@@ -2321,7 +2323,7 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     """ FIXME fill description
 
-    FIXME fill vars
+    FIXME fill (v)
     Parameters
     ----------
     wire_width : int or float
