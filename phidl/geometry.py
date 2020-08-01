@@ -414,7 +414,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
 
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference or Polygon
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
         Polygons to offset or Device containing polygons to offset.
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
@@ -490,7 +490,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
 
     Parameters
     ----------
-    A, B : Device/DeviceReference or list of Device/DeviceReference or Polygon
+    A, B : Device(/Reference) or list of Device(/Reference) or Polygon
         Input Devices.
     operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
         Boolean operation to perform.
@@ -587,8 +587,7 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
 
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference or 
-    Polygon
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
         Polygons to outline or Device containing polygons to outline.
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
@@ -649,8 +648,7 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1, 1],
 
     Parameters
     ----------
-    elements : Device/DeviceReference or list of Device/DeviceReference or 
-    Polygon
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
         A Device containing the polygons to invert.
     border : int or float
         Size of the border around the inverted shape (border value is the 
@@ -694,9 +692,7 @@ def xor_diff(A, B, precision = 1e-4):
 
     Parameters
     ----------
-    A : Device/DeviceReference or list of Device/DeviceReference
-        A Device containing a polygon(s).
-    B : Device/DeviceReference or list of Device/DeviceReference
+    A, B : Device(/Reference) or list of Device(/Reference)
         A Device containing a polygon(s).
     precision : float
         Desired precision for rounding vertex coordinates.
@@ -739,7 +735,7 @@ def union(D, by_layer = False, precision = 1e-4, join_first = True,
 
     Parameters
     ----------
-    D : Device/DeviceReference or list of Device/DeviceReference
+    D : Device(/Reference) or list of Device(/Reference)
         A Device containing polygons to perform a union on.
     by_Layer : bool
 
