@@ -289,3 +289,17 @@ def test_align():
     D.align(elements = 'all', alignment = 'y')
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'ed32ee1ce1f3da8f6216020877d6c1b64097c600')
+
+def test_polygon_simplify():
+    D = Device()
+    t = np.linspace(0,np.pi,1000)
+    x = np.cos(t)
+    y = np.sin(t)
+    poly = D.add_polygon([x,y])
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '0c3b1465c8b6ffd911c41b02114b9a06f606ad91')
+    # qp(D)
+    poly.simplify(tolerance = 1e-1)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '7d9ebcb231fb0107cbbf618353adeb583782ca11')
+    # qp(D)

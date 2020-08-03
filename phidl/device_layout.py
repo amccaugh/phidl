@@ -500,10 +500,10 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         return self.mirror(p1, p2)
 
     def simplify(self, tolerance = 1e-3):
-    """ 
-    Removes points from the polygon but does not change the polygon
-    shape by more than `tolerance` from the original. Uses the
-    Ramer–Douglas–Peucker algorithm for line simplification. """
+        """ 
+        Removes points from the polygon but does not change the polygon
+        shape by more than `tolerance` from the original. Uses the
+        Ramer–Douglas–Peucker algorithm for line simplification. """
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _simplify(points, tolerance = tolerance)
         if self.parent is not None:
