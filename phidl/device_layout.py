@@ -522,7 +522,7 @@ def make_device(fun, config = None, **kwargs):
         raise TypeError("""[PHIDL] When creating Device() from a function, the
         second argument should be a ``config`` argument which is a
         dictionary containing arguments for the function.
-        e.g. make_device(ellipse, config = my_config_dict) """)
+        e.g. make_device(ellipse, config = ellipse_args_dict) """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
