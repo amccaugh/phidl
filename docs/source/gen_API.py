@@ -37,17 +37,11 @@ def write_docstring(main_path, source_path,
     and both are internally sorted alphabetically. Functions that have leading underscores will be ignored.
     Ex: 
         def _z(*):
-            <function contents>
         class Z(*):
-            <class contents>
         def f(*):
-            <function contents>
         def a(*):
-            <function contents>
         class G(*):
-            <class contents>
         class B(*):
-            <class contents>
         
         will be sorted as B, G, Z, a, f.
     """
@@ -83,7 +77,7 @@ def write_docstring(main_path, source_path,
             if len(fname) == 1: fname = fname.lower() + 'GENAPIFUNC'
             if fname[0] is not '_': names.append((fname, 'F'))
     # Sorting by type first and then alphabetically
-    names = sorted(names, key = itemgetter(1,0))
+    names = sorted(names, key = itemgetter(1, 0))
 
     for name in names:
         # Fixing single-letter function names
@@ -104,7 +98,6 @@ def write_docstring(main_path, source_path,
                      .format(name[0]))
     fw.close()
 
-#%%
 main_path = join(dirname(dirname(dirname(__file__))), 'phidl')
 source_path = dirname(__file__)
 fwrite = 'API.rst'
@@ -114,6 +107,10 @@ except: pass
 
 write_docstring(main_path = main_path, source_path = source_path,
                 fname = 'geometry.py', fwrite = fwrite)
+write_docstring(main_path = main_path, source_path = source_path, 
+                fname = 'device_layout.py', fwrite = fwrite)
 
-
-# %%
+#%%
+pip uninstall phidl
+pip install git+https://github.com/amccaugh/phidl.git@docs
+sphinx-build -b html source build

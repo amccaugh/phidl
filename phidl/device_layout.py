@@ -37,13 +37,14 @@ gdspy.library.use_current_library = False
 __version__ = '1.3.0'
 
 
-
 #==============================================================================
 # Useful transformation functions
 #==============================================================================
 
-def _rotate_points(points, angle = 45, center = (0,0)):
-    """ Rotates points around a centerpoint defined by ``center``.  ``points`` may be input as either single points [1,2] or array-like[N][2], and will return in kind.
+def _rotate_points(points, angle = 45, center = (0, 0)):
+    """ Rotates points around a centerpoint defined by ``center``.  ``points`` 
+    may be input as either single points [1,2] or array-like[N][2], and will 
+    return in kind.
 
     Parameters
     ----------
@@ -60,17 +61,17 @@ def _rotate_points(points, angle = 45, center = (0,0)):
     """
     if angle == 0:
          return points
-    angle = angle*pi/180
+    angle = angle * pi/180
     ca = cos(angle)
     sa = sin(angle)
     sa = np.array((-sa, sa))
     c0 = np.array(center)
     if np.asarray(points).ndim == 2:
-        return (points - c0) * ca + (points - c0)[:,::-1] * sa + c0
+        return (points - c0)*ca + (points - c0)[:,::-1]*sa + c0
     if np.asarray(points).ndim == 1:
-        return (points - c0) * ca + (points - c0)[::-1] * sa + c0
+        return (points - c0)*ca + (points - c0)[::-1]*sa + c0
 
-def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
+def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind.
 
@@ -241,37 +242,47 @@ def reset():
     Device._next_uid = 0
 
 
-
 class LayerSet(object):
+    """ Set of layer objects.
+
+    Methods
+    -------
+    add_layer(name, gds_layer, gds_datatype, description, color, inverted,
+    alpha, dither)
+        Adds a layer to an existing LayerSet object.
+    """
     def __init__(self):
         self._layers = {}
 
     def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
-                 description = None, color = None, inverted = False,
+                  description = None, color = None, inverted = False,
                   alpha = 0.6, dither = None):
-        new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, name = name,
-                 description = description, inverted = inverted,
-                 color = color, alpha = alpha, dither = dither)
+        new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, 
+                          name = name, description = description,
+                          inverted = inverted, color = color, alpha = alpha, 
+                          dither = dither)
         if name in self._layers:
-            raise ValueError('[PHIDL] LayerSet: Tried to add layer named "%s", but a layer'
-                ' with that name already exists in this LayerSet' % (name))
+            raise ValueError('[PHIDL] LayerSet: Tried to add layer named '
+                             '"%s"' % (name) + ', but a layer with that '
+                             'name already exists in this LayerSet')
         else:
             self._layers[name] = new_layer
 
     def __getitem__(self, val):
-        """ If you have a LayerSet `ls`, allows access to the layer names like ls['gold2'] """
+        """ If you have a LayerSet `ls`, allows access to the layer names like 
+        ls['gold2'] """
         try:
             return self._layers[val]
         except:
-            raise ValueError('[PHIDL] LayerSet: Tried to access layer named "%s"'
-                ' which does not exist' % (val))
-
+            raise ValueError('[PHIDL] LayerSet: Tried to access layer '
+                             'named "%s"' % (val) + ' which does not exist')
 
     def __repr__(self):
         return ('LayerSet (%s layers total)' % (len(self._layers)))
 
 
 class Layer(object):
+    """ Layer object. """
     layer_dict = {}
 
     def __init__(self, gds_layer = 0, gds_datatype = 0, name = 'unnamed',
@@ -354,13 +365,14 @@ def _parse_layer(layer):
     return (gds_layer, gds_datatype)
 
 
-
 class _GeometryHelper(object):
     """ This is a helper class. It can be added to any other class which has
     the functions move() and the property ``bbox`` (as in self.bbox).  It uses
-    that function+property to enable you to do things like check what the center
-    of the bounding box is (self.center), and also to do things like move the
-    bounding box such that its maximum x value is 5.2 (self.xmax = 5.2)."""
+    that function+property to enable you to do things like check what the 
+    center of the bounding box is (self.center), and also to do things like 
+    move the bounding box such that its maximum x value is 5.2 
+    (self.xmax = 5.2).
+    """
 
     @property
     def center(self):
@@ -394,7 +406,8 @@ class _GeometryHelper(object):
 
     @xmax.setter
     def xmax(self, destination):
-        self.move(destination = (destination, 0), origin = self.bbox[1], axis = 'x')
+        self.move(destination = (destination, 0), origin = self.bbox[1],
+                  axis = 'x')
 
     @property
     def ymax(self):
@@ -402,7 +415,8 @@ class _GeometryHelper(object):
 
     @ymax.setter
     def ymax(self, destination):
-        self.move(destination = (0, destination), origin = self.bbox[1], axis = 'y')
+        self.move(destination = (0, destination), origin = self.bbox[1], 
+                  axis = 'y')
 
     @property
     def xmin(self):
@@ -410,7 +424,8 @@ class _GeometryHelper(object):
 
     @xmin.setter
     def xmin(self, destination):
-        self.move(destination = (destination, 0), origin = self.bbox[0], axis = 'x')
+        self.move(destination = (destination, 0), origin = self.bbox[0],
+                  axis = 'x')
 
     @property
     def ymin(self):
@@ -418,7 +433,8 @@ class _GeometryHelper(object):
 
     @ymin.setter
     def ymin(self, destination):
-        self.move(destination = (0, destination), origin = self.bbox[0], axis = 'y')
+        self.move(destination = (0, destination), origin = self.bbox[0],
+                  axis = 'y')
 
     @property
     def size(self):
@@ -439,14 +455,14 @@ class _GeometryHelper(object):
         if destination is None:
             destination = origin
             origin = 0
-        self.move(origin = (origin,0), destination = (destination,0))
+        self.move(origin = (origin, 0), destination = (destination, 0))
         return self
 
     def movey(self, origin = 0, destination = None):
         if destination is None:
             destination = origin
             origin = 0
-        self.move(origin = (0,origin), destination = (0,destination))
+        self.move(origin = (0, origin), destination = (0, destination))
         return self
 
     def __add__(self, element):
@@ -457,17 +473,35 @@ class _GeometryHelper(object):
 
 
 class Port(object):
+    """ 
+
+    Methods
+    -------
+    endpoints()
+        Returns a numpy array with the left and right endpoints of the Port.
+    normal()
+
+    x()
+        Returns the x-coordinate of the Port midpoint.
+    y()
+        Returns the y-coordinate of the Port midpoint.
+    center()
+        Returns the Port midpoint.
+    rotate
+    """
     _next_uid = 0
 
-    def __init__(self, name = None, midpoint = (0,0), width = 1, orientation = 0, parent = None):
+    def __init__(self, name = None, midpoint = (0, 0), width = 1,
+                 orientation = 0, parent = None):
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
-        self.orientation = mod(orientation,360)
+        self.orientation = mod(orientation, 360)
         self.parent = parent
         self.info = {}
         self.uid = Port._next_uid
-        if self.width < 0: raise ValueError('[PHIDL] Port creation error: width must be >=0')
+        if self.width < 0: raise ValueError('[PHIDL] Port creation '
+                                            'error: width must be >=0')
         Port._next_uid += 1
 
     def __repr__(self):
@@ -477,8 +511,8 @@ class Port(object):
     @property
     def endpoints(self):
         dxdy = np.array([
-            self.width/2*np.cos((self.orientation - 90)*pi/180),
-            self.width/2*np.sin((self.orientation - 90)*pi/180)
+            self.width/2*cos((self.orientation - 90) * pi/180),
+            self.width/2*sin((self.orientation - 90) * pi/180)
             ])
         left_point = self.midpoint - dxdy
         right_point = self.midpoint + dxdy
@@ -489,14 +523,14 @@ class Port(object):
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
-        self.orientation = np.arctan2(dx,-dy)*180/pi
+        self.orientation = np.arctan2(dx, -dy) * 180/pi
         self.width = sqrt(dx**2 + dy**2)
 
     @property
     def normal(self):
-        dx = np.cos((self.orientation)*pi/180)
-        dy = np.sin((self.orientation)*pi/180)
-        return np.array([self.midpoint, self.midpoint + np.array([dx,dy])])
+        dx = cos((self.orientation) * pi/180)
+        dy = sin((self.orientation) * pi/180)
+        return np.array([self.midpoint, self.midpoint + np.array([dx, dy])])
 
     @property
     def x(self):
@@ -510,13 +544,13 @@ class Port(object):
     def center(self):
         return self.midpoint
     
-    # Use this function instead of copy() (which will not create a new numpy array
-    # for self.midpoint) or deepcopy() (which will also deepcopy the self.parent
-    # DeviceReference recursively, causing performance issues)
+    # Use this function instead of copy() (which will not create a new numpy 
+    # array for self.midpoint) or deepcopy() (which will also deepcopy the 
+    # self.parent DeviceReference recursively, causing performance issues)
     def _copy(self, new_uid = True):
         new_port = Port(name = self.name, midpoint = self.midpoint,
-            width = self.width, orientation = self.orientation,
-            parent = self.parent)
+                        width = self.width, orientation = self.orientation,
+                        parent = self.parent)
         new_port.info = deepcopy(self.info)
         if new_uid == False:
             new_port.uid = self.uid
@@ -527,7 +561,8 @@ class Port(object):
         self.orientation = mod(self.orientation + angle, 360)
         if center is None:
             center = self.midpoint
-        self.midpoint = _rotate_points(self.midpoint, angle = angle, center = center)
+        self.midpoint = _rotate_points(self.midpoint, angle = angle,
+                                       center = center)
         return self
 
 
