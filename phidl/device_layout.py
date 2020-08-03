@@ -135,6 +135,43 @@ def _align(elements, alignment = 'ymax'):
         e.__setattr__(alignment, value)
     return elements
 
+
+def _line_distances(points, start, end):
+    if np.all(start == end):
+        return np.linalg.norm(points - start, axis=1)
+
+    vec = end - start
+    cross = np.cross(vec, start - points)
+    return np.divide(abs(cross), np.linalg.norm(vec))
+
+
+def _simplify(points, tolerance=0):
+    """ Ramer–Douglas–Peucker algorithm for line simplification.  Takes an
+    array of points of shape (N,2) and removes excess points in the line. The
+    remaining points form a identical line to within `tolerance` from the original """
+    # From https://github.com/fhirschmann/rdp/issues/7 
+    # originally written by Kirill Konevets https://github.com/kkonevets
+
+    M = np.asarray(points)
+    start, end = M[0], M[-1]
+    dists = _line_distances(M, start, end)
+
+    index = np.argmax(dists)
+    dmax = dists[index]
+
+    if dmax > tolerance:
+        result1 = _simplify(M[:index + 1], tolerance)
+        result2 = _simplify(M[index:], tolerance)
+
+        result = np.vstack((result1[:-1], result2))
+    else:
+        result = np.array([start, end])
+
+    return result
+
+
+
+
 def reset():
     Layer.layer_dict = {}
     Device._next_uid = 0
@@ -461,6 +498,17 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
+
+    def simplify(self, tolerance = 1e-3):
+    """ 
+    Removes points from the polygon but does not change the polygon
+    shape by more than `tolerance` from the original. Uses the
+    Ramer–Douglas–Peucker algorithm for line simplification. """
+        for n, points in enumerate(self.polygons):
+            self.polygons[n] = _simplify(points, tolerance = tolerance)
+        if self.parent is not None:
+            self.parent._bb_valid = False
+        return self
 
 
 
