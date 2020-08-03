@@ -1288,6 +1288,7 @@ class Group(_GeometryHelper):
     def bbox(self):
         if len(self.elements) == 0:
             raise ValueError('[PHIDL] Group is empty, no bbox is available')
+        bboxes = np.empty([len(self.elements),4])
         for n,e in enumerate(self.elements):
             bboxes[n] = e.bbox.flatten()
 
