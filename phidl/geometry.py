@@ -420,7 +420,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
         Distance to offset polygons. Positive values expand, negative shrink.
     precision : float
         Desired precision for rounding vertex coordinates.
-    num_divisions : 
+    num_divisions : array-like[2] of int
 
     join : {'miter', 'bevel', 'round'}
         Type of join used to create the offset polygon.
@@ -496,7 +496,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
         Boolean operation to perform.
     precision : float
         Desired precision for rounding vertex coordinates.
-    num_divisions : 
+    num_divisions : array-like[2] of int
 
     max_points : int
         The maximum number of vertices within the resulting polygon.
@@ -593,7 +593,7 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
         Distance to offset polygons. Positive values expand, negative shrink.
     precision : float
         Desired precision for rounding vertex coordinates.
-    num_divisions : list of int
+    num_divisions : array-like[2] of int
 
     join : {'miter', 'bevel', 'round'}
         Type of join used to create the offset polygon.
@@ -656,7 +656,7 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1, 1],
         shape to the border, and is applied to all 4 sides of the shape).
     precision : float
         Desired precision for rounding vertex coordinates.
-    num_divisions : list of int
+    num_divisions : array-like[2] of int
 
     max_points : int
         The maximum number of vertices within the resulting polygon.
@@ -731,14 +731,13 @@ def union(D, by_layer = False, precision = 1e-4, join_first = True,
           max_points = 4000, layer = 0):
     """ Performs the union of all polygons within a Device.
 
-    FIXME fill (by_Layer, join_first)
-
     Parameters
     ----------
     D : Device(/Reference) or list of Device(/Reference)
         A Device containing polygons to perform a union on.
     by_Layer : bool
-
+        If true, performs the union operation layer-wise so each layer can be 
+        individually combined.
     precision : float
         Desired precision for rounding vertex coordinates.
     join_first : bool
@@ -1011,7 +1010,7 @@ def _offset_region(all_polygons, bboxes,
     distance d, this function crops out a region (x+2*d, y+2*d) large, offsets 
     that region, then crops it back to size (x, y) to create a valid result.
 
-    FIXME fill (polygons_offset_cropped)
+    FIXME private fill (polygons_offset_cropped)
 
     Parameters
     ----------
@@ -1290,23 +1289,22 @@ def litho_steps(line_widths = [1, 2, 4, 8, 16],
     """ Produces a positive + negative tone linewidth test, used for
     lithography resolution test patterning.
 
-    FIXME fill (line_widths, line_spacing, height, D)
-
     Parameters
     ----------
-    line_widths : list of int or float
-
+    line_widths : array-like[N] of int or float
+        Widths of the steps (positive side).
     line_spacing : int or float
-
+        Space between each step (negative side).
     height : int or float
-
+        Height of the steps.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
     Returns
     -------
     D : Device
-
+        A Device containing the lithographic linewidth resolution test 
+        geometry.
     """
     D = Device('litho_steps')
 
@@ -1370,25 +1368,25 @@ def litho_calipers(notch_size = [2, 5],
     """ Creates a vernier caliper structure for lithography alignment
     tests. Vernier structure is made horizontally.
 
-    FIXME fill (notch_size, notch_spacing, num_notches, offset_per_notch, 
-    row_spacing, D)
-
     Parameters
     ----------
-    notch_size : 
-
-    notch_spacing : 
-
-    num_notches : 
-
-    offset_per_notch : 
-
-    row_spacing : 
-
+    notch_size : array-like[2] of int or flaot
+        x, y size of the notches.
+    notch_spacing : int or float
+        Spacing between notches on the control structure.
+    num_notches : int
+        Number of notches on one side of the structure (total number of 
+        notches is 2*num_notches + 1).
+    offset_per_notch : int or float
+        The amount of horizontal offset to apply to the notch spacing per 
+        notch on the non-control structure.
+    row_spacing : int or float
+        The amount of vertical space between the control and non-control 
+        structures.
     layer1 : int, array-like[2], or set
-        Specific layer(s) to put polygon geometry on.
+        Specific layer(s) to put the control geometry on.
     layer2 : int, array-like[2], or set
-        Specific layer(s) to put polygon geometry on.
+        Specific layer(s) to put the non-control geometry on.
 
     Returns
     -------
@@ -2207,7 +2205,7 @@ def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
 
 
 def ramp(length = 10, width1 = 5, width2 = 8, layer = 0):
-    """ FIXME fill description
+    """ Creates a ramp geometry.
 
     Parameters
     ----------
@@ -2366,9 +2364,9 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     return Z
 
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
-    """ FIXME fill description
+    """ FIXME private fill description
 
-    FIXME fill (v)
+    FIXME private fill (v)
 
     Parameters
     ----------
@@ -2451,9 +2449,9 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness,
     return w[0]
 
 def _G_integrand(xip, B):
-    """ FIXME fill description
+    """ FIXME private fill description
 
-    FIXME fill (xip, B)
+    FIXME private fill (xip, B)
 
     Parameters
     ----------
@@ -2475,9 +2473,9 @@ def _G_integrand(xip, B):
 
 
 def _G(xi, B):
-    """ FIXME fill description
+    """ FIXME private fill description
 
-    FIXME fill (xi, B)
+    FIXME private fill (xi, B)
 
     Parameters
     ----------
@@ -3269,7 +3267,7 @@ def packer(D_list,
 
 def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]],
                         dx = 1, dy = 1):
-    """ FIXME fill description
+    """ FIXME private fill description
 
     FIXME private fill (polygons, bounds, dy, dy, raster)
     
@@ -3355,7 +3353,7 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]],
 
 
 def _expand_raster(raster, distance = (4, 2)):
-    """ FIXME fill description
+    """ FIXME private fill description
 
     FIXME private fill (raster, distance)
 
@@ -4764,8 +4762,8 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     """ Creates an optimally-rounded SNSPD with wires coming out of it that 
     expand.
     
-    FIXME fill (wire_width, wire_pitch, num_squares, connector_width, 
-    connector_symmetric, turn_ratio)
+    FIXME fill (wire_width, wire_pitch, num_squares, connector_symmetric, 
+    turn_ratio)
 
     Parameters
     ----------
@@ -4779,7 +4777,7 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     num_squares : int or None
 
     connector_width : int or float
-
+        Width of the connectors.
     connector_symmetric : bool
     
     turn_ratio : 

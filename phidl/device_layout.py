@@ -243,20 +243,21 @@ def reset():
 
 
 class LayerSet(object):
-    """ Set of layer objects.
-
-    Methods
-    -------
-    add_layer(name, gds_layer, gds_datatype, description, color, inverted,
-    alpha, dither)
-        Adds a layer to an existing LayerSet object.
-    """
+    """ Set of layer objects. """
     def __init__(self):
         self._layers = {}
 
     def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
                   description = None, color = None, inverted = False,
                   alpha = 0.6, dither = None):
+        """ Adds a layer to an existing LayerSet object.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
         new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, 
                           name = name, description = description,
                           inverted = inverted, color = color, alpha = alpha, 
