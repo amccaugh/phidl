@@ -7,10 +7,10 @@ API Reference
 Geometry Library
 ****************
 
-device_lru_cache
-================
+device_lru_cache:
+=================
 
-.. autoclass:: phidl.geometry.device_lru_cache
+.. autoclass:: phidl.geometry.device_lru_cache:
    :members:
    :inherited-members:
    :show-inheritance:
@@ -350,5 +350,102 @@ ytron_round
 ===========
 
 .. autofunction:: phidl.geometry.ytron_round
+
+
+*********************
+Device_layout Library
+*********************
+
+CellArray
+=========
+
+.. autoclass:: phidl.device_layout.CellArray
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Device
+======
+
+.. autoclass:: phidl.device_layout.Device
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+DeviceReference
+===============
+
+.. autoclass:: phidl.device_layout.DeviceReference
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Group
+=====
+
+.. autoclass:: phidl.device_layout.Group
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Label
+=====
+
+.. autoclass:: phidl.device_layout.Label
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Layer
+=====
+
+.. autoclass:: phidl.device_layout.Layer
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+LayerSet
+========
+
+.. autoclass:: phidl.device_layout.LayerSet
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Polygon
+=======
+
+.. autoclass:: phidl.device_layout.Polygon
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Port
+====
+
+.. autoclass:: phidl.device_layout.Port
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+make_device
+===========
+
+.. autofunction:: phidl.device_layout.make_device
+
+
+reset
+=====
+
+.. autofunction:: phidl.device_layout.reset
 
 

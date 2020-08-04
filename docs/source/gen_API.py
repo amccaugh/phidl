@@ -4,7 +4,7 @@ from os.path import join, dirname
 from operator import itemgetter
 
 def write_docstring(main_path, source_path,
-                    fname, fwrite = 'API.rst',
+                    fread, fwrite = 'API.rst',
                     main_header = 'API Reference',
                     sub_header = 'Library'):
     """ Writes a Sphinx-markdown-formatted file that generates docstrings for 
@@ -46,7 +46,7 @@ def write_docstring(main_path, source_path,
         will be sorted as B, G, Z, a, f.
     """
     os.chdir(main_path)
-    fr = open(fname, 'r')
+    fr = open(fread, 'r')
     flines = fr.readlines()
     fr.close()
     os.chdir(source_path)
@@ -60,9 +60,10 @@ def write_docstring(main_path, source_path,
                  '\n\n\n')
     if sub_header is not None: sub_header = ' ' + sub_header
     else: sub_header = ''
-    fw.write('*' * (len(fname[:-3]) + len(sub_header)) + \
-             '\n{0}{1}\n'.format(fname[:-3].capitalize(), sub_header) + \
-             '*' * (len(fname[:-3]) + len(sub_header)) + \
+    fread_name = fread[:-3]
+    fw.write('*' * (len(fread_name) + len(sub_header)) + \
+             '\n{0}{1}\n'.format(fread_name.capitalize(), sub_header) + \
+             '*' * (len(fread_name) + len(sub_header)) + \
              '\n\n')
 
     # Gathering all functions and classes as tuples of (name, type).
@@ -71,7 +72,8 @@ def write_docstring(main_path, source_path,
     names = []
     for line in flines:
         if line[0:5] == 'class':
-            names.append((line[6:line.find(':')], 'C'))
+            cname = line[6:line.find('(')]
+            if cname[0] is not '_': names.append((cname, 'C'))
         if line[0:3] == 'def':
             fname = line[4:line.find('(')]
             if len(fname) == 1: fname = fname.lower() + 'GENAPIFUNC'
@@ -89,13 +91,14 @@ def write_docstring(main_path, source_path,
         fw.write(name[0] + '\n')
         fw.write(('=' * len(name[0])) + '\n\n')
         if name[1] is 'C':
-            fw.write('.. autoclass:: phidl.geometry.{0}\n'.format(name[0]))
+            fw.write('.. autoclass:: phidl.{0}.{1}\n' \
+                     .format(fread_name,name[0]))
             fw.write('   :members:\n'
                      '   :inherited-members:\n'
                      '   :show-inheritance:\n\n\n')
         else:
-            fw.write('.. autofunction:: phidl.geometry.{0}\n\n\n' \
-                     .format(name[0]))
+            fw.write('.. autofunction:: phidl.{0}.{1}\n\n\n' \
+                     .format(fread_name, name[0]))
     fw.close()
 
 main_path = join(dirname(dirname(dirname(__file__))), 'phidl')
@@ -106,9 +109,9 @@ try: os.remove(join(source_path, 'API.rst'))
 except: pass
 
 write_docstring(main_path = main_path, source_path = source_path,
-                fname = 'geometry.py', fwrite = fwrite)
+                fread = 'geometry.py', fwrite = fwrite)
 write_docstring(main_path = main_path, source_path = source_path, 
-                fname = 'device_layout.py', fwrite = fwrite)
+                fread = 'device_layout.py', fwrite = fwrite)
 
 #%%
 pip uninstall phidl
