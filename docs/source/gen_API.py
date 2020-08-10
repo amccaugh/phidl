@@ -73,6 +73,7 @@ def write_docstring(main_path, source_path,
     for line in flines:
         if line[0:5] == 'class':
             cname = line[6:line.find('(')]
+            if cname[-1] == ':': cname = cname[:-1]
             if cname[0] is not '_': names.append((cname, 'C'))
         if line[0:3] == 'def':
             fname = line[4:line.find('(')]

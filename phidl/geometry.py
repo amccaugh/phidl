@@ -511,9 +511,9 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
 
     Notes
     -----
-    'A+B' is equivalent to 'or'
-    'A-B' is equivalent to 'not'
-    'B-A' is equivalent to 'not' with the operands switched
+    'A+B' is equivalent to 'or'.
+    'A-B' is equivalent to 'not'.
+    'B-A' is equivalent to 'not' with the operands switched.
     """
     D = Device('boolean')
 
@@ -1395,7 +1395,7 @@ def litho_calipers(notch_size = [2, 5],
     Returns
     -------
     D: Device
-
+        A Device containing the caliper structures.
     """
     D = Device('litho_calipers')
     num_notches_total = num_notches*2 + 1
@@ -1454,7 +1454,7 @@ def extract(D, layers = [0, 1]):
 
 
 def copy(D):
-    """ FIXME fill description
+    """ Copies a Device.
 
     Parameters
     ----------
@@ -1489,7 +1489,7 @@ def copy(D):
 
 
 def deepcopy(D):
-    """ FIXME fill description
+    """ Deep copies a Device.
 
     Parameters
     ----------
@@ -1709,7 +1709,7 @@ def preview_layerset(ls, size = 100, spacing = 100):
     return D
 
 class device_lru_cache:
-    """ FIXME fill """
+    """ FIXME class fill """
     def __init__(self, fn):
         self.maxsize = 32
         self.fn = fn
@@ -2503,14 +2503,12 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25,
                  width1 = None, width2 = None, num_pts = 100, layer = 0):
     """ Creates a Hecken-tapered microstrip.
 
-    FIXME fill (B, Z1, Z2, width1, width2, num_pts, D)
-
     Parameters
     ----------
     length : int or float
         Length of the microstrip.
     B : int or float
-
+        Controls the intensity of the taper.
     dielectric_thickness : int or float
         Thickness of the substrate.
     eps_r : int or float
@@ -2518,15 +2516,15 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25,
     Lk_per_sq : float
         Kinetic inductance per square of the microstrip.
     Z1 : int, float, or None
-
+        Impedance of the left side region of the microstrip.
     Z2 : int, float, or None
-
+        Impedance of the right side region of the microstrip.
     width1 : int, float, or None
-
+        Width of the left side of the microstrip.
     width2 : int, float, or None
-
+        Width of the right side of the microstrip.
     num_pts : int
-
+        Number of points comprising the curve of the entire microstrip.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -3591,16 +3589,16 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
             partial_etch = False):
     """ FIXME fill description
 
-    FIXME fill (period, fill_factor, partial_etch)
+    FIXME fill (partial_etch)
 
     Parameters
     ----------
     num_periods : int
         Number of gratings.
     period : int or float
-
+        Distance between gratings.
     fill_factor : int or float
-
+        Thickness of the gratings.
     width_grating : int or float
         Width of the gratings.
     length_taper : int or float
@@ -3643,8 +3641,8 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
         for i in range(num_periods):
             cgrating = G.add_ref(
                 compass(size = [period * (1-fill_factor),
-                                width_grating + partetch_overhang*2]),
-                layer = 1)
+                        width_grating + partetch_overhang*2],
+                        layer = 1))
             cgrating.x += i*period
         # define the port of the grating
         p = G.add_port(port = cgrating.ports['E'], name = 1)
@@ -3652,8 +3650,8 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
 
         #draw the deep etched square around the grating
         deepbox = G.add_ref(compass(size = [num_periods*period,
-                                            width_grating]),
-                                    layer = 0)
+                                            width_grating],
+                                    layer = 0))
     return G
 
 #==============================================================================
@@ -4808,21 +4806,20 @@ def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
                 layer = 0):
     """ FIXME fill description
 
-    FIXME fill (rho, arm_lengths, source_length, arm_widths, theta, 
-    theta_resolution, D)
+    FIXME fill (rho, theta_resolution)
 
     Parameters
     ----------
     rho : int or float
 
-    arm_lengths : array-like
-
-    source_length : array-like
-
-    arm_widths : array-like
-
+    arm_lengths : array-like[2] of int or float
+        Lengths of the left and right arms of the yTron, respectively.
+    source_length : int or float
+        Length of the source of the yTron.
+    arm_widths : array-like[2] of int or float
+        Widths of the left and right arms of the yTron, respectively.
     theta : int or float
-
+        Angle between the two yTron arms.
     theta_resolution : int or float
 
     layer : int, array-like[2], or set
@@ -4831,7 +4828,7 @@ def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
     Returns
     -------
     D : Device
-
+        A Device containing a yTron geometry.
     """
     #==========================================================================
     #  Create the basic geometry

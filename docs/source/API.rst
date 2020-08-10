@@ -7,10 +7,10 @@ API Reference
 Geometry Library
 ****************
 
-device_lru_cache:
-=================
+device_lru_cache
+================
 
-.. autoclass:: phidl.geometry.device_lru_cache:
+.. autoclass:: phidl.geometry.device_lru_cache
    :members:
    :inherited-members:
    :show-inheritance:
