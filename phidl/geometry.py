@@ -410,8 +410,6 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
            max_points = 4000, layer = 0):
     """ Shrinks or expands a polygon or set of polygons.
 
-    FIXME fill (num_divisions)
-
     Parameters
     ----------
     elements : Device(/Reference), list of Device(/Reference), or Polygon
@@ -421,7 +419,9 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : array-like[2] of int
-
+        The number of divisions with which the geometry is divided into 
+        multiple rectangular regions. This allows for each region to be 
+        processed sequentially, which is more computationally efficient.
     join : {'miter', 'bevel', 'round'}
         Type of join used to create the offset polygon.
     tolerance : int or float
@@ -486,8 +486,6 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
     """ Performs boolean operations between 2 Device/DeviceReference objects
     or lists of Devices/DeviceReferences.
 
-    FIXME fill (num_divisions)
-
     Parameters
     ----------
     A, B : Device(/Reference) or list of Device(/Reference) or Polygon
@@ -497,7 +495,9 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : array-like[2] of int
-
+        The number of divisions with which the geometry is divided into 
+        multiple rectangular regions. This allows for each region to be 
+        processed sequentially, which is more computationally efficient.
     max_points : int
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
@@ -583,8 +583,6 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
 
-    FIXME fill (num_divisions)
-
     Parameters
     ----------
     elements : Device(/Reference), list of Device(/Reference), or Polygon
@@ -594,7 +592,9 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : array-like[2] of int
-
+        The number of divisions with which the geometry is divided into 
+        multiple rectangular regions. This allows for each region to be 
+        processed sequentially, which is more computationally efficient.
     join : {'miter', 'bevel', 'round'}
         Type of join used to create the offset polygon.
     tolerance : int or float
@@ -644,8 +644,6 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1, 1],
     """ Creates an inverted version of the input shapes with an additional
     border around the edges.
 
-    FIXME fill (num_divisions)
-
     Parameters
     ----------
     elements : Device(/Reference), list of Device(/Reference), or Polygon
@@ -657,7 +655,9 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1, 1],
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : array-like[2] of int
-
+        The number of divisions with which the geometry is divided into 
+        multiple rectangular regions. This allows for each region to be 
+        processed sequentially, which is more computationally efficient.
     max_points : int
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
@@ -1099,7 +1099,7 @@ def _offset_polygons_parallel(polygons,
                               tolerance = 2):
     """ FIXME private fill description
 
-    FIXME private fill (polygons, num_divisions, offset_polygons)
+    FIXME private fill (polygons, offset_polygons)
 
     Parameters
     ----------
@@ -1107,8 +1107,10 @@ def _offset_polygons_parallel(polygons,
 
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
-    num_divisions : 
-
+    num_divisions : array-like[2] of int
+        The number of divisions with which the geometry is divided into 
+        multiple rectangular regions. This allows for each region to be 
+        processed sequentially, which is more computationally efficient.
     join_first : bool
         Join all paths before offsetting to avoid unnecessary joins in 
         adjacent polygon sides.
@@ -1219,7 +1221,7 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
                                precision = 1e-4):
     """ FIXME private fill description
 
-    FIXME private fill (num_divisions, boolean_polygons)
+    FIXME private fill (boolean_polygons)
 
     Parameters
     ----------
@@ -1227,8 +1229,10 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
         Set or list of polygons to be booleaned.
     polygons_B : PolygonSet or list of polygons
         Set or list of polygons to be booleaned.
-    num_divisions : 
-
+    num_divisions : array-like[2] of int
+        The number of divisions with which the geometry is divided into 
+        multiple rectangular regions. This allows for each region to be 
+        processed sequentially, which is more computationally efficient.
     operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
         Boolean operation to perform.
     precision : float
@@ -1666,21 +1670,20 @@ def preview_layerset(ls, size = 100, spacing = 100):
     used for previewing LayerSet color schemes in quickplot or saved .gds
     files.
 
-    FIXME fill (ls, size, spacing, D)
-
     Parameters
     ----------
     ls : LayerSet
         Set of layers to preview color schemes.
     size : int or float
-
+        Resizing factor for the preview Device.
     spacing : int or float
-
+        The space between each layer representation.
 
     Returns
     -------
     D : Device
-
+        A Device containing a representation of all the layers in the input 
+        LayerSet.
     """
     D = Device()
     scale = size/100
@@ -2025,21 +2028,20 @@ def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, layer = 0):
 def flagpole(size = (4, 2), stub_size = (2, 1), shape = 'p',
              taper_type = 'straight', layer = 0):
     """ Creates a flagpole geometry of one of four configurations, all 
-    involving a vertical central column and a outward-pointing stub.
-
-    FIXME fill (taper_type)
+    involving a vertical central column and a outward-pointing flag.
 
     Parameters
     ----------
     size : array-like
-        (width, height) of the central column of the flagpole.
+        (width, height) of the flag.
     stub_size : array-like
-        (width, height) of the stub.
+        (width, height) of the pole stub.
     shape : {'p', 'q', 'b', 'd'}
         Configuration of the flagpole, where the curved portion of the 
         letters represents the flag and the straight portion the pole.
     taper_type : {'straight', 'fillet', None}
-
+        Type of taper between the bottom corner of the stub on the side of 
+        the flag and the corner of the flag closest to the stub.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -2088,25 +2090,24 @@ def flagpole(size = (4, 2), stub_size = (2, 1), shape = 'p',
 
 
 def tee(size = (4, 2), stub_size = (2, 1), taper_type = None, layer = 0):
-    """ FIXME fill description
-
-    FIXME fill (size, stub_size, taper_type)
+    """ Creates a T-shaped geometry.
 
     Parameters
     ----------
     size : array-like
-
+        (width, height) of the horizontal top part of the T shape.
     stub_size : array-like
-
+        (width, height) of the vertical stub part of the T shape.
     taper_type : {'straight', 'fillet', None}
-
+        If specified, the type of taper between the bottom corners of the stub 
+        and the bottom corners of the T shape.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
     Returns
     -------
     D : Device
-
+        A Device containing a T-shaped geometry.
     """
     f = np.array(size)
     p = np.array(stub_size)
@@ -2165,12 +2166,12 @@ def tee(size = (4, 2), stub_size = (2, 1), taper_type = None, layer = 0):
 
 # TODO change this so "width1" and "width2" arguments can accept Port directly
 def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
-    """ FIXME fill description
+    """ Creates a tapered trapezoid/rectangle geometry.
 
     Parameters
     ----------
     length : int or float
-        Length of the taper section.
+        Length of the shape.
     width1 : int, float, or None
         Width of end 1 of the taper section (width is equal to the port width 
         if Port is not None and width1 is None).
@@ -2868,25 +2869,23 @@ def basic_die(size = (10000, 10000),
 #==============================================================================
 
 def racetrack_gradual(width = 0.3, R = 5, N = 3, layer = 0):
-    """ FIXME fill
-
-    FIXME fill (R, N, D)
+    """ Creates a gradual racetrack bent geometry.
 
     Parameters
     ----------
     width : int or float 
         Width of the track.
-    R : 
-
-    N : 
-
+    R : int or float
+        Radius of the track at its most curved point.
+    N : int or float
+        Radius of the track at its least curved point.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
     Returns
     -------
     D : Device
-
+        A Device containing a gradual racetrack bent geometry.
     """
     curve_fun = lambda t: _racetrack_gradual_parametric(t, R = 5, N = 3)
     route_path = gdspy.Path(width = width, initial_point = [0, 0])
@@ -2903,23 +2902,23 @@ def _racetrack_gradual_parametric(t, R, N):
     of a racetrack bent according to 
     20090810_EOS4_modulator_designs_excerptForJasonGradualBends.ppt
 
-    FIXME private fill (t, R, N, x, y)
+    FIXME private fill (t)
 
     Parameters
     ----------
     t : 
 
-    R : 
-
-    N : 
-
+    R : int or float
+        Radius of the track at its most curved point.
+    N : int or float
+        Radius of the track at its least curved point.
 
     Returns
     -------
-    x : 
-
-    y : 
-
+    x : array-like[N]
+        x-coordinates of the racetrack curve.
+    y : array-like[N]
+        y-coordinates of the racetrack curve.
     """
     x0 = R/2**(1/N)
     Rmin = 2**(0.5-1/N)/(N-1)*R
@@ -2965,50 +2964,34 @@ def grid(device_list,
          equal_row = False,
          expand_list = True):
     """ Places the devices in the `device_list` (1D or 2D) on a grid.
-    
-    FIXME fill(device_list, spacing, shape, grid_size, equal_column, 
-    equal_row, expand_list, device_matrix)
 
     Parameters
     ----------
-    device_list : 
-
-    spacing : 
-
+    device_list : array-like[N] of Device
+        Devices to be placed onto a grid.
+    spacing : int, float, or array-like[N] of int or float
+        Spacing between adjacent elements on the grid, can be a tuple for 
+        different distances in height and width.
     shape : array-like[2]
-
-    grid_size : 
-
-    equal_column : 
-
-    equal_row : 
-
-    expand_list : 
-
+        x, y shape of the grid (see np.reshape). If no shape is given and the list is 1D, the output is as if np.reshape were run with (1, -1).
+    grid_size : array-like[2]
+        (width, height) of the column and row, used to set the grid center 
+        points of each element.
+    equal_column : bool
+        If True, sets all columns to the same width in the case that 
+        `grid_size` is None or a tuple (None, None).
+    equal_row : bool
+        If True, sets all rows to the same width in the case that  
+        `grid_size` is None or a tuple (None, None).
+    expand_list : bool
+        If False, prevents the function from expanding `device_matrix` with 
+        empty items in the case that there are too few items in `device_list` 
+        for the `shape`.
 
     Returns
     -------
-    device_matrix : 
-
-    Notes
-    -----
-    If `shape` (needs to be 2 items e.g. (1, -1)) is given, `device_list` is 
-    reshaped (see np.reshape). If no shape is given and the list is 1D, the 
-    output is as if np.reshape were run with (1, -1).
-
-    If there are too few items in the `device_list` for the `shape`, the 
-    matrix is expanded with empty items (None) unless disabled with 
-    `expand_list`.
-
-    The grid center points of each element can be set by giving a tuple 
-    `grid_size` with the width and height of the column and row.
-
-    If the grid_size element is None or a tuple (None, None), `equal_column` 
-    sets all columns to the same width and `equal_row` sets all rows of the 
-    grid to the same height.
-    
-    The `spacing` parameter allows to set a gap between adjacent elements and 
-    can be a tuple for different distances in height and width.
+    device_matrix : Device
+        A Device containing all the Devices in `device_list` in a grid.
     """
     device_array = np.array(device_list)
     if device_array.ndim > 2 or device_array.ndim == 0:
@@ -3557,16 +3540,14 @@ def fill_rectangle(D, fill_size = (40, 10), avoid_layers = 'all',
 def polygon_ports(xpts = [-1, -1, 0, 0],
                   ypts = [0, 1, 1, 0],
                   layer = 0):
-    """ FIXME fill description
-
-    FIXME fill (xpts, ypts)
+    """ Creates a polygon with ports on all edges.
 
     Parameters
     ----------
     xpts : array-like
-
+        x-coordinate values of the polygon vertices.
     ypts : array-like
-
+        y-coordinate values of the polygon vertices.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
@@ -3610,23 +3591,22 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
             partial_etch = False):
     """ FIXME fill description
 
-    FIXME fill (num_period, period, fill_factor, width_grating, length_taper, 
-    width, partial_etch)
+    FIXME fill (period, fill_factor, partial_etch)
 
     Parameters
     ----------
-    num_periods : 
+    num_periods : int
+        Number of gratings.
+    period : int or float
 
-    period : 
-
-    fill_factor : 
+    fill_factor : int or float
 
     width_grating : int or float
-
+        Width of the gratings.
     length_taper : int or float
-
+        Length of the taper section.
     width : int or float 
-    
+        Width of the end of the taper section.
     partial_etch : bool
 
 
@@ -3752,36 +3732,35 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15,
              via_layer = 3):
     """ FIXME fill description
 
-    FIXME fill (num_vias, wire_width, via_width, via_spacing, pad_size, 
-    min_pad_spacing, pad_layer, wiring1_layer, wiring2_layer, via_layer, VR)
+    FIXME fill (via_width, via_spacing, min_pad_spacing)
 
     Parameters
     ----------
-    num_vias : 
-
-    wire_width : 
-
+    num_vias : int
+        The total number of requested vias (must be an even number).
+    wire_width : int or float
+        The width of the wires.
     via_width : 
 
     via_spacing : 
 
-    pad_size : 
-
+    pad_size : array-like[2]
+        (width, height) of the pads.
     min_pad_spacing : 
 
-    pad_layer : 
-
-    wiring1_layer : 
-
-    wiring2_layer : 
-
-    via_layer : 
-
+    pad_layer : int
+        Specific layer to put the pads on. 
+    wiring1_layer : int
+        Specific layer to put the top wiring on. 
+    wiring2_layer : int
+        Specific layer to put the bottom wiring on. 
+    via_layer : int
+        Specific layer to put the vias on. 
 
     Returns
     -------
     VR : Device
-
+        A Device containing the test via structures.
 
     Usage
     -----
@@ -3796,13 +3775,6 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15,
 
         via_route_test_structure(num_vias=12, pad_size=(100,100),wire_width=8)
 
-    total requested vias (num_vias) -> this needs to be even
-    pad size (pad_size) -> given in a pair (width, height)
-    wire_width -> how wide each wire should be
-    pad_layer -> GDS layer number of the pads
-    wiring1_layer -> GDS layer number of the top wiring
-    wiring2_layer -> GDS layer number of the bottom wiring
-    via_layer -> GDS layer number of the vias
     ex: via_route(54, min_pad_spacing=300)
     """
     VR = Device('test_via')
@@ -4146,30 +4118,30 @@ def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
             pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = None):
     """ FIXME fill description
 
-    FIXME fill (wire_widths, wire_widths_wide, pad_size, pad_gap, wire_layer, 
-    pad_layer, gnd_layer)
-
     Parameters
     ----------
-    wire_widths : 
-
-    wire_widths_wide : 
-
-    pad_size : 
-
-    pad_gap : 
-
-    wire_layer : 
-
-    pad_layer : 
-
-    gnd_layer : 
-
+    wire_widths : array-like[N]
+        The widths of the thinnest parts of the wire connecting the pads and 
+        the IC.
+    wire_widths_wide : array-like[N]
+        The widths of the thickest parts of the wire connecting the pads and 
+        the IC.
+    pad_size : array-like[2] of int or float
+        (width, height) of the pads.
+    pad_gap : int or float
+        Distance between the pads and the IC (also the length of the wire 
+        connecting the pads and the IC).
+    wire_layer : int
+        Specific layer(s) to put the wires on. 
+    pad_layer : int
+        Specific layer(s) to put the pads on. 
+    gnd_layer : int or None
+        Specific layer(s) to put the ground plane on. 
 
     Returns
     -------
     ICS : Device
-
+        A Device containing the test IC structure.
 
     Notes
     -----
@@ -4249,27 +4221,25 @@ def test_res(pad_size = [50, 50],
              gnd_layer = None):
     """ Creates an efficient resonator structure for a wafer layout.
 
-    FIXME fill (res_layer, pad_layer, gnd_layer, P)
-
     Parameters
     ----------
-    pad_size : list of int or float
-        Size of the two matched impedance pads (microns).
+    pad_size : array-like[2] of int or float
+        (width, height) of the two matched impedance pads in microns.
     num_squares : int or float
         Number of squares comprising the resonator wire.
     width : int or float
-        The width of the squares (microns).
-    res_layer : 
-    
-    pad_layer : 
-
-    gnd_layer :  
-
+        The width of the squares in microns.
+    res_layer : int
+        Specific layer(s) to put the resonator structure on.
+    pad_layer : int or None
+        Specific layer(s) to put the pads on.
+    gnd_layer :  int or None
+        Specific layer(s) to put the ground plane on.
 
     Returns
     -------
     P : Device
-
+        A Device containing an efficient resonator structure.
     """
     x = pad_size[0]
     z = pad_size[1]
@@ -4355,21 +4325,20 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
     on the right end of the polygon connected to two prongs extending towards 
     ports on the left end.
 
-    FIXME fill (width, pitch, turn_ratio, num_pts)
-
     Parameters
     ----------
     width : int or float
-
+        Width of the hairpin leads.
     pitch : int or float
-
+        Distance between the two hairpin leads. Must be greater than width.
     length : int or float
         Length of the hairpin from the connectors to the opposite end of the 
         curve.
-    turn_ratio : 
-
+    turn_ratio : int or float
+        Specifies how much of the hairpin is dedicated to the 180 degree turn. 
+        A turn_ratio of 10 will result in 20% of the hairpin being comprised of the turn.
     num_pts : int
-
+        Number of points constituting the 180 degree turn.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
@@ -4380,6 +4349,8 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
 
     Notes
     -----
+    Hairpin pitch must be greater than width.
+
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in 
         superconducting nanocircuits. Physical Review B, 84(17), 1–27.
@@ -4445,7 +4416,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
                  symmetric = False, layer = 0):
     """ Creates an optimally-rounded step geometry.
 
-    FIXME fill (num_pts, width_tol, anticrowding_factor, symmetric)
+    FIXME fill (width_tol, anticrowding_factor)
 
     Parameters
     ----------
@@ -4454,13 +4425,15 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
     end_width : int or float
         Width of the connector on the right end of the step.
     num_pts : int
-
+        The number of points comprising the entire step geometry.
     width_tol : float
 
     anticrowding_factor : int or float
-
+        Adjusts the horizontal range of the step. Lower values result in 
+        a horizontally-compressed plot step.
     symmetric : bool
-
+        If True, adds a mirrored copy of the step across the x-axis to the 
+        geometry and adjusts the width of the ports.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
@@ -4590,16 +4563,14 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     """ Creates an optimally-rounded 90 degree bend that is sharp on the outer 
     corner.
 
-    FIXME fill (num_pts, length_adjust)
-
     Parameters
     ----------
     width : int or float
         Width of the ports on either side of the bend.
     num_pts : int
-
-    length_adjust : 
-
+        The number of points comprising the curved section of the bend.
+    length_adjust : int or float
+        Adjusts the length of the non-curved portion of the bend.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on. 
 
@@ -4666,23 +4637,25 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
           layer = 0):
     """ Creates an optimally-rounded SNSPD.
 
-    FIXME fill (wire_width, wire_pitch, num_squares, turn_ratio, 
-    terminals_same_side)
+    FIXME fill (num_squares)
 
     Parameters
     ----------
-    wire_width : int or float
-
-    wire_pitch : int or float
-
+    width : int or float
+        Width of the wire.
+    pitch : int or float
+        Distance between two adjacent wires. Must be greater than width.
     size : array-like
-        x, y size of the rectangle formed by the outer boundary of the SNSPD.
+        (width, height) of the rectangle formed by the outer boundary of the 
+        SNSPD.
     num_squares : int or None
 
-    turn_ratio : 
-
+    turn_ratio : int or float
+        Specifies how much of the SNSPD width is dedicated to the 180 degree 
+        turn. A turn_ratio of 10 will result in 20% of the width being 
+        comprised of the turn.
     terminals_same_side : bool
-
+        If True, both ports will be located on the same side of the SNSPD.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -4762,28 +4735,30 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
     """ Creates an optimally-rounded SNSPD with wires coming out of it that 
     expand.
     
-    FIXME fill (wire_width, wire_pitch, num_squares, connector_symmetric, 
-    turn_ratio)
+    FIXME fill (num_squares)
 
     Parameters
     ----------
-    wire_width : int or float
-
-    wire_pitch : int or float
-
+    width : int or float
+        Width of the wire.
+    pitch : int or float
+        Distance between two adjacent wires. Must be greater than width.
     size : array-like
-        x, y size of the rectangle formed by the outer boundary of the SNSPD, 
-        not including the input and output wires.
+        (width, height) of the rectangle formed by the outer boundary of the 
+        SNSPD, not including the input and output wires.
     num_squares : int or None
 
     connector_width : int or float
         Width of the connectors.
     connector_symmetric : bool
-    
-    turn_ratio : 
-
+        If True, mirrors the connectors across their flat edge and adds them 
+        to the connector geometry.
+    turn_ratio : int or float
+        Specifies how much of the SNSPD width is dedicated to the 180 degree 
+        turn. A turn_ratio of 10 will result in 20% of the width being 
+        comprised of the turn.
     terminals_same_side : bool
-        If true, terminals are placed on the same side of the SNSPD.
+        If True, both ports will be located on the same side of the SNSPD.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
