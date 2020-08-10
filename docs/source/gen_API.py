@@ -24,8 +24,8 @@ def write_docstring(main_path, source_path,
         The top-level header for the markdown file.
     sub_header : str, optional
         Appended to the subheader associated with the ``fname`` (e.g. if 
-        ``fname = 'test.py'`` and ``sub_header = 'Library'``, the section
-        header for ``test.py`` becomes "Test Library").
+        ``fname`` = 'test.py' and ``sub_header`` = 'Library', the section
+        header for ``test.py`` becomes 'Test Library').
 
     Notes
     -----

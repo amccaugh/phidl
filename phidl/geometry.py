@@ -1,4 +1,5 @@
 # # -*- coding: utf-8 -*-
+#%%
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import itertools
@@ -3589,8 +3590,6 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
             partial_etch = False):
     """ FIXME fill description
 
-    FIXME fill (partial_etch)
-
     Parameters
     ----------
     num_periods : int
@@ -3606,7 +3605,7 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
     width : int or float 
         Width of the end of the taper section.
     partial_etch : bool
-
+        If True, makes an untapered, partially-etched grating.
 
     Returns
     -------
@@ -3648,7 +3647,7 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
         p = G.add_port(port = cgrating.ports['E'], name = 1)
         p.midpoint = p.midpoint + np.array([(1-fill_factor)*period, 0])
 
-        #draw the deep etched square around the grating
+        # draw the deep etched square around the grating
         deepbox = G.add_ref(compass(size = [num_periods*period,
                                             width_grating],
                                     layer = 0))
@@ -3730,22 +3729,20 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15,
              via_layer = 3):
     """ FIXME fill description
 
-    FIXME fill (via_width, via_spacing, min_pad_spacing)
-
     Parameters
     ----------
     num_vias : int
         The total number of requested vias (must be an even number).
     wire_width : int or float
         The width of the wires.
-    via_width : 
-
-    via_spacing : 
-
+    via_width : int or float
+        Diameter of the vias.
+    via_spacing : int or float
+        Distance between vias.
     pad_size : array-like[2]
         (width, height) of the pads.
-    min_pad_spacing : 
-
+    min_pad_spacing : int or float
+        Defines the minimum distance between the two pads.
     pad_layer : int
         Specific layer to put the pads on. 
     wiring1_layer : int
@@ -4635,22 +4632,21 @@ def snspd(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
           layer = 0):
     """ Creates an optimally-rounded SNSPD.
 
-    FIXME fill (num_squares)
-
     Parameters
     ----------
     width : int or float
         Width of the wire.
     pitch : int or float
-        Distance between two adjacent wires. Must be greater than width.
-    size : array-like
+        Distance between two adjacent wires. Must be greater than `width`.
+    size : None or array-like[2] of int or float
         (width, height) of the rectangle formed by the outer boundary of the 
-        SNSPD.
+        SNSPD. Must be none if `num_squares` is specified.
     num_squares : int or None
-
+        Total number of squares inside the SNSPD length. Must be none if 
+        `size` is specified.
     turn_ratio : int or float
         Specifies how much of the SNSPD width is dedicated to the 180 degree 
-        turn. A turn_ratio of 10 will result in 20% of the width being 
+        turn. A `turn_ratio` of 10 will result in 20% of the width being 
         comprised of the turn.
     terminals_same_side : bool
         If True, both ports will be located on the same side of the SNSPD.
@@ -4732,20 +4728,19 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
                    terminals_same_side = False, layer = 0):
     """ Creates an optimally-rounded SNSPD with wires coming out of it that 
     expand.
-    
-    FIXME fill (num_squares)
 
     Parameters
     ----------
     width : int or float
         Width of the wire.
     pitch : int or float
-        Distance between two adjacent wires. Must be greater than width.
-    size : array-like
+        Distance between two adjacent wires. Must be greater than `width`.
+    size : None or array-like[2] of int or float
         (width, height) of the rectangle formed by the outer boundary of the 
-        SNSPD, not including the input and output wires.
+        SNSPD. Must be none if `num_squares` is specified.
     num_squares : int or None
-
+        Total number of squares inside the SNSPD length. Must be none if 
+        `size` is specified.
     connector_width : int or float
         Width of the connectors.
     connector_symmetric : bool
@@ -4753,7 +4748,7 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
         to the connector geometry.
     turn_ratio : int or float
         Specifies how much of the SNSPD width is dedicated to the 180 degree 
-        turn. A turn_ratio of 10 will result in 20% of the width being 
+        turn. A `turn_ratio` of 10 will result in 20% of the width being 
         comprised of the turn.
     terminals_same_side : bool
         If True, both ports will be located on the same side of the SNSPD.
@@ -4898,3 +4893,6 @@ def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
                 # arm_widths = (200, 200), theta = 2.5, theta_resolution = 10,
                 # layer = 0)
 #quickplot(y)
+
+
+# %%
