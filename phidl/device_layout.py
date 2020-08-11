@@ -46,6 +46,8 @@ def _rotate_points(points, angle = 45, center = (0, 0)):
     may be input as either single points [1,2] or array-like[N][2], and will 
     return in kind.
 
+    FIXME private fill (points, angle, center, RETURN)
+
     Parameters
     ----------
     points : 
@@ -75,6 +77,8 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind.
 
+    FIXME private fill (points, p1, p2, RETURN)
+
     Parameters
     ----------
     points : 
@@ -96,7 +100,9 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
 def _is_iterable(items):
-    """ FIXME fill
+    """ FIXME private fill description
+
+    FIXME private fill (items)
 
     Parameters
     ----------
@@ -112,6 +118,8 @@ def _is_iterable(items):
 def _parse_coordinate(c):
     """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate.
     
+    FIXME private fill (c, c)
+
     Parameters
     ----------
     c : 
@@ -119,6 +127,7 @@ def _parse_coordinate(c):
 
     Returns
     -------
+    c : 
 
     """
     if isinstance(c, Port):
@@ -129,7 +138,9 @@ def _parse_coordinate(c):
         raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
 
 def _parse_move(origin, destination, axis):
-    """ FIXME fill
+    """ FIXME private fill description
+
+    FIXME private fill (origin, destination, axis, dx, dy)
 
     Parameters
     ----------
@@ -161,9 +172,13 @@ def _parse_move(origin, destination, axis):
     return dx,dy
 
 def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
-    """ Takes a list of elements and distributes them either (1: suparation==False) equally
-    along a grid or (2: separation==True) with a fixed spacing between them.
+    """ Takes a list of elements and distributes them either 
+    (1: suparation==False) equally along a grid or (2: separation==True) with 
+    a fixed spacing between them.
     
+    FIXME private fill (elements, direction, spacing, separation, edge, 
+    elements)
+
     Parameters
     ----------
     elements : 
@@ -215,7 +230,9 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     return elements
 
 def _align(elements, alignment = 'ymax'):
-    """ FIXME fill
+    """ FIXME private fill description
+
+    FIXME private fill (elements, alignment, elements)
 
     Parameters
     ----------
@@ -237,7 +254,17 @@ def _align(elements, alignment = 'ymax'):
     return elements
 
 def reset():
-    """ FIXME fill """
+    """ FIXME fill description
+
+    FIXME fill ()
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    """
     Layer.layer_dict = {}
     Device._next_uid = 0
 
@@ -245,6 +272,7 @@ def reset():
 class LayerSet(object):
     """ Set of layer objects. """
     def __init__(self):
+        """ Initialises an empty LayerSet. """        
         self._layers = {}
 
     def add_layer(self, name = 'unnamed', gds_layer = 0, gds_datatype = 0,
@@ -252,11 +280,28 @@ class LayerSet(object):
                   alpha = 0.6, dither = None):
         """ Adds a layer to an existing LayerSet object.
 
+        FIXME fill (dither)
+        FIXME check
+
         Parameters
         ----------
+        name : str
+            Name of the Layer.
+        gds_layer : int
+            GDSII Layer number.
+        gds_datatype : int
+            GDSII datatype.
+        description : str
+            Layer description.
+        color : str
+            Hex code of color for the Layer.
+        inverted : bool
+            If true, inverts the Layer.
+        alpha : int or float
+            Alpha parameter (opacity) for the Layer, value must be between 0.0 
+            and 1.0.
+        dither : 
 
-        Returns
-        -------
         """
         new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, 
                           name = name, description = description,
@@ -271,7 +316,18 @@ class LayerSet(object):
 
     def __getitem__(self, val):
         """ If you have a LayerSet `ls`, allows access to the layer names like 
-        ls['gold2'] """
+        ls['gold2']
+
+        FIXME private fill (val, RETURN)
+
+        Parameters
+        ----------
+        val : 
+
+        Returns
+        -------
+        self._layers[val] : 
+        """
         try:
             return self._layers[val]
         except:
@@ -279,6 +335,7 @@ class LayerSet(object):
                              'named "%s"' % (val) + ' which does not exist')
 
     def __repr__(self):
+        """ Prints the number of Layers in the LayerSet object. """        
         return ('LayerSet (%s layers total)' % (len(self._layers)))
 
 
@@ -289,6 +346,25 @@ class Layer(object):
     def __init__(self, gds_layer = 0, gds_datatype = 0, name = 'unnamed',
                  description = None, inverted = False,
                  color = None, alpha = 0.6, dither = None):
+        """ FIXME fill description
+
+        FIXME fill (dither)
+
+        Parameters
+        ----------
+        gds_layer : int
+            GDSII Layer number.
+        gds_datatype : int
+            GDSII datatype.
+        name : str
+            Name of the Layer.
+        color : str
+            Hex code of color for the Layer.
+        alpha : int or float
+            Alpha parameter (opacity) for the Layer.
+        dither : 
+
+        """                 
         if isinstance(gds_layer, Layer):
             l = gds_layer # We were actually passed Layer(mylayer), make a copy
             gds_datatype = l.gds_datatype
@@ -331,24 +407,25 @@ class Layer(object):
         Layer.layer_dict[(gds_layer, gds_datatype)] = self
 
     def __repr__(self):
+        """ Prints a description of the Layer object, including the name, GDS 
+        layer, GDS datatype, description, and color of the Layer. """        
         return ('Layer (name %s, GDS layer %s, GDS datatype %s, description %s, color %s)' % \
                 (self.name, self.gds_layer, self.gds_datatype, self.description, self.color))
 
 
 def _parse_layer(layer):
     """ Check if the variable layer is a Layer object, a 2-element list like
-    [0,1] representing layer=0 and datatype=1, or just a layer number.
+    [0, 1] representing layer = 0 and datatype = 1, or just a layer number.
     
     Parameters
     ----------
     layer : int, array-like[2], or set
-        Specific layer(s) to put polygon geometry on.
-
+        Variable to check.
 
     Returns
     -------
-    (gds_layer, gds_datatype) : tuple
-    
+    (gds_layer, gds_datatype) : array-like[2]
+        The layer number and datatype of the input.
     """
     if isinstance(layer, Layer):
         gds_layer, gds_datatype = layer.gds_layer, layer.gds_datatype
@@ -377,82 +454,278 @@ class _GeometryHelper(object):
 
     @property
     def center(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """   
         return np.sum(self.bbox,0)/2
 
     @center.setter
     def center(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         self.move(destination = destination, origin = self.center)
 
     @property
     def x(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         return np.sum(self.bbox,0)[0]/2
 
     @x.setter
     def x(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         destination = (destination, self.center[1])
         self.move(destination = destination, origin = self.center, axis = 'x')
 
     @property
     def y(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         return np.sum(self.bbox,0)[1]/2
 
     @y.setter
     def y(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         destination = ( self.center[0], destination)
         self.move(destination = destination, origin = self.center, axis = 'y')
 
     @property
     def xmax(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         return self.bbox[1][0]
 
     @xmax.setter
     def xmax(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         self.move(destination = (destination, 0), origin = self.bbox[1],
                   axis = 'x')
 
     @property
     def ymax(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         return self.bbox[1][1]
 
     @ymax.setter
     def ymax(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         self.move(destination = (0, destination), origin = self.bbox[1], 
                   axis = 'y')
 
     @property
     def xmin(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         return self.bbox[0][0]
 
     @xmin.setter
     def xmin(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         self.move(destination = (destination, 0), origin = self.bbox[0],
                   axis = 'x')
 
     @property
     def ymin(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         return self.bbox[0][1]
 
     @ymin.setter
     def ymin(self, destination):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         self.move(destination = (0, destination), origin = self.bbox[0],
                   axis = 'y')
 
     @property
     def size(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         bbox = self.bbox
         return bbox[1] - bbox[0]
 
     @property
     def xsize(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         bbox = self.bbox
         return bbox[1][0] - bbox[0][0]
 
     @property
     def ysize(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         bbox = self.bbox
         return bbox[1][1] - bbox[0][1]
 
     def movex(self, origin = 0, destination = None):
+        """ Moves an object by a specified x-distance.
+
+        Parameters
+        ----------
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, key, or None
+            Destination point of the move.
+        """           
         if destination is None:
             destination = origin
             origin = 0
@@ -460,6 +733,15 @@ class _GeometryHelper(object):
         return self
 
     def movey(self, origin = 0, destination = None):
+        """ Moves an object by a specified y-distance.
+
+        Parameters
+        ----------
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        """           
         if destination is None:
             destination = origin
             origin = 0
@@ -467,6 +749,17 @@ class _GeometryHelper(object):
         return self
 
     def __add__(self, element):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """           
         G = Group()
         G.add(self)
         G.add(element)
@@ -474,26 +767,27 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    """ 
-
-    Methods
-    -------
-    endpoints()
-        Returns a numpy array with the left and right endpoints of the Port.
-    normal()
-
-    x()
-        Returns the x-coordinate of the Port midpoint.
-    y()
-        Returns the y-coordinate of the Port midpoint.
-    center()
-        Returns the Port midpoint.
-    rotate
-    """
+    """ FIXME fill description """
     _next_uid = 0
 
     def __init__(self, name = None, midpoint = (0, 0), width = 1,
                  orientation = 0, parent = None):
+        """ Initialises a new Port object.
+
+        FIXME fill (parent)
+
+        Parameters
+        ----------
+        name : str
+            Name of the Port object.
+        midpoint : array-like[2] of int or float
+            Midpoint of the Port location.
+        width : int or float
+            Width of the Port.
+        orientation : int or float
+            Orientation (rotation) of the Port.
+        parent : 
+        """                    
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
@@ -506,11 +800,14 @@ class Port(object):
         Port._next_uid += 1
 
     def __repr__(self):
+        """ Prints a description of the Port object, including the name, 
+        midpoint, width, and orientation of the Port. """           
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
                 (self.name, self.midpoint, self.width, self.orientation))
 
     @property
     def endpoints(self):
+        """ Returns the endpoints of the Port. """           
         dxdy = np.array([
             self.width/2*cos((self.orientation - 90) * pi/180),
             self.width/2*sin((self.orientation - 90) * pi/180)
@@ -521,6 +818,13 @@ class Port(object):
 
     @endpoints.setter
     def endpoints(self, points):
+        """ Sets the endpoints of a Port.
+
+        Parameters
+        ----------
+        points : array-like[2] of int or float
+            Endpoints to assign to the Port.
+        """           
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
@@ -529,26 +833,45 @@ class Port(object):
 
     @property
     def normal(self):
+        """ FIXME fill description
+
+        Returns
+        -------
+
+        """           
         dx = cos((self.orientation) * pi/180)
         dy = sin((self.orientation) * pi/180)
         return np.array([self.midpoint, self.midpoint + np.array([dx, dy])])
 
     @property
     def x(self):
+        """ Returns the x-coordinate of the Port midpoint. """           
         return self.midpoint[0]
 
     @property
     def y(self):
+        """ Returns the y-coordinate of the Port midpoint. """           
         return self.midpoint[1]
 
     @property
     def center(self):
+        """ Returns the midpoint of the Port. """           
         return self.midpoint
     
-    # Use this function instead of copy() (which will not create a new numpy 
-    # array for self.midpoint) or deepcopy() (which will also deepcopy the 
-    # self.parent DeviceReference recursively, causing performance issues)
     def _copy(self, new_uid = True):
+        """ Copies a Port.
+
+        Returns
+        -------
+        new_port : Port
+            Copied Port.
+
+        Notes
+        -----
+        Use this function instead of copy() (which will not create a new numpy 
+        array for self.midpoint) or deepcopy() (which will also deepcopy the 
+        self.parent DeviceReference recursively, causing performance issues).
+        """           
         new_port = Port(name = self.name, midpoint = self.midpoint,
                         width = self.width, orientation = self.orientation,
                         parent = self.parent)
@@ -559,6 +882,15 @@ class Port(object):
         return new_port
 
     def rotate(self, angle = 45, center = None):
+        """ Rotates a Port by the specified angle.
+
+        Parameters
+        ----------
+        angle : int or float
+            Angle to rotate the Port in degrees.
+        center : array-like[2] or None
+            Midpoint of the Port.
+        """           
         self.orientation = mod(self.orientation + angle, 360)
         if center is None:
             center = self.midpoint
@@ -568,27 +900,58 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
+    """ FIXME fill description """
     def __init__(self, points, gds_layer, gds_datatype, parent):
-        self.parent = parent
-        super(Polygon, self).__init__(points = points, layer=gds_layer,
-            datatype=gds_datatype)
+        """ Initialises a Polygon object.
 
+        FIXME fill (points, parent)
+
+        Parameters
+        ----------
+        points : 
+        gds_layer : int
+            GDSII layer of the Polygon.
+        gds_datatype : int
+            GDSII datatype of the Polygon.
+        parent : 
+
+        """        
+        self.parent = parent
+        super(Polygon, self).__init__(points = points, layer = gds_layer,
+                                      datatype = gds_datatype)
 
     @property
     def bbox(self):
+        """ Returns the bounding box of the Polygon. """        
         return self.get_bounding_box()
 
     def rotate(self, angle = 45, center = (0,0)):
+        """ Rotates a Polygon by the specified angle.
+
+        Parameters
+        ----------
+        angle : int or float
+            Angle to rotate the Polygon in degrees.
+        center : array-like[2] or None
+            Midpoint of the Polygon.
+        """        
         super(Polygon, self).rotate(angle = angle*pi/180, center = center)
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
 
     def move(self, origin = (0,0), destination = None, axis = None):
-        """ Moves elements of the Device from the origin point to the destination.  Both
-         origin and destination can be 1x2 array-like, Port, or a key
-         corresponding to one of the Ports in this device """
+        """ Moves elements of the Device from the origin point to the 
+        destination. Both origin and destination can be 1x2 array-like, Port, 
+        or a key corresponding to one of the Ports in this device.
 
+        Parameters
+        ----------
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        """
         dx,dy = _parse_move(origin, destination, axis)
 
         super(Polygon, self).translate(dx, dy)
@@ -598,6 +961,17 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
 
     def mirror(self, p1 = (0,1), p2 = (0,0)):
+        """ Mirrors a Polygon across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
+
+        Parameters
+        ----------
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
+        """        
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _reflect_points(points, p1, p2)
         if self.parent is not None:
@@ -605,19 +979,25 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         return self
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
+        """ 
+        .. deprecated:: 1.3.0
+            `reflect` will be removed in May 2021, please replace with
+            `mirror`.
+        """        
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
 
-
 def make_device(fun, config = None, **kwargs):
-    """ FIXME fill
+    """ FIXME fill description
+
+    FIXME fill (fun, config, D)
 
     Parameters
     ----------
     fun : 
 
-    config : 
+    config : dict or None
 
 
     Returns
@@ -642,12 +1022,12 @@ def make_device(fun, config = None, **kwargs):
         function does not produce a Device.""")
     return D
 
-
-
 class Device(gdspy.Cell, _GeometryHelper):
+    """ FIXME fill description """
     _next_uid = 0
 
     def __init__(self, *args, **kwargs):
+        """ FIXME fill description """        
         if len(args) > 0:
             if callable(args[0]):
                 raise ValueError('[PHIDL] You can no longer create geometry '
@@ -674,7 +1054,17 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def __getitem__(self, key):
-        """ If you have a Device D, allows access to aliases you made like D['arc2'] """
+        """ If you have a Device D, allows access to aliases you made like D['arc2'].
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         try:
             return self.aliases[key]
         except:
@@ -682,19 +1072,47 @@ class Device(gdspy.Cell, _GeometryHelper):
                 'which does not exist' % (key, self.name))
 
     def __repr__(self):
+        """ Prints a description of the Device, including the name, uid, 
+        ports, aliases, polygons, and references.
+        """        
         return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s polygons, %s references)' % \
                 (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
                 len(self.polygons), len(self.references)))
 
 
     def __str__(self):
+        """ FIXME private fill description """        
         return self.__repr__()
 
     def __lshift__(self, element):
+        """ FIXME private fill description
+
+        FIXME private fill (elements)
+
+        Parameters
+        ----------
+        elements : 
+
+        Returns
+        -------
+
+        """        
         return self.add_ref(element)
 
     def __setitem__(self, key, element):
-        """ Allow adding polygons and cell references like D['arc3'] = pg.arc() """
+        """ Allow adding polygons and cell references like D['arc3'] = pg.arc()
+
+        FIXME private fill (key, element)
+
+        Parameters
+        ----------
+        key : 
+        element : 
+
+        Returns
+        -------
+
+        """
         if isinstance(element, (DeviceReference,Polygon,CellArray)):
             self.aliases[key] = element
         else:
@@ -703,6 +1121,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     @property
     def layers(self):
+        """ Returns a set of the Layers in the Device. """        
         return self.get_layers()
 
     # @property
@@ -714,16 +1133,29 @@ class Device(gdspy.Cell, _GeometryHelper):
     #     return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
 
 
-
     @property
     def bbox(self):
+        """ Returns the bounding box of the Device. """      
         bbox = self.get_bounding_box()
-        if bbox is None:  bbox = ((0,0),(0,0))
+        if bbox is None: bbox = ((0,0),(0,0))
         return np.array(bbox)
 
     def add_ref(self, device, alias = None):
         """ Takes a Device and adds it as a DeviceReference to the current
-        Device.  """
+        Device.
+
+        FIXME fill (alias)
+
+        Parameters
+        ----------
+        device : Device
+            Device to be added as a DeviceReference.
+        alias : 
+
+        Returns
+        -------
+
+        """
         if _is_iterable(device):
             return [self.add_ref(E) for E in device]
         if not isinstance(device, Device):
@@ -739,6 +1171,17 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def add_polygon(self, points, layer = None):
+        """ Adds a Polygon to the Device.
+
+        FIXME fill (points)
+
+        Parameters
+        ----------
+        points : 
+
+        layer : int, array-like[2], or set
+            Specific layer(s) to put polygon geometry on.
+        """        
         # Check if input a list of polygons by seeing if it's 3 levels deep
         try:
             points[0][0][0] # Try to access first x point
@@ -777,7 +1220,28 @@ class Device(gdspy.Cell, _GeometryHelper):
         return polygon
 
 
-    def add_array(self, device, columns = 2, rows = 2, spacing = (100,100), alias = None):
+    def add_array(self, device, columns = 2, rows = 2, spacing = (100, 100), 
+                  alias = None):
+        """ FIXME fill description
+
+        FIXME fill (device, columns, rows, spacing, alias)
+
+        Parameters
+        ----------
+        device : Device
+
+        columns : int
+
+        rows : int
+
+        spacing : array-like[2] of int or float
+
+        alias : 
+
+        Returns
+        -------
+
+        """        
         if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_array() was passed something that
             was not a Device object. """)
@@ -790,9 +1254,29 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
-        """ Can be called to copy an existing port like add_port(port = existing_port) or
-        to create a new port add_port(myname, mymidpoint, mywidth, myorientation).
-        Can also be called to copy an existing port with a new name like add_port(port = existing_port, name = new_name)"""
+        """ Adds a Port to the Device.
+
+        Parameters
+        ----------
+        name : str
+            Name of the Port object.
+        midpoint : array-like[2] of int or float
+            Midpoint of the Port location.
+        width : int or float
+            Width of the Port.
+        orientation : int or float
+            Orientation (rotation) of the Port.
+        port : Port or None
+            A Port if the added Port is a copy of an existing Port.
+
+        Notes
+        -----
+        Can be called to copy an existing port like 
+        add_port(port = existing_port) or to create a new port
+        add_port(myname, mymidpoint, mywidth, myorientation).
+        Can also be called to copy an existing port with a new name like 
+        add_port(port = existing_port, name = new_name)
+        """
         if port is not None:
             if not isinstance(port, Port):
                 raise ValueError('[PHIDL] add_port() error: Argument `port` must be a Port for copying')
@@ -813,18 +1297,43 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
+        """ Adds a Label to the Device.
+
+        FIXME fill (magnification, rotation, anchor)
+
+        Parameters
+        ----------
+        text : str
+            Label text.
+        position : array-like[2]
+            x-, y-coordinates of the Label location.
+        magnification : int, float, or None
+
+        rotation : int, float, or None
+
+        anchor : 
+
+        layer : int, array-like[2], or set
+            Specific layer(s) to put Label on.
+        """        
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
-        l = Label(text = text, position = position, anchor = anchor, magnification = magnification, rotation = rotation,
-                                 layer = gds_layer, texttype = gds_datatype)
+        l = Label(text = text, position = position, anchor = anchor, 
+                  magnification = magnification, rotation = rotation,
+                  layer = gds_layer, texttype = gds_datatype)
         self.add(l)
         return l
 
 
     def label(self, *args, **kwargs):
+        """
+        .. deprecated:: 1.3.0
+            `label` will be removed, please replace with
+            `add_label`.        
+        """
         warnings.warn('[PHIDL] WARNING: label() will be deprecated, please replace with add_label()')
         return self.add_label(*args, **kwargs)
 
@@ -832,6 +1341,24 @@ class Device(gdspy.Cell, _GeometryHelper):
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
                   auto_rename = True, max_cellname_length = 28,
                   cellname = 'toplevel'):
+        """ FIXME fill description
+
+        FIXME fill (filename, unit, precision, auto_rename, 
+        max_cellname_length, cellname)
+
+        Parameters
+        ----------
+        filename : str
+        unit : float
+        precision : float
+        auto_rename : bool
+        max_cellname_length : int
+        cellname : str
+
+        Returns
+        -------
+
+        """                  
         if filename[-4:] != '.gds':  filename += '.gds'
         referenced_cells = list(self.get_dependencies(recursive=True))
         all_cells = [self] + referenced_cells
@@ -867,6 +1394,19 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def remap_layers(self, layermap = {}, include_labels = True):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+        layermap : 
+        include_labels : bool
+
+        Returns
+        -------
+
+        """        
         layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
 
         all_D = list(self.get_dependencies(True))
@@ -891,6 +1431,17 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def remove_layers(self, layers = (), include_labels = True, invert_selection = False):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         layers = [_parse_layer(l) for l in layers]
         all_D = list(self.get_dependencies(True))
         all_D += [self]
@@ -917,6 +1468,17 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True, edge = 'center'):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if elements == 'all': elements = (self.polygons + self.references)
         _distribute(elements = elements, direction = direction, spacing = spacing,
                     separation = separation, edge = edge)
@@ -924,12 +1486,34 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if elements == 'all': elements = (self.polygons + self.references)
         _align(elements, alignment = alignment)
         return self
 
 
     def flatten(self,  single_layer = None):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if single_layer is None:
             super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
         else:
@@ -946,7 +1530,17 @@ class Device(gdspy.Cell, _GeometryHelper):
     def absorb(self, reference):
         """ Flattens and absorbs polygons from an underlying
         DeviceReference into the Device, destroying the reference
-        in the process but keeping the polygon geometry """
+        in the process but keeping the polygon geometry
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         if reference not in self.references:
             raise ValueError("""[PHIDL] Device.absorb() failed -
                 the reference it was asked to absorb does not
@@ -962,8 +1556,18 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ Returns copies of all the ports of the Device, rotated
         and translated so that they're in their top-level position.
         The Ports returned are copies of the originals, but each copy
-        has the same ``uid'' as the original so that they can be
-        traced back to the original if needed"""
+        has the same ``uid`` as the original so that they can be
+        traced back to the original if needed
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         port_list = [p._copy(new_uid = False) for p in self.ports.values()]
 
         if depth is None or depth > 0:
@@ -987,6 +1591,17 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def remove(self, items):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if not _is_iterable(items):  items = [items]
         for item in items:
             if isinstance(item, Port):
@@ -1029,9 +1644,18 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves elements of the Device from the origin point to the destination.  Both
-         origin and destination can be 1x2 array-like, Port, or a key
-         corresponding to one of the Ports in this device """
+        origin and destination can be 1x2 array-like, Port, or a key
+        corresponding to one of the Ports in this device
 
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         dx,dy = _parse_move(origin, destination, axis)
 
         # Move geometries
@@ -1048,6 +1672,17 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def mirror(self, p1 = (0,1), p2 = (0,0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         for e in (self.polygons+self.references+self.labels):
             e.mirror(p1, p2)
         for p in self.ports.values():
@@ -1058,12 +1693,32 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
 
     def hash_geometry(self, precision = 1e-4):
-        """
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
         Algorithm:
         hash(
             hash(First layer information: [layer1, datatype1]),
@@ -1103,9 +1758,20 @@ class Device(gdspy.Cell, _GeometryHelper):
         return final_hash.hexdigest()
 
 
-
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
+    """ FIXME fill description """
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         super(DeviceReference, self).__init__(
                  ref_cell = device,
                  origin=origin,
@@ -1122,17 +1788,49 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def __repr__(self):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
                 (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
 
 
     def __str__(self):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         return self.__repr__()
 
 
     def __getitem__(self, val):
         """ This allows you to access an alias from the reference's parent, and receive
-        a copy of the reference which is correctly rotated and translated"""
+        a copy of the reference which is correctly rotated and translated
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         try:
             alias_device = self.parent[val]
         except:
@@ -1153,7 +1851,17 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     @property
     def ports(self):
         """ This property allows you to access myref.ports, and receive a copy
-        of the ports dict which is correctly rotated and translated"""
+        of the ports dict which is correctly rotated and translated
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         for name, port in self.parent.ports.items():
             port = self.parent.ports[name]
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
@@ -1172,17 +1880,29 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     @property
     def info(self):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         return self.parent.info
 
     @property
     def bbox(self):
+        """ Returns the bounding box of the DeviceReference. """
         bbox = self.get_bounding_box()
         if bbox is None:  bbox = ((0,0),(0,0))
         return np.array(bbox)
 
 
-
-    def _transform_port(self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False):
+    def _transform_port(self, point, orientation, origin = (0, 0), 
+                        rotation = None, x_reflection = False):
         # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
@@ -1191,7 +1911,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             new_point[1] = -new_point[1]
             new_orientation = -orientation
         if rotation is not None:
-            new_point = _rotate_points(new_point, angle = rotation, center = [0, 0])
+            new_point = _rotate_points(new_point, angle = rotation,
+                                       center = [0, 0])
             new_orientation += rotation
         if origin is not None:
             new_point = new_point + np.array(origin)
@@ -1199,22 +1920,34 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         return new_point, new_orientation
 
-    def move(self, origin = (0,0), destination = None, axis = None):
-        """ Moves the DeviceReference from the origin point to the destination.  Both
-         origin and destination can be 1x2 array-like, Port, or a key
-         corresponding to one of the Ports in this device_ref """
+    def move(self, origin = (0, 0), destination = None, axis = None):
+        """ Moves the DeviceReference from the origin point to the 
+            destination.  Both origin and destination can be 1x2 array-like, 
+            Port, or a key corresponding to one of the Ports in this 
+            device_ref. """
 
-        dx,dy = _parse_move(origin, destination, axis)
-        self.origin = np.array(self.origin) + np.array((dx,dy))
+        dx, dy = _parse_move(origin, destination, axis)
+        self.origin = np.array(self.origin) + np.array((dx, dy))
 
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
 
 
-    def rotate(self, angle = 45, center = (0,0)):
+    def rotate(self, angle = 45, center = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if angle == 0: return self
-        if type(center) is Port:  center = center.midpoint
+        if type(center) is Port: center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
 
@@ -1223,16 +1956,28 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
 
-    def mirror(self, p1 = (0,1), p2 = (0,0)):
-        if type(p1) is Port:  p1 = p1.midpoint
-        if type(p2) is Port:  p2 = p2.midpoint
-        p1 = np.array(p1);  p2 = np.array(p2)
+    def mirror(self, p1 = (0, 1), p2 = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        if type(p1) is Port: p1 = p1.midpoint
+        if type(p2) is Port: p2 = p2.midpoint
+        p1 = np.array(p1); p2 = np.array(p2)
         # Translate so reflection axis passes through origin
         self.origin = self.origin - p1
 
         # Rotate so reflection axis aligns with x-axis
-        angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
-        self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
+        angle = np.arctan2((p2[1]-p1[1]), (p2[0]-p1[0])) * 180/pi
+        self.origin = _rotate_points(self.origin, angle = -angle,
+                                     center = [0, 0])
         self.rotation -= angle
 
         # Reflect across x-axis
@@ -1241,7 +1986,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self.rotation = -self.rotation
 
         # Un-rotate and un-translate
-        self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
+        self.origin = _rotate_points(self.origin, angle = angle,
+                                     center = [0, 0])
         self.rotation += angle
         self.origin = self.origin + p1
 
@@ -1249,12 +1995,35 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             self.owner._bb_valid = False
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
-        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+    def reflect(self, p1 = (0, 1), p2 = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in '
+                      'May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
 
     def connect(self, port, destination, overlap = 0):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         # ``port`` can either be a string with the name or an actual Port
         if port in self.ports: # Then ``port`` is a key for the ports dict
             p = self.ports[port]
@@ -1263,54 +2032,85 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         else:
             raise ValueError('[PHIDL] connect() did not receive a Port or valid port name' + \
                 ' - received (%s), ports available are (%s)' % (port, tuple(self.ports.keys())))
-        self.rotate(angle =  180 + destination.orientation - p.orientation, center = p.midpoint)
+        self.rotate(angle =  180 + destination.orientation - p.orientation,
+                    center = p.midpoint)
         self.move(origin = p, destination = destination)
         self.move(-overlap*np.array([cos(destination.orientation*pi/180),
                                      sin(destination.orientation*pi/180)]))
         return self
 
 
-
-
 class CellArray(gdspy.CellArray, _GeometryHelper):
+    """ FIXME fill description """
     def __init__(self, device, columns, rows, spacing, origin=(0, 0),
-                 rotation=0, magnification=None, x_reflection=False):
+                 rotation = 0, magnification = None, x_reflection = False):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """                 
         super(CellArray, self).__init__(
             columns = columns,
             rows = rows,
             spacing = spacing,
             ref_cell = device,
-            origin=origin,
-            rotation=rotation,
-            magnification=magnification,
-            x_reflection=x_reflection,
-            ignore_missing=False)
+            origin = origin,
+            rotation = rotation,
+            magnification = magnification,
+            x_reflection = x_reflection,
+            ignore_missing = False)
         self.parent = device
         self.owner = None
 
     @property
     def bbox(self):
+        """ Returns the bounding box of the CellArray. """      
         bbox = self.get_bounding_box()
-        if bbox is None:  bbox = ((0,0),(0,0))
+        if bbox is None: bbox = ((0, 0), (0, 0))
         return np.array(bbox)
 
 
-    def move(self, origin = (0,0), destination = None, axis = None):
+    def move(self, origin = (0, 0), destination = None, axis = None):
         """ Moves the CellArray from the origin point to the destination.  Both
-         origin and destination can be 1x2 array-like, Port, or a key
-         corresponding to one of the Ports in this device_ref """
+        origin and destination can be 1x2 array-like, Port, or a key
+        corresponding to one of the Ports in this device_ref.
+         
+        FIXME fill ()
 
-        dx,dy = _parse_move(origin, destination, axis)
-        self.origin = np.array(self.origin) + np.array((dx,dy))
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        dx, dy = _parse_move(origin, destination, axis)
+        self.origin = np.array(self.origin) + np.array((dx, dy))
 
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
 
 
-    def rotate(self, angle = 45, center = (0,0)):
+    def rotate(self, angle = 45, center = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if angle == 0: return self
-        if type(center) is Port:  center = center.midpoint
+        if type(center) is Port: center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
         if self.owner is not None:
@@ -1318,16 +2118,28 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         return self
 
 
-    def mirror(self, p1 = (0,1), p2 = (0,0)):
-        if type(p1) is Port:  p1 = p1.midpoint
-        if type(p2) is Port:  p2 = p2.midpoint
-        p1 = np.array(p1);  p2 = np.array(p2)
+    def mirror(self, p1 = (0, 1), p2 = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        if type(p1) is Port: p1 = p1.midpoint
+        if type(p2) is Port: p2 = p2.midpoint
+        p1 = np.array(p1); p2 = np.array(p2)
         # Translate so reflection axis passes through origin
         self.origin = self.origin - p1
 
         # Rotate so reflection axis aligns with x-axis
-        angle = np.arctan2((p2[1]-p1[1]),(p2[0]-p1[0]))*180/pi
-        self.origin = _rotate_points(self.origin, angle = -angle, center = [0,0])
+        angle = np.arctan2((p2[1]-p1[1]), (p2[0]-p1[0])) * 180/pi
+        self.origin = _rotate_points(self.origin, angle = -angle,
+                                     center = [0, 0])
         self.rotation -= angle
 
         # Reflect across x-axis
@@ -1336,7 +2148,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         self.rotation = -self.rotation
 
         # Un-rotate and un-translate
-        self.origin = _rotate_points(self.origin, angle = angle, center = [0,0])
+        self.origin = _rotate_points(self.origin, angle = angle,
+                                     center = [0, 0])
         self.rotation += angle
         self.origin = self.origin + p1
 
@@ -1344,37 +2157,107 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
             self.owner._bb_valid = False
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
-        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+    def reflect(self, p1 = (0, 1), p2 = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in '
+                      'May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
 
-
 class Label(gdspy.Label, _GeometryHelper):
-
+    """FIXME fill description """
     def __init__(self, *args, **kwargs):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         super(Label, self).__init__(*args, **kwargs)
 
 
     @property
     def bbox(self):
-        return np.array([[self.position[0], self.position[1]],[self.position[0], self.position[1]]])
+        """ Returns the bounding box of the Label. """       
+        return np.array([[self.position[0], self.position[1]], 
+                         [self.position[0], self.position[1]]])
 
-    def rotate(self, angle = 45, center = (0,0)):
-        self.position = _rotate_points(self.position, angle = angle, center = center)
+    def rotate(self, angle = 45, center = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        self.position = _rotate_points(self.position, angle = angle,
+                                       center = center)
         return self
 
-    def move(self, origin = (0,0), destination = None, axis = None):
+    def move(self, origin = (0, 0), destination = None, axis = None):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         dx,dy = _parse_move(origin, destination, axis)
-        self.position += np.asarray((dx,dy))
+        self.position += np.asarray((dx, dy))
         return self
 
-    def mirror(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0, 1), p2 = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         self.position = _reflect_points(self.position, p1, p2)
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
-        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+    def reflect(self, p1 = (0, 1), p2 = (0, 0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in '
+                      'May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
 
@@ -1382,22 +2265,67 @@ PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label)
 
 class Group(_GeometryHelper):
     """ Groups objects together so they can be manipulated as though 
-    they were a single object (move/rotate/mirror) """
+    they were a single object (move/rotate/mirror). """
     def __init__(self, *args):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         self.elements = []
         self.add(args)
     
     def __repr__(self):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         return ('Group (%s elements total)' % (len(self.elements)))
     
     def __len__(self):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
         return len(self.elements)
 
     def __iadd__(self, element):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         return self.add(element)
 
     @property
     def bbox(self):
+        """ Returns the bounding boxes of the Group. """
         bboxes = np.empty([len(self.elements),4])
         for n,e in enumerate(self.elements):
             bboxes[n] = e.bbox.flatten()
@@ -1407,6 +2335,17 @@ class Group(_GeometryHelper):
         return np.array(bbox)
                                             
     def add(self, element):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         if isinstance(element, Group):
             [self.add(e) for e in element.elements]
         elif _is_iterable(element):
@@ -1423,25 +2362,80 @@ class Group(_GeometryHelper):
         return self
             
     def rotate(self, angle = 45, center = (0,0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         for e in self.elements:
             e.rotate(angle = angle, center = center)
         return self
         
     def move(self, origin = (0,0), destination = None, axis = None):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         for e in self.elements:
             e.move(origin = origin, destination = destination, axis = axis)
         return self
         
     def mirror(self, p1 = (0,1), p2 = (0,0)):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         for e in self.elements:
             e.mirror(p1 = p1, p2 = p2)
         return self
 
     def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
-        _distribute(elements = self.elements, direction = direction, spacing = spacing,
-                    separation = separation, edge = edge)
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
+        _distribute(elements = self.elements, direction = direction,
+                    spacing = spacing, separation = separation, edge = edge)
         return self
 
     def align(self, alignment = 'ymax'):
+        """ FIXME fill description
+
+        FIXME fill ()
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """        
         _align(elements = self.elements, alignment = alignment)
         return self

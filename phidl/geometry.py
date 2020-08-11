@@ -180,8 +180,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
         Width of the ring.
     angle_resolution : int or float
         Resolution of the curve of the ring (# of degrees per point).
-    layer : int, array-like[2], or set
-        Specific layer(s) to put polygon geometry on.
+    layer : 
 
     Returns
     -------

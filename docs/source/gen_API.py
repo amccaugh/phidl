@@ -60,10 +60,14 @@ def write_docstring(main_path, source_path,
                  '\n\n\n')
     if sub_header is not None: sub_header = ' ' + sub_header
     else: sub_header = ''
-    fread_name = fread[:-3]
-    fw.write('*' * (len(fread_name) + len(sub_header)) + \
-             '\n{0}{1}\n'.format(fread_name.capitalize(), sub_header) + \
-             '*' * (len(fread_name) + len(sub_header)) + \
+    fread_header = fread_name = fread[:-3]
+    if '_' in fread_header:
+        fread_header = fread_header.split('_')[0].capitalize() + ' ' \
+                     + fread_header.split('_')[1].capitalize()
+    else: fread_header = fread_header.capitalize()
+    fw.write('*' * (len(fread_header) + len(sub_header)) + \
+             '\n{0}{1}\n'.format(fread_header, sub_header) + \
+             '*' * (len(fread_header) + len(sub_header)) + \
              '\n\n')
 
     # Gathering all functions and classes as tuples of (name, type).
