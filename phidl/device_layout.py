@@ -183,13 +183,13 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     ----------
     elements : 
 
-    direction : 
+    direction : {'x','y'}
 
     spacing : 
 
     separation : 
 
-    edge : 
+    edge : {'min', 'center', 'max'}
 
 
     Returns
@@ -238,7 +238,7 @@ def _align(elements, alignment = 'ymax'):
     ----------
     elements : 
 
-    alignment : 
+    alignment : {'x','y','xmin', 'xmax', 'ymin','ymax'}
 
 
     Returns
@@ -882,7 +882,7 @@ class Port(object):
         return new_port
 
     def rotate(self, angle = 45, center = None):
-        """ Rotates a Port by the specified angle.
+        """ Rotates a Port around the specified counterpoint.
 
         Parameters
         ----------
@@ -951,6 +951,8 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
+        axis : 
+
         """
         dx,dy = _parse_move(origin, destination, axis)
 
@@ -1396,16 +1398,12 @@ class Device(gdspy.Cell, _GeometryHelper):
     def remap_layers(self, layermap = {}, include_labels = True):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (layermap, include_labels)
 
         Parameters
         ----------
         layermap : 
         include_labels : bool
-
-        Returns
-        -------
-
         """        
         layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
 
@@ -1431,16 +1429,18 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def remove_layers(self, layers = (), include_labels = True, invert_selection = False):
-        """ FIXME fill description
+        """ Removes layers from a Device.
 
-        FIXME fill ()
+        FIXME fill (include_labels)
 
         Parameters
         ----------
+        layers : int, array-like[2], or set
+            Specific layer(s) to remove.
+        include_labels : bool
 
-        Returns
-        -------
-
+        invert_selection : bool
+            If true, removes all layers except those specified.
         """        
         layers = [_parse_layer(l) for l in layers]
         all_D = list(self.get_dependencies(True))
@@ -1467,58 +1467,60 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
 
-    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True, edge = 'center'):
+    def distribute(self, elements = 'all', direction = 'x', spacing = 100, 
+                   separation = True, edge = 'center'):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (elements, direction, spacing, separation, edge)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        elements : 
+        direction : {'x','y'}
+        spacing : int or float
+        separation : bool
+        edge : {'min', 'center', 'max'}
         """        
         if elements == 'all': elements = (self.polygons + self.references)
-        _distribute(elements = elements, direction = direction, spacing = spacing,
-                    separation = separation, edge = edge)
+        _distribute(elements = elements, direction = direction,
+                    spacing = spacing, separation = separation, edge = edge)
         return self
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (elements, alignment)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        elements : 
+        alignment : {'x','y','xmin', 'xmax', 'ymin','ymax'}
         """        
         if elements == 'all': elements = (self.polygons + self.references)
         _align(elements, alignment = alignment)
         return self
 
 
-    def flatten(self,  single_layer = None):
+    def flatten(self, single_layer = None):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (single_layer)
 
         Parameters
         ----------
-
-        Returns
-        -------
+        single_layer : 
 
         """        
         if single_layer is None:
-            super(Device, self).flatten(single_layer=None, single_datatype=None, single_texttype=None)
+            super(Device, self).flatten(single_layer = None, 
+                                        single_datatype = None, 
+                                        single_texttype = None)
         else:
             gds_layer, gds_datatype = _parse_layer(single_layer)
-            super(Device, self).flatten(single_layer = gds_layer, single_datatype = gds_datatype, single_texttype=gds_datatype)
+            super(Device, self).flatten(single_layer = gds_layer, 
+                                        single_datatype = gds_datatype, 
+                                        single_texttype = gds_datatype)
 
         temp_polygons = list(self.polygons)
         self.references = []
@@ -1528,18 +1530,14 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def absorb(self, reference):
-        """ Flattens and absorbs polygons from an underlying
-        DeviceReference into the Device, destroying the reference
-        in the process but keeping the polygon geometry
-
-        FIXME fill ()
+        """ Flattens and absorbs polygons from an underlying DeviceReference 
+        into the Device, destroying the reference in the process but keeping 
+        the polygon geometry.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        reference : DeviceReference
+            DeviceReference to be absorbed into the Device.
         """
         if reference not in self.references:
             raise ValueError("""[PHIDL] Device.absorb() failed -
@@ -1553,20 +1551,22 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def get_ports(self, depth = None):
-        """ Returns copies of all the ports of the Device, rotated
-        and translated so that they're in their top-level position.
-        The Ports returned are copies of the originals, but each copy
-        has the same ``uid`` as the original so that they can be
-        traced back to the original if needed
+        """ Returns copies of all the ports of the Device, rotated and 
+        translated so that they're in their top-level position. The Ports 
+        returned are copies of the originals, but each copy has the same 
+        ``uid`` as the original so that they can be traced back to the 
+        original if needed.
 
         FIXME fill ()
 
         Parameters
         ----------
+        depth : int, float, or None
 
         Returns
         -------
-
+        port_list : list of Port
+            List of all Ports in the Device.
         """
         port_list = [p._copy(new_uid = False) for p in self.ports.values()]
 
@@ -1591,16 +1591,13 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def remove(self, items):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Removes items from a Device, which can include Ports, PolygonSets, 
+        CellReferences, and Labels.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        items : array-like[N]
+            Items to be removed from the Device.
         """        
         if not _is_iterable(items):  items = [items]
         for item in items:
@@ -1628,6 +1625,16 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def rotate(self, angle = 45, center = (0,0)):
+        """ Rotates all Polygons in the Device around the specified 
+        centerpoint.
+
+        Parameters
+        ----------
+        angle : int or float
+            Angle to rotate the Device in degrees.
+        center : array-like[2] or None
+            Midpoint of the Device.
+        """          
         if angle == 0: return self
         for e in self.polygons:
             e.rotate(angle = angle, center = center)
@@ -1643,17 +1650,19 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def move(self, origin = (0,0), destination = None, axis = None):
-        """ Moves elements of the Device from the origin point to the destination.  Both
-        origin and destination can be 1x2 array-like, Port, or a key
-        corresponding to one of the Ports in this device
+        """ Moves elements of the Device from the origin point to the 
+        destination. Both origin and destination can be 1x2 array-like, Port, 
+        or a key corresponding to one of the Ports in this Device.
 
-        FIXME fill ()
+        FIXME fill (axis)
 
         Parameters
         ----------
-
-        Returns
-        -------
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        axis : 
 
         """
         dx,dy = _parse_move(origin, destination, axis)
@@ -1672,16 +1681,16 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def mirror(self, p1 = (0,1), p2 = (0,0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Mirrors a Device across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
         """        
         for e in (self.polygons+self.references+self.labels):
             e.mirror(p1, p2)
@@ -1693,16 +1702,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
     def reflect(self, p1 = (0,1), p2 = (0,0)):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
+        """ 
+        .. deprecated:: 1.3.0
+            `reflect` will be removed in May 2021, please replace with
+            `mirror`.
         """        
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
@@ -1711,10 +1714,11 @@ class Device(gdspy.Cell, _GeometryHelper):
     def hash_geometry(self, precision = 1e-4):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (precision)
 
         Parameters
         ----------
+        precision : float
 
         Returns
         -------
@@ -1763,14 +1767,15 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (device, origin, rotation, magnification, x_reflection)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        device : Device
+        origin : array-like[2] of int or float
+        rotation : int or float
+        magnification : 
+        x_reflection : bool
         """        
         super(DeviceReference, self).__init__(
                  ref_cell = device,
@@ -1788,17 +1793,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def __repr__(self):
-        """ FIXME private fill description
-
-        FIXME private fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """        
+        """ Prints a description of the DeviceReference, including parent Device, ports, origin, rotation, and x_reflection. """        
         return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
                 (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
 
@@ -1808,9 +1803,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         FIXME private fill ()
 
-        Parameters
-        ----------
-
         Returns
         -------
 
@@ -1819,16 +1811,19 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def __getitem__(self, val):
-        """ This allows you to access an alias from the reference's parent, and receive
-        a copy of the reference which is correctly rotated and translated
+        """ This allows you to access an alias from the reference's parent and 
+        receive a copy of the reference which is correctly rotated and
+        translated.
 
-        FIXME private fill ()
+        FIXME private fill (val, new_reference)
 
         Parameters
         ----------
+        val : 
 
         Returns
         -------
+        new_reference : 
 
         """
         try:
@@ -1851,17 +1846,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     @property
     def ports(self):
         """ This property allows you to access myref.ports, and receive a copy
-        of the ports dict which is correctly rotated and translated
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """
+        of the ports dict which is correctly rotated and translated. """
         for name, port in self.parent.ports.items():
             port = self.parent.ports[name]
             new_midpoint, new_orientation = self._transform_port(port.midpoint, \
@@ -1884,9 +1869,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         FIXME fill ()
 
-        Parameters
-        ----------
-
         Returns
         -------
 
@@ -1903,6 +1885,24 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     def _transform_port(self, point, orientation, origin = (0, 0), 
                         rotation = None, x_reflection = False):
+        """ FIXME private fill description
+
+        FIXME private fill ()
+
+        Parameters
+        ----------
+        point : 
+        orientation : 
+        origin : 
+        rotation : 
+        x_reflection : 
+
+        Returns
+        -------
+        new_point : 
+        new_orientation : 
+
+        """                         
         # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
@@ -1922,10 +1922,18 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     def move(self, origin = (0, 0), destination = None, axis = None):
         """ Moves the DeviceReference from the origin point to the 
-            destination.  Both origin and destination can be 1x2 array-like, 
-            Port, or a key corresponding to one of the Ports in this 
-            device_ref. """
+        destination. Both origin and destination can be 1x2 array-like, 
+        Port, or a key corresponding to one of the Ports in this 
+        DeviceReference. 
 
+        Parameters
+        ----------
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        axis : 
+        """
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
 
@@ -1935,16 +1943,15 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def rotate(self, angle = 45, center = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Rotates all Polygons in the DeviceReference around the specified 
+        centerpoint.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        angle : int or float
+            Angle to rotate the DeviceReference in degrees.
+        center : array-like[2] or None
+            Midpoint of the DeviceReference.
         """        
         if angle == 0: return self
         if type(center) is Port: center = center.midpoint
@@ -1957,16 +1964,16 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def mirror(self, p1 = (0, 1), p2 = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Mirrors a DeviceReference across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
         """        
         if type(p1) is Port: p1 = p1.midpoint
         if type(p2) is Port: p2 = p2.midpoint
@@ -1996,16 +2003,10 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
     def reflect(self, p1 = (0, 1), p2 = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
+        """
+        .. deprecated:: 1.3.0
+            `reflect` will be removed in May 2021, please replace with
+            `mirror`.        
         """        
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in '
                       'May 2021, please replace with mirror()')
@@ -2015,13 +2016,13 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def connect(self, port, destination, overlap = 0):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (port, destination, overlap)
 
         Parameters
         ----------
-
-        Returns
-        -------
+        port : Port
+        destination : 
+        overlap : 
 
         """        
         # ``port`` can either be a string with the name or an actual Port
@@ -2042,18 +2043,23 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 class CellArray(gdspy.CellArray, _GeometryHelper):
     """ FIXME fill description """
-    def __init__(self, device, columns, rows, spacing, origin=(0, 0),
+    def __init__(self, device, columns, rows, spacing, origin = (0, 0),
                  rotation = 0, magnification = None, x_reflection = False):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (device, columns, rows, spacing, origin, rotation, 
+        magnification, x_reflection)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        device : Device
+        columns : 
+        rows : 
+        spacing : int or float
+        origin : array-like[2] of int or float
+        rotation : int or float
+        magnification : 
+        x_reflection : 
         """                 
         super(CellArray, self).__init__(
             columns = columns,
@@ -2077,17 +2083,19 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
 
     def move(self, origin = (0, 0), destination = None, axis = None):
-        """ Moves the CellArray from the origin point to the destination.  Both
+        """ Moves the CellArray from the origin point to the destination. Both
         origin and destination can be 1x2 array-like, Port, or a key
-        corresponding to one of the Ports in this device_ref.
+        corresponding to one of the Ports in this CellArray.
          
-        FIXME fill ()
+        FIXME fill (axis)
 
         Parameters
         ----------
-
-        Returns
-        -------
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        axis : 
         """
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
@@ -2098,16 +2106,15 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
 
     def rotate(self, angle = 45, center = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Rotates all Polygons in the CellArray around the specified 
+        centerpoint.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        angle : int or float
+            Angle to rotate the CellArray in degrees.
+        center : array-like[2], Port, or None
+            Midpoint of the CellArray.
         """        
         if angle == 0: return self
         if type(center) is Port: center = center.midpoint
@@ -2119,16 +2126,16 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
 
     def mirror(self, p1 = (0, 1), p2 = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Mirrors a CellArray across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
         """        
         if type(p1) is Port: p1 = p1.midpoint
         if type(p2) is Port: p2 = p2.midpoint
@@ -2158,16 +2165,10 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         return self
 
     def reflect(self, p1 = (0, 1), p2 = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
+        """
+        .. deprecated:: 1.3.0
+            `reflect` will be removed in May 2021, please replace with
+            `mirror`.        
         """        
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in '
                       'May 2021, please replace with mirror()')
@@ -2177,17 +2178,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 class Label(gdspy.Label, _GeometryHelper):
     """FIXME fill description """
     def __init__(self, *args, **kwargs):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """        
+        """ FIXME fill description """        
         super(Label, self).__init__(*args, **kwargs)
 
 
@@ -2198,63 +2189,58 @@ class Label(gdspy.Label, _GeometryHelper):
                          [self.position[0], self.position[1]]])
 
     def rotate(self, angle = 45, center = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Rotates Label around the specified centerpoint.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        angle : int or float
+            Angle to rotate the Label in degrees.
+        center : array-like[2] or None
+            Midpoint of the Label.
         """        
         self.position = _rotate_points(self.position, angle = angle,
                                        center = center)
         return self
 
     def move(self, origin = (0, 0), destination = None, axis = None):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Moves the Label from the origin point to the destination. Both
+        origin and destination can be 1x2 array-like, Port, or a key
+        corresponding to one of the Ports in this Label.
+         
+        FIXME fill (axis)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        axis : 
         """        
         dx,dy = _parse_move(origin, destination, axis)
         self.position += np.asarray((dx, dy))
         return self
 
     def mirror(self, p1 = (0, 1), p2 = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Mirrors a Label across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
         """        
         self.position = _reflect_points(self.position, p1, p2)
         return self
 
     def reflect(self, p1 = (0, 1), p2 = (0, 0)):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
+        """
+        .. deprecated:: 1.3.0
+            `reflect` will be removed in May 2021, please replace with
+            `mirror`.        
         """        
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in '
                       'May 2021, please replace with mirror()')
@@ -2282,44 +2268,22 @@ class Group(_GeometryHelper):
         self.add(args)
     
     def __repr__(self):
-        """ FIXME private fill description
-
-        FIXME private fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """
+        """ Prints the number of elements in the Group. """
         return ('Group (%s elements total)' % (len(self.elements)))
     
     def __len__(self):
-        """ FIXME private fill description
-
-        FIXME private fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """
+        """ Returns the number of elements in the Group. """
         return len(self.elements)
 
     def __iadd__(self, element):
-        """ FIXME private fill description
+        """ Adds an element to the Group.
 
-        FIXME private fill ()
+        FIXME fill (element)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        element : 
+            Element to be added.
         """        
         return self.add(element)
 
@@ -2337,13 +2301,11 @@ class Group(_GeometryHelper):
     def add(self, element):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (element)
 
         Parameters
         ----------
-
-        Returns
-        -------
+        element : 
 
         """        
         if isinstance(element, Group):
@@ -2362,48 +2324,49 @@ class Group(_GeometryHelper):
         return self
             
     def rotate(self, angle = 45, center = (0,0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Rotates all elements in a Group around the specified centerpoint.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        angle : int or float
+            Angle to rotate the Group in degrees.
+        center : array-like[2] or None
+            Midpoint of the Group.
         """        
         for e in self.elements:
             e.rotate(angle = angle, center = center)
         return self
         
     def move(self, origin = (0,0), destination = None, axis = None):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Moves the Group from the origin point to the destination. Both
+        origin and destination can be 1x2 array-like, Port, or a key
+        corresponding to one of the Ports in this Group.
+         
+        FIXME fill (axis)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        origin : array-like[2], Port, or key
+            Origin point of the move.
+        destination : array-like[2], Port, or key
+            Destination point of the move.
+        axis : 
         """        
         for e in self.elements:
             e.move(origin = origin, destination = destination, axis = axis)
         return self
         
     def mirror(self, p1 = (0,1), p2 = (0,0)):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Mirrors a Group across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
         """        
         for e in self.elements:
             e.mirror(p1 = p1, p2 = p2)
@@ -2412,13 +2375,13 @@ class Group(_GeometryHelper):
     def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (direction, spacing, separation)
 
         Parameters
         ----------
-
-        Returns
-        -------
+        direction : {'x', 'y'}
+        spacing : int or float
+        separation : bool
 
         """        
         _distribute(elements = self.elements, direction = direction,
@@ -2428,14 +2391,11 @@ class Group(_GeometryHelper):
     def align(self, alignment = 'ymax'):
         """ FIXME fill description
 
-        FIXME fill ()
+        FIXME fill (alignment)
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        alignment : {'x','y','xmin', 'xmax', 'ymin','ymax'}
         """        
         _align(elements = self.elements, alignment = alignment)
         return self
