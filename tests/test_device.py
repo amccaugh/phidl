@@ -57,7 +57,7 @@ def test_add_array():
     assert(A.bbox.tolist() == [[0.0, 0.0], [216.0, 104.0]])
     A.rotate(10)
     A.move((15,1.5))
-    A.reflect((0,1))
+    A.mirror((0,1))
     A.get_polygons()
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '418b7503baff80fbe93031d45d87557c277f07b4')
@@ -103,7 +103,7 @@ def test_move():
     print(np.allclose(l.center, D.center))
     D.rotate(75)
     print(np.allclose(l.center, D.center))
-    D.reflect([7,5])
+    D.mirror([7,5])
     print(np.allclose(l.center, D.center))
 
 
@@ -125,13 +125,13 @@ def test_reflect():
     # Test polygon reflection
     D = Device()
     p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
-    p.reflect(p1 = (1.7,2.5), p2 = (4.5, 9.1))
+    p.mirror(p1 = (1.7,2.5), p2 = (4.5, 9.1))
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'bc6ae5308c2240e425cd503e0cdda30007bbfc4d')
     # Test Device reflection
     D = Device()
     p = D.add_polygon( [(8,6,7,9), (6,8,9,5)] )
-    D.reflect(p1 = (1.7,2.5), p2 = (4.5, 9.1))
+    D.mirror(p1 = (1.7,2.5), p2 = (4.5, 9.1))
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'bc6ae5308c2240e425cd503e0cdda30007bbfc4d')
 

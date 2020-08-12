@@ -13,7 +13,7 @@ def _arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution
     outer_radius = radius+width/2
     angle1 = (start_angle)*pi/180
     angle2 = (start_angle + theta)*pi/180
-    t = np.linspace(angle1, angle2, np.ceil(abs(theta)/angle_resolution))
+    t = np.linspace(angle1, angle2, int(np.ceil(abs(theta)/angle_resolution)))
     inner_points_x = (inner_radius*cos(t)).tolist()
     inner_points_y = (inner_radius*sin(t)).tolist()
     outer_points_x = (outer_radius*cos(t)).tolist()
@@ -82,18 +82,18 @@ def _gradual_bend(
     #clone the half-curve into two objects and connect for a 90 deg bend.
     D1 = Total.add_ref(D)
     D2 = Total.add_ref(D)
-    D2.reflect(p1=[0,0],p2=[1,1])
+    D2.mirror(p1=[0,0],p2=[1,1])
     D2.connect(port=2,destination=D1.ports[2])
     Total.xmin=0
     Total.ymin=0
 
     #orient to default settings...
-    Total.reflect(p1=[0,0],p2=[1,1])
-    Total.reflect(p1=[0,0],p2=[1,0])
+    Total.mirror(p1=[0,0],p2=[1,1])
+    Total.mirror(p1=[0,0],p2=[1,0])
 
     #orient to user-provided settings
     if direction == 'cw':
-        Total.reflect(p1=[0,0],p2=[1,0])
+        Total.mirror(p1=[0,0],p2=[1,0])
     Total.rotate(angle=start_angle,center=Total.center)
     Total.center=[0,0]
     Total.add_port(name=1,port=D1.ports[1])
