@@ -1,6 +1,7 @@
-#%%
 import os
-from os.path import join, dirname
+import sys
+from os.path import join, dirname, exists
+
 from operator import itemgetter
 
 def write_docstring(main_path, source_path,
@@ -78,11 +79,11 @@ def write_docstring(main_path, source_path,
         if line[0:5] == 'class':
             cname = line[6:line.find('(')]
             if cname[-1] == ':': cname = cname[:-1]
-            if cname[0] is not '_': names.append((cname, 'C'))
+            if cname[0] != '_': names.append((cname, 'C'))
         if line[0:3] == 'def':
             fname = line[4:line.find('(')]
             if len(fname) == 1: fname = fname.lower() + 'GENAPIFUNC'
-            if fname[0] is not '_': names.append((fname, 'F'))
+            if fname[0] != '_': names.append((fname, 'F'))
     # Sorting by type first and then alphabetically
     names = sorted(names, key = itemgetter(1, 0))
 
@@ -95,7 +96,7 @@ def write_docstring(main_path, source_path,
         # Writing to file in Sphinx markdown format
         fw.write(name[0] + '\n')
         fw.write(('=' * len(name[0])) + '\n\n')
-        if name[1] is 'C':
+        if name[1] == 'C':
             fw.write('.. autoclass:: phidl.{0}.{1}\n' \
                      .format(fread_name,name[0]))
             fw.write('   :members:\n'
@@ -106,19 +107,38 @@ def write_docstring(main_path, source_path,
                      .format(fread_name, name[0]))
     fw.close()
 
-main_path = join(dirname(dirname(dirname(__file__))), 'phidl')
-source_path = dirname(__file__)
-fwrite = 'API.rst'
-os.chdir(source_path)
-try: os.remove(join(source_path, 'API.rst'))
-except: pass
+# Gathering command-line arguments
+source_path = os.getcwd()
+args = sys.argv
+if args[1][-4:] == '.rst':
+    fwrite = args[1]
+    args = args[2:]
+    try: os.remove(join(source_path, fwrite))
+    except: pass
+elif args[1] == 'add':
+    fwrite = args[2]
+    args = args[3:]
+else: raise ValueError('First input argument must be a .rst file or "add".')
 
-write_docstring(main_path = main_path, source_path = source_path,
-                fread = 'geometry.py', fwrite = fwrite)
-write_docstring(main_path = main_path, source_path = source_path, 
-                fread = 'device_layout.py', fwrite = fwrite)
+# Determining necessary paths
+py_path = input('Name of the project subfolder containing the package '
+                'Python files: ')
+main_path = join(dirname(dirname(source_path)), py_path)
+if exists(join(main_path, args[0])): pass
+else: raise ValueError('Python subfolder path is not valid.')
 
-#%%
-pip uninstall phidl
-pip install git+https://github.com/amccaugh/phidl.git@docs
-sphinx-build -b html source build
+# Executing write_docstring
+for i in range(len(args) ):
+    if args[i][-3:] != '.py':
+        raise ValueError('All input arguments past the first must be Python' 
+                         ' files.')
+    write_docstring(main_path = main_path, source_path = source_path,
+                    fread = args[i], fwrite = fwrite)
+
+# pip uninstall phidl
+# pip install git+https://github.com/amccaugh/phidl.git@docs
+os.chdir(dirname(source_path))
+os.system("sphinx-build -b html source build")
+
+# cd E:\Documents\GitHub\phidl\docs\source
+# python gen_API.py API.rst geometry.py device_layout.py
