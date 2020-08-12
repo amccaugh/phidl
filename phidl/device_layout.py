@@ -376,9 +376,12 @@ class _GeometryHelper(object):
         return self
 
     def __add__(self, element):
-        G = Group()
-        G.add(self)
-        G.add(element)
+        if isinstance(self, Group):
+            G = Group()
+            G.add(self.elements)
+            G.add(element)
+        else:
+            G = Group([self, element])
         return G
 
 
