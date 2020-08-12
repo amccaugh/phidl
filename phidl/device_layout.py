@@ -1412,8 +1412,8 @@ class Path(object):
             if isinstance(simplify, bool):
                 raise ValueError('[PHIDL] the simplify argument must be a number (e.g. 1e-3) or None')
             if simplify is not None:
-                points1 = _simplify(points1, epsilon = simplify)
-                points2 = _simplify(points2, epsilon = simplify)
+                points1 = _simplify(points1, tolerance = simplify)
+                points2 = _simplify(points2, tolerance = simplify)
             
             # Join points together 
             points = np.concatenate([points1, points2[::-1,:]])
