@@ -15,4 +15,6 @@ Geometry and function reference for `PHIDL <https://github.com/amccaugh/phidl>`_
    examples/movement
    examples/references
    examples/group
+   examples/waveguides
+   examples/waveguides_ports-routing-composition
 
