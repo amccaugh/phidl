@@ -752,8 +752,7 @@ class _GeometryHelper(object):
 
         Parameters
         ----------
-        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or 
-        Group
+        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
             Element to add.
         """           
         G = Group()
@@ -2278,8 +2277,7 @@ class Group(_GeometryHelper):
 
         Parameters
         ----------
-        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or 
-        Group
+        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
             Element to be added.
         """        
         return self.add(element)
@@ -2300,8 +2298,7 @@ class Group(_GeometryHelper):
 
         Parameters
         ----------
-        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or 
-        Group
+        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
             Element to add.
         """        
         if isinstance(element, Group):
