@@ -100,35 +100,27 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
         return np.array([2*(p1 + (p2-p1)*np.dot((p2-p1),(p-p1))/norm(p2-p1)**2) - p for p in points])
 
 def _is_iterable(items):
-    """ FIXME private fill description
-
-    FIXME private fill (items)
+    """ Checks if the passed variable is iterable.
 
     Parameters
     ----------
-    items : 
-
-
-    Returns
-    -------
-
+    items : any
+        Item to check for iterability.
     """
     return isinstance(items, (list, tuple, set, np.ndarray))
 
 def _parse_coordinate(c):
     """ Translates various inputs (lists, tuples, Ports) to an (x,y) coordinate.
-    
-    FIXME private fill (c, c)
 
     Parameters
     ----------
-    c : 
-
+    c : array-like[N] or Port
+        Input to translate into a coordinate.
 
     Returns
     -------
-    c : 
-
+    c : array-like[2]
+        Parsed coordinate.
     """
     if isinstance(c, Port):
         return c.midpoint
@@ -138,25 +130,24 @@ def _parse_coordinate(c):
         raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
 
 def _parse_move(origin, destination, axis):
-    """ FIXME private fill description
-
-    FIXME private fill (origin, destination, axis, dx, dy)
+    """ Translates various input coordinates to changes in position in the x- 
+    and y-directions.
 
     Parameters
     ----------
-    origin : 
-
-    destination : 
-
-    axis : 
-
+    origin : array-like[2] of int or float, Port, or key
+        Origin point of the move.
+    destination : array-like[2] of int or float, Port, key, or None
+        Destination point of the move.
+    axis : {'x', 'y'}
+        Direction of move.
 
     Returns
     -------
-    dx : 
-
-    dy : 
-
+    dx : int or float
+        Change in position in the x-direction.
+    dy : int or float
+        Change in position in the y-direction.
     """
     # If only one set of coordinates is defined, make sure it's used to move things
     if destination is None:
@@ -171,16 +162,17 @@ def _parse_move(origin, destination, axis):
 
     return dx,dy
 
-def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
+def _distribute(elements, direction = 'x', spacing = 100, separation = True, 
+                edge = 'center'):
     """ Takes a list of elements and distributes them either equally along a 
     grid or with a fixed spacing between them.
     
-    FIXME private fill (elements, edge, elements)
+    FIXME private fill (edge)
 
     Parameters
     ----------
-    elements : 
-
+    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+        Elements to distribute.
     direction : {'x', 'y'}
         Direction of distribution; either a line in the x-direction or 
         y-direction.
@@ -193,8 +185,8 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
 
     Returns
     -------
-    elements : 
-
+    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+        Distributed elements.
     """
     if direction not in ({'x','y'}):
         raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
@@ -231,19 +223,19 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
 def _align(elements, alignment = 'ymax'):
     """ FIXME private fill description
 
-    FIXME private fill (elements, alignment, elements)
+    FIXME private fill (alignment)
 
     Parameters
     ----------
-    elements : 
-
+    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+        Elements to align.
     alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
 
 
     Returns
     -------
-    elements : 
-
+    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+        Aligned elements.
     """
     if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
         raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
@@ -817,7 +809,8 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        axis : 
+        axis : {'x', 'y'}
+            Direction of move. 
 
         """
         dx,dy = _parse_move(origin, destination, axis)
@@ -953,6 +946,8 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def __lshift__(self, element):
         """ FIXME private fill description
+
+        FIXME private fill (element)
 
         Parameters
         ----------
@@ -1524,7 +1519,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        axis : 
+        axis : {'x', 'y'}
+            Direction of move. 
 
         """
         dx,dy = _parse_move(origin, destination, axis)
@@ -1750,12 +1746,15 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         Parameters
         ----------
-        point : 
-        orientation : 
-        origin : 
-        rotation : 
-        x_reflection : 
-
+        point : array-like[N][2]
+            Coordinates of the Port.
+        orientation : int, float, or None
+        origin : array-like[2] or None
+            If given, shifts the transformed points to the specified origin.
+        rotation : int, float, or None
+        x_reflection : bool
+            If True, reflects the Port across the x-axis before applying 
+            rotation.
         Returns
         -------
         new_point : 
@@ -1791,7 +1790,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        axis : 
+        axis : {'x', 'y'}
+            Direction of move. 
         """
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
@@ -1925,7 +1925,6 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
     """    
     def __init__(self, device, columns, rows, spacing, origin = (0, 0),
                  rotation = 0, magnification = None, x_reflection = False):
-             
         super(CellArray, self).__init__(
             columns = columns,
             rows = rows,
@@ -1960,7 +1959,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        axis : 
+        axis : {'x', 'y'}
+            Direction of move. 
         """
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
@@ -2078,7 +2078,8 @@ class Label(gdspy.Label, _GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        axis : 
+        axis : {'x', 'y'}
+            Direction of move. 
         """        
         dx,dy = _parse_move(origin, destination, axis)
         self.position += np.asarray((dx, dy))
@@ -2198,7 +2199,8 @@ class Group(_GeometryHelper):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        axis : 
+        axis : {'x', 'y'}
+            Direction of move. 
         """        
         for e in self.elements:
             e.move(origin = origin, destination = destination, axis = axis)
