@@ -12,6 +12,7 @@
 # make “elements to polygons” general function
 # fix boolean with empty device
 # make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
+# check that aliases show up properly in quickplot2
 
 #==============================================================================
 # Imports
@@ -26,17 +27,17 @@ from copy import deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
-import webcolors
 import warnings
 import yaml
 import os
 import hashlib
+from phidl.constants import _CSS3_NAMES_TO_HEX
 
 # Remove this once gdspy fully deprecates current_library
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.2.2'
+__version__ = '1.3.0'
 
 
 
@@ -153,18 +154,21 @@ class Layer(object):
             if color is None: # not specified
                 self.color = None
             elif np.size(color) == 3: # in format (0.5, 0.5, 0.5)
-                self.color = webcolors.rgb_to_hex(np.array( np.array(color)*255, dtype = int))
+                color = np.array(color)
+                if np.any(color > 1) or np.any(color < 0): raise ValueError
+                color = np.array(np.round(color*255), dtype = int)
+                self.color = "#{:02x}{:02x}{:02x}".format(*color)
             elif color[0] == '#': # in format #1d2e3f
-                self.color = webcolors.hex_to_rgb(color)
-                self.color = webcolors.rgb_to_hex(self.color)
+                if len(color) != 7: raise ValueError
+                int(color[1:],16) # Will throw error if not hex format
+                self.color = color
             else: # in named format 'gold'
-                self.color = webcolors.name_to_hex(color)
+                self.color = _CSS3_NAMES_TO_HEX[color]
         except:
-            raise ValueError("""[PHIDL] Layer() color must be specified as a
-            0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex  color
-            (e.g. #a31df4), or a CSS3 color name (e.g. 'gold' or
-            see http://www.w3schools.com/colors/colors_names.asp )
-            """)
+            raise ValueError("[PHIDL] Layer() color must be specified as a " +
+            "0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex color string " +
+            "(e.g. '#a31df4'), or a CSS3 color name (e.g. 'gold' or " +
+            "see http://www.w3schools.com/colors/colors_names.asp )")
 
         Layer.layer_dict[(gds_layer, gds_datatype)] = self
 
@@ -413,12 +417,16 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _reflect_points(points, p1, p2)
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+        return self.mirror(p1, p2)
 
 
 
@@ -580,7 +588,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_array() was passed something that
             was not a Device object. """)
-        a = CellArray(device = device, columns = columns, rows = rows, spacing = spacing)
+        a = CellArray(device = device, columns = int(round(columns)), rows = int(round(rows)), spacing = spacing)
         a.owner = self
         self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
         if alias is not None:
@@ -629,18 +637,18 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
-                  auto_rename = True, max_cellname_length = 28):
+                  auto_rename = True, max_cellname_length = 28,
+                  cellname = 'toplevel'):
         if filename[-4:] != '.gds':  filename += '.gds'
-        tempname = self.name
         referenced_cells = list(self.get_dependencies(recursive=True))
         all_cells = [self] + referenced_cells
 
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            all_cells_names = [c._internal_name for c in all_cells_sorted]
+            # all_cells_names = [c._internal_name for c in all_cells_sorted]
             all_cells_original_names = [c.name for c in all_cells_sorted]
-            used_names = {'toplevel'}
+            used_names = {cellname}
             n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
@@ -654,7 +662,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 new_name = temp_name
                 used_names.add(new_name)
                 c.name = new_name
-            self.name = 'toplevel'
+            self.name = cellname
         # Write the gds
         gdspy.write_gds(filename, cells=all_cells, name='library',
                         unit=unit, precision=precision)
@@ -737,24 +745,39 @@ class Device(gdspy.Cell, _GeometryHelper):
         return self
 
 
-    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True):
-        if direction not in (['+x','-x','x','+y','-y','y']):
-            raise ValueError("[PHIDL] distribute(): 'direction' argument must be one of '+x','-x','x','+y','-y','y'")
+    def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True, edge = 'center'):
+        if direction not in ({'x','y'}):
+            raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
+        if (edge not in ({'min', 'center', 'max'})) and (separation == False):
+            raise ValueError("[PHIDL] distribute(): When `separation` is False," +
+                " the `edge` argument must be one of {'min', 'center', 'max'}")
 
         if elements == 'all': elements = (self.polygons + self.references)
 
-        if direction == 'x': direction = '+x'
-        elif direction == 'y': direction = '+y'
+        if (direction == 'y'): sizes = [e.ysize for e in elements]
+        if (direction == 'x'): sizes = [e.xsize for e in elements]
 
-        sizes = [e.size for e in elements]
-        xy = elements[0].center
-        for n, e in enumerate(elements[:-1]):
-            e.center = xy
-            if direction == '+x':  xy[0] += spacing + separation*(sizes[n] + sizes[n+1])[0]/2
-            if direction == '-x':  xy[0] -= spacing + separation*(sizes[n] + sizes[n+1])[0]/2
-            if direction == '+y':  xy[1] += spacing + separation*(sizes[n] + sizes[n+1])[1]/2
-            if direction == '-y':  xy[1] -= spacing + separation*(sizes[n] + sizes[n+1])[1]/2
-        elements[-1].center = xy
+        spacing = np.array([spacing]*len(elements))
+
+        if separation == True: # Then `edge` doesn't apply
+            if direction == 'x': edge = 'xmin'
+            if direction == 'y': edge = 'ymin'
+        else:
+            sizes = np.zeros(len(spacing))
+            if direction == 'x':
+                if   edge == 'min': edge = 'xmin'
+                elif edge == 'max': edge = 'xmax'
+                elif edge == 'center': edge = 'x'
+            if direction == 'y': 
+                if   edge == 'min': edge = 'ymin'
+                elif edge == 'max': edge = 'ymax'
+                elif edge == 'center': edge = 'y'
+
+        # Calculate new positions and move each element
+        start = elements[0].__getattribute__(edge)
+        positions = np.cumsum(np.concatenate(([start], (spacing + sizes))))
+        for n, e in enumerate(elements):
+            e.__setattr__(edge, positions[n])
         return self
 
 
@@ -906,15 +929,19 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         for e in (self.polygons+self.references+self.labels):
-            e.reflect(p1, p2)
+            e.mirror(p1, p2)
         for p in self.ports.values():
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1]-p1[1], p2[0]-p1[0])*180/pi
             p.orientation = 2*phi - p.orientation
         self._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+        return self.mirror(p1, p2)
 
 
     def hash_geometry(self, precision = 1e-4):
@@ -996,7 +1023,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         new_reference = DeviceReference(alias_device.parent, origin=alias_device.origin, rotation=alias_device.rotation, magnification=alias_device.magnification, x_reflection=alias_device.x_reflection)
 
         if self.x_reflection:
-            new_reference.reflect((1,0))
+            new_reference.mirror((1,0))
         if self.rotation is not None:
             new_reference.rotate(self.rotation)
         if self.origin is not None:
@@ -1098,7 +1125,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         if type(p1) is Port:  p1 = p1.midpoint
         if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
@@ -1123,6 +1150,10 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+        return self.mirror(p1, p2)
 
 
     def connect(self, port, destination, overlap = 0):
@@ -1209,7 +1240,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         return self
 
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         if type(p1) is Port:  p1 = p1.midpoint
         if type(p2) is Port:  p2 = p2.midpoint
         p1 = np.array(p1);  p2 = np.array(p2)
@@ -1234,6 +1265,10 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         if self.owner is not None:
             self.owner._bb_valid = False
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+        return self.mirror(p1, p2)
 
 
 
@@ -1265,6 +1300,10 @@ class Label(gdspy.Label, _GeometryHelper):
         self.position += np.array(d) - o
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
         self.position = _reflect_points(self.position, p1, p2)
         return self
+
+    def reflect(self, p1 = (0,1), p2 = (0,0)):
+        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
+        return self.mirror(p1, p2)

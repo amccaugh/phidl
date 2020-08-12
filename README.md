@@ -7,7 +7,13 @@ PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for
 - [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [Try now in an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 - [About PHIDL](#about-phidl)
-- [Changelog](#changelog) (latest update 1.2.2 (January 17, 2020))
+- [Changelog](#changelog) (latest update 1.3.0 (May 5, 2020))
+  - Now introducing the automatic [`pg.packer()` geometry-packing tool](https://phidl.readthedocs.io/en/latest/#packer-align-distribute):
+
+`pg.packer(D_list, spacing = 1.25, aspect_ratio = (2,1))`
+
+![phidl example image](https://amccaugh.github.io/phidl/packer.png)
+
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
@@ -70,6 +76,13 @@ pg.litho_star(num_lines = 16, line_width = 3)
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_7.png)
 
+There are also handy functions to help pack shapes into as small an area as possible:
+
+```
+pg.packer(D_list, spacing = 1.25, aspect_ratio = (2,1))
+```
+
+![phidl example image](https://amccaugh.github.io/phidl/packer.png)
 
 You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device which needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
 
@@ -78,6 +91,25 @@ You can also do things like create a backing fill to make sure the resist develo
 
 
 # Changelog
+
+## 1.3.0 (May 5, 2020)
+
+### New features
+- Now introducing the automatic `pg.packer()` geometry-packing tool:
+![phidl example image](https://amccaugh.github.io/phidl/packer.png)
+- New documentation for `pg.packer()`, `align()`, and `distribute()`.  See [**Geometry + function documentation**](https://phidl.readthedocs.io/)
+
+### Changes
+- Configurable toplevel `cellname` argument in `write_gds()`
+- Change to the arguments available in `distribute()`.  See the [**Geometry + function documentation**](https://phidl.readthedocs.io/)
+- Rename `reflect()` to `mirror()`. Note that `reflect()` will continue to work until May 2021 so as not to break any existing code
+
+### Bugfixes
+- Int-casting compatibility fix with latest numpy (thanks @gyger)
+- Bugfix to `pg.basic_die()` for non-square die (thanks @jonnyfountain)
+- Fixed harmless but annoying warning if PyQt was not installed
+- Small under-the-hood optimizations
+
 
 ## 1.2.2 (January 17, 2020)
 
