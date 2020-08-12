@@ -118,7 +118,12 @@ if args[1][-4:] == '.rst':
 elif args[1] == 'add':
     fwrite = args[2]
     args = args[3:]
-else: raise ValueError('First input argument must be a .rst file or "add".')
+elif args[1] == 'build':
+    os.chdir(dirname(source_path))
+    os.system("sphinx-build -b html source build")
+    sys.exit()
+else: raise ValueError('First input argument must be a .rst file, '
+                       '"add", or "build".')
 
 # Determining necessary paths
 py_path = input('Name of the project subfolder containing the package '
