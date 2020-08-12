@@ -488,7 +488,9 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
 
     Parameters
     ----------
-    A, B : Device(/Reference) or list of Device(/Reference) or Polygon
+    A : Device(/Reference) or list of Device(/Reference) or Polygon
+        Input Devices.
+    B : Device(/Reference) or list of Device(/Reference) or Polygon
         Input Devices.
     operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
         Boolean operation to perform.
@@ -692,7 +694,9 @@ def xor_diff(A, B, precision = 1e-4):
 
     Parameters
     ----------
-    A, B : Device(/Reference) or list of Device(/Reference)
+    A : Device(/Reference) or list of Device(/Reference)
+        A Device containing a polygon(s).
+    B : Device(/Reference) or list of Device(/Reference)
         A Device containing a polygon(s).
     precision : float
         Desired precision for rounding vertex coordinates.

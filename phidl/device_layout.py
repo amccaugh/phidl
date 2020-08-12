@@ -46,16 +46,16 @@ def _rotate_points(points, angle = 45, center = (0, 0)):
     may be input as either single points [1,2] or array-like[N][2], and will 
     return in kind.
 
-    FIXME private fill (points, angle, center, RETURN)
+    FIXME private fill (RETURN)
 
     Parameters
     ----------
-    points : 
-
-    angle : 
-
-    center : 
-
+    points : array-like[N][2]
+        Coordinates of the element to be rotated.
+    angle : int or float
+        Angle to rotate the points.
+    center : array-like[2]
+        Centerpoint of rotation.
 
     Returns
     -------
@@ -77,16 +77,16 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind.
 
-    FIXME private fill (points, p1, p2, RETURN)
+    FIXME private fill (RETURN)
 
     Parameters
     ----------
-    points : 
-
-    p1 : 
-
-    p2 : 
-
+    points : array-like[N][2]
+        Coordinates of the element to be reflected.
+    p1 : array-like[2]
+        Coordinates of the start of the reflecting line.
+    p2 : array-like[2]
+        Coordinates of the end of the reflecting line.
 
     Returns
     -------
@@ -237,7 +237,7 @@ def _align(elements, alignment = 'ymax'):
     ----------
     elements : 
 
-    alignment : {'x','y','xmin', 'xmax', 'ymin','ymax'}
+    alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
 
 
     Returns
@@ -363,7 +363,7 @@ class Layer(object):
             Alpha parameter (opacity) for the Layer.
         dither : 
 
-        """                 
+        """      
         if isinstance(gds_layer, Layer):
             l = gds_layer # We were actually passed Layer(mylayer), make a copy
             gds_datatype = l.gds_datatype
@@ -444,7 +444,7 @@ def _parse_layer(layer):
 
 class _GeometryHelper(object):
     """ This is a helper class. It can be added to any other class which has
-    the functions move() and the property ``bbox`` (as in self.bbox).  It uses
+    the functions move() and the property ``bbox`` (as in self.bbox). It uses
     that function+property to enable you to do things like check what the 
     center of the bounding box is (self.center), and also to do things like 
     move the bounding box such that its maximum x value is 5.2 
@@ -453,265 +453,137 @@ class _GeometryHelper(object):
 
     @property
     def center(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """   
+        """ Returns the center of the bounding box. """   
         return np.sum(self.bbox,0)/2
 
     @center.setter
     def center(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the center of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
+        destination : array-like[2]
+            Coordinates of the new bounding box center.
+        """
         self.move(destination = destination, origin = self.center)
 
     @property
     def x(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the x-coordinate of the center of the bounding box. """
         return np.sum(self.bbox,0)[0]/2
 
     @x.setter
     def x(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the x-coordinate of the center of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
+        destination : int or float
+            x-coordinate of the bbox center.
+        """
         destination = (destination, self.center[1])
         self.move(destination = destination, origin = self.center, axis = 'x')
 
     @property
     def y(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the y-coordinate of the center of the bounding box. """
         return np.sum(self.bbox,0)[1]/2
 
     @y.setter
     def y(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the y-coordinate of the center of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
-        destination = ( self.center[0], destination)
+        destination : int or float
+            y-coordinate of the bbox center.
+        """
+        destination = (self.center[0], destination)
         self.move(destination = destination, origin = self.center, axis = 'y')
 
     @property
     def xmax(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the maximum x-value of the bounding box. """
         return self.bbox[1][0]
 
     @xmax.setter
     def xmax(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the x-coordinate of the maximum edge of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
+        destination : int or float
+            x-coordinate of the maximum edge of the bbox.
+        """
         self.move(destination = (destination, 0), origin = self.bbox[1],
                   axis = 'x')
 
     @property
     def ymax(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the maximum y-value of the bounding box. """        
         return self.bbox[1][1]
 
     @ymax.setter
     def ymax(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the y-coordinate of the maximum edge of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
+        destination : int or float
+            y-coordinate of the maximum edge of the bbox.
+        """
         self.move(destination = (0, destination), origin = self.bbox[1], 
                   axis = 'y')
 
     @property
     def xmin(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the minimum x-value of the bounding box. """
         return self.bbox[0][0]
 
     @xmin.setter
     def xmin(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the x-coordinate of the minimum edge of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
+        destination : int or float
+            x-coordinate of the minimum edge of the bbox.
+        """
         self.move(destination = (destination, 0), origin = self.bbox[0],
                   axis = 'x')
 
     @property
     def ymin(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the minimum y-value of the bounding box. """
         return self.bbox[0][1]
 
     @ymin.setter
     def ymin(self, destination):
-        """ FIXME fill description
-
-        FIXME fill ()
+        """ Sets the y-coordinate of the minimum edge of the bounding box.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
-        """           
+        destination : int or float
+            y-coordinate of the minimum edge of the bbox.
+        """
         self.move(destination = (0, destination), origin = self.bbox[0],
                   axis = 'y')
 
     @property
     def size(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the (x, y) size of the bounding box. """
         bbox = self.bbox
         return bbox[1] - bbox[0]
 
     @property
     def xsize(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the horizontal size of the bounding box. """
         bbox = self.bbox
         return bbox[1][0] - bbox[0][0]
 
     @property
     def ysize(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """           
+        """ Returns the vertical size of the bounding box. """
         bbox = self.bbox
         return bbox[1][1] - bbox[0][1]
 
@@ -724,7 +596,7 @@ class _GeometryHelper(object):
             Origin point of the move.
         destination : array-like[2], Port, key, or None
             Destination point of the move.
-        """           
+        """
         if destination is None:
             destination = origin
             origin = 0
@@ -740,7 +612,7 @@ class _GeometryHelper(object):
             Origin point of the move.
         destination : array-like[2], Port, or key
             Destination point of the move.
-        """           
+        """
         if destination is None:
             destination = origin
             origin = 0
@@ -754,7 +626,7 @@ class _GeometryHelper(object):
         ----------
         element : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
             Element to add.
-        """           
+        """
         G = Group()
         G.add(self)
         G.add(element)
@@ -762,27 +634,26 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    """ FIXME fill description """
+    """ FIXME fill description 
+    
+    FIXME fill (parent)
+
+    Parameters
+    ----------
+    name : str
+        Name of the Port object.
+    midpoint : array-like[2] of int or float
+        Midpoint of the Port location.
+    width : int or float
+        Width of the Port.
+    orientation : int or float
+        Orientation (rotation) of the Port.
+    parent :     
+    """
     _next_uid = 0
 
     def __init__(self, name = None, midpoint = (0, 0), width = 1,
-                 orientation = 0, parent = None):
-        """ Initialises a new Port object.
-
-        FIXME fill (parent)
-
-        Parameters
-        ----------
-        name : str
-            Name of the Port object.
-        midpoint : array-like[2] of int or float
-            Midpoint of the Port location.
-        width : int or float
-            Width of the Port.
-        orientation : int or float
-            Orientation (rotation) of the Port.
-        parent : 
-        """                    
+                 orientation = 0, parent = None):              
         self.name = name
         self.midpoint = np.array(midpoint, dtype = 'float64')
         self.width = width
@@ -796,13 +667,13 @@ class Port(object):
 
     def __repr__(self):
         """ Prints a description of the Port object, including the name, 
-        midpoint, width, and orientation of the Port. """           
+        midpoint, width, and orientation of the Port. """
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
                 (self.name, self.midpoint, self.width, self.orientation))
 
     @property
     def endpoints(self):
-        """ Returns the endpoints of the Port. """           
+        """ Returns the endpoints of the Port. """
         dxdy = np.array([
             self.width/2*cos((self.orientation - 90) * pi/180),
             self.width/2*sin((self.orientation - 90) * pi/180)
@@ -819,7 +690,7 @@ class Port(object):
         ----------
         points : array-like[2] of int or float
             Endpoints to assign to the Port.
-        """           
+        """
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
@@ -833,24 +704,24 @@ class Port(object):
         Returns
         -------
 
-        """           
+        """
         dx = cos((self.orientation) * pi/180)
         dy = sin((self.orientation) * pi/180)
         return np.array([self.midpoint, self.midpoint + np.array([dx, dy])])
 
     @property
     def x(self):
-        """ Returns the x-coordinate of the Port midpoint. """           
+        """ Returns the x-coordinate of the Port midpoint. """
         return self.midpoint[0]
 
     @property
     def y(self):
-        """ Returns the y-coordinate of the Port midpoint. """           
+        """ Returns the y-coordinate of the Port midpoint. """
         return self.midpoint[1]
 
     @property
     def center(self):
-        """ Returns the midpoint of the Port. """           
+        """ Returns the midpoint of the Port. """
         return self.midpoint
     
     def _copy(self, new_uid = True):
@@ -866,7 +737,7 @@ class Port(object):
         Use this function instead of copy() (which will not create a new numpy 
         array for self.midpoint) or deepcopy() (which will also deepcopy the 
         self.parent DeviceReference recursively, causing performance issues).
-        """           
+        """
         new_port = Port(name = self.name, midpoint = self.midpoint,
                         width = self.width, orientation = self.orientation,
                         parent = self.parent)
@@ -885,7 +756,7 @@ class Port(object):
             Angle to rotate the Port in degrees.
         center : array-like[2] or None
             Midpoint of the Port.
-        """           
+        """
         self.orientation = mod(self.orientation + angle, 360)
         if center is None:
             center = self.midpoint
@@ -895,22 +766,22 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
-    """ FIXME fill description """
-    def __init__(self, points, gds_layer, gds_datatype, parent):
-        """ Initialises a Polygon object.
+    """ FIXME fill description 
+    
+    FIXME fill (parent)
 
-        FIXME fill (points, parent)
-
-        Parameters
-        ----------
-        points : 
-        gds_layer : int
-            GDSII layer of the Polygon.
-        gds_datatype : int
-            GDSII datatype of the Polygon.
-        parent : 
-
-        """        
+    Parameters
+    ----------
+    points : array-like[N][2]
+        Coordinates of the vertices of the Polygon.
+    gds_layer : int
+        GDSII layer of the Polygon.
+    gds_datatype : int
+        GDSII datatype of the Polygon.
+    parent : 
+    
+    """
+    def __init__(self, points, gds_layer, gds_datatype, parent):   
         self.parent = parent
         super(Polygon, self).__init__(points = points, layer = gds_layer,
                                       datatype = gds_datatype)
@@ -1023,8 +894,7 @@ class Device(gdspy.Cell, _GeometryHelper):
     """ FIXME fill description """
     _next_uid = 0
 
-    def __init__(self, *args, **kwargs):
-        """ FIXME fill description """        
+    def __init__(self, *args, **kwargs):    
         if len(args) > 0:
             if callable(args[0]):
                 raise ValueError('[PHIDL] You can no longer create geometry '
@@ -1165,12 +1035,10 @@ class Device(gdspy.Cell, _GeometryHelper):
     def add_polygon(self, points, layer = None):
         """ Adds a Polygon to the Device.
 
-        FIXME fill (points)
-
         Parameters
         ----------
-        points : 
-
+        points : array-like[N][2]
+            Coordinates of the vertices of the Polygon.
         layer : int, array-like[2], or set
             Specific layer(s) to put polygon geometry on.
         """        
@@ -1216,23 +1084,23 @@ class Device(gdspy.Cell, _GeometryHelper):
                   alias = None):
         """ FIXME fill description
 
-        FIXME fill (device, columns, rows, spacing, alias)
+        FIXME fill (device, alias, a)
 
         Parameters
         ----------
         device : Device
-
+            
         columns : int
-
+            Number of columns in the array.
         rows : int
-
+            Number of rows in the array.
         spacing : array-like[2] of int or float
-
+            Distances between adjacent columns and adjacent rows.
         alias : 
 
         Returns
         -------
-
+        a : CellArray
         """        
         if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_array() was passed something that
@@ -1291,8 +1159,6 @@ class Device(gdspy.Cell, _GeometryHelper):
     def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
         """ Adds a Label to the Device.
 
-        FIXME fill (magnification, rotation, anchor)
-
         Parameters
         ----------
         text : str
@@ -1300,11 +1166,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         position : array-like[2]
             x-, y-coordinates of the Label location.
         magnification : int, float, or None
-
+            Magnification factor for the Label text.
         rotation : int, float, or None
-
-        anchor : 
-
+            Angle rotation of the Label text.
+        anchor : {'n', 'e', 's', 'w', 'o', 'ne', 'nw', ...}
+            Position of the anchor relative to the text.
         layer : int, array-like[2], or set
             Specific layer(s) to put Label on.
         """        
@@ -1350,7 +1216,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         Returns
         -------
 
-        """                  
+        """       
         if filename[-4:] != '.gds':  filename += '.gds'
         referenced_cells = list(self.get_dependencies(recursive=True))
         all_cells = [self] + referenced_cells
@@ -1421,16 +1287,14 @@ class Device(gdspy.Cell, _GeometryHelper):
     def remove_layers(self, layers = (), include_labels = True, invert_selection = False):
         """ Removes layers from a Device.
 
-        FIXME fill (include_labels)
-
         Parameters
         ----------
         layers : int, array-like[2], or set
             Specific layer(s) to remove.
         include_labels : bool
-
+            If True, keeps the labels corresponding to the input layers.
         invert_selection : bool
-            If true, removes all layers except those specified.
+            If True, removes all layers except those specified.
         """        
         layers = [_parse_layer(l) for l in layers]
         all_D = list(self.get_dependencies(True))
@@ -1461,11 +1325,11 @@ class Device(gdspy.Cell, _GeometryHelper):
                    separation = True, edge = 'center'):
         """ Distributes the specified elements in the Device.
 
-        FIXME fill (elements, edge)
+        FIXME fill (edge)
 
         Parameters
         ----------
-        elements : 
+        elements : Port, Polygon, Label, or 'all'
             Elements to distribute.
         direction : {'x', 'y'}
             Direction of distribution; either a line in the x-direction or 
@@ -1487,12 +1351,13 @@ class Device(gdspy.Cell, _GeometryHelper):
     def align(self, elements = 'all', alignment = 'ymax'):
         """ FIXME fill description
 
-        FIXME fill (elements, alignment)
+        FIXME fill (alignment)
 
         Parameters
         ----------
-        elements : 
-        alignment : {'x','y','xmin', 'xmax', 'ymin','ymax'}
+        elements : DeviceReference, Port, Polygon, Label, or 'all'
+            Elements in the Device to align.
+        alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
         """        
         if elements == 'all': elements = (self.polygons + self.references)
         _align(elements, alignment = alignment)
@@ -1554,11 +1419,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         ``uid`` as the original so that they can be traced back to the 
         original if needed.
 
-        FIXME fill ()
+        FIXME fill (depth)
 
         Parameters
         ----------
-        depth : int, float, or None
+        depth : int or None
 
         Returns
         -------
@@ -1760,20 +1625,24 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
-    """ FIXME fill description """
-    def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False):
-        """ FIXME fill description
+    """ FIXME fill description 
 
-        FIXME fill (device, origin, rotation, magnification, x_reflection)
-
-        Parameters
-        ----------
-        device : Device
-        origin : array-like[2] of int or float
-        rotation : int or float
-        magnification : 
-        x_reflection : bool
-        """        
+    Parameters
+    ----------
+    device : Device
+        The referenced Device.
+    origin : array-like[2] of int or float
+        Position where the Device is inserted.
+    rotation : int or float
+        Angle of rotation of the reference (in `degrees`)
+    magnification : int or float
+        Magnification factor for the reference.
+    x_reflection : bool
+        If True, the reference is reflected parallel to the x-direction before 
+        being rotated.
+    """
+    def __init__(self, device, origin=(0, 0), rotation=0, magnification=None, 
+                 x_reflection=False):   
         super(DeviceReference, self).__init__(
                  ref_cell = device,
                  origin=origin,
@@ -1862,14 +1731,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     @property
     def info(self):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Returns
-        -------
-
-        """        
+        """ FIXME fill description """        
         return self.parent.info
 
     @property
@@ -1899,7 +1761,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         new_point : 
         new_orientation : 
 
-        """                         
+        """   
         # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
@@ -2017,7 +1879,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
         Parameters
         ----------
-        port : Port
+        port : str or Port
         destination : 
         overlap : 
 
@@ -2039,25 +1901,31 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
 class CellArray(gdspy.CellArray, _GeometryHelper):
-    """ FIXME fill description """
+    """ Multiple references to an existing cell in an array format.
+
+    Parameters
+    ----------
+    device : Device
+        The referenced Device.
+    columns : int
+        Number of columns in the array.
+    rows : int
+        Number of rows in the array.
+    spacing : array-like[2] of int or float
+        Distances between adjacent columns and adjacent rows.
+    origin : array-like[2] of int or float
+        Position where the cell is inserted.
+    rotation : int or float
+        Angle of rotation of the reference (in `degrees`).
+    magnification : int or float
+        Magnification factor for the reference.
+    x_reflection : bool
+        If True, the reference is reflected parallel to the x direction 
+        before being rotated.
+    """    
     def __init__(self, device, columns, rows, spacing, origin = (0, 0),
                  rotation = 0, magnification = None, x_reflection = False):
-        """ FIXME fill description
-
-        FIXME fill (device, columns, rows, spacing, origin, rotation, 
-        magnification, x_reflection)
-
-        Parameters
-        ----------
-        device : Device
-        columns : 
-        rows : 
-        spacing : int or float
-        origin : array-like[2] of int or float
-        rotation : int or float
-        magnification : 
-        x_reflection : 
-        """                 
+             
         super(CellArray, self).__init__(
             columns = columns,
             rows = rows,
@@ -2103,7 +1971,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
 
     def rotate(self, angle = 45, center = (0, 0)):
-        """ Rotates all Polygons in the CellArray around the specified 
+        """ Rotates all elements in the CellArray around the specified 
         centerpoint.
 
         Parameters
@@ -2174,10 +2042,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
 class Label(gdspy.Label, _GeometryHelper):
     """FIXME fill description """
-    def __init__(self, *args, **kwargs):
-        """ FIXME fill description """        
+    def __init__(self, *args, **kwargs):      
         super(Label, self).__init__(*args, **kwargs)
-
 
     @property
     def bbox(self):
@@ -2250,17 +2116,6 @@ class Group(_GeometryHelper):
     """ Groups objects together so they can be manipulated as though 
     they were a single object (move/rotate/mirror). """
     def __init__(self, *args):
-        """ FIXME fill description
-
-        FIXME fill ()
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        """
         self.elements = []
         self.add(args)
     
@@ -2392,7 +2247,7 @@ class Group(_GeometryHelper):
 
         Parameters
         ----------
-        alignment : {'x','y','xmin', 'xmax', 'ymin','ymax'}
+        alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
         """        
         _align(elements = self.elements, alignment = alignment)
         return self
