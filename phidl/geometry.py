@@ -7,7 +7,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 
 import gdspy
 from gdspy import clipper
-from phidl.device_layout import Device, Port, Polygon, CellArray
+from phidl.device_layout import Device, Port, Polygon, CellArray, Group
 from phidl.device_layout import _parse_layer, DeviceReference
 import copy as python_copy
 from collections import OrderedDict
@@ -1755,9 +1755,79 @@ def _racetrack_gradual_parametric(t, R, N):
 
 #==============================================================================
 #
-# Packing and fill
+# Arange, packing and fill
 #
 #==============================================================================
+
+def grid(device_list,
+    spacing = (5,10),
+    separation = True,
+    shape = None,
+    align_x = 'x',
+    align_y = 'y',
+    edge_x = 'x',
+    edge_y = 'ymax',
+        ):
+    """ Places a list/array of devices on a grid (the array may be 1D or 2D).  
+    If separation==False the devices are spaced on an fixed grid defined by `spacing`.
+    If separation==True, the grid the devices are arranged such that every row and 
+    column is separated by `spacing` distance.  The `align` and `edge` arguments are
+    used to determine the relative position of the devices within their rows/columns
+    (note that the `edge` arguments are unused if separation==True)   If `shape` 
+    is given, the device_list will be reshaped according to shape == (x_columns, y_rows).
+    The reshaping is done according to numpy.reshape().
+    """
+
+    device_array = np.asarray(device_list)
+    # Check arguments
+    if device_array.ndim not in (1,2):
+        raise ValueError("[PHIDL] grid() The device_list needs to be 1D or 2D.")
+    if shape is not None and len(shape) != 2:
+        raise ValueError("[PHIDL] grid() shape argument must be None or" +
+                        " have a length of 2, for example shape=(4,6)")
+
+    # Check that shape is valid and reshape array if needed
+    if (shape is None) and (device_array.ndim == 2): # Already in desired shape
+        shape = device_array.shape
+    elif (shape is None) and (device_array.ndim == 1):
+        shape = (device_array.size, -1)
+    elif 0 < shape[0] * shape[1] < device_array.size:
+        raise ValueError("[PHIDL] grid() The shape is too small for all the items in device_list")
+    else:
+        if np.min(shape) == -1:
+            remainder = np.max(shape) - device_array.size % np.max(shape)
+        else:
+            remainder = shape[0]*shape[1] - device_array.size
+        if remainder != 0:
+            device_array = np.append(device_array, [None,]*remainder)
+    device_array = np.reshape(device_array, shape)
+
+    # Create a blank Device and reference all the Devices in it
+    D = Device('grid')
+    ref_array = np.empty(device_array.shape, dtype = np.object)
+    dummy = Device()
+    for idx, d in np.ndenumerate(device_array):
+        if d is not None:
+            ref_array[idx] = D << d
+        else:
+            ref_array[idx] = D << dummy # Create dummy devices
+
+
+    rows = [Group(ref_array[n,:]) for n in range(ref_array.shape[0])]
+    cols = [Group(ref_array[:,n]) for n in range(ref_array.shape[1])]
+
+    # Align rows and columns independently
+    for n,r in enumerate(rows):
+        r.align(alignment = align_y)
+    for n,c in enumerate(cols):
+        c.align(alignment = align_x)
+
+    # Distribute rows and columns
+    Group(cols).distribute(direction = 'x', spacing = spacing[0], separation = separation, edge = edge_x)
+    Group(rows[::-1]).distribute(direction = 'y', spacing = spacing[1], separation = separation, edge = edge_y)
+
+    # return device_matrix
+    return D
 
 
 def _pack_single_bin(
@@ -2666,8 +2736,12 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50, width_tol = 1e-
         reverse = False
 
     if start_width == end_width: # Just return a square
-        ypts = [0, start_width, start_width,           0]
-        xpts = [0,           0, start_width, start_width]
+        if symmetric == True:
+            ypts = [-start_width/2, start_width/2, start_width/2, -start_width/2]
+            xpts = [0,           0, start_width, start_width]
+        if symmetric == False:
+            ypts = [0, start_width, start_width,           0]
+            xpts = [0,           0, start_width, start_width]
     else:
         xmin,ymin = invert_step_point(y_desired = start_width*(1+width_tol), W = start_width, a = end_width)
         xmax,ymax = invert_step_point(y_desired = end_width*(1-width_tol), W = start_width, a = end_width)

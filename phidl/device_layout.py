@@ -7,12 +7,11 @@
 # Minor TODO
 #==============================================================================
 # Replace write_gds() with GdsLibrary.write_gds()
-# geometry: Add packer(), make option to limit die size
 # add wire_basic to phidl.routing.  also add endcap parameter
-# make “elements to polygons” general function
-# fix boolean with empty device
-# make gdspy2phidl command (allow add_polygon to take gdspy things like flexpath)
 # check that aliases show up properly in quickplot2
+# phidl add autoarray_xy to pg.geometry()
+# Make get-info which returns a dict of Devices and their Info
+# Allow connect(overlap) to be a tuple (0, 0.7)
 
 #==============================================================================
 # Imports
@@ -66,7 +65,7 @@ def _reflect_points(points, p1 = (0,0), p2 = (1,0)):
     input as either single points [1,2] or array-like[N][2], and will return in kind
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
-    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
+    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2)
     if np.asarray(points).ndim == 1:
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(points-p1))/norm(p2-p1)**2) - points
     if np.asarray(points).ndim == 2:
@@ -85,6 +84,95 @@ def _parse_coordinate(c):
         return ports[c].midpoint
     else:
         raise ValueError('[PHIDL] Could not parse coordinate, input should be array-like (e.g. [1.5,2.3] or a Port')
+
+def _parse_move(origin, destination, axis):
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        d = _parse_coordinate(destination)
+        o = _parse_coordinate(origin)
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+        dx,dy = np.array(d) - o
+
+        return dx,dy
+
+def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
+    """ Takes a list of elements and distributes them either (1: suparation==False) equally
+    along a grid or (2: separation==True) with a fixed spacing between them """
+    if len(elements) == 0: return elements
+    if direction not in ({'x','y'}):
+        raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
+    if (direction == 'x') and (edge not in ({'x', 'xmin', 'xmax'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` == False and direction == 'x'," +
+            " the `edge` argument must be one of {'x', 'xmin', 'xmax'}")
+    if (direction == 'y') and (edge not in ({'y', 'ymin', 'ymax'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` == False and direction == 'y'," +
+            " the `edge` argument must be one of {'y', 'ymin', 'ymax'}")
+
+    if (direction == 'y'): sizes = [e.ysize for e in elements]
+    if (direction == 'x'): sizes = [e.xsize for e in elements]
+
+    spacing = np.array([spacing]*len(elements))
+
+    if separation == True: # Then `edge` doesn't apply
+        if direction == 'x': edge = 'xmin'
+        if direction == 'y': edge = 'ymin'
+    else:
+        sizes = np.zeros(len(spacing))
+
+    # Calculate new positions and move each element
+    start = elements[0].__getattribute__(edge)
+    positions = np.cumsum(np.concatenate(([start], (spacing + sizes))))
+    for n, e in enumerate(elements):
+        e.__setattr__(edge, positions[n])
+    return elements
+
+def _align(elements, alignment = 'ymax'):
+    if len(elements) == 0: return elements
+    if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
+        raise ValueError("[PHIDL] 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
+    value = Group(elements).__getattribute__(alignment)
+    for e in elements:
+        e.__setattr__(alignment, value)
+    return elements
+
+
+def _line_distances(points, start, end):
+    if np.all(start == end):
+        return np.linalg.norm(points - start, axis=1)
+
+    vec = end - start
+    cross = np.cross(vec, start - points)
+    return np.divide(abs(cross), np.linalg.norm(vec))
+
+
+def _simplify(points, tolerance=0):
+    """ Ramer–Douglas–Peucker algorithm for line simplification.  Takes an
+    array of points of shape (N,2) and removes excess points in the line. The
+    remaining points form a identical line to within `tolerance` from the original """
+    # From https://github.com/fhirschmann/rdp/issues/7 
+    # originally written by Kirill Konevets https://github.com/kkonevets
+
+    M = np.asarray(points)
+    start, end = M[0], M[-1]
+    dists = _line_distances(M, start, end)
+
+    index = np.argmax(dists)
+    dmax = dists[index]
+
+    if dmax > tolerance:
+        result1 = _simplify(M[:index + 1], tolerance)
+        result2 = _simplify(M[index:], tolerance)
+
+        result = np.vstack((result1[:-1], result2))
+    else:
+        result = np.array([start, end])
+
+    return result
+
 
 
 
@@ -291,6 +379,11 @@ class _GeometryHelper(object):
         self.move(origin = (0,origin), destination = (0,destination))
         return self
 
+    def __add__(self, element):
+        G = Group()
+        G.add(self)
+        G.add(element)
+        return G
 
 
 class Port(object):
@@ -326,7 +419,7 @@ class Port(object):
         p1, p2 = np.array(points[0]), np.array(points[1])
         self.midpoint = (p1+p2)/2
         dx, dy = p2-p1
-        self.orientation = np.arctan2(dx,dy)*180/pi
+        self.orientation = np.arctan2(dx,-dy)*180/pi
         self.width = sqrt(dx**2 + dy**2)
 
     @property
@@ -391,25 +484,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:        d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[PHIDL] [DeviceReference.move()] ``destination`` not array-like, a port, or port name')
-
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        dx,dy = np.array(d) - o
+        dx,dy = _parse_move(origin, destination, axis)
 
         super(Polygon, self).translate(dx, dy)
         if self.parent is not None:
@@ -428,6 +503,17 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
+    def simplify(self, tolerance = 1e-3):
+        """ 
+        Removes points from the polygon but does not change the polygon
+        shape by more than `tolerance` from the original. Uses the
+        Ramer–Douglas–Peucker algorithm for line simplification. """
+        for n, points in enumerate(self.polygons):
+            self.polygons[n] = _simplify(points, tolerance = tolerance)
+        if self.parent is not None:
+            self.parent._bb_valid = False
+        return self
+
 
 
 def make_device(fun, config = None, **kwargs):
@@ -440,7 +526,7 @@ def make_device(fun, config = None, **kwargs):
         raise TypeError("""[PHIDL] When creating Device() from a function, the
         second argument should be a ``config`` argument which is a
         dictionary containing arguments for the function.
-        e.g. make_device(ellipse, config = my_config_dict) """)
+        e.g. make_device(ellipse, config = ellipse_args_dict) """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
@@ -746,50 +832,15 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def distribute(self, elements = 'all', direction = 'x', spacing = 100, separation = True, edge = 'center'):
-        if direction not in ({'x','y'}):
-            raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
-        if (edge not in ({'min', 'center', 'max'})) and (separation == False):
-            raise ValueError("[PHIDL] distribute(): When `separation` is False," +
-                " the `edge` argument must be one of {'min', 'center', 'max'}")
-
         if elements == 'all': elements = (self.polygons + self.references)
-
-        if (direction == 'y'): sizes = [e.ysize for e in elements]
-        if (direction == 'x'): sizes = [e.xsize for e in elements]
-
-        spacing = np.array([spacing]*len(elements))
-
-        if separation == True: # Then `edge` doesn't apply
-            if direction == 'x': edge = 'xmin'
-            if direction == 'y': edge = 'ymin'
-        else:
-            sizes = np.zeros(len(spacing))
-            if direction == 'x':
-                if   edge == 'min': edge = 'xmin'
-                elif edge == 'max': edge = 'xmax'
-                elif edge == 'center': edge = 'x'
-            if direction == 'y': 
-                if   edge == 'min': edge = 'ymin'
-                elif edge == 'max': edge = 'ymax'
-                elif edge == 'center': edge = 'y'
-
-        # Calculate new positions and move each element
-        start = elements[0].__getattribute__(edge)
-        positions = np.cumsum(np.concatenate(([start], (spacing + sizes))))
-        for n, e in enumerate(elements):
-            e.__setattr__(edge, positions[n])
+        _distribute(elements = elements, direction = direction, spacing = spacing,
+                    separation = separation, edge = edge)
         return self
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
         if elements == 'all': elements = (self.polygons + self.references)
-        if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
-            raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
-        if elements is None:
-            elements = (self.polygons + self.references)
-        value = self.__getattribute__(alignment)
-        for e in elements:
-            e.__setattr__(alignment, value)
+        _align(elements, alignment = alignment)
         return self
 
 
@@ -896,35 +947,17 @@ class Device(gdspy.Cell, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[PHIDL] DeviceReference.move() ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:        d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[PHIDL] DeviceReference.move() ``destination`` not array-like, a port, or port name')
-
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        dx,dy = np.array(d) - o
+        dx,dy = _parse_move(origin, destination, axis)
 
         # Move geometries
         for e in self.polygons:
             e.translate(dx,dy)
         for e in self.references:
-            e.move(destination = d, origin = o)
+            e.move(destination = destination, origin = origin)
         for e in self.labels:
-            e.move(destination = d, origin = o)
+            e.move(destination = destination, origin = origin)
         for p in self.ports.values():
-            p.midpoint = np.array(p.midpoint) + np.array(d) - np.array(o)
+            p.midpoint = np.array(p.midpoint) + np.array((dx,dy))
 
         self._bb_valid = False
         return self
@@ -1086,28 +1119,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device_ref """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = (0,0)
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:   d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[DeviceReference.move()] ``destination`` not array-like, a port, or port name')
-
-        # Lock one axis if necessary
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        # This needs to be done in two steps otherwise floating point errors can accrue
-        dxdy = np.array(d) - np.array(o)
-        self.origin = np.array(self.origin) + dxdy
+        dx,dy = _parse_move(origin, destination, axis)
+        self.origin = np.array(self.origin) + np.array((dx,dy))
 
         if self.owner is not None:
             self.owner._bb_valid = False
@@ -1202,28 +1215,8 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
          origin and destination can be 1x2 array-like, Port, or a key
          corresponding to one of the Ports in this device_ref """
 
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = (0,0)
-
-        if isinstance(origin, Port):            o = origin.midpoint
-        elif np.array(origin).size == 2:    o = origin
-        elif origin in self.ports:    o = self.ports[origin].midpoint
-        else: raise ValueError('[CellArray.move()] ``origin`` not array-like, a port, or port name')
-
-        if isinstance(destination, Port):           d = destination.midpoint
-        elif np.array(destination).size == 2:   d = destination
-        elif destination in self.ports:   d = self.ports[destination].midpoint
-        else: raise ValueError('[CellArray.move()] ``destination`` not array-like, a port, or port name')
-
-        # Lock one axis if necessary
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        # This needs to be done in two steps otherwise floating point errors can accrue
-        dxdy = np.array(d) - np.array(o)
-        self.origin = np.array(self.origin) + dxdy
+        dx,dy = _parse_move(origin, destination, axis)
+        self.origin = np.array(self.origin) + np.array((dx,dy))
 
         if self.owner is not None:
             self.owner._bb_valid = False
@@ -1287,17 +1280,8 @@ class Label(gdspy.Label, _GeometryHelper):
         return self
 
     def move(self, origin = (0,0), destination = None, axis = None):
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        o = _parse_coordinate(origin)
-        d = _parse_coordinate(destination)
-
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-
-        self.position += np.array(d) - o
+        dx,dy = _parse_move(origin, destination, axis)
+        self.position += np.asarray((dx,dy))
         return self
 
     def mirror(self, p1 = (0,1), p2 = (0,0)):
@@ -1307,3 +1291,75 @@ class Label(gdspy.Label, _GeometryHelper):
     def reflect(self, p1 = (0,1), p2 = (0,0)):
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
+
+
+
+class Group(_GeometryHelper):
+    """ Groups objects together so they can be manipulated as though 
+    they were a single object (move/rotate/mirror) """
+    def __init__(self, *args):
+        self.elements = []
+        self.add(args)
+    
+    def __repr__(self):
+        return ('Group (%s elements total)' % (len(self.elements)))
+    
+    def __len__(self):
+        return len(self.elements)
+
+    def __iadd__(self, element):
+        return self.add(element)
+
+    @property
+    def bbox(self):
+        if len(self.elements) == 0:
+            raise ValueError('[PHIDL] Group is empty, no bbox is available')
+        bboxes = np.empty([len(self.elements),4])
+        for n,e in enumerate(self.elements):
+            bboxes[n] = e.bbox.flatten()
+
+        bbox = ( (bboxes[:,0].min(), bboxes[:,1].min()),
+                 (bboxes[:,2].max(), bboxes[:,3].max()) )
+        return np.array(bbox)
+                                            
+    def add(self, element):
+        if _is_iterable(element):
+            [self.add(e) for e in element]
+        elif element is None:
+            return self
+        elif isinstance(element, PHIDL_ELEMENTS):
+            self.elements.append(element)
+        else:
+            raise ValueError('[PHIDL] add() Could not add element to Group, the only ' \
+                             'allowed element types are ' \
+                             '(Device, DeviceReference, Port, Polygon, CellArray, Label, Group)')
+        # Remove non-unique entries
+        used = set()
+        self.elements = [x for x in self.elements if x not in used and (used.add(x) or True)]
+        return self
+            
+    def rotate(self, angle = 45, center = (0,0)):
+        for e in self.elements:
+            e.rotate(angle = angle, center = center)
+        return self
+        
+    def move(self, origin = (0,0), destination = None, axis = None):
+        for e in self.elements:
+            e.move(origin = origin, destination = destination, axis = axis)
+        return self
+        
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
+        for e in self.elements:
+            e.mirror(p1 = p1, p2 = p2)
+        return self
+
+    def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
+        _distribute(elements = self.elements, direction = direction, spacing = spacing,
+                    separation = separation, edge = edge)
+        return self
+
+    def align(self, alignment = 'ymax'):
+        _align(elements = self.elements, alignment = alignment)
+        return self
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
