@@ -1340,3 +1340,165 @@ class Group(_GeometryHelper):
         return self
 
 PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
+
+
+
+class Path(object):
+    def __init__(self, start_angle = 0):
+        self.points = np.array([[0,0]])
+        self.start_angle = start_angle
+        self.end_angle = start_angle
+        # self.divisions = [0]
+
+    def append(self, points):
+        
+        if np.ndim(points) == 2: # Just a list of points
+            start_angle = None
+            end_angle = None
+        elif np.ndim(points) == 1 and len(points) == 3: # (points, start_angle, end_angle)
+            start_angle = points[1]
+            end_angle = points[2]
+            points = points[0]
+        else:
+            raise ValueError('[PHIDL] Path.append() must take arguments' + 
+                ' of the form (points) or (points, start_angle, end_angle)')
+        
+        # Connect beginning of new points with old points
+        if self.end_angle is None:
+            nx1,ny1 =  self.points[-1] - self.points[-2]
+            angle1 = np.arctan2(ny1,nx1)/np.pi*180
+        else:
+            angle1 = self.end_angle
+        if start_angle is None:
+            nx2,ny2 =  points[1] - points[0]
+            angle2 = np.arctan2(ny2,nx2)/np.pi*180
+        else:
+            angle2 = start_angle
+        points = _rotate_points(points, angle = angle1 - angle2)
+        points += self.points[-1,:] - points[0,:]
+        
+        # Update end angle
+        if end_angle is None:
+            self.end_angle = None
+        else:
+            self.end_angle = end_angle + angle1 - angle2
+
+        # Concatenate old points + new points
+        self.points = np.vstack([self.points, points[1:]])
+        # self.divisions.append(len(self.points))
+        return self
+
+
+    def make(self, xsection, simplify = None):
+        X = xsection
+        
+        D = Device()
+        for s in X.sections:
+            width = s['width']
+            offset = s['offset']
+            layer = s['layer']
+            portnames = s['portnames']
+            
+            offset1 = offset + width/2
+            offset2 = offset - width/2
+            if offset1 > offset2:  offset1, offset2 = offset2, offset1
+            
+            points1 = self._parametric_offset_curve(self.points, offset_distance = offset + width/2,
+                                    start_angle = self.start_angle, end_angle = self.end_angle)
+            points2 = self._parametric_offset_curve(self.points, offset_distance = offset - width/2,
+                                    start_angle = self.start_angle, end_angle = self.end_angle)
+            
+            # Simplify lines using the Ramer–Douglas–Peucker algorithm
+            if isinstance(simplify, bool):
+                raise ValueError('[PHIDL] the simplify argument must be a number (e.g. 1e-3) or None')
+            if simplify is not None:
+                points1 = _simplify(points1, epsilon = simplify)
+                points2 = _simplify(points2, epsilon = simplify)
+            
+            # Join points together 
+            points = np.concatenate([points1, points2[::-1,:]])
+
+            # Combine the offset-lines into a polygon and union if join_after == True
+            # if join_after == True: # Use clipper to perform a union operation
+            #     points = np.array(clipper.offset([points], 0, 'miter', 2, int(1/simplify), 0)[0])
+            
+            D.add_polygon(points, layer = layer)
+            
+            # Add ports if they were specified
+            if portnames[0] is not None:
+                new_port = D.add_port(name = portnames[0])
+                new_port.endpoints = (points1[0], points2[0])
+            if portnames[1] is not None:
+                new_port = D.add_port(name = portnames[1])
+                new_port.endpoints = (points2[-1], points1[-1])
+                
+        return D
+
+    def _parametric_offset_curve(self, points, offset_distance, start_angle, end_angle):
+        """ Creates a parametric offset (does not account for cusps etc)
+        by using gradient of the supplied x and y points """
+        x = points[:,0]
+        y = points[:,1]
+        dxdt = np.gradient(x)
+        dydt = np.gradient(y)
+        if start_angle is not None:
+            dxdt[0] = np.cos(start_angle*np.pi/180)
+            dydt[0] = np.sin(start_angle*np.pi/180)
+        if end_angle is not None:
+            dxdt[-1] = np.cos(end_angle*np.pi/180)
+            dydt[-1] = np.sin(end_angle*np.pi/180)
+        x_offset = x + offset_distance*dydt/np.sqrt(dxdt**2 + dydt**2)
+        y_offset = y - offset_distance*dxdt/np.sqrt(dydt**2 + dxdt**2)
+        return np.array([x_offset, y_offset]).T
+
+    def length(self):
+        x = self.points[:,0]
+        y = self.points[:,1]
+        dx = np.diff(x)
+        dy = np.diff(y)
+        return np.sum(np.sqrt((dx)**2 + (dy)**2))
+
+    def curvature(self):
+        x = self.points[:,0]
+        y = self.points[:,1]
+        dx = np.diff(x)
+        dy = np.diff(y)
+        ds = np.sqrt((dx)**2 + (dy)**2)
+        s = np.cumsum(ds)
+        theta = np.arctan2(dy,dx)
+
+        # Fix discontinuities arising from np.arctan2
+        dtheta = np.diff(theta)
+        dtheta[np.where(dtheta > np.pi)] += -2*np.pi
+        dtheta[np.where(dtheta < -np.pi)] += 2*np.pi
+        theta = np.concatenate([[0], np.cumsum(dtheta)]) + theta[0]
+
+        K = np.gradient(theta,s, edge_order = 2)
+        return s, K
+
+class Xsection(object):
+    def __init__(self): 
+        self.sections = []
+        self.portnames = set()
+        
+    def add(self, width = 1, offset = 0, layer = 0, portnames = (None,None)):
+        if width <= 0:
+            raise ValueError('[PHIDL] Xsection.add(): widths must be >0')
+        if len(portnames) != 2:
+            raise ValueError('[PHIDL] Xsection.add(): must receive 2 port names')
+        for p in portnames:
+            if p in self.portnames:
+                raise ValueError('[PHIDL] Xsection.add(): portname "%s" already ' \
+                                 "exists in this Xsection, please rename port" % p)
+
+        new_segment = dict(
+            width = width,
+            offset = offset,
+            layer = layer,
+            portnames = portnames,
+            )
+        self.sections.append(new_segment)
+        [self.portnames.add(p) for p in portnames if p is not None]
+        
+        return self
+        
