@@ -896,9 +896,9 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
         # Allow name to be set like Device('arc') or Device(name = 'arc')
-        if 'name' in kwargs:                          _internal_name = kwargs['name']
+        if 'name' in kwargs: _internal_name = kwargs['name']
         elif (len(args) == 1) and (len(kwargs) == 0): _internal_name = args[0]
-        else:                                         _internal_name = 'Unnamed'
+        else: _internal_name = 'Unnamed'
 
         # Make a new blank device
         self.ports = {}
@@ -909,12 +909,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.uid = Device._next_uid
         self._internal_name = _internal_name
         gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
-        super(Device, self).__init__(name = gds_name, exclude_from_current=True)
+        super(Device, self).__init__(name = gds_name, 
+                                     exclude_from_current=True)
         Device._next_uid += 1
 
 
     def __getitem__(self, key):
-        """ If you have a Device D, allows access to aliases you made like D['arc2'].
+        """ If you have a Device D, allows access to aliases you made like 
+        D['arc2'].
 
         FIXME private fill ()
 
@@ -928,16 +930,18 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:
             return self.aliases[key]
         except:
-            raise ValueError('[PHIDL] Tried to access alias "%s" in Device "%s",  '
-                'which does not exist' % (key, self.name))
+            raise ValueError('[PHIDL] Tried to access alias "%s" in Device '
+                             '"%s", which does not exist' % (key, self.name))
 
     def __repr__(self):
         """ Prints a description of the Device, including the name, uid, 
         ports, aliases, polygons, and references.
         """        
-        return ('Device (name "%s" (uid %s),  ports %s, aliases %s, %s polygons, %s references)' % \
-                (self._internal_name, self.uid, list(self.ports.keys()), list(self.aliases.keys()),
-                len(self.polygons), len(self.references)))
+        return ('Device (name "%s" (uid %s), ports %s, aliases %s, %s '
+                'polygons, %s references)' % \
+                (self._internal_name, self.uid, list(self.ports.keys()),
+                 list(self.aliases.keys()), len(self.polygons),
+                 len(self.references)))
 
 
     def __str__(self):
@@ -973,8 +977,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         if isinstance(element, (DeviceReference,Polygon,CellArray)):
             self.aliases[key] = element
         else:
-            raise ValueError('[PHIDL] Tried to assign alias "%s" in Device "%s",  '
-                'but failed because the item was not a DeviceReference' % (key, self.name))
+            raise ValueError('[PHIDL] Tried to assign alias "%s" in '
+                             'Device "%s", but failed because the item was '
+                             'not a DeviceReference' % (key, self.name))
 
     @property
     def layers(self):
@@ -1018,9 +1023,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_ref() was passed something that
             was not a Device object. """)
-        d = DeviceReference(device)   # Create a DeviceReference (CellReference)
+        d = DeviceReference(device)  # Create a DeviceReference (CellReference)
         d.owner = self
-        self.add(d)             # Add DeviceReference (CellReference) to Device (Cell)
+        self.add(d)      # Add DeviceReference (CellReference) to Device (Cell)
 
         if alias is not None:
             self.aliases[alias] = d
@@ -1046,12 +1051,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         if isinstance(points, gdspy.PolygonSet):
             if layer is None:   layers = zip(points.layers, points.datatypes)
             else:   layers = [layer]*len(points.polygons)
-            return [self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)]
+            return [self.add_polygon(p, layer)
+                    for p, layer in zip(points.polygons, layers)]
 
         # Check if layer is actually a list of Layer objects
         try:
             if isinstance(layer, LayerSet):
-                return [self.add_polygon(points, l) for l in layer._layers.values()]
+                return [self.add_polygon(points, l)
+                        for l in layer._layers.values()]
             elif isinstance(layer, set):
                 return [self.add_polygon(points, l) for l in layer]
             elif all([isinstance(l, (Layer)) for l in layer]):
@@ -1100,15 +1107,17 @@ class Device(gdspy.Cell, _GeometryHelper):
         if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_array() was passed something that
             was not a Device object. """)
-        a = CellArray(device = device, columns = int(round(columns)), rows = int(round(rows)), spacing = spacing)
+        a = CellArray(device = device, columns = int(round(columns)),
+                      rows = int(round(rows)), spacing = spacing)
         a.owner = self
-        self.add(a)             # Add DeviceReference (CellReference) to Device (Cell)
+        self.add(a)      # Add DeviceReference (CellReference) to Device (Cell)
         if alias is not None:
             self.aliases[alias] = a
-        return a                # Return the CellArray
+        return a         # Return the CellArray
 
 
-    def add_port(self, name = None, midpoint = (0,0), width = 1, orientation = 45, port = None):
+    def add_port(self, name = None, midpoint = (0,0), width = 1,
+                 orientation = 45, port = None):
         """ Adds a Port to the Device.
 
         Parameters
@@ -1151,7 +1160,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         return p
 
 
-    def add_label(self, text = 'hello', position = (0,0), magnification = None, rotation = None, anchor = 'o', layer = 255):
+    def add_label(self, text = 'hello', position = (0,0),
+                  magnification = None, rotation = None, anchor = 'o',
+                  layer = 255):
         """ Adds a Label to the Device.
 
         Parameters
