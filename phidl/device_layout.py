@@ -172,25 +172,24 @@ def _parse_move(origin, destination, axis):
     return dx,dy
 
 def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = 'center'):
-    """ Takes a list of elements and distributes them either 
-    (1: suparation==False) equally along a grid or (2: separation==True) with 
-    a fixed spacing between them.
+    """ Takes a list of elements and distributes them either equally along a 
+    grid or with a fixed spacing between them.
     
-    FIXME private fill (elements, direction, spacing, separation, edge, 
-    elements)
+    FIXME private fill (elements, edge, elements)
 
     Parameters
     ----------
     elements : 
 
-    direction : {'x','y'}
-
-    spacing : 
-
-    separation : 
-
+    direction : {'x', 'y'}
+        Direction of distribution; either a line in the x-direction or 
+        y-direction.
+    spacing : int or float
+        Distance between elements.
+    separation : bool
+        If True, separates elements with a fixed spacing between; if 
+        False, separates elements equally along a grid.
     edge : {'min', 'center', 'max'}
-
 
     Returns
     -------
@@ -749,16 +748,13 @@ class _GeometryHelper(object):
         return self
 
     def __add__(self, element):
-        """ FIXME private fill description
-
-        FIXME private fill ()
+        """ Adds an element to a Group.
 
         Parameters
         ----------
-
-        Returns
-        -------
-
+        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or 
+        Group
+            Element to add.
         """           
         G = Group()
         G.add(self)
@@ -1089,15 +1085,10 @@ class Device(gdspy.Cell, _GeometryHelper):
     def __lshift__(self, element):
         """ FIXME private fill description
 
-        FIXME private fill (elements)
-
         Parameters
         ----------
-        elements : 
-
-        Returns
-        -------
-
+        elements : Device, DeviceReference, Port, Polygon, CellArray, Label, 
+        or Group
         """        
         return self.add_ref(element)
 
@@ -1109,7 +1100,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         Parameters
         ----------
         key : 
-        element : 
+        element : DeviceReference, Polygon, or CellArray
 
         Returns
         -------
@@ -1469,17 +1460,24 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def distribute(self, elements = 'all', direction = 'x', spacing = 100, 
                    separation = True, edge = 'center'):
-        """ FIXME fill description
+        """ Distributes the specified elements in the Device.
 
-        FIXME fill (elements, direction, spacing, separation, edge)
+        FIXME fill (elements, edge)
 
         Parameters
         ----------
         elements : 
-        direction : {'x','y'}
+            Elements to distribute.
+        direction : {'x', 'y'}
+            Direction of distribution; either a line in the x-direction or 
+            y-direction.
         spacing : int or float
+            Distance between elements.
         separation : bool
+            If True, separates elements with a fixed spacing between; if 
+            False, separates elements equally along a grid.
         edge : {'min', 'center', 'max'}
+        
         """        
         if elements == 'all': elements = (self.polygons + self.references)
         _distribute(elements = elements, direction = direction,
@@ -2278,11 +2276,10 @@ class Group(_GeometryHelper):
     def __iadd__(self, element):
         """ Adds an element to the Group.
 
-        FIXME fill (element)
-
         Parameters
         ----------
-        element : 
+        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or 
+        Group
             Element to be added.
         """        
         return self.add(element)
@@ -2299,14 +2296,13 @@ class Group(_GeometryHelper):
         return np.array(bbox)
                                             
     def add(self, element):
-        """ FIXME fill description
-
-        FIXME fill (element)
+        """ Adds an element to the Group.
 
         Parameters
         ----------
-        element : 
-
+        element : Device, DeviceReference, Port, Polygon, CellArray, Label, or 
+        Group
+            Element to add.
         """        
         if isinstance(element, Group):
             [self.add(e) for e in element.elements]
@@ -2372,17 +2368,21 @@ class Group(_GeometryHelper):
             e.mirror(p1 = p1, p2 = p2)
         return self
 
-    def distribute(self, direction = 'x', spacing = 100, separation = True, edge = 'center'):
-        """ FIXME fill description
-
-        FIXME fill (direction, spacing, separation)
+    def distribute(self, direction = 'x', spacing = 100, separation = True, 
+                   edge = 'center'):
+        """ Distributes the elements in the Group.
 
         Parameters
         ----------
         direction : {'x', 'y'}
+            Direction of distribution; either a line in the x-direction or 
+            y-direction.
         spacing : int or float
+            Distance between elements.
         separation : bool
-
+            If True, separates elements with a fixed spacing between; if 
+            False, separates elements equally along a grid.
+        edge : {'min', 'center', 'max'}
         """        
         _distribute(elements = self.elements, direction = direction,
                     spacing = spacing, separation = separation, edge = edge)

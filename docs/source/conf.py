@@ -30,8 +30,7 @@ author = 'Adam McCaughan'
 extensions = [
     'nbsphinx',
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    #,'rinoh.frontend.sphinx'
+    'sphinx.ext.napoleon'
 ]
 
 napoleon_google_docstring = False
