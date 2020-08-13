@@ -1,3 +1,4 @@
+- pip install sphinxcontrib-napoleon
 - Include 'nbsphinx', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon' as extensions
 - Change directory to phidl/docs/source
 - Run "python gen_geometry.py" to build images
