@@ -8,7 +8,8 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon, _rotate_points
+from phidl.device_layout import Device, DeviceReference, CellArray
+from phidl.device_layout import Layer, Polygon, Path, _rotate_points
 import gdspy
 
 _SUBPORT_RGB = (0,120,120)
@@ -98,6 +99,13 @@ def quickplot(items, show_ports = True, show_subports = True,
             new_bbox = _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
             bbox = _update_bbox(bbox, new_bbox)
+        elif isinstance(item, Path):
+            points = item.points
+            new_bbox = _draw_line(x = points[:,0], y = points[:,1],
+                            ax = ax, linestyle = '--',
+                            linewidth = 2, color = 'b')
+            bbox = _update_bbox(bbox, new_bbox)
+
     if bbox == None:
         bbox = [0,0,1,1]
     xmargin = (bbox[2]-bbox[0])*0.2
@@ -137,11 +145,7 @@ def _get_layerprop(layer, datatype):
     return {'color':color, 'alpha':alpha}
 
 
-def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
-    """ This function uses a trick where all polygon points are concatenated,
-    separated only by NaN values.  This speeds up drawing considerably, see
-    http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
-    """
+def _draw_polygons(polygons, ax, **kwargs):
     coll = PolyCollection(polygons, **kwargs)
     ax.add_collection(coll)
     stacked_polygons = np.vstack(polygons)
@@ -150,6 +154,16 @@ def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
     bbox = [xmin,ymin,xmax,ymax]
     return bbox
         
+from matplotlib.lines import Line2D
+def _draw_line(x, y, ax, **kwargs):
+    line = Line2D(x, y, **kwargs)
+    ax.add_line(line)
+    xmin,ymin = np.min(x), np.min(y)
+    xmax,ymax = np.max(x), np.max(y)
+    bbox = [xmin,ymin,xmax,ymax]
+    return bbox
+
+
 def _port_marker(port, is_subport):
     if is_subport:
         arrow_scale = 0.75

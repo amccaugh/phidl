@@ -89,7 +89,7 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
     A new set of points that are reflected across ``p1`` and ``p2``.
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
-    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
+    points = np.array(points); p1 = np.array(p1); p2 = np.array(p2)
     if np.asarray(points).ndim == 1:
         return 2*(p1 + (p2-p1)*np.dot((p2-p1),(points-p1))/norm(p2-p1)**2) - points
     if np.asarray(points).ndim == 2:
@@ -184,11 +184,31 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True,
     elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
         Distributed elements.
     """
+        # If only one set of coordinates is defined, make sure it's used to move things
+        if destination is None:
+            destination = origin
+            origin = [0,0]
+
+        d = _parse_coordinate(destination)
+        o = _parse_coordinate(origin)
+        if axis == 'x': d = (d[0], o[1])
+        if axis == 'y': d = (o[0], d[1])
+        dx,dy = np.array(d) - o
+
+        return dx,dy
+
+def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
+    """ Takes a list of elements and distributes them either (1: suparation==False) equally
+    along a grid or (2: separation==True) with a fixed spacing between them """
+    if len(elements) == 0: return elements
     if direction not in ({'x','y'}):
         raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
-    if (edge not in ({'min', 'center', 'max'})) and (separation == False):
-        raise ValueError("[PHIDL] distribute(): When `separation` is False," +
-            " the `edge` argument must be one of {'min', 'center', 'max'}")
+    if (direction == 'x') and (edge not in ({'x', 'xmin', 'xmax'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` == False and direction == 'x'," +
+            " the `edge` argument must be one of {'x', 'xmin', 'xmax'}")
+    if (direction == 'y') and (edge not in ({'y', 'ymin', 'ymax'})) and (separation == False):
+        raise ValueError("[PHIDL] distribute(): When `separation` == False and direction == 'y'," +
+            " the `edge` argument must be one of {'y', 'ymin', 'ymax'}")
 
     if (direction == 'y'): sizes = [e.ysize for e in elements]
     if (direction == 'x'): sizes = [e.xsize for e in elements]
@@ -200,14 +220,6 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True,
         if direction == 'y': edge = 'ymin'
     else:
         sizes = np.zeros(len(spacing))
-        if direction == 'x':
-            if   edge == 'min': edge = 'xmin'
-            elif edge == 'max': edge = 'xmax'
-            elif edge == 'center': edge = 'x'
-        if direction == 'y': 
-            if   edge == 'min': edge = 'ymin'
-            elif edge == 'max': edge = 'ymax'
-            elif edge == 'center': edge = 'y'
 
     # Calculate new positions and move each element
     start = elements[0].__getattribute__(edge)
@@ -233,12 +245,50 @@ def _align(elements, alignment = 'ymax'):
     elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
         Aligned elements.
     """
+    if len(elements) == 0: return elements
     if alignment not in (['x','y','xmin', 'xmax', 'ymin','ymax']):
-        raise ValueError("[PHIDL] align(): 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
+        raise ValueError("[PHIDL] 'alignment' argument must be one of 'x','y','xmin', 'xmax', 'ymin','ymax'")
     value = Group(elements).__getattribute__(alignment)
     for e in elements:
         e.__setattr__(alignment, value)
     return elements
+
+
+def _line_distances(points, start, end):
+    if np.all(start == end):
+        return np.linalg.norm(points - start, axis=1)
+
+    vec = end - start
+    cross = np.cross(vec, start - points)
+    return np.divide(abs(cross), np.linalg.norm(vec))
+
+
+def _simplify(points, tolerance=0):
+    """ Ramer–Douglas–Peucker algorithm for line simplification.  Takes an
+    array of points of shape (N,2) and removes excess points in the line. The
+    remaining points form a identical line to within `tolerance` from the original """
+    # From https://github.com/fhirschmann/rdp/issues/7 
+    # originally written by Kirill Konevets https://github.com/kkonevets
+
+    M = np.asarray(points)
+    start, end = M[0], M[-1]
+    dists = _line_distances(M, start, end)
+
+    index = np.argmax(dists)
+    dmax = dists[index]
+
+    if dmax > tolerance:
+        result1 = _simplify(M[:index + 1], tolerance)
+        result2 = _simplify(M[index:], tolerance)
+
+        result = np.vstack((result1[:-1], result2))
+    else:
+        result = np.array([start, end])
+
+    return result
+
+
+
 
 def reset():
     """ FIXME fill description """
@@ -602,9 +652,12 @@ class _GeometryHelper(object):
         element : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
             Element to add.
         """
-        G = Group()
-        G.add(self)
-        G.add(element)
+        if isinstance(self, Group):
+            G = Group()
+            G.add(self.elements)
+            G.add(element)
+        else:
+            G = Group([self, element])
         return G
 
 
@@ -831,6 +884,17 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
         return self.mirror(p1, p2)
 
+    def simplify(self, tolerance = 1e-3):
+        """ 
+        Removes points from the polygon but does not change the polygon
+        shape by more than `tolerance` from the original. Uses the
+        Ramer–Douglas–Peucker algorithm for line simplification. """
+        for n, points in enumerate(self.polygons):
+            self.polygons[n] = _simplify(points, tolerance = tolerance)
+        if self.parent is not None:
+            self.parent._bb_valid = False
+        return self
+
 
 def make_device(fun, config = None, **kwargs):
     """ Makes a Device from a function.
@@ -856,7 +920,7 @@ def make_device(fun, config = None, **kwargs):
         raise TypeError("""[PHIDL] When creating Device() from a function, the
         second argument should be a ``config`` argument which is a
         dictionary containing arguments for the function.
-        e.g. make_device(ellipse, config = my_config_dict) """)
+        e.g. make_device(ellipse, config = ellipse_args_dict) """)
     config_dict.update(**kwargs)
     D = fun(**config_dict)
     if not isinstance(D, Device):
@@ -2108,7 +2172,6 @@ class Label(gdspy.Label, _GeometryHelper):
         return self.mirror(p1, p2)
 
 
-PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label)
 
 class Group(_GeometryHelper):
     """ Groups objects together so they can be manipulated as though 
@@ -2138,6 +2201,8 @@ class Group(_GeometryHelper):
     @property
     def bbox(self):
         """ Returns the bounding boxes of the Group. """
+        if len(self.elements) == 0:
+            raise ValueError('[PHIDL] Group is empty, no bbox is available')
         bboxes = np.empty([len(self.elements),4])
         for n,e in enumerate(self.elements):
             bboxes[n] = e.bbox.flatten()
@@ -2154,10 +2219,10 @@ class Group(_GeometryHelper):
         element : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
             Element to add.
         """        
-        if isinstance(element, Group):
-            [self.add(e) for e in element.elements]
-        elif _is_iterable(element):
+        if _is_iterable(element):
             [self.add(e) for e in element]
+        elif element is None:
+            return self
         elif isinstance(element, PHIDL_ELEMENTS):
             self.elements.append(element)
         else:
@@ -2248,3 +2313,167 @@ class Group(_GeometryHelper):
         """        
         _align(elements = self.elements, alignment = alignment)
         return self
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
+
+
+
+class Path(object):
+    def __init__(self, start_angle = 0):
+        self.points = np.array([[0,0]])
+        self.start_angle = start_angle
+        self.end_angle = start_angle
+        # self.divisions = [0]
+
+    def append(self, points):
+        
+        if np.ndim(points) == 2: # Just a list of points
+            start_angle = None
+            end_angle = None
+        elif np.ndim(points) == 1 and len(points) == 3: # (points, start_angle, end_angle)
+            start_angle = points[1]
+            end_angle = points[2]
+            points = points[0]
+        else:
+            raise ValueError('[PHIDL] Path.append() must take arguments' + 
+                ' of the form (points) or (points, start_angle, end_angle)')
+        
+        # Connect beginning of new points with old points
+        if self.end_angle is None:
+            nx1,ny1 =  self.points[-1] - self.points[-2]
+            angle1 = np.arctan2(ny1,nx1)/np.pi*180
+        else:
+            angle1 = self.end_angle
+        if start_angle is None:
+            nx2,ny2 =  points[1] - points[0]
+            angle2 = np.arctan2(ny2,nx2)/np.pi*180
+        else:
+            angle2 = start_angle
+        points = _rotate_points(points, angle = angle1 - angle2)
+        points += self.points[-1,:] - points[0,:]
+        
+        # Update end angle
+        if end_angle is None:
+            self.end_angle = None
+        else:
+            self.end_angle = end_angle + angle1 - angle2
+
+        # Concatenate old points + new points
+        self.points = np.vstack([self.points, points[1:]])
+        # self.divisions.append(len(self.points))
+        return self
+
+
+    def make(self, xsection, simplify = None):
+        X = xsection
+        
+        D = Device()
+        for s in X.sections:
+            width = s['width']
+            offset = s['offset']
+            layer = s['layer']
+            portnames = s['portnames']
+            
+            offset1 = offset + width/2
+            offset2 = offset - width/2
+            if offset1 > offset2:  offset1, offset2 = offset2, offset1
+            
+            points1 = self._parametric_offset_curve(self.points, offset_distance = offset + width/2,
+                                    start_angle = self.start_angle, end_angle = self.end_angle)
+            points2 = self._parametric_offset_curve(self.points, offset_distance = offset - width/2,
+                                    start_angle = self.start_angle, end_angle = self.end_angle)
+            
+            # Simplify lines using the Ramer–Douglas–Peucker algorithm
+            if isinstance(simplify, bool):
+                raise ValueError('[PHIDL] the simplify argument must be a number (e.g. 1e-3) or None')
+            if simplify is not None:
+                points1 = _simplify(points1, tolerance = simplify)
+                points2 = _simplify(points2, tolerance = simplify)
+            
+            # Join points together 
+            points = np.concatenate([points1, points2[::-1,:]])
+
+            # Combine the offset-lines into a polygon and union if join_after == True
+            # if join_after == True: # Use clipper to perform a union operation
+            #     points = np.array(clipper.offset([points], 0, 'miter', 2, int(1/simplify), 0)[0])
+            
+            D.add_polygon(points, layer = layer)
+            
+            # Add ports if they were specified
+            if portnames[0] is not None:
+                new_port = D.add_port(name = portnames[0])
+                new_port.endpoints = (points1[0], points2[0])
+            if portnames[1] is not None:
+                new_port = D.add_port(name = portnames[1])
+                new_port.endpoints = (points2[-1], points1[-1])
+                
+        return D
+
+    def _parametric_offset_curve(self, points, offset_distance, start_angle, end_angle):
+        """ Creates a parametric offset (does not account for cusps etc)
+        by using gradient of the supplied x and y points """
+        x = points[:,0]
+        y = points[:,1]
+        dxdt = np.gradient(x)
+        dydt = np.gradient(y)
+        if start_angle is not None:
+            dxdt[0] = np.cos(start_angle*np.pi/180)
+            dydt[0] = np.sin(start_angle*np.pi/180)
+        if end_angle is not None:
+            dxdt[-1] = np.cos(end_angle*np.pi/180)
+            dydt[-1] = np.sin(end_angle*np.pi/180)
+        x_offset = x + offset_distance*dydt/np.sqrt(dxdt**2 + dydt**2)
+        y_offset = y - offset_distance*dxdt/np.sqrt(dydt**2 + dxdt**2)
+        return np.array([x_offset, y_offset]).T
+
+    def length(self):
+        x = self.points[:,0]
+        y = self.points[:,1]
+        dx = np.diff(x)
+        dy = np.diff(y)
+        return np.sum(np.sqrt((dx)**2 + (dy)**2))
+
+    def curvature(self):
+        x = self.points[:,0]
+        y = self.points[:,1]
+        dx = np.diff(x)
+        dy = np.diff(y)
+        ds = np.sqrt((dx)**2 + (dy)**2)
+        s = np.cumsum(ds)
+        theta = np.arctan2(dy,dx)
+
+        # Fix discontinuities arising from np.arctan2
+        dtheta = np.diff(theta)
+        dtheta[np.where(dtheta > np.pi)] += -2*np.pi
+        dtheta[np.where(dtheta < -np.pi)] += 2*np.pi
+        theta = np.concatenate([[0], np.cumsum(dtheta)]) + theta[0]
+
+        K = np.gradient(theta,s, edge_order = 2)
+        return s, K
+
+class Xsection(object):
+    def __init__(self): 
+        self.sections = []
+        self.portnames = set()
+        
+    def add(self, width = 1, offset = 0, layer = 0, portnames = (None,None)):
+        if width <= 0:
+            raise ValueError('[PHIDL] Xsection.add(): widths must be >0')
+        if len(portnames) != 2:
+            raise ValueError('[PHIDL] Xsection.add(): must receive 2 port names')
+        for p in portnames:
+            if p in self.portnames:
+                raise ValueError('[PHIDL] Xsection.add(): portname "%s" already ' \
+                                 "exists in this Xsection, please rename port" % p)
+
+        new_segment = dict(
+            width = width,
+            offset = offset,
+            layer = layer,
+            portnames = portnames,
+            )
+        self.sections.append(new_segment)
+        [self.portnames.add(p) for p in portnames if p is not None]
+        
+        return self
+        

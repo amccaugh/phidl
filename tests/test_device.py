@@ -267,7 +267,7 @@ def test_distribute():
     D = Device()
     [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
     D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
-                 edge = 'min') # edge must be either 'min', 'max', or 'center'
+                 edge = 'xmin')
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '18be0ef1db78095233d2f3ae5f065d9f453a6c07')
 
@@ -289,3 +289,17 @@ def test_align():
     D.align(elements = 'all', alignment = 'y')
     h = D.hash_geometry(precision = 1e-4)
     assert(h == 'ed32ee1ce1f3da8f6216020877d6c1b64097c600')
+
+def test_polygon_simplify():
+    D = Device()
+    t = np.linspace(0,np.pi,1000)
+    x = np.cos(t)
+    y = np.sin(t)
+    poly = D.add_polygon([x,y])
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '0c3b1465c8b6ffd911c41b02114b9a06f606ad91')
+    # qp(D)
+    poly.simplify(tolerance = 1e-1)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '7d9ebcb231fb0107cbbf618353adeb583782ca11')
+    # qp(D)
