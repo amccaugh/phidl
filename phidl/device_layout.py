@@ -46,8 +46,6 @@ def _rotate_points(points, angle = 45, center = (0, 0)):
     may be input as either single points [1,2] or array-like[N][2], and will 
     return in kind.
 
-    FIXME private fill (RETURN)
-
     Parameters
     ----------
     points : array-like[N][2]
@@ -59,7 +57,7 @@ def _rotate_points(points, angle = 45, center = (0, 0)):
 
     Returns
     -------
-
+    A new set of points that are rotated around ``center``.
     """
     if angle == 0:
          return points
@@ -77,8 +75,6 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
     """ Reflects points across the line formed by p1 and p2.  ``points`` may be
     input as either single points [1,2] or array-like[N][2], and will return in kind.
 
-    FIXME private fill (RETURN)
-
     Parameters
     ----------
     points : array-like[N][2]
@@ -90,7 +86,7 @@ def _reflect_points(points, p1 = (0, 0), p2 = (1, 0)):
 
     Returns
     -------
-
+    A new set of points that are reflected across ``p1`` and ``p2``.
     """
     # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
     points = np.array(points); p1 = np.array(p1); p2 = np.array(p2);
@@ -245,17 +241,7 @@ def _align(elements, alignment = 'ymax'):
     return elements
 
 def reset():
-    """ FIXME fill description
-
-    FIXME fill ()
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-
-    """
+    """ FIXME fill description """
     Layer.layer_dict = {}
     Device._next_uid = 0
 
@@ -272,7 +258,6 @@ class LayerSet(object):
         """ Adds a layer to an existing LayerSet object.
 
         FIXME fill (dither)
-        FIXME check
 
         Parameters
         ----------
@@ -307,17 +292,17 @@ class LayerSet(object):
 
     def __getitem__(self, val):
         """ If you have a LayerSet `ls`, allows access to the layer names like 
-        ls['gold2']
-
-        FIXME private fill (val, RETURN)
+        ls['gold2'].
 
         Parameters
         ----------
-        val : 
+        val : str
+            Layer name to access within the LayerSet.
 
         Returns
         -------
-        self._layers[val] : 
+        self._layers[val] : Layer
+            Accessed Layer in the LayerSet.
         """
         try:
             return self._layers[val]
@@ -331,31 +316,29 @@ class LayerSet(object):
 
 
 class Layer(object):
-    """ Layer object. """
+    """ Layer object. 
+    
+    FIXME fill (dither)
+
+    Parameters
+    ----------
+    gds_layer : int
+        GDSII Layer number.
+    gds_datatype : int
+        GDSII datatype.
+    name : str
+        Name of the Layer.
+    color : str
+        Hex code of color for the Layer.
+    alpha : int or float
+        Alpha parameter (opacity) for the Layer.
+    dither : 
+    """
     layer_dict = {}
 
     def __init__(self, gds_layer = 0, gds_datatype = 0, name = 'unnamed',
                  description = None, inverted = False,
                  color = None, alpha = 0.6, dither = None):
-        """ FIXME fill description
-
-        FIXME fill (dither)
-
-        Parameters
-        ----------
-        gds_layer : int
-            GDSII Layer number.
-        gds_datatype : int
-            GDSII datatype.
-        name : str
-            Name of the Layer.
-        color : str
-            Hex code of color for the Layer.
-        alpha : int or float
-            Alpha parameter (opacity) for the Layer.
-        dither : 
-
-        """      
         if isinstance(gds_layer, Layer):
             l = gds_layer # We were actually passed Layer(mylayer), make a copy
             gds_datatype = l.gds_datatype
@@ -758,7 +741,7 @@ class Port(object):
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
-    """ FIXME fill description 
+    """ Polygonal geometric object.
     
     FIXME fill (parent)
 
@@ -850,21 +833,19 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
 
 def make_device(fun, config = None, **kwargs):
-    """ FIXME fill description
-
-    FIXME fill (fun, config, D)
+    """ Makes a Device from a function.
 
     Parameters
     ----------
-    fun : 
-
+    fun : str
+        Name of the function to make the Device with.
     config : dict or None
-
+        A dictionary containing arguments for the given function.
 
     Returns
     -------
     D : Device
-
+        A Device constructed from the specified function.
     """
     config_dict = {}
     if type(config) is dict:
@@ -918,14 +899,15 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ If you have a Device D, allows access to aliases you made like 
         D['arc2'].
 
-        FIXME private fill ()
-
         Parameters
         ----------
+        key : str
+            Element name to access within the Device.
 
         Returns
         -------
-
+        self._layers[val] : Layer
+            Accessed element in the Device.
         """
         try:
             return self.aliases[key]
@@ -945,7 +927,8 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def __str__(self):
-        """ FIXME private fill description """        
+        """ FIXME Prints a description of the Device, including the name, uid, 
+        ports, aliases, polygons, and references. """        
         return self.__repr__()
 
     def __lshift__(self, element):
@@ -1006,17 +989,17 @@ class Device(gdspy.Cell, _GeometryHelper):
         """ Takes a Device and adds it as a DeviceReference to the current
         Device.
 
-        FIXME fill (alias)
-
         Parameters
         ----------
         device : Device
             Device to be added as a DeviceReference.
-        alias : 
+        alias : str
+            Alias of the Device.
 
         Returns
         -------
-
+        d : DeviceReference
+            A DeviceReference that is added to the current Device.
         """
         if _is_iterable(device):
             return [self.add_ref(E) for E in device]
@@ -1084,25 +1067,25 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def add_array(self, device, columns = 2, rows = 2, spacing = (100, 100), 
                   alias = None):
-        """ FIXME fill description
-
-        FIXME fill (device, alias, a)
+        """ Creates a CellArray reference to a Device.
 
         Parameters
         ----------
         device : Device
-            
+            The referenced Device.
         columns : int
             Number of columns in the array.
         rows : int
             Number of rows in the array.
         spacing : array-like[2] of int or float
             Distances between adjacent columns and adjacent rows.
-        alias : 
+        alias : str or None
+            Alias of the referenced Device.
 
         Returns
         -------
         a : CellArray
+            A CellArray containing references to the input Device.
         """        
         if not isinstance(device, Device):
             raise TypeError("""[PHIDL] add_array() was passed something that
@@ -1205,18 +1188,24 @@ class Device(gdspy.Cell, _GeometryHelper):
     def write_gds(self, filename, unit = 1e-6, precision = 1e-9,
                   auto_rename = True, max_cellname_length = 28,
                   cellname = 'toplevel'):
-        """ FIXME fill description
+        """ Writes a Device to a GDS file.
 
-        FIXME fill (filename, unit, precision, auto_rename, 
-        max_cellname_length, cellname)
+        FIXME fill (cellname)
 
         Parameters
         ----------
         filename : str
-        unit : float
+            Name of the GDS file to write to.
+        unit : int or float
+            Unit size for the objects in the library (in `meters`).
         precision : float
+            Precision for the dimensions of the objects in the library (in 
+            `meters`).
         auto_rename : bool
-        max_cellname_length : int
+            If True, fixes any duplicate cell names.
+        max_cellname_length : int or None
+            If given, and if `auto_rename` is True, enforces a limit on the 
+            length of the fixed duplicate cellnames.
         cellname : str
 
         Returns
@@ -1264,7 +1253,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         Parameters
         ----------
-        layermap : 
+        layermap : dict
         include_labels : bool
         """        
         layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
@@ -1355,7 +1344,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
-        """ FIXME fill description
+        """ Align elements in a Device according to FIXME
 
         FIXME fill (alignment)
 
@@ -1364,6 +1353,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         elements : DeviceReference, Port, Polygon, Label, or 'all'
             Elements in the Device to align.
         alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
+
         """        
         if elements == 'all': elements = (self.polygons + self.references)
         _align(elements, alignment = alignment)
@@ -1522,8 +1512,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         destination. Both origin and destination can be 1x2 array-like, Port, 
         or a key corresponding to one of the Ports in this Device.
 
-        FIXME fill (axis)
-
         Parameters
         ----------
         origin : array-like[2], Port, or key
@@ -1531,8 +1519,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         destination : array-like[2], Port, or key
             Destination point of the move.
         axis : {'x', 'y'}
-            Direction of move. 
-
+            Direction of the move. 
         """
         dx,dy = _parse_move(origin, destination, axis)
 
@@ -1632,7 +1619,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
-    """ FIXME fill description 
+    """ Simple reference to an existing Device.
 
     Parameters
     ----------
@@ -1666,19 +1653,16 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def __repr__(self):
-        """ Prints a description of the DeviceReference, including parent Device, ports, origin, rotation, and x_reflection. """        
+        """ Prints a description of the DeviceReference, including parent 
+        Device, ports, origin, rotation, and x_reflection.
+        """        
         return ('DeviceReference (parent Device "%s", ports %s, origin %s, rotation %s, x_reflection %s)' % \
                 (self.parent.name, list(self.ports.keys()), self.origin, self.rotation, self.x_reflection))
 
 
     def __str__(self):
-        """ FIXME private fill description
-
-        FIXME private fill ()
-
-        Returns
-        -------
-
+        """ Prints a description of the DeviceReference, including parent 
+        Device, ports, origin, rotation, and x_reflection.
         """        
         return self.__repr__()
 
@@ -1688,16 +1672,15 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         receive a copy of the reference which is correctly rotated and
         translated.
 
-        FIXME private fill (val, new_reference)
-
         Parameters
         ----------
-        val : 
+        val : str
+            Alias from the reference's parent to be accessed.
 
         Returns
         -------
-        new_reference : 
-
+        new_reference : DeviceReference
+            DeviceReference for the copied parent reference.
         """
         try:
             alias_device = self.parent[val]
@@ -1738,7 +1721,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     @property
     def info(self):
-        """ FIXME fill description """        
+        """ Returns information about the properties of the reference's 
+        parent.
+        """        
         return self.parent.info
 
     @property
@@ -1751,9 +1736,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
     def _transform_port(self, point, orientation, origin = (0, 0), 
                         rotation = None, x_reflection = False):
-        """ FIXME private fill description
+        """ Applies various transformations to a Port.
 
-        FIXME private fill ()
+        FIXME private fill (orientation, rotation, new_orientation)
 
         Parameters
         ----------
@@ -1766,11 +1751,13 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         x_reflection : bool
             If True, reflects the Port across the x-axis before applying 
             rotation.
+
         Returns
         -------
-        new_point : 
-        new_orientation : 
-
+        new_point : array-like[N][2]
+            Coordinates of the transformed Port.
+        new_orientation : int, float, or None
+            
         """   
         # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
@@ -1891,8 +1878,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         Parameters
         ----------
         port : str or Port
-        destination : 
-        overlap : 
+        destination : array-like[2]
+        overlap : int or float
 
         """        
         # ``port`` can either be a string with the name or an actual Port
@@ -1961,8 +1948,6 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         """ Moves the CellArray from the origin point to the destination. Both
         origin and destination can be 1x2 array-like, Port, or a key
         corresponding to one of the Ports in this CellArray.
-         
-        FIXME fill (axis)
 
         Parameters
         ----------
@@ -1971,7 +1956,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         destination : array-like[2], Port, or key
             Destination point of the move.
         axis : {'x', 'y'}
-            Direction of move. 
+            Direction of the move. 
         """
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
@@ -2052,7 +2037,10 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
 
 class Label(gdspy.Label, _GeometryHelper):
-    """FIXME fill description """
+    """ Text that can be used to label parts of the geometry or display 
+    messages. The text does not create additional geometry, it’s meant for 
+    display and labeling purposes only.
+    """
     def __init__(self, *args, **kwargs):      
         super(Label, self).__init__(*args, **kwargs)
 
@@ -2080,9 +2068,7 @@ class Label(gdspy.Label, _GeometryHelper):
         """ Moves the Label from the origin point to the destination. Both
         origin and destination can be 1x2 array-like, Port, or a key
         corresponding to one of the Ports in this Label.
-         
-        FIXME fill (axis)
-
+        
         Parameters
         ----------
         origin : array-like[2], Port, or key
@@ -2090,7 +2076,7 @@ class Label(gdspy.Label, _GeometryHelper):
         destination : array-like[2], Port, or key
             Destination point of the move.
         axis : {'x', 'y'}
-            Direction of move. 
+            Direction of the move. 
         """        
         dx,dy = _parse_move(origin, destination, axis)
         self.position += np.asarray((dx, dy))
@@ -2201,8 +2187,6 @@ class Group(_GeometryHelper):
         """ Moves the Group from the origin point to the destination. Both
         origin and destination can be 1x2 array-like, Port, or a key
         corresponding to one of the Ports in this Group.
-         
-        FIXME fill (axis)
 
         Parameters
         ----------
@@ -2211,7 +2195,7 @@ class Group(_GeometryHelper):
         destination : array-like[2], Port, or key
             Destination point of the move.
         axis : {'x', 'y'}
-            Direction of move. 
+            Direction of the move. 
         """        
         for e in self.elements:
             e.move(origin = origin, destination = destination, axis = axis)
@@ -2254,7 +2238,7 @@ class Group(_GeometryHelper):
         return self
 
     def align(self, alignment = 'ymax'):
-        """ FIXME fill description
+        """ Aligns the elements in the Group.
 
         FIXME fill (alignment)
 
