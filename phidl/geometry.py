@@ -1943,7 +1943,7 @@ def compass(size=(4,2), layer=0):
 
     Parameters
     ----------
-    size : array_like
+    size : array_like[2]
         Dimensions of the rectangular contact pad.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
