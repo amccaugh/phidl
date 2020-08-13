@@ -1937,7 +1937,7 @@ def connector(midpoint = (0, 0), width = 1, orientation = 0):
 #
 #==============================================================================
 
-def compass(size = (4,2), layer = 0):
+def compass(size=(4, 2), layer = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west).
 
