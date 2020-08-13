@@ -1937,7 +1937,7 @@ def connector(midpoint = (0, 0), width = 1, orientation = 0):
 #
 #==============================================================================
 
-def compass(size = (4, 2), layer = 0):
+def compass(size = (4,2), layer = 0):
     """ Creates a rectangular contact pad with centered ports on edges of the
     rectangle (north, south, east, and west).
 
@@ -3694,7 +3694,7 @@ def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer,
     Returns
     -------
     VI : Device
-        
+
     """
     VI = Device('test_via_iter')
     wire1 = VI.add_ref(compass(size = (via_spacing, wire_width),
