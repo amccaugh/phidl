@@ -158,8 +158,7 @@ def _parse_move(origin, destination, axis):
 
     return dx,dy
 
-def _distribute(elements, direction = 'x', spacing = 100, separation = True, 
-                edge = 'center'):
+def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
     """ Takes a list of elements and distributes them either equally along a 
     grid or with a fixed spacing between them.
     
@@ -184,22 +183,6 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True,
     elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
         Distributed elements.
     """
-        # If only one set of coordinates is defined, make sure it's used to move things
-        if destination is None:
-            destination = origin
-            origin = [0,0]
-
-        d = _parse_coordinate(destination)
-        o = _parse_coordinate(origin)
-        if axis == 'x': d = (d[0], o[1])
-        if axis == 'y': d = (o[0], d[1])
-        dx,dy = np.array(d) - o
-
-        return dx,dy
-
-def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
-    """ Takes a list of elements and distributes them either (1: suparation==False) equally
-    along a grid or (2: separation==True) with a fixed spacing between them """
     if len(elements) == 0: return elements
     if direction not in ({'x','y'}):
         raise ValueError("[PHIDL] distribute(): 'direction' argument must be either 'x' or'y'")
