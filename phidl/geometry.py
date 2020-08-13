@@ -1244,7 +1244,7 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
 
     Returns
     -------
-    boolean_polygons : 
+    boolean_polygons : list of polygons
 
     """
     # Build bounding boxes
@@ -2601,20 +2601,19 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
     """ FIXME fill description
 
-    FIXME fill (x_taper, w_taper, meander_length, spacing_factor, min_spacing, 
-    D)
+    FIXME fill (meander_length, spacing_factor, min_spacing, D)
 
     Parameters
     ----------
-    x_taper : 
+    x_taper : array-like[N]
+        The x-coordinates of the data points, must be increasing.
+    w_taper : array-like[N]
+        The y-coordinates of the data points, same length as ``x_taper``.
+    meander_length : int or float
 
-    w_taper : 
+    spacing_factor : int or float
 
-    meander_length : 
-
-    spacing_factor : 
-
-    min_spacing : 
+    min_spacing : int or float
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
@@ -2904,12 +2903,10 @@ def _racetrack_gradual_parametric(t, R, N):
     of a racetrack bent according to 
     20090810_EOS4_modulator_designs_excerptForJasonGradualBends.ppt
 
-    FIXME private fill (t)
-
     Parameters
     ----------
-    t : 
-
+    t : array-like[N]
+        Parametric values for the racetrack.
     R : int or float
         Radius of the track at its most curved point.
     N : int or float
@@ -3072,7 +3069,7 @@ def _pack_single_bin(rect_dict,
 
     Parameters
     ----------
-    rect_dict : 
+    rect_dict : dict
 
     aspect_ratio : 
 
@@ -3677,28 +3674,27 @@ def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer,
                   via_layer, via_width):
     """ FIXME private fill description
 
-    FIXME private fill (via_spacing, wire_width, wiring1_layer, wiring2_layer, 
-    via_layer, via_width, VI)
+    FIXME private fill (VI)
 
     Parameters
     ----------
-    via_spacing : 
-
-    wire_width : 
-
-    wiring1_layer : 
-
-    wiring2_layer : 
-
-    via_layer : 
-
-    via_width : 
-
+    via_spacing : int or float
+        Distance between vias.
+    wire_width : int or float
+        The width of the wires.
+    wiring1_layer : int
+        Specific layer to put the top wiring on. 
+    wiring2_layer : int
+        Specific layer to put the bottom wiring on. 
+    via_layer : int
+        Specific layer to put the vias on. 
+    via_width : int or float
+        Diameter of the vias.
 
     Returns
     -------
     VI : Device
-
+        
     """
     VI = Device('test_via_iter')
     wire1 = VI.add_ref(compass(size = (via_spacing, wire_width),
