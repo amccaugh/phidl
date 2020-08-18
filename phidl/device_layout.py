@@ -14,6 +14,23 @@
 # Allow connect(overlap) to be a tuple (0, 0.7)
 
 #==============================================================================
+# Documentation TODO
+#==============================================================================
+# Tutorials
+# - Using Layers (Layers, LayerSet, {} notation)
+# - Arranging objects together with packer()/grid()/autoarray()
+# - Using Aliases
+# - Boolean operations
+# - Quickplot usage (quickplot, quickplot2, inline jupyter notebook)
+# - Advanced and Misc (simplify)
+
+# Examples
+# - An electrical device with contact pads
+# - An optoelectronic device
+#     - Waveguide + LED 
+#     - route_manhattan
+
+#==============================================================================
 # Imports
 #==============================================================================
 
