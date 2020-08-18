@@ -70,3 +70,34 @@ def partial_euler(angle = 90, Rmin = 3, p = 0.2, num_pts = 720):
     P.append(points)
     return P
 
+def spiral(num_turns = 3.25, gap = 1, inner_gap = 9, num_pts = 720):
+    # FIXME: Every 0.25 num_turns = 0.125 actual turns
+    num_pts = abs(int(num_pts*num_turns*360))
+    num_turns1 = np.floor(num_turns)
+    if (num_turns % 2) == 0:
+        num_turns1 -= 1
+    a1 = np.pi*num_turns1 + np.pi/2
+    a2 = np.pi*num_turns + np.pi/2
+    a = np.array([np.linspace(0, a1, num_pts),
+                    np.concatenate([np.linspace(0, a1, num_pts),
+                                    np.arange(a1,a2, a1/(num_pts-1))[1:]])])
+    i1 = np.argmax(a[0] > np.pi/2)
+    i2 = [len(x) for x in a]
+    r = np.array([np.ones(i2[0]), np.ones(i2[1])])
+    for i in range(2):
+        r[i][:i1] = inner_gap/2 * np.sin(a[0][:i1])
+        r[i][i1:i2[0]] = inner_gap/2 + (a[0][i1:i2[0]] - np.pi/2)/np.pi*gap
+    if i2[0] == 0 or i2[1] != 0:
+        r[1][i2[0]:] = inner_gap/2 + (a[1][i2[0]:] - np.pi/2)/np.pi*gap
+    else: pass
+    a, r = np.concatenate([[np.flip(a[1]), -np.flip(r[1])], [a[0], r[0]]],
+                            axis = 1)
+    x = r * np.cos(a); y = r * np.sin(a)
+    points = np.array((x,y)).T
+
+    P = Path()
+    # Manually add points & adjust start and end angles
+    P.points = points[::-1]
+    P.start_angle = 180
+    P.end_angle = np.mod(360*num_turns, 360)
+    return P
