@@ -2306,21 +2306,18 @@ class Path(object):
         self.points = np.array([[0,0]])
         self.start_angle = start_angle
         self.end_angle = start_angle
-        # self.divisions = [0]
+        self.info = {}
 
     def append(self, points):
-        
-        if np.ndim(points) == 2: # Just a list of points
-            start_angle = None
-            end_angle = None
-        elif np.ndim(points) == 1 and len(points) == 3: # (points, start_angle, end_angle)
-            start_angle = points[1]
-            end_angle = points[2]
-            points = points[0]
+        # If appending another Path, load relevant variables
+        if isinstance(points, Path):
+            start_angle = points.start_angle
+            end_angle = points.end_angle
+            points = points.points
         else:
-            raise ValueError('[PHIDL] Path.append() must take arguments' + 
-                ' of the form (points) or (points, start_angle, end_angle)')
-        
+            end_angle = None
+            start_angle = None
+
         # Connect beginning of new points with old points
         if self.end_angle is None:
             nx1,ny1 =  self.points[-1] - self.points[-2]
@@ -2343,7 +2340,6 @@ class Path(object):
 
         # Concatenate old points + new points
         self.points = np.vstack([self.points, points[1:]])
-        # self.divisions.append(len(self.points))
         return self
 
 
