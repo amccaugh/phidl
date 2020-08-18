@@ -16,6 +16,8 @@
 #==============================================================================
 # Documentation TODO
 #==============================================================================
+# Update binder to point at quickstart.ipynb
+# Rename "Examples" to Tutorials
 # Tutorials
 # - Using Layers (Layers, LayerSet, {} notation)
 # - Arranging objects together with packer()/grid()/autoarray()
@@ -29,6 +31,7 @@
 # - An optoelectronic device
 #     - Waveguide + LED 
 #     - route_manhattan
+
 
 #==============================================================================
 # Imports
