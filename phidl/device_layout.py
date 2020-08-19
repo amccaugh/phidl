@@ -2321,12 +2321,19 @@ PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Grou
 
 
 
-class Path(object):
+class Path(_GeometryHelper):
     def __init__(self, start_angle = 0):
         self.points = np.array([[0,0]])
         self.start_angle = start_angle
         self.end_angle = start_angle
         self.info = {}
+
+    @property
+    def bbox(self):
+        """ Returns the bounding box of the Path. """      
+        bbox = [(np.min(self.points[:,0]), np.min(self.points[:,1])),
+                (np.max(self.points[:,0]), np.max(self.points[:,1]))]
+        return np.array(bbox)
 
     def append(self, points):
         # If appending another Path, load relevant variables
@@ -2356,10 +2363,11 @@ class Path(object):
         if end_angle is None:
             self.end_angle = None
         else:
-            self.end_angle = end_angle + angle1 - angle2
+            self.end_angle = mod(end_angle + angle1 - angle2, 360)
 
         # Concatenate old points + new points
         self.points = np.vstack([self.points, points[1:]])
+        
         return self
 
 
@@ -2407,6 +2415,69 @@ class Path(object):
                 new_port.endpoints = (points2[-1], points1[-1])
                 
         return D
+
+
+    def move(self, origin = (0,0), destination = None, axis = None):
+        """ Moves the Path from the origin point to the 
+        destination. Both origin and destination can be 1x2 array-like
+        or a Port.
+
+        Parameters
+        ----------
+        origin : array-like[2], Port
+            Origin point of the move.
+        destination : array-like[2], Port
+            Destination point of the move.
+        axis : {'x', 'y'}
+            Direction of move. 
+
+        """
+        dx,dy = _parse_move(origin, destination, axis)
+        self.points += np.array([dx,dy])
+
+        return self
+
+    def rotate(self, angle = 45, center = (0,0)):
+        """ Rotates all Polygons in the Device around the specified 
+        center point. If no center point specified will rotate around (0,0).
+
+        Parameters
+        ----------
+        angle : int or float
+            Angle to rotate the Device in degrees.
+        center : array-like[2] or None
+            Midpoint of the Device.
+        """          
+        if angle == 0:
+            return self
+        self.points = _rotate_points(self.points, angle, center)
+        if self.start_angle is not None:
+            self.start_angle = mod(self.start_angle + angle, 360)
+        if self.end_angle is not None:
+            self.end_angle = mod(self.end_angle + angle, 360)
+        return self
+
+
+    def mirror(self, p1 = (0,1), p2 = (0,0)):
+        """ Mirrors the Path across the line formed between the two 
+        specified points. ``points`` may be input as either single points 
+        [1,2] or array-like[N][2], and will return in kind.
+
+        Parameters
+        ----------
+        p1 : array-like[N][2]
+            First point of the line.
+        p2 : array-like[N][2]
+            Second point of the line.
+        """        
+        self.points = _reflect_points(self.points, p1, p2)
+        angle = np.arctan2((p2[1]-p1[1]), (p2[0]-p1[0])) * 180/pi
+        if self.start_angle is not None:
+            self.start_angle = mod(2*angle - self.start_angle, 360)
+        if self.end_angle is not None:
+            self.end_angle = mod(2*angle - self.end_angle, 360)
+        return self
+
 
     def _parametric_offset_curve(self, points, offset_distance, start_angle, end_angle):
         """ Creates a parametric offset (does not account for cusps etc)
