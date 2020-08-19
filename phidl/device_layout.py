@@ -779,7 +779,8 @@ class Port(object):
         return new_port
 
     def rotate(self, angle = 45, center = None):
-        """ Rotates a Port around the specified counterpoint.
+        """ Rotates a Port around the specified center point, 
+        if no centerpoint specified will rotate around (0,0).
 
         Parameters
         ----------
@@ -1551,7 +1552,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     def rotate(self, angle = 45, center = (0,0)):
         """ Rotates all Polygons in the Device around the specified 
-        centerpoint.
+        center point.
 
         Parameters
         ----------
