@@ -2343,28 +2343,17 @@ class Path(_GeometryHelper):
             end_angle = points.end_angle
             points = points.points
         else:
-            end_angle = None
-            start_angle = None
+            nx1,ny1 =  points[1] - points[0]
+            start_angle = np.arctan2(ny1,nx1)/np.pi*180
+            nx2,ny2 =  points[-1] - points[-2]
+            end_angle = np.arctan2(ny2,nx2)/np.pi*180
 
         # Connect beginning of new points with old points
-        if self.end_angle is None:
-            nx1,ny1 =  self.points[-1] - self.points[-2]
-            angle1 = np.arctan2(ny1,nx1)/np.pi*180
-        else:
-            angle1 = self.end_angle
-        if start_angle is None:
-            nx2,ny2 =  points[1] - points[0]
-            angle2 = np.arctan2(ny2,nx2)/np.pi*180
-        else:
-            angle2 = start_angle
-        points = _rotate_points(points, angle = angle1 - angle2)
+        points = _rotate_points(points, angle = self.end_angle - start_angle)
         points += self.points[-1,:] - points[0,:]
         
         # Update end angle
-        if end_angle is None:
-            self.end_angle = None
-        else:
-            self.end_angle = mod(end_angle + angle1 - angle2, 360)
+        self.end_angle = mod(end_angle + self.end_angle - start_angle, 360)
 
         # Concatenate old points + new points
         self.points = np.vstack([self.points, points[1:]])
