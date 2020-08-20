@@ -2329,6 +2329,9 @@ class Path(_GeometryHelper):
         self.end_angle = start_angle
         self.info = {}
 
+    def __len__(self):
+        return len(self.points)
+
     @property
     def bbox(self):
         """ Returns the bounding box of the Path. """      
