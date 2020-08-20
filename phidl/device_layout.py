@@ -2409,6 +2409,43 @@ class Path(_GeometryHelper):
                 
         return D
 
+    def offset(self, offset = 0, copy = False):
+        if offset == 0:
+            points = self.points
+            start_angle = self.start_angle
+            end_angle = self.end_angle
+        elif callable(offset):
+            dx = np.diff(self.points[:,0])
+            dy = np.diff(self.points[:,1])
+            lengths = np.cumsum(np.sqrt((dx)**2 + (dy)**2))
+            lengths = np.concatenate([[0], lengths])
+            offset = offset(lengths)
+            points = self._parametric_offset_curve(self.points, offset_distance = offset,
+                                start_angle = self.start_angle, end_angle = self.end_angle)
+            nx1,ny1 =  points[1] - points[0]
+            start_angle = np.arctan2(ny1,nx1)/np.pi*180
+            nx2,ny2 =  points[-1] - points[-2]
+            end_angle = np.arctan2(ny2,nx2)/np.pi*180
+        else: # Offset is just a number
+            points = self._parametric_offset_curve(self.points, offset_distance = offset,
+                                start_angle = self.start_angle, end_angle = self.end_angle)
+            start_angle = self.start_angle
+            end_angle = self.end_angle
+        
+        self.points = points
+        self.start_angle = start_angle
+        self.end_angle = end_angle
+        return self
+
+
+    def copy(self):
+        P = Path()
+        P.info = self.info.copy()
+        P.points = np.array(self.points)
+        P.start_angle = self.start_angle
+        P.end_angle = self.end_angle
+        return P
+
 
     def move(self, origin = (0,0), destination = None, axis = None):
         """ Moves the Path from the origin point to the 
