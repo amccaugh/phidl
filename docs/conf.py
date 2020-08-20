@@ -12,14 +12,15 @@
 #
 import os
 import sys
-sys.path.append(os.path.abspath('../..'))
-sys.path.append(os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('..'))
+# sys.path.append(os.path.abspath('../..'))
+# sys.path.append(os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'PHIDL'
-copyright = '2020, Adam McCaughan'
-author = 'Adam McCaughan'
+copyright = '2020, Adam N. McCaughan'
+author = 'Adam N. McCaughan'
 
 
 # -- General configuration ---------------------------------------------------
