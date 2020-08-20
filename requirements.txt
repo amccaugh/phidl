@@ -2,3 +2,4 @@ numpy
 matplotlib
 gdspy
 nbsphinx
+ipython
