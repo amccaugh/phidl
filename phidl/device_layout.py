@@ -2428,9 +2428,15 @@ class Path(_GeometryHelper):
         return D
 
     def offset(self, offset = 0):
-        """ Modifies the path so that it follows the path centerline plus
-        an offset.  The offset can either be a fixed value, a function of the 
-        form my_offset(t) where t goes from 0->1, or a list of values """
+        """ Offsets the Path so that it follows the Path centerline plus
+        an offset.  The offset can either be a fixed value, or a function 
+        of the form my_offset(t) where t goes from 0->1
+
+        Parameters
+        ----------
+        offset : int or float, callable
+            Magnitude of the offset
+        """
         if offset == 0:
             points = self.points
             start_angle = self.start_angle
