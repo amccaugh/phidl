@@ -2409,23 +2409,34 @@ class Path(_GeometryHelper):
                 
         return D
 
-    def offset(self, offset = 0, copy = False):
+    def offset(self, offset = 0):
+        """ Modifies the path so that it follows the path centerline plus
+        an offset.  The offset can either be a fixed value, a function of the 
+        form my_offset(t) where t goes from 0->1, or a list of values """
         if offset == 0:
             points = self.points
             start_angle = self.start_angle
             end_angle = self.end_angle
         elif callable(offset):
+            # Compute lengths
             dx = np.diff(self.points[:,0])
             dy = np.diff(self.points[:,1])
             lengths = np.cumsum(np.sqrt((dx)**2 + (dy)**2))
             lengths = np.concatenate([[0], lengths])
-            offset = offset(lengths)
-            points = self._parametric_offset_curve(self.points, offset_distance = offset,
+            # Create list of offset points and perform offset
+            points = self._parametric_offset_curve(self.points,
+                                offset_distance = offset(lengths / lengths[-1]),
                                 start_angle = self.start_angle, end_angle = self.end_angle)
-            nx1,ny1 =  points[1] - points[0]
-            start_angle = np.arctan2(ny1,nx1)/np.pi*180
-            nx2,ny2 =  points[-1] - points[-2]
-            end_angle = np.arctan2(ny2,nx2)/np.pi*180
+            # Numerically compute start and end angles
+            tol = 1e-6
+            ds = tol/lengths[-1]
+            ny1 =  offset(ds) - offset(0)
+            start_angle = np.arctan2(-ny1,tol)/np.pi*180 + self.start_angle
+            start_angle = np.round(start_angle, decimals = 6)
+            ny2 =  offset(1) - offset(1 - ds)
+            end_angle = np.arctan2(-ny2,tol)/np.pi*180 + self.end_angle
+            end_angle = np.round(end_angle, decimals = 6)
+            
         else: # Offset is just a number
             points = self._parametric_offset_curve(self.points, offset_distance = offset,
                                 start_angle = self.start_angle, end_angle = self.end_angle)
