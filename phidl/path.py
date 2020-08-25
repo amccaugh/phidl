@@ -1,3 +1,9 @@
+# TODO
+# phidl: finish variable offset/width functiaonlity
+# phidl: change group tutorial to rotate by 90 degrees
+
+
+
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 import numpy as np

@@ -2364,15 +2364,15 @@ class Path(_GeometryHelper):
         return self
 
 
-    def make(self, xsection, simplify = None):
-        X = xsection
+    def extrude(self, cross_section, simplify = None):
+        X = cross_section
         
         D = Device()
         for s in X.sections:
             width = s['width']
             offset = s['offset']
             layer = s['layer']
-            portnames = s['portnames']
+            ports = s['ports']
             
             offset1 = offset + width/2
             offset2 = offset - width/2
@@ -2400,11 +2400,11 @@ class Path(_GeometryHelper):
             D.add_polygon(points, layer = layer)
             
             # Add ports if they were specified
-            if portnames[0] is not None:
-                new_port = D.add_port(name = portnames[0])
+            if ports[0] is not None:
+                new_port = D.add_port(name = ports[0])
                 new_port.endpoints = (points1[0], points2[0])
-            if portnames[1] is not None:
-                new_port = D.add_port(name = portnames[1])
+            if ports[1] is not None:
+                new_port = D.add_port(name = ports[1])
                 new_port.endpoints = (points2[-1], points1[-1])
                 
         return D
@@ -2551,29 +2551,32 @@ class Path(_GeometryHelper):
         K = np.gradient(theta,s, edge_order = 2)
         return s, K
 
-class Xsection(object):
+class CrossSection(object):
     def __init__(self): 
         self.sections = []
-        self.portnames = set()
+        self.ports = set()
         
-    def add(self, width = 1, offset = 0, layer = 0, portnames = (None,None)):
+    def add(self, width = 1, offset = 0, layer = 0, ports = (None,None)):
         if width <= 0:
-            raise ValueError('[PHIDL] Xsection.add(): widths must be >0')
-        if len(portnames) != 2:
-            raise ValueError('[PHIDL] Xsection.add(): must receive 2 port names')
-        for p in portnames:
-            if p in self.portnames:
-                raise ValueError('[PHIDL] Xsection.add(): portname "%s" already ' \
-                                 "exists in this Xsection, please rename port" % p)
+            raise ValueError('[PHIDL] CrossSection.add(): widths must be >0')
+        if len(ports) != 2:
+            raise ValueError('[PHIDL] CrossSection.add(): must receive 2 port names')
+        for p in ports:
+            if p in self.ports:
+                raise ValueError('[PHIDL] CrossSection.add(): a port named "%s" already ' \
+                                 "exists in this CrossSection, please rename port" % p)
 
         new_segment = dict(
             width = width,
             offset = offset,
             layer = layer,
-            portnames = portnames,
+            ports = ports,
             )
         self.sections.append(new_segment)
-        [self.portnames.add(p) for p in portnames if p is not None]
+        [self.ports.add(p) for p in ports if p is not None]
         
         return self
         
+    def extrude(self, path, simplify = None):
+        D = path.extrude(cross_section = self, simplify = simplify)
+        return D
