@@ -2368,20 +2368,38 @@ class Path(_GeometryHelper):
         X = cross_section
         
         D = Device()
-        for s in X.sections:
-            width = s['width']
-            offset = s['offset']
-            layer = s['layer']
-            ports = s['ports']
+        for section in X.sections:
+            width = section['width']
+            offset = section['offset']
+            layer = section['layer']
+            ports = section['ports']
+
+            if callable(offset):
+                P_offset = self.copy()
+                P_offset.offset(offset)
+                points = P_offset.points
+                start_angle = P_offset.start_angle
+                end_angle = P_offset.end_angle
+                offset = 0
+            else:
+                points = self.points
+                start_angle = self.start_angle
+                end_angle = self.end_angle
+ 
+            if callable(width):
+                # Compute lengths
+                dx = np.diff(self.points[:,0])
+                dy = np.diff(self.points[:,1])
+                lengths = np.cumsum(np.sqrt((dx)**2 + (dy)**2))
+                lengths = np.concatenate([[0], lengths])
+                width = width(lengths / lengths[-1])
+            else:
+                pass
             
-            offset1 = offset + width/2
-            offset2 = offset - width/2
-            if offset1 > offset2:  offset1, offset2 = offset2, offset1
-            
-            points1 = self._parametric_offset_curve(self.points, offset_distance = offset + width/2,
-                                    start_angle = self.start_angle, end_angle = self.end_angle)
-            points2 = self._parametric_offset_curve(self.points, offset_distance = offset - width/2,
-                                    start_angle = self.start_angle, end_angle = self.end_angle)
+            points1 = self._parametric_offset_curve(points, offset_distance = offset + width/2,
+                                    start_angle = start_angle, end_angle = end_angle)
+            points2 = self._parametric_offset_curve(points, offset_distance = offset - width/2,
+                                    start_angle = start_angle, end_angle = end_angle)
             
             # Simplify lines using the Ramer–Douglas–Peucker algorithm
             if isinstance(simplify, bool):
@@ -2436,7 +2454,7 @@ class Path(_GeometryHelper):
             ny2 =  offset(1) - offset(1 - ds)
             end_angle = np.arctan2(-ny2,tol)/np.pi*180 + self.end_angle
             end_angle = np.round(end_angle, decimals = 6)
-            
+
         else: # Offset is just a number
             points = self._parametric_offset_curve(self.points, offset_distance = offset,
                                 start_angle = self.start_angle, end_angle = self.end_angle)
@@ -2568,7 +2586,7 @@ class CrossSection(object):
         self.ports = set()
         
     def add(self, width = 1, offset = 0, layer = 0, ports = (None,None)):
-        if width <= 0:
+        if isinstance(width, (float, int)) and (width <= 0):
             raise ValueError('[PHIDL] CrossSection.add(): widths must be >0')
         if len(ports) != 2:
             raise ValueError('[PHIDL] CrossSection.add(): must receive 2 port names')
