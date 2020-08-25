@@ -424,7 +424,7 @@ class Layer(object):
                 int(color[1:],16) # Will throw error if not hex format
                 self.color = color
             else: # in named format 'gold'
-                self.color = _CSS3_NAMES_TO_HEX[color]
+                self.color = _CSS3_NAMES_TO_HEX[color.lower()]
         except:
             raise ValueError("[PHIDL] Layer() color must be specified as a " +
             "0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex color string " +
