@@ -370,8 +370,6 @@ class LayerSet(object):
 
 class Layer(object):
     """ Layer object. 
-    
-    FIXME fill (dither)
 
     Parameters
     ----------
@@ -386,6 +384,8 @@ class Layer(object):
     alpha : int or float
         Alpha parameter (opacity) for the Layer.
     dither : 
+        Dither parameter (texture) for the Layer
+        (only used in phidl.utilities.write_lyp)
     """
     layer_dict = {}
 
@@ -665,9 +665,7 @@ class _GeometryHelper(object):
 
 
 class Port(object):
-    """ FIXME fill description 
-    
-    FIXME fill (parent)
+    """ Port object that can be used to easily snap together other geometric objects
 
     Parameters
     ----------
@@ -730,7 +728,7 @@ class Port(object):
 
     @property
     def normal(self):
-        """ FIXME fill description
+        """ Returns a vector normal to the Port
 
         Returns
         -------
@@ -799,8 +797,6 @@ class Port(object):
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
     """ Polygonal geometric object.
-    
-    FIXME fill (parent)
 
     Parameters
     ----------
@@ -933,7 +929,7 @@ def make_device(fun, config = None, **kwargs):
     return D
 
 class Device(gdspy.Cell, _GeometryHelper):
-    """ FIXME fill description """
+    """ The basic object that holds polygons, labels, and ports in PHIDL """
     _next_uid = 0
 
     def __init__(self, *args, **kwargs):    
@@ -995,31 +991,30 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def __str__(self):
-        """ FIXME Prints a description of the Device, including the name, uid, 
+        """ Prints a description of the Device, including the name, uid, 
         ports, aliases, polygons, and references. """        
         return self.__repr__()
 
     def __lshift__(self, element):
-        """ FIXME private fill description
-
-        FIXME private fill (element)
+        """ Convenience operators equivalent to add_ref()
 
         Parameters
         ----------
-        elements : Device, DeviceReference, Port, Polygon, CellArray, Label, 
-        or Group
+        elements : Device
+            Element to reference
         """        
         return self.add_ref(element)
 
     def __setitem__(self, key, element):
         """ Allow adding polygons and cell references like D['arc3'] = pg.arc()
 
-        FIXME private fill (key, element)
-
         Parameters
         ----------
-        key : 
-        element : DeviceReference, Polygon, or CellArray
+        key :
+            Alias name
+        element :
+            Object that will be accessible by alias name
+
 
         Returns
         -------
@@ -1258,8 +1253,6 @@ class Device(gdspy.Cell, _GeometryHelper):
                   cellname = 'toplevel'):
         """ Writes a Device to a GDS file.
 
-        FIXME fill (cellname)
-
         Parameters
         ----------
         filename : str
@@ -1275,6 +1268,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             If given, and if `auto_rename` is True, enforces a limit on the 
             length of the fixed duplicate cellnames.
         cellname : str
+            Name of the top-level cell in the saved GDS
 
         Returns
         -------
@@ -1315,14 +1309,15 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def remap_layers(self, layermap = {}, include_labels = True):
-        """ FIXME fill description
-
-        FIXME fill (layermap, include_labels)
+        """ Moves all polygons in the Device from one layer to another
+        according to the layermap argument.
 
         Parameters
         ----------
         layermap : dict
+            Dictionary of values in format {layer_from : layer_to}
         include_labels : bool
+            Selects whether to move Labels along with polygons
         """        
         layermap = {_parse_layer(k):_parse_layer(v) for k,v in layermap.items()}
 
@@ -1388,8 +1383,6 @@ class Device(gdspy.Cell, _GeometryHelper):
                    separation = True, edge = 'center'):
         """ Distributes the specified elements in the Device.
 
-        FIXME fill (edge)
-
         Parameters
         ----------
         elements : Port, Polygon, Label, or 'all'
@@ -1403,6 +1396,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             If True, separates elements with a fixed spacing between; if 
             False, separates elements equally along a grid.
         edge : {'min', 'center', 'max'}
+            Which edge to perform the distribution along (unused if
+            separation == True)
         
         """        
         if elements == 'all': elements = (self.polygons + self.references)
