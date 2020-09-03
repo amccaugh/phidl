@@ -2,6 +2,7 @@
 # Major TODO
 #==============================================================================
 # Add D.info['length'] to Devices created from Paths
+# Allow Path.append() to add lists of Paths
 
 #==============================================================================
 # Minor TODO
