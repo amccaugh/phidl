@@ -2,7 +2,6 @@
 # Major TODO
 #==============================================================================
 # Add D.info['length'] to Devices created from Paths
-# Allow Path.append() to add lists of Paths
 
 #==============================================================================
 # Minor TODO
@@ -2335,17 +2334,27 @@ class Path(_GeometryHelper):
                 (np.max(self.points[:,0]), np.max(self.points[:,1]))]
         return np.array(bbox)
 
-    def append(self, points):
+    def append(self, path):
         # If appending another Path, load relevant variables
-        if isinstance(points, Path):
-            start_angle = points.start_angle
-            end_angle = points.end_angle
-            points = points.points
-        else:
+        if isinstance(path, Path):
+            start_angle = path.start_angle
+            end_angle = path.end_angle
+            points = path.points
+        # If array[N][2]
+        elif (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2): 
+            points = path
             nx1,ny1 =  points[1] - points[0]
             start_angle = np.arctan2(ny1,nx1)/np.pi*180
             nx2,ny2 =  points[-1] - points[-2]
             end_angle = np.arctan2(ny2,nx2)/np.pi*180
+        # If list of Paths or arrays
+        elif isinstance(path, (list, tuple)): 
+            for p in path:
+                self.append(p)
+            return self
+        else:
+            raise ValueError('[PHIDL] Path.append() the "path" argument must be either ' + 
+                    'a Path object, an array-like[N][2] list of points, or a list of these')
 
         # Connect beginning of new points with old points
         points = _rotate_points(points, angle = self.end_angle - start_angle)
