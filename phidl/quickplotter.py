@@ -107,9 +107,9 @@ def quickplot(items, show_ports = True, show_subports = True,
             bbox = _update_bbox(bbox, new_bbox)
 
     if bbox == None:
-        bbox = [0,0,1,1]
-    xmargin = (bbox[2]-bbox[0])*0.2
-    ymargin = (bbox[3]-bbox[1])*0.2
+        bbox = [-1,-1,1,1]
+    xmargin = (bbox[2]-bbox[0])*0.1 + 1e-9
+    ymargin = (bbox[3]-bbox[1])*0.1 + 1e-9
     ax.set_xlim([bbox[0]-xmargin, bbox[2]+xmargin])
     ax.set_ylim([bbox[1]-ymargin, bbox[3]+ymargin])
     # print(bbox)
