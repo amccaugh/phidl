@@ -2686,6 +2686,8 @@ class CrossSection(object):
     def __init__(self): 
         self.sections = []
         self.ports = set()
+        self.aliases = {}
+        self.info = {}
         
     def add(self, width = 1, offset = 0, layer = 0, ports = (None,None), name = None):
         """ Adds a cross-sectional element to the CrossSection.  If ports are
@@ -2747,3 +2749,19 @@ class CrossSection(object):
         """          
         D = path.extrude(cross_section = self, simplify = simplify)
         return D
+
+
+    def copy(self):
+        """ Creates a copy of the CrosSection.
+
+        Returns
+        -------
+        CrossSection
+            A copy of the CrossSection
+
+        """
+        X = CrossSection()
+        X.info = self.info.copy()
+        X.sections = list(self.sections)
+        X.ports = set(self.ports)
+        return X
