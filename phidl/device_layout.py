@@ -1266,8 +1266,8 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         Parameters
         ----------
-        filename : str
-            Name of the GDS file to write to.
+        filename : str or file
+            The GDS file to write to.
         unit : int or float
             Unit size for the objects in the library (in `meters`).
         precision : float
@@ -1284,8 +1284,12 @@ class Device(gdspy.Cell, _GeometryHelper):
         Returns
         -------
 
-        """       
-        if filename[-4:] != '.gds':  filename += '.gds'
+        """ 
+        # If string, try to append ".gds" to the end, otherwise leave alone
+        try:
+            if filename[-4:] != '.gds':  filename += '.gds'
+        except:
+            pass
         referenced_cells = list(self.get_dependencies(recursive=True))
         all_cells = [self] + referenced_cells
 
