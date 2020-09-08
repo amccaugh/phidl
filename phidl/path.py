@@ -12,7 +12,22 @@ from phidl.device_layout import Path
 
 
 def arc(radius = 10, angle = 90, num_pts = 720):
-    """ Produces an arc of points with `num_pts` per 360 degrees """
+    """ Create a circular arc Path
+
+    Parameters
+    ----------
+    radius : int or float
+        Radius of arc
+    angle : int or float
+        Total angle of arc
+    num_pts : int
+        Number of points used per 360 degrees
+
+    Returns
+    -------
+    Path
+        A Path object with the specified arc
+    """
     num_pts = abs(int(num_pts*angle/360))
     t = np.linspace(-90*np.pi/180, (angle-90)*np.pi/180, num_pts)
     x = radius*np.cos(t)
@@ -28,7 +43,20 @@ def arc(radius = 10, angle = 90, num_pts = 720):
 
 
 def straight(length = 5, num_pts = 100):
-    """ Produces an straight section """
+    """ Creates a straight Path
+
+    Parameters
+    ----------
+    length : int or float
+        Total length of straight path
+    num_pts : int
+        Number of points along Path
+
+    Returns
+    -------
+    Path
+        A Path object with the specified straight section
+    """
     x = np.linspace(0, length, num_pts)
     y = x*0
     points = np.array((x,y)).T
@@ -45,7 +73,30 @@ def _cumtrapz(x):
     function usually found in scipy (scipy.integrate.cumtrapz) """
     return np.cumsum((x[1:] + x[:-1])/2)
 
-def partial_euler(angle = 90, Rmin = 3, p = 0.2, num_pts = 720):
+def euler(Rmin = 3, angle = 90, p = 1.0, num_pts = 720):
+    """ Create an Euler curve (also known as "racetrack" or "clothoid" curve)
+    with smoothly varying curvature.  If p < 1.0, will create a "partial euler"
+    curve as described in Vogelbacher et. al. https://dx.doi.org/10.1364/oe.27.031394
+
+    Parameters
+    ----------
+    angle : int or float
+        Total angle of curve
+    Rmin : int or float
+        Minimum radius of curvature
+    p : float
+        Proportion of curve that is an Euler curve
+    num_pts : int
+        Number of points used per 360 degrees
+
+    Returns
+    -------
+    Path
+        A Path object with the specified Euler curve
+    """
+    if (p < 0) or (p > 1):
+        raise ValueError('[PHIDL] euler() requires argument `p` be between 0 and 1')
+
     num_pts = abs(int(num_pts*angle/360))
     # Overhead calculations
     angle = np.radians(angle)
