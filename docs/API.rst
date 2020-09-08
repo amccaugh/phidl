@@ -365,6 +365,15 @@ CellArray
    :show-inheritance:
 
 
+CrossSection
+============
+
+.. autoclass:: phidl.device_layout.CrossSection
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
 Device
 ======
 
@@ -414,6 +423,15 @@ LayerSet
 ========
 
 .. autoclass:: phidl.device_layout.LayerSet
+   :members:
+   :inherited-members:
+   :show-inheritance:
+
+
+Path
+====
+
+.. autoclass:: phidl.device_layout.Path
    :members:
    :inherited-members:
    :show-inheritance:
