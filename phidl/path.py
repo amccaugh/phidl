@@ -73,10 +73,12 @@ def _cumtrapz(x):
     function usually found in scipy (scipy.integrate.cumtrapz) """
     return np.cumsum((x[1:] + x[:-1])/2)
 
+
 def euler(Rmin = 3, angle = 90, p = 1.0, num_pts = 720):
     """ Create an Euler curve (also known as "racetrack" or "clothoid" curve)
-    with smoothly varying curvature.  If p < 1.0, will create a "partial euler"
-    curve as described in Vogelbacher et. al. https://dx.doi.org/10.1364/oe.27.031394
+    with smoothly varying curvature and with a miminum radius of curvature equal
+    to Rmin.  If p < 1.0, will create a "partial euler" curve as described in
+    Vogelbacher et. al. https://dx.doi.org/10.1364/oe.27.031394
 
     Parameters
     ----------
@@ -98,34 +100,25 @@ def euler(Rmin = 3, angle = 90, p = 1.0, num_pts = 720):
         raise ValueError('[PHIDL] euler() requires argument `p` be between 0 and 1')
 
     num_pts = abs(int(num_pts*angle/360))
-    # Overhead calculations
-    angle = np.radians(angle)
-    sp = np.sqrt(p*angle)      # Clothoid-to-normal transition point s value
-    s0 = angle*Rmin + sp    # Total path length derived from curvature integral = angle
-    eta = 1 / (2*sp*Rmin) # Scaling factor to enforce Rmin
-    # Constructing s and K arrays
-    s = np.linspace(0, s0, num_pts)
-    K = np.zeros(num_pts)
-    if p == 0: K += 1/Rmin
-    else:
-        i1 = np.argmax(s > sp)
-        i2 = np.argmax(s >= s0 - sp)
-        K = eta * np.concatenate([np.multiply(np.ones(i1), 2*s[:i1]),
-                                np.multiply(np.ones(i2-i1), 2*sp),
-                                np.multiply(np.ones(num_pts-i2), 
-                                            2*(s0 - s[i2:num_pts]))])
+    num_pts_euler = int(np.round(num_pts/2*p))
+
+    K1 = np.linspace(0, 1/Rmin, num_pts_euler)
+    K2 = np.ones(num_pts - 2*num_pts_euler)/Rmin
+    K3 = np.linspace(1/Rmin, 0, num_pts_euler)
+    K = np.concatenate([K1,K2,K3])
     # Integrating to find x and y
-    ds = s[1] - s[0]
+    ds = np.radians(angle)/np.trapz(K)
     phi = _cumtrapz(K*ds)
     x, y = np.concatenate([np.array([[0],[0]]), 
-                           np.cumsum([ds*np.cos(phi),
-                           ds*np.sin(phi)], axis = 1)],
-                           axis = 1)
+                        np.cumsum([ds*np.cos(phi),
+                        ds*np.sin(phi)], axis = 1)],
+                        axis = 1)
     points = np.array((x,y)).T
 
     P = Path()
     P.append(points)
     return P
+
 
 def spiral(num_turns = 3.25, gap = 1, inner_gap = 9, num_pts = 720):
     # FIXME: Every 0.25 num_turns = 0.125 actual turns
