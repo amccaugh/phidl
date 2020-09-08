@@ -887,10 +887,19 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         return self.mirror(p1, p2)
 
     def simplify(self, tolerance = 1e-3):
-        """ 
-        Removes points from the polygon but does not change the polygon
-        shape by more than `tolerance` from the original. Uses the
-        Ramer–Douglas–Peucker algorithm for line simplification. """
+        """ Removes points from the polygon but does not change the polygon
+        shape by more than `tolerance` from the original. Uses the 
+        Ramer-Douglas-Peucker algorithm.
+
+        Parameters
+        ----------
+        tolerance : float
+            Tolerance value for the simplification algorithm.  All points that
+            can be removed without changing the resulting polygon by more than
+            the value listed here will be removed. Also known as `epsilon` here
+            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        """
+        
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _simplify(points, tolerance = tolerance)
         if self.parent is not None:
@@ -2345,6 +2354,15 @@ class Path(_GeometryHelper):
         return np.array(bbox)
 
     def append(self, path):
+        """ Attaches the input path to the end of this object.  The input path
+        will be automatically rotated and translated such that it continues
+        smoothly from the previous segment.
+
+        Parameters
+        ----------
+        path : Path, array-like[N][2], or list of Paths
+            The input path that will be appended
+        """ 
         # If appending another Path, load relevant variables
         if isinstance(path, Path):
             start_angle = path.start_angle
@@ -2647,6 +2665,14 @@ class Path(_GeometryHelper):
         return s, K
 
 class CrossSection(object):
+    """ The CrossSection object for extruding smooth path.  To be used in
+    combination with a Path to create a Device.
+
+    Parameters
+    ----------
+    path : array-like[N][2], Path, or list of Paths
+        Points or Paths to append() initially
+    """
     def __init__(self): 
         self.sections = []
         self.ports = set()
