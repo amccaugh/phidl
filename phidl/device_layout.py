@@ -2675,7 +2675,7 @@ class Path(_GeometryHelper):
         return s, K
 
 class CrossSection(object):
-    """ The CrossSection object for extruding smooth path.  To be used in
+    """ The CrossSection object for extruding a Path.  To be used in
     combination with a Path to create a Device.
 
     Parameters
