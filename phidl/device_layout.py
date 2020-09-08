@@ -2792,23 +2792,3 @@ class CrossSection(object):
         except:
             raise ValueError('[PHIDL] Tried to access name "%s" in CrossSection '
                              'which does not exist' % (key))
-
-
-    # def __setitem__(self, key, element):
-    #     """ Allows modification of to cross-sectional elements by name like
-    #      X['etch2'].width = 2
-
-    #     Parameters
-    #     ----------
-    #     key :
-    #         Element name in the CrossSection
-    #     element :
-    #         Cross-sectional element that will be accessed by name
-
-    #     """
-    #     if isinstance(element, (DeviceReference,Polygon,CellArray)):
-    #         self.aliases[key] = element
-    #     else:
-    #         raise ValueError('[PHIDL] Tried to assign alias "%s" in '
-    #                          'Device "%s", but failed because the item was '
-    #                          'not a DeviceReference' % (key, self.name))
