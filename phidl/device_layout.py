@@ -181,12 +181,10 @@ def _parse_move(origin, destination, axis):
 def _distribute(elements, direction = 'x', spacing = 100, separation = True, edge = None):
     """ Takes a list of elements and distributes them either equally along a 
     grid or with a fixed spacing between them.
-    
-    FIXME private fill (edge)
 
     Parameters
     ----------
-    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+    elements : array-like of PHIDL objects
         Elements to distribute.
     direction : {'x', 'y'}
         Direction of distribution; either a line in the x-direction or 
@@ -194,9 +192,11 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     spacing : int or float
         Distance between elements.
     separation : bool
-        If True, separates elements with a fixed spacing between; if 
-        False, separates elements equally along a grid.
-    edge : {'min', 'center', 'max'}
+        If True, guarantees elements are speparated with a fixed spacing between; if 
+        False, elements are spaced evenly along a grid.
+    edge : {'x', 'xmin', 'xmax', 'y', 'ymin', 'ymax'}
+        Which edge to perform the distribution along (unused if
+        separation == True)
 
     Returns
     -------
@@ -238,14 +238,16 @@ def _align(elements, alignment = 'ymax'):
 
     Parameters
     ----------
-    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+    elements : array-like of PHIDL objects
         Elements to align.
     alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
+        Which edge to align along (e.g. 'ymax' will align move the elements such
+        that all of their topmost points are aligned)
 
 
     Returns
     -------
-    elements : Device, DeviceReference, Port, Polygon, CellArray, Label, or Group
+    elements : array-like of PHIDL objects
         Aligned elements.
     """
     if len(elements) == 0: return elements
@@ -269,7 +271,8 @@ def _line_distances(points, start, end):
 def _simplify(points, tolerance=0):
     """ Ramer–Douglas–Peucker algorithm for line simplification.  Takes an
     array of points of shape (N,2) and removes excess points in the line. The
-    remaining points form a identical line to within `tolerance` from the original """
+    remaining points form a identical line to within `tolerance` from the
+    original """
     # From https://github.com/fhirschmann/rdp/issues/7 
     # originally written by Kirill Konevets https://github.com/kkonevets
 
@@ -294,7 +297,8 @@ def _simplify(points, tolerance=0):
 
 
 def reset():
-    """ FIXME fill description """
+    """ Resets the built-in Layer dictionary (controls the coloring in
+    quickplot() ), and sets the Device universal ID (uid) to zero. """
     Layer.layer_dict = {}
     Device._next_uid = 0
 
@@ -732,7 +736,8 @@ class Port(object):
 
         Returns
         -------
-
+        array-like[2]
+            Vector normal to the Port
         """
         dx = cos((self.orientation) * pi/180)
         dy = sin((self.orientation) * pi/180)
@@ -758,7 +763,7 @@ class Port(object):
 
         Returns
         -------
-        new_port : Port
+        Port
             Copied Port.
 
         Notes
@@ -784,7 +789,7 @@ class Port(object):
         ----------
         angle : int or float
             Angle to rotate the Port in degrees.
-        center : array-like[2] or None
+            center : array-like[2] or None
             Midpoint of the Port.
         """
         self.orientation = mod(self.orientation + angle, 360)
@@ -1385,7 +1390,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         Parameters
         ----------
-        elements : Port, Polygon, Label, or 'all'
+        elements : array-like of PHIDL objects or 'all'
             Elements to distribute.
         direction : {'x', 'y'}
             Direction of distribution; either a line in the x-direction or 
@@ -1393,9 +1398,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         spacing : int or float
             Distance between elements.
         separation : bool
-            If True, separates elements with a fixed spacing between; if 
-            False, separates elements equally along a grid.
-        edge : {'min', 'center', 'max'}
+            If True, guarantees elements are speparated with a fixed spacing
+            between; if  False, elements are spaced evenly along a grid.
+        edge : {'x', 'xmin', 'xmax', 'y', 'ymin', 'ymax'}
             Which edge to perform the distribution along (unused if
             separation == True)
         
@@ -1407,15 +1412,15 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def align(self, elements = 'all', alignment = 'ymax'):
-        """ Align elements in a Device according to FIXME
-
-        FIXME fill (alignment)
+        """ Align elements in the Device
 
         Parameters
         ----------
-        elements : DeviceReference, Port, Polygon, Label, or 'all'
+        elements : array-like of PHIDL objects, or 'all'
             Elements in the Device to align.
         alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
+            Which edge to align along (e.g. 'ymax' will move the elements such
+            that all of their topmost points are aligned)
 
         """        
         if elements == 'all': elements = (self.polygons + self.references)
@@ -1424,7 +1429,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def flatten(self, single_layer = None):
-        """ FIXME fill description
+        """ Flattens the heirarchy of the Device
 
         FIXME fill (single_layer)
 
@@ -1526,8 +1531,10 @@ class Device(gdspy.Cell, _GeometryHelper):
                 try:
                     self.ports = { k:v for k, v in self.ports.items() if v != item}
                 except:
-                    raise ValueError("""[PHIDL] Device.remove() cannot find the Port
-                                     it was asked to remove in the Device: "%s".""" % (item))
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the
+                                     Port
+                                     it was asked to remove in the Device:
+                                     "%s".""" % (item))
             else:
                 try:
                     if isinstance(item, gdspy.PolygonSet):
@@ -1538,8 +1545,10 @@ class Device(gdspy.Cell, _GeometryHelper):
                         self.labels.remove(item)
                     self.aliases = { k:v for k, v in self.aliases.items() if v != item}
                 except:
-                    raise ValueError("""[PHIDL] Device.remove() cannot find the item
-                                     it was asked to remove in the Device: "%s".""" % (item))
+                    raise ValueError("""[PHIDL] Device.remove() cannot find the
+                                     item
+                                     it was asked to remove in the Device:
+                                     "%s".""" % (item))
 
         self._bb_valid = False
         return self
@@ -1934,9 +1943,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
 
 
     def connect(self, port, destination, overlap = 0):
-        """ FIXME fill description
-
-        FIXME fill (port, destination, overlap)
+        """ Moves and rotates this object such that the the Port specified by
+        `port` is connected (aligned and adjacent) with the Port specified by
+        `destination`
 
         Parameters
         ----------
@@ -2051,8 +2060,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
 
     def mirror(self, p1 = (0, 1), p2 = (0, 0)):
         """ Mirrors a CellArray across the line formed between the two 
-        specified points. ``points`` may be input as either single points 
-        [1,2] or array-like[N][2], and will return in kind.
+        specified points.
 
         Parameters
         ----------
@@ -2293,9 +2301,11 @@ class Group(_GeometryHelper):
         spacing : int or float
             Distance between elements.
         separation : bool
-            If True, separates elements with a fixed spacing between; if 
-            False, separates elements equally along a grid.
-        edge : {'min', 'center', 'max'}
+            If True, guarantees elements are speparated with a fixed spacing
+            between; if False, elements are spaced evenly along a grid.
+        edge : {'x', 'xmin', 'xmax', 'y', 'ymin', 'ymax'}
+            Which edge to perform the distribution along (unused if
+            separation == True)
         """        
         _distribute(elements = self.elements, direction = direction,
                     spacing = spacing, separation = separation, edge = edge)
@@ -2304,11 +2314,11 @@ class Group(_GeometryHelper):
     def align(self, alignment = 'ymax'):
         """ Aligns the elements in the Group.
 
-        FIXME fill (alignment)
-
         Parameters
         ----------
         alignment : {'x', 'y', 'xmin', 'xmax', 'ymin', 'ymax'}
+            Which edge to align along (e.g. 'ymax' will align move the elements
+            such that all of their topmost points are aligned)
         """        
         _align(elements = self.elements, alignment = alignment)
         return self
@@ -2370,6 +2380,24 @@ class Path(_GeometryHelper):
 
 
     def extrude(self, cross_section, simplify = None):
+        """ Combines the 1D Path with a 1D CrossSection to form 2D polygons.
+
+        Parameters
+        ----------
+        cross_section : CrossSection
+            The CrossSection that the Path will extrude along
+        simplify : float
+            Tolerance value for the simplification algorithm.  All points that
+            can be removed without changing the resulting polygon by more than
+            the value listed here will be removed. Also known as `epsilon` here
+            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+
+        Returns
+        -------
+        Device
+            A Device with polygons added that correspond to the extrusion of the
+            Path with the CrossSection
+        """          
         X = cross_section
         
         D = Device()
@@ -2479,6 +2507,14 @@ class Path(_GeometryHelper):
 
 
     def copy(self):
+        """ Creates a copy of the Path.
+
+        Returns
+        -------
+        Path
+            A copy of the Path
+
+        """
         P = Path()
         P.info = self.info.copy()
         P.points = np.array(self.points)
@@ -2567,6 +2603,13 @@ class Path(_GeometryHelper):
         return np.array([x_offset, y_offset]).T
 
     def length(self):
+        """ Computes the cumulative length (arc length) of the path.
+
+        Returns
+        -------
+        float
+            The length of the Path
+        """
         x = self.points[:,0]
         y = self.points[:,1]
         dx = np.diff(x)
@@ -2574,6 +2617,18 @@ class Path(_GeometryHelper):
         return np.sum(np.sqrt((dx)**2 + (dy)**2))
 
     def curvature(self):
+        """ Calculates the curvature of the Path. Note this curvature is
+        numerically computed so areas where the curvature jumps instantaneously
+        (such as between an arc and a straight segment) will be slightly
+        interpolated.
+
+        Returns
+        -------
+        s : array-like[N]
+            The arc-length of the Path
+        K : array-like[N]
+            The curvature of the Path
+        """
         x = self.points[:,0]
         y = self.points[:,1]
         dx = np.diff(x)
@@ -2596,7 +2651,25 @@ class CrossSection(object):
         self.sections = []
         self.ports = set()
         
-    def add(self, width = 1, offset = 0, layer = 0, ports = (None,None)):
+    def add(self, width = 1, offset = 0, layer = 0, ports = (None,None), name = None):
+        """ Adds a cross-sectional element to the CrossSection.  If ports are
+        specified, when creating a Device with the extrude() command there be
+        have Ports at the ends.
+
+        Parameters
+        ----------
+        width : float
+            Width of the segment
+        offset : float
+            Offset of the segment (positive values = right hand side)
+        layer : int, tuple of int, or set of int
+            The polygon layer to put the segment on
+        ports : array-like[2] of str, int, or None
+            If not None, specifies the names for the ports at the ends of the
+            cross-sectional element
+        name : str, int, or None
+            Name of the cross-sectional element for later access
+        """          
         if isinstance(width, (float, int)) and (width <= 0):
             raise ValueError('[PHIDL] CrossSection.add(): widths must be >0')
         if len(ports) != 2:
@@ -2618,5 +2691,23 @@ class CrossSection(object):
         return self
         
     def extrude(self, path, simplify = None):
+        """ Combines the 1D CrossSection with a 1D Path to form 2D polygons.
+
+        Parameters
+        ----------
+        path : Path
+            The Path for the CrossSection to follow
+        simplify : float
+            Tolerance value for the simplification algorithm.  All points that
+            can be removed without changing the resulting polygon by more than
+            the value listed here will be removed. Also known as `epsilon` here
+            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+
+        Returns
+        -------
+        Device
+            A Device with polygons added that correspond to the extrusion of the
+            Path with the CrossSection
+        """          
         D = path.extrude(cross_section = self, simplify = simplify)
         return D
