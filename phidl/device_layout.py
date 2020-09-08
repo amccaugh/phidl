@@ -232,9 +232,7 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     return elements
 
 def _align(elements, alignment = 'ymax'):
-    """ FIXME private fill description
-
-    FIXME private fill (alignment)
+    """ Aligns lists of PHIDL elements
 
     Parameters
     ----------
@@ -314,8 +312,6 @@ class LayerSet(object):
                   alpha = 0.6, dither = None):
         """ Adds a layer to an existing LayerSet object.
 
-        FIXME fill (dither)
-
         Parameters
         ----------
         name : str
@@ -333,7 +329,8 @@ class LayerSet(object):
         alpha : int or float
             Alpha parameter (opacity) for the Layer, value must be between 0.0 
             and 1.0.
-        dither : 
+        dither : str
+            KLayout dither style (only used in phidl.utilities.write_lyp() )
 
         """
         new_layer = Layer(gds_layer = gds_layer, gds_datatype = gds_datatype, 
@@ -387,8 +384,8 @@ class Layer(object):
         Hex code of color for the Layer.
     alpha : int or float
         Alpha parameter (opacity) for the Layer.
-    dither : 
-        Dither parameter (texture) for the Layer
+    dither : str
+        KLayout dither parameter (texture) for the Layer
         (only used in phidl.utilities.write_lyp)
     """
     layer_dict = {}
@@ -1429,14 +1426,15 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def flatten(self, single_layer = None):
-        """ Flattens the heirarchy of the Device
-
-        FIXME fill (single_layer)
+        """ Flattens the heirarchy of the Device such that there are no longer
+        any references to other Devices.  All polygons and labels from
+        underlying references are copied and placed in the top-level Device.
+        If single_layer is specified, all polygons are moved to that layer. 
 
         Parameters
         ----------
-        single_layer : 
-
+        single_layer : None, int, tuple of int, or set of int
+            If not None, all polygons are moved to the specified
         """        
         if single_layer is None:
             super(Device, self).flatten(single_layer = None, 
@@ -1483,11 +1481,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         ``uid`` as the original so that they can be traced back to the 
         original if needed.
 
-        FIXME fill (depth)
-
         Parameters
         ----------
         depth : int or None
+            If not None, defines from how many reference levels to
+            retrieve Ports from.
 
         Returns
         -------
@@ -1640,17 +1638,24 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
     def hash_geometry(self, precision = 1e-4):
-        """ FIXME fill description
-
-        FIXME fill (precision)
+        """ Computes an SHA1 hash of the geometry in the Device. For each layer,
+            each polygon is individually hashed and then the polygon hashes
+            are sorted, to ensure the hash stays constant regardless of the
+            ordering the polygons.  Similarly, the layers are sorted by
+            (layer, datatype)
 
         Parameters
         ----------
         precision : float
+            Roudning precision for the the objects in the Device.  For instance,
+            a precision of 1e-2 will round a point at (0.124, 1.748) to (0.12, 1.75)
 
         Returns
         -------
+        str
+            Hash result in the form of an SHA1 hex digest string
 
+        ...
         Algorithm:
         hash(
             hash(First layer information: [layer1, datatype1]),
@@ -1661,11 +1666,6 @@ class Device(gdspy.Cell, _GeometryHelper):
             hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
             hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
         )
-        ...
-        Note: For each layer, each polygon is individually hashed and then
-              the polygon hashes are sorted, to ensure the hash stays constant
-              regardless of the ordering the polygons.  Similarly, the layers
-              are sorted by (layer, datatype)
         """
         polygons_by_spec = self.get_polygons(by_spec = True)
         layers = np.array(list(polygons_by_spec.keys()))
@@ -1810,16 +1810,16 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
                         rotation = None, x_reflection = False):
         """ Applies various transformations to a Port.
 
-        FIXME private fill (orientation, rotation, new_orientation)
-
         Parameters
         ----------
         point : array-like[N][2]
             Coordinates of the Port.
         orientation : int, float, or None
+            Orientation of the Port
         origin : array-like[2] or None
             If given, shifts the transformed points to the specified origin.
         rotation : int, float, or None
+            Angle of rotation to apply
         x_reflection : bool
             If True, reflects the Port across the x-axis before applying 
             rotation.
