@@ -2716,6 +2716,9 @@ class CrossSection(object):
             if p in self.ports:
                 raise ValueError('[PHIDL] CrossSection.add(): a port named "%s" already ' \
                                  "exists in this CrossSection, please rename port" % p)
+        if name in self.aliases:
+            raise ValueError('[PHIDL] CrossSection.add(): an element named "%s" already ' \
+                                "exists in this CrossSection, please change the name" % name)
 
         new_segment = dict(
             width = width,
@@ -2723,11 +2726,15 @@ class CrossSection(object):
             layer = layer,
             ports = ports,
             )
+
+        if name is not None:
+            self.aliases[name] = new_segment
         self.sections.append(new_segment)
         [self.ports.add(p) for p in ports if p is not None]
         
         return self
         
+
     def extrude(self, path, simplify = None):
         """ Combines the 1D CrossSection with a 1D Path to form 2D polygons.
 
@@ -2764,4 +2771,40 @@ class CrossSection(object):
         X.info = self.info.copy()
         X.sections = list(self.sections)
         X.ports = set(self.ports)
+        X.aliases = dict(self.aliases)
         return X
+
+
+    def __getitem__(self, key):
+        """ Allows access to cross-sectional elements by name like X['etch2'].
+
+        Parameters
+        ----------
+        key : str
+            Element name to access within the CrossSection.
+        """
+        try:
+            return self.aliases[key]
+        except:
+            raise ValueError('[PHIDL] Tried to access name "%s" in CrossSection '
+                             'which does not exist' % (key))
+
+
+    # def __setitem__(self, key, element):
+    #     """ Allows modification of to cross-sectional elements by name like
+    #      X['etch2'].width = 2
+
+    #     Parameters
+    #     ----------
+    #     key :
+    #         Element name in the CrossSection
+    #     element :
+    #         Cross-sectional element that will be accessed by name
+
+    #     """
+    #     if isinstance(element, (DeviceReference,Polygon,CellArray)):
+    #         self.aliases[key] = element
+    #     else:
+    #         raise ValueError('[PHIDL] Tried to assign alias "%s" in '
+    #                          'Device "%s", but failed because the item was '
+    #                          'not a DeviceReference' % (key, self.name))
