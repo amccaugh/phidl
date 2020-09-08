@@ -2337,11 +2337,21 @@ PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Grou
 
 
 class Path(_GeometryHelper):
-    def __init__(self, start_angle = 0):
+    """ The Path object for making smooth Paths.  To be used in combination 
+    with a CrossSection to create a Device.
+
+    Parameters
+    ----------
+    path : array-like[N][2], Path, or list of Paths
+        Points or Paths to append() initially
+    """
+    def __init__(self, path = None):
         self.points = np.array([[0,0]])
-        self.start_angle = start_angle
-        self.end_angle = start_angle
+        self.start_angle = 0
+        self.end_angle = 0
         self.info = {}
+        if path is not None:
+            self.append(path)
 
     def __len__(self):
         return len(self.points)
