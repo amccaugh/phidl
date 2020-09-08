@@ -4,6 +4,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh, mod
 from numpy.linalg import norm
 from phidl.device_layout import Device
 from phidl.device_layout import _parse_layer
+from phidl.geometry import turn
 import gdspy
 
 
@@ -635,6 +636,96 @@ def route_manhattan_auto(
 
     return Total
 
+def route_turn_manhattan(
+    port1,
+    port2,
+    layer=0,
+    radius=20
+    ):
+    """
+    Mahattan routing between two ports. If directions are not cardinal, adds a
+    turn to make cardinal and then routes.
+    
+    Parameters
+    ----------
+    port1, port2: Port objects
+        Ports to route to and from
+    layer: int (default: 0)
+        Layer to use for the routes
+    radius: float (default: 20)
+        Curve radius for bends
+        
+    Returns
+    ----------
+    Device object
+    
+    Notes
+    ----------
+    If direction is not cardinal, will route to nearest cardinal, then call
+    route_manhattan.
+    """
+    
+    D = Device()    
+    new_ports = []
+    for port in (port1, port2):
+        if port.orientation % 90 == 0:
+            new_ports.append(port)
+        else:
+            turn_angle = get_turn_angle(port.orientation, to_cardinal(port.orientation))
+            turn_route = turn(port, radius=radius, angle=turn_angle, layer=layer)
+            D.add_ref(turn_route)
+            new_ports.append(turn_route.ports[2])
+    
+    #Manhattan on new ports
+    route = route_manhattan(new_ports[0], new_ports[1], bendType='circular', layer=layer,
+                       radius=radius)
+    
+    D.add_ref(route)
+    
+    return D
+    
+
+def to_cardinal(angle):
+    """
+    Determines which cardinal direction is closest to input angle
+
+    Parameters
+    ----------
+    angle : float
+
+    Returns
+    -------
+    angle : [-180, -90, 0, 90]
+        Which cardinal direction is closest to the input angle
+    """
+
+    angle = map_to_pm180(angle)
+
+    cardinals = np.array([-180, -90, 0, 90])
+
+    arg = np.argmin(np.abs(angle - cardinals))
+
+    return cardinals[arg]
+
+
+def map_to_pm180(angle):
+    """converts an angle to an angle between -180 (inclusive) to +180 (exclusive)"""
+    return np.mod(angle + 180,360)-180
+
+def get_turn_angle(start_angle, target_angle):
+    """
+    Difference in angle in the range -180 to +180 (where negative is counter clockwise)
+
+    Parameters
+    ----------
+    start_angle, target_angle : float
+
+    Returns
+    -------
+    float
+        difference in angle.
+    """
+    return map_to_pm180(target_angle - start_angle)
 
 
 #==============================================================================
