@@ -108,8 +108,8 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
         Proportion of curve that is an Euler curve
     use_eff : bool
         If False: `radius` corresponds to minimum radius of curvature of the bend
-        If True:  `radius` corresponds to the end-to-end radius of curvature that
-        an equivalent circular arc would have
+        If True: The curve will be scaled such that the endpoints match an arc
+        with parameters `radius` and `angle`
     num_pts : int
         Number of points used per 360 degrees
 
