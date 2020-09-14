@@ -77,8 +77,6 @@ def _fresnel(R0, s, num_pts, n_iter=8):
       x += (-1)**n * t**(4*n+1)/(np.math.factorial(2*n) * (4*n+1))
       y += (-1)**n * t**(4*n+3)/(np.math.factorial(2*n+1) * (4*n+3))
     
-    x = np.concatenate([[0], x])
-    y = np.concatenate([[0], y])
     return np.array([np.sqrt(2)*R0*x, np.sqrt(2)*R0*y])
 
 
