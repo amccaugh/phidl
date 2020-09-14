@@ -1,10 +1,3 @@
-# TODO
-# phidl: finish variable offset/width functiaonlity
-# phidl: change group tutorial to rotate by 90 degrees
-
-
-
-# -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import warnings
@@ -131,7 +124,7 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
         angle = np.abs(angle)
     else:
         mirror = False
-        
+
     R0 = 1
     alpha = np.radians(angle)
     Rp = R0 / (np.sqrt(p*alpha))
@@ -191,34 +184,103 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
     return P
 
 
-# def spiral(num_turns = 3.25, gap = 1, inner_gap = 9, num_pts = 720):
-#     # FIXME: Every 0.25 num_turns = 0.125 actual turns
-#     num_pts = abs(int(num_pts*num_turns*360))
-#     num_turns1 = np.floor(num_turns)
-#     if (num_turns % 2) == 0:
-#         num_turns1 -= 1
-#     a1 = np.pi*num_turns1 + np.pi/2
-#     a2 = np.pi*num_turns + np.pi/2
-#     a = np.array([np.linspace(0, a1, num_pts),
-#                     np.concatenate([np.linspace(0, a1, num_pts),
-#                                     np.arange(a1,a2, a1/(num_pts-1))[1:]])])
-#     i1 = np.argmax(a[0] > np.pi/2)
-#     i2 = [len(x) for x in a]
-#     r = np.array([np.ones(i2[0]), np.ones(i2[1])])
-#     for i in range(2):
-#         r[i][:i1] = inner_gap/2 * np.sin(a[0][:i1])
-#         r[i][i1:i2[0]] = inner_gap/2 + (a[0][i1:i2[0]] - np.pi/2)/np.pi*gap
-#     if i2[0] == 0 or i2[1] != 0:
-#         r[1][i2[0]:] = inner_gap/2 + (a[1][i2[0]:] - np.pi/2)/np.pi*gap
-#     else: pass
-#     a, r = np.concatenate([[np.flip(a[1]), -np.flip(r[1])], [a[0], r[0]]],
-#                             axis = 1)
-#     x = r * np.cos(a); y = r * np.sin(a)
-#     points = np.array((x,y)).T
+def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
+    """ Creates a spiral geometry consisting of two oddly-symmetric 
+    semi-circular arcs in the centre and two Archimedean spiral arms extending 
+    outward from the ends of both arcs.
+    Parameters
+    ----------
+    num_turns : int or float
+        The number of turns in the spiral. Must be greater than 1. A full 
+        spiral rotation counts as 1 turn, and the center arcs will together 
+        always be 0.5 turn.
+    gap : int or float
+        The distance between any point on one arm of the spiral and a point 
+        with the same angular coordinate on an adjacent arm.
+    inner_gap : int or float
+        The inner size of the spiral, equal to twice the chord length of the 
+        centre arcs.
+    num_pts: int
+        The number of points in the entire spiral. The actual number of points 
+        will be slightly different than the specified value, as they are 
+        dynamically allocated using the path lengths of the spiral.
+    Returns
+    -------
+    x : ndarray
+        Array of the x-coordinates of the spiral.
+    y : ndarray
+        Array of the y-coordinates of the spiral.
+    Notes
+    -----
+    ``num_turns`` usage (x is any whole number):
+        - ``num_turns = x.0``: Output arm will be extended 0.5 turn to be on 
+        the same side as the input.
+        - ``num_turns < x.5``: Input arm will be extended by the fractional 
+        amount.
+        - ``num_turns = x.5``: Both arms will be the same length and the input 
+        and output will be on opposite sides.
+        - ``num_turns > x.5``: Output arm will be extended by the fractional 
+        amount.
+    """
+    # Establishing number of turns in each arm
+    if num_turns <= 1:
+        raise ValueError('num_turns must be greater than 1')
+    diff = num_turns - np.floor(num_turns)
+    if diff < 0.5:
+        num_turns1 = np.floor(num_turns) - 1 + 2*diff
+    else:
+        num_turns1 = np.floor(num_turns)
+    if diff > 0.5:
+        num_turns2 = np.floor(num_turns) - 1 + 2*diff
+    else:
+        num_turns2 = np.floor(num_turns)
+    print(num_turns1)
+    print(num_turns2)
 
-#     P = Path()
-#     # Manually add points & adjust start and end angles
-#     P.points = points[::-1]
-#     P.start_angle = 180
-#     P.end_angle = np.mod(360*num_turns, 360)
-#     return P
+    # Establishing relevant angles and spiral/centre arc parameters
+    a1 = np.pi/2
+    a2 = np.array([np.pi*num_turns1 + a1, np.pi*num_turns2 + a1])
+    a = inner_gap/2 - gap/2
+    b = gap/np.pi
+    Rc = inner_gap*np.sqrt(1 + (b/(a+b*a1))**2) / 4
+    theta = np.degrees(2*np.arcsin(inner_gap/4/Rc))
+
+    # Establishing number of points in each arm
+    s_centre = Rc*np.radians(theta)
+    s_spiral = ((a + a2*b)**2 + b**2)**(3/2) / (3*(a*b + (a2*b**2)))
+    z = num_pts / (s_spiral[0] + s_spiral[1] + 2*s_centre)
+    num_pts0 = int(z*s_centre)
+    num_pts1 = int(z*s_spiral[0])
+    num_pts2 = int(z*s_spiral[1]) - num_pts1
+
+    # Forming both spiral arms
+    arm1 = np.linspace(a1, a2[0], num_pts1)
+    arm2 = np.linspace(a2[0], a2[1], num_pts2)[1:]
+    a_spiral = np.array([arm1, np.concatenate([arm1, arm2])])
+    r_spiral = a + b*a_spiral
+    x_spiral = np.array([np.zeros(num_pts1), np.zeros(len(a_spiral[1]))])
+    y_spiral = np.array([np.zeros(num_pts1), np.zeros(len(a_spiral[1]))])
+    for i in range(2):
+        x_spiral[i] = r_spiral[i]*np.cos(a_spiral[i])
+        y_spiral[i] = r_spiral[i]*np.sin(a_spiral[i])
+
+    # Forming centre arcs
+    pts = _rotate_points(arc(Rc, theta, 360*num_pts0/theta).points, -theta/2+90)
+    x_centre = pts[:,0] + x_spiral[0][0] - pts[:,0][-1]
+    y_centre = pts[:,1] + y_spiral[0][0] - pts[:,1][-1]
+    x_centre = np.concatenate([-np.flip(x_centre), x_centre])
+    y_centre = np.concatenate([-np.flip(y_centre), y_centre])
+
+    # Combining into final spiral
+    x = np.concatenate([-np.flip(x_spiral[1]), x_centre, x_spiral[0]])
+    y = np.concatenate([-np.flip(y_spiral[1]), y_centre, y_spiral[0]])
+    points = np.array((x,y)).T
+
+    P = Path(points)
+    # Manually add points & adjust start and end angles
+    # P.points = points
+    # P.start_angle = np.mod(num_turns2*180 + 180, 360)
+    # P.end_angle = np.mod(num_turns1*180 + 180, 360)
+    # print(P.start_angle)
+    # print(P.end_angle)
+    return P
