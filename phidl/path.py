@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import warnings
-from phidl.device_layout import Path, _rotate_points
+from phidl.device_layout import Path, CrossSection, _rotate_points
 
 
 def arc(radius = 10, angle = 90, num_pts = 720):
@@ -282,3 +282,75 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     # print(P.start_angle)
     # print(P.end_angle)
     return P
+
+
+
+
+def _sinusoidal_transition(y1, y2):
+    dx = y2 - y1
+    return lambda t: y1 + (1 - np.cos(np.pi*t))/2*dx
+
+def _linear_transition(y1, y2):
+    dx = y2 - y1
+    return lambda t: y1 + t*dx
+
+
+def transition(cross_section1, cross_section2, width_type = 'sine'):
+    """ Creates a CrossSection that smoothly transitions between two input
+    CrossSections. Only cross-sectional elements that have the `name` (as in
+    X.add(..., name = 'wg') ) parameter specified in both input CrosSections
+    will be created. Port names will be cloned from the input CrossSections in
+    reverse.
+
+    Parameters
+    ----------
+    cross_section1 : CrossSection
+        First input CrossSection
+    cross_section2 : CrossSection
+        Second input CrossSection
+    width_type : {'sine', 'linear'}
+        Sets the type of width transition used if any widths are different
+        between the two input CrossSections.
+
+    Returns
+    -------
+    CrossSection
+        A smoothly-transitioning CrossSection
+    """
+
+    X1 = cross_section1
+    X2 = cross_section2
+    Xtrans = CrossSection()
+    for alias in X1.aliases.keys():
+        if alias in X2.aliases:
+
+            offset1 = X1[alias]['offset']
+            offset2 = X2[alias]['offset']
+            width1 = X1[alias]['width']
+            width2 = X2[alias]['width']
+
+            if callable(offset1):
+                offset1 = offset1(1)
+            if callable(offset2):
+                offset2 = offset2(0)
+            if callable(width1):
+                width1 = width1(1)
+            if callable(width2):
+                width2 = width2(0)
+
+            offset_fun = _sinusoidal_transition(offset1, offset2)
+            
+            if width_type == 'sine':
+                width_fun = _sinusoidal_transition(width1, width2)
+            elif width_type == 'linear':
+                width_fun = _linear_transition(width1, width2)
+            else:
+                raise ValueError("[PHIDL] transition() width_type " +
+                    "argument must be one of {'sine','linear'}")
+
+            Xtrans.add(width = width_fun, offset = offset_fun,
+                    layer = X1[alias]['layer'], 
+                    ports = (X2[alias]['ports'][0], X1[alias]['ports'][1]),
+                    name = alias)
+
+    return Xtrans
