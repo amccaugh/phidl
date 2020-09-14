@@ -120,12 +120,18 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
     """
     if (p < 0) or (p > 1):
         raise ValueError('[PHIDL] euler() requires argument `p` be between 0 and 1')
+    if p == 0:
+        P = arc(radius = radius, angle = angle, num_pts = num_pts)
+        P.info['Reff'] = radius
+        P.info['Rmin'] = radius
+        return P
 
     R0 = 1
     alpha = np.radians(angle)
     Rp = R0 / (np.sqrt(p*alpha))
     sp = R0 * np.sqrt(p*alpha)
     s0 = 2*sp + Rp*alpha*(1-p)
+    num_pts = abs(int(num_pts*angle/360))
     num_pts_euler = int(np.round(sp/(s0/2)*num_pts))
     num_pts_arc = num_pts - num_pts_euler
 
@@ -155,7 +161,7 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
     dy = np.tan(np.radians(end_angle-90)) * points[-1][0]
     Reff = points[-1][1] - dy
     Rmin = Rp
-    
+
     # Fix degenerate condition at angle == 180
     if np.abs(180-angle) < 1e-3:
         Reff = points[-1][1]/2
