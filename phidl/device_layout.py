@@ -7,6 +7,7 @@
 # Minor TODO
 #==============================================================================
 # Replace write_gds() with GdsLibrary.write_gds()
+# Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
 # check that aliases show up properly in quickplot2
 # phidl add autoarray_xy to pg.geometry()
@@ -17,7 +18,6 @@
 # Documentation TODO
 #==============================================================================
 # Update binder to point at quickstart.ipynb
-# Rename "Examples" to Tutorials
 # Tutorials
 # - Using Layers (Layers, LayerSet, {} notation)
 # - Arranging objects together with packer()/grid()/autoarray()
@@ -2652,7 +2652,8 @@ class Path(_GeometryHelper):
         """ Calculates the curvature of the Path. Note this curvature is
         numerically computed so areas where the curvature jumps instantaneously
         (such as between an arc and a straight segment) will be slightly
-        interpolated.
+        interpolated, and sudden changes in point density along the curve can
+        cause discontinuities.
 
         Returns
         -------
