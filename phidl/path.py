@@ -126,6 +126,12 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
         P.info['Rmin'] = radius
         return P
 
+    if angle < 0:
+        mirror = True
+        angle = np.abs(angle)
+    else:
+        mirror = False
+        
     R0 = 1
     alpha = np.radians(angle)
     Rp = R0 / (np.sqrt(p*alpha))
@@ -180,6 +186,8 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
     P.end_angle = end_angle
     P.info['Reff'] = Reff*scale
     P.info['Rmin'] = Rmin*scale
+    if mirror == True:
+        P.mirror((1,0))
     return P
 
 
