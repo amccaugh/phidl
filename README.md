@@ -4,14 +4,12 @@
 GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 
 - [**Installation / requirements**](#installation--requirements)
-- [**Tutorial + examples**](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
-- [**Geometry + function documentation**](https://phidl.readthedocs.io/)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.3.0 (May 5, 2020))
-  - Now introducing the automatic [`pg.packer()` geometry-packing tool](https://phidl.readthedocs.io/en/latest/#packer-align-distribute):
+- [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
+- [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.0 (Sept 14, 2020))
+  - Now introducing the [path / waveguide module](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html):
 
-`pg.packer(D_list, spacing = 1.25, aspect_ratio = (2,1))`
-
-![phidl example image](https://amccaugh.github.io/phidl/packer.png)
+![phidl example image](https://amccaugh.github.io/phidl/path_waveguide_module.png)
 
 
 # Installation / requirements
@@ -28,7 +26,7 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 
 PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
 
-PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 that extends and simplifies the excellent [gdspy](https://github.com/heitzmann/gdspy).  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) that are fully parameterized. It also has a built-in quick-plotting function based on Qt (or matplotlib) that allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__geometry library reference__](https://phidl.readthedocs.io/) and a [__very thorough tutorial__](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py#L35) that will walk you through the process of getting acquainted with PHIDL.
+PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 that significantly extends the excellent [gdspy](https://github.com/heitzmann/gdspy).  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) that are fully parameterized. It also has a built-in quick-plotting function based on matplotlib (or Qt) that allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__geometry library reference__](https://phidl.readthedocs.io/) and a set of [__very thorough tutorials__](https://phidl.readthedocs.io/en/latest/tutorials.html) that will walk you through the process of getting acquainted with PHIDL.
 
 The goal is to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a geometry you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
 
