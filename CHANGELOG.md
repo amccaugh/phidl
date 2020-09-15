@@ -1,5 +1,27 @@
 # Changelog
 
+
+## 1.4.0 (Sept 14, 2020)
+
+Huge update with lots of quality-of-life improvements.
+
+### New features
+- New [path / waveguide module](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html) featuring intuitive and fast path building, sub-millisecond polygon generation, and modular cross-sections (thanks to Alex Tait @atait, Dylan Oh @dmwo, Samuel Gyger @gyger, and Florian Vogelbacher).
+- Now you can easily `Group` objects for easier manipulation. See the [Group tutorial here](https://phidl.readthedocs.io/en/latest/tutorials/group.html)
+- Significantly extended documentation, including new tutorials, geometry library description with images, and API / function reference.  See https://phidl.readthedocs.io/
+- Docstrings added for all functions
+- Addition of `pg.grid()` a grid-placement function for creating 2D arrays of devices (thanks to Samuel Gyger @gyger)
+
+### Changes
+- `filename` argument in `write_gds()` can now accept `pathlib` or file buffer   (thanks to Samuel Gyger @gyger)
+
+### Bugfixes
+- int-casting fix in `routing`  (thanks to Samuel Gyger @gyger)
+- Fix for `pg.optimal_step()` if `start_width==end_width` and `symmetric==True` (thanks to Ekkehart Schmidt)
+- Fix capitalization errors of color names in `Layer`  (thanks to Jeff Shainline)
+- Fix to `@endpoints.setter`
+
+
 ## 1.3.0 (May 5, 2020)
 
 ### New features

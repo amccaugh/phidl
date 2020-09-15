@@ -17,7 +17,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 
 setup(name='phidl',
-      version='1.3.0',
+      version='1.4.0',
       description='PHIDL',
       long_description = long_description,
       long_description_content_type='text/markdown',
@@ -25,6 +25,6 @@ setup(name='phidl',
       author='Adam McCaughan',
       author_email='amccaugh@gmail.com',
       packages=['phidl'],
-      py_modules=['phidl.geometry', 'phidl.routing', 'phidl.utilities'],
+      py_modules=['phidl.geometry', 'phidl.routing', 'phidl.utilities', 'phidl.path'],
       package_dir = {'phidl': 'phidl'},
      )
