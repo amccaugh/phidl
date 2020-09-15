@@ -17,7 +17,8 @@
 #==============================================================================
 # Documentation TODO
 #==============================================================================
-# Update binder to point at quickstart.ipynb
+# - Grid() function
+# - All Path functions
 # Tutorials
 # - Using Layers (Layers, LayerSet, {} notation)
 # - Arranging objects together with packer()/grid()/autoarray()
