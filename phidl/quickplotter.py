@@ -8,9 +8,12 @@ import sys
 import warnings
 
 import phidl
-from phidl.device_layout import Device, DeviceReference, CellArray, Layer, Polygon, _rotate_points
+from phidl.device_layout import Device, DeviceReference, CellArray
+from phidl.device_layout import Layer, Polygon, Path, _rotate_points
 import gdspy
 
+_SUBPORT_RGB = (0,120,120)
+_PORT_RGB = (190,0,0)
 
 try:
     from matplotlib import pyplot as plt
@@ -25,8 +28,8 @@ try:
     from PyQt5.QtCore import Qt, QPoint, QPointF, QRectF, QRect, QSize,QSizeF,  QCoreApplication, QLineF
     from PyQt5.QtGui import QColor, QPolygonF, QPen
 
-    PORT_COLOR = QColor(190,0,0)
-    SUBPORT_COLOR = QColor(0,135,135)
+    PORT_COLOR = QColor(*_PORT_RGB)
+    SUBPORT_COLOR = QColor(*_SUBPORT_RGB)
     OUTLINE_PEN = QColor(200,200,200)
     qt_imported = True
 except:
@@ -35,7 +38,7 @@ except:
     qt_imported = False
 
 
-def quickplot(items, show_ports = True, show_subports = False,
+def quickplot(items, show_ports = True, show_subports = True,
               label_ports = True, label_aliases = False, new_window = False):
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
@@ -77,13 +80,14 @@ def quickplot(items, show_ports = True, show_subports = False,
                     if (port.width is None) or (port.width == 0):
                         new_bbox = _draw_port_as_point(ax, port)
                     else:
-                        new_bbox = _draw_port(ax, port, arrow_scale = 1,  color = 'r')
+                        new_bbox = _draw_port(ax, port, is_subport = False,  color = 'r')
                     bbox = _update_bbox(bbox, new_bbox)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
                     if not isinstance(sd, (gdspy.CellArray)):
                         for name, port in sd.ports.items():
-                            new_bbox = _draw_port(ax, port, arrow_scale = 0.75, color = 'k')
+                            new_bbox = _draw_port(ax, port, is_subport = True,
+                                                  color = np.array(_SUBPORT_RGB)/255)
                             bbox = _update_bbox(bbox, new_bbox)
             if isinstance(item, Device) and label_aliases is True:
                 for name, ref in item.aliases.items():
@@ -95,10 +99,17 @@ def quickplot(items, show_ports = True, show_subports = False,
             new_bbox = _draw_polygons(polygons, ax, facecolor = layerprop['color'],
                            edgecolor = 'k', alpha = layerprop['alpha'])
             bbox = _update_bbox(bbox, new_bbox)
+        elif isinstance(item, Path):
+            points = item.points
+            new_bbox = _draw_line(x = points[:,0], y = points[:,1],
+                            ax = ax, linestyle = '--',
+                            linewidth = 2, color = 'b')
+            bbox = _update_bbox(bbox, new_bbox)
+
     if bbox == None:
-        bbox = [0,0,1,1]
-    xmargin = (bbox[2]-bbox[0])*0.2
-    ymargin = (bbox[3]-bbox[1])*0.2
+        bbox = [-1,-1,1,1]
+    xmargin = (bbox[2]-bbox[0])*0.1 + 1e-9
+    ymargin = (bbox[3]-bbox[1])*0.1 + 1e-9
     ax.set_xlim([bbox[0]-xmargin, bbox[2]+xmargin])
     ax.set_ylim([bbox[1]-ymargin, bbox[3]+ymargin])
     # print(bbox)
@@ -134,11 +145,7 @@ def _get_layerprop(layer, datatype):
     return {'color':color, 'alpha':alpha}
 
 
-def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
-    """ This function uses a trick where all polygon points are concatenated,
-    separated only by NaN values.  This speeds up drawing considerably, see
-    http://exnumerus.blogspot.com/2011/02/how-to-quickly-plot-polygons-in.html
-    """
+def _draw_polygons(polygons, ax, **kwargs):
     coll = PolyCollection(polygons, **kwargs)
     ax.add_collection(coll)
     stacked_polygons = np.vstack(polygons)
@@ -147,34 +154,43 @@ def _draw_polygons(polygons, ax, quickdraw = False, **kwargs):
     bbox = [xmin,ymin,xmax,ymax]
     return bbox
         
+from matplotlib.lines import Line2D
+def _draw_line(x, y, ax, **kwargs):
+    line = Line2D(x, y, **kwargs)
+    ax.add_line(line)
+    xmin,ymin = np.min(x), np.min(y)
+    xmax,ymax = np.max(x), np.max(y)
+    bbox = [xmin,ymin,xmax,ymax]
+    return bbox
+
+
+def _port_marker(port, is_subport):
+    if is_subport:
+        arrow_scale = 0.75
+        rad = (port.orientation+45)*np.pi/180
+        pm = +1
+    else:
+        arrow_scale = 1
+        rad = (port.orientation-45)*np.pi/180
+        pm = -1
+    arrow_points = np.array([[0,0],[10,0],[6,pm*4],[6,pm*2],[0,pm*2]])/35*port.width*arrow_scale
+    arrow_points += port.midpoint
+    arrow_points = _rotate_points(arrow_points, angle = port.orientation, center = port.center)
+    text_pos = np.array([np.cos(rad), np.sin(rad)])*port.width/3 + port.center
+    return arrow_points, text_pos
 
 
 
-def _draw_port(ax, port, arrow_scale, color):
-    # x,y = port.midpoint
-    nv = port.normal
-    n = (nv[1]-nv[0])
-    dx,dy = n*port.width/8*arrow_scale
-    dx += n[1]*port.width/8*arrow_scale
-    dy += n[0]*port.width/8*arrow_scale
-    # dx,dy = np.array(np.cos(port.orientation/180*np.pi), np.sin(port.orientation/180*np.pi))*port.width/10*arrow_scale + \
-    #         np.array(np.cos((port.orientation+90)/180*np.pi), np.sin((port.orientation+90)/180*np.pi))*port.width/4*arrow_scale
-    # print(port.midpoint)
-    # print(port.width)
-    # print(nv)
+def _draw_port(ax, port, is_subport, color):
     xbound, ybound = np.column_stack(port.endpoints)
     #plt.plot(x, y, 'rp', markersize = 12) # Draw port midpoint
-    arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width*arrow_scale
-    arrow_points += port.midpoint
-    arrow_points = _rotate_points(arrow_points, angle = port.orientation, center = port.midpoint)
+    arrow_points, text_pos = _port_marker(port, is_subport)
     xmin,ymin = np.min(np.vstack([arrow_points,port.endpoints]), axis = 0)
     xmax,ymax = np.max(np.vstack([arrow_points,port.endpoints]), axis = 0)
     ax.plot(xbound, ybound, alpha = 0.5, linewidth = 3, color = color) # Draw port edge
-    ax.plot(arrow_points[:,0], arrow_points[:,1], alpha = 0.5, linewidth = 1, color = color) # Draw port edge
-    # plt.arrow(x, y, dx, dy,length_includes_head=True, width = 0.1*arrow_scale,
-    #           head_width=0.3*arrow_scale, alpha = 0.5, **kwargs)
-    ax.text(port.midpoint[0]+dx, port.midpoint[1]+dy, port.name,
-        horizontalalignment = 'center', verticalalignment = 'center', fontsize = 14)
+    ax.plot(arrow_points[:,0], arrow_points[:,1], alpha = 0.8, linewidth = 2, color = color) # Draw port edge
+    ax.text(text_pos[0], text_pos[1], port.name,
+        horizontalalignment = 'center', verticalalignment = 'center', fontsize = 14, color = color)
     bbox = [xmin,ymin,xmax,ymax]
     return bbox
 
@@ -351,20 +367,16 @@ class Viewer(QGraphicsView):
             point1 = QPointF(point1[0], point1[1])
             point2 = QPointF(point2[0], point2[1])
             qline = self.scene.addLine(QLineF(point1, point2))
-            arrow_points = np.array([[0,0],[10,0],[6,4],[6,2],[0,2]])/(40)*port.width
+            arrow_points, text_pos = _port_marker(port, is_subport)
             arrow_qpoly = QPolygonF( [QPointF(p[0], p[1]) for p in arrow_points] )
             port_scene_poly = self.scene.addPolygon(arrow_qpoly)
-            port_scene_poly.setRotation(port.orientation)
-            port_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
+            # port_scene_poly.setRotation(port.orientation)
+            # port_scene_poly.moveBy(port.midpoint[0], port.midpoint[1])
             port_shapes = [qline,port_scene_poly]
         qtext = self.scene.addText(str(port.name), self.portfont)
-        port_items = port_shapes + [qtext]
-        rad = port.orientation*np.pi/180
-        x,y = port.endpoints[0]*1/4 +  port.endpoints[1]*3/4 + np.array([np.cos(rad), np.sin(rad)])*port.width/8
-#        x,y = port.midpoint[0], port.midpoint[1]
-#        x,y  = x - qtext.boundingRect().width()/2, y - qtext.boundingRect().height()/2
-        qtext.setPos(QPointF(x,y))
+        qtext.setPos(QPointF(text_pos[0], text_pos[1]))
         qtext.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        port_items = port_shapes + [qtext]
 
         if not is_subport:
             [shape.setPen(self.portpen) for shape in port_shapes]

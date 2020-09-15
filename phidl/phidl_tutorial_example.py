@@ -166,7 +166,7 @@ qp(D) # quickplot it!
 # All the waveguides we made have two ports: 'wgport1' and 'wgport2'  We can
 # use these names in place of (x,y) pairs.  For instance, if we want to move
 # wg1 such that its port 'wgport1' rests on the origin, we do:
-wg1.move(origin = 'wgport1', destination = [0,0])
+wg1.move(origin = wg1.ports['wgport1'], destination = [0,0])
 # Alternatively, we can use the Port object itself in the same manner.  We can
 # access the Port objects for any Device (or DeviceReference) by calling device.ports,
 # --which returns a Python dictionary--and accessing its value with the key
@@ -449,7 +449,7 @@ D.distribute(elements = 'all',   # either 'all' or a list of objects
 D = Device()
 [D.add_ref(pg.rectangle(size = [n*15+20,n*15+20]).move((n,n*4))) for n in [0,2,3,1,2]]
 D.distribute(elements = 'all', direction = 'x', spacing = 100, separation = False,
-             edge = 'min') # edge must be either 'min', 'max', or 'center'
+             edge = 'xmin') # edge must be either 'xmin', 'xmax', 'x', 'ymin', 'ymax', or 'y'
 
 qp(D) # quickplot the geometry
 
