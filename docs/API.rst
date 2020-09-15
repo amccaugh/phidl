@@ -352,9 +352,37 @@ ytron_round
 .. autofunction:: phidl.geometry.ytron_round
 
 
-*********************
-Device Layout Library
-*********************
+************
+Path Library
+************
+
+arc
+===
+
+.. autofunction:: phidl.path.arc
+
+
+euler
+=====
+
+.. autofunction:: phidl.path.euler
+
+
+straight
+========
+
+.. autofunction:: phidl.path.straight
+
+
+spiral
+======
+
+.. autofunction:: phidl.path.spiral
+
+
+**************
+Layout Classes
+**************
 
 CellArray
 =========
