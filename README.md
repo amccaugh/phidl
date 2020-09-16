@@ -7,7 +7,8 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
 - [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.0 (Sept 14, 2020))
-  - Now introducing the [path / waveguide module](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html):
+  - You can now easily [`Group` objects together](https://phidl.readthedocs.io/en/latest/tutorials/group.html)
+  - Now introducing the [**path / waveguide module**](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html):
 
 ![phidl example image](https://amccaugh.github.io/phidl/path_waveguide_module.png)
 
