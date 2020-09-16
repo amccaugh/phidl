@@ -81,20 +81,20 @@ def _fresnel(R0, s, num_pts, n_iter=8):
 
 
 def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
-    """ Create an Euler bend (also known as "racetrack" or "clothoid" curve)
-    with smoothly varying curvature.  By default, `radius` corresponds to the
-    minimum radius of curvature of the bend. However, if `use_eff` is set to
-    True, `radius` corresponds to the effective radius of curvature (making the
-    curve a drop-in replacement for an arc). If p < 1.0, will create a "partial
-    euler" curve as described in Vogelbacher et. al.
-    https://dx.doi.org/10.1364/oe.27.031394
+    """ Create an Euler bend (also known as "racetrack" or "clothoid" curves)
+    that adiabatically transitions from straight to curved.  By default,
+    `radius` corresponds to the minimum radius of curvature of the bend.
+    However, if `use_eff` is set to True, `radius` corresponds to the effective
+    radius of curvature (making the curve a drop-in replacement for an arc). If
+    p < 1.0, will create a "partial euler" curve as described in Vogelbacher et.
+    al. https://dx.doi.org/10.1364/oe.27.031394
 
     Parameters
     ----------
-    angle : int or float
-        Total angle of curve
     radius : int or float
         Minimum radius of curvature
+    angle : int or float
+        Total angle of curve
     p : float
         Proportion of curve that is an Euler curve
     use_eff : bool
