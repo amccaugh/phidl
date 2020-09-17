@@ -25,13 +25,13 @@ def arc(radius = 10, angle = 90, num_pts = 720):
     t = np.linspace(-90*np.pi/180, (angle-90)*np.pi/180, num_pts)
     x = radius*np.cos(t)
     y = radius*(np.sin(t)+1)
-    points = np.array((x,y)).T
+    points = np.array((x,y)).T * np.sign(angle)
 
     P = Path()
     # Manually add points & adjust start and end angles
     P.points = points
-    P.start_angle = 180*(angle<0)
-    P.end_angle = P.start_angle + angle
+    P.start_angle = 0
+    P.end_angle = angle
     return P
 
 
