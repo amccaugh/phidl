@@ -1,6 +1,7 @@
 # # -*- coding: utf-8 -*-
 #%%
 from __future__ import division, print_function, absolute_import
+import os.path
 import numpy as np
 import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
@@ -2752,10 +2753,7 @@ def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0)
                 else:
                     valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
                     warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
-                    'Valid characters: %s' % (chr(ascii_val), ascii_val,
-                'Valid characters: %s' % (chr(ascii_val), ascii_val,        
-                    'Valid characters: %s' % (chr(ascii_val), ascii_val,
-                                            valid_chars))
+                                  'Valid characters: %s' % (chr(ascii_val), ascii_val, valid_chars))
             t.add_ref(l)
             yoffset -= 1500*scaling
             xoffset = 0
