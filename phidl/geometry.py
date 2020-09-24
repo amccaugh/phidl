@@ -2736,32 +2736,38 @@ def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0)
     if face == "DEPLOF":
         scaling = size/1000
 
-    for line in text.split('\n'):
-        l = Device(name = 'textline')
-        for c in line:
-            ascii_val = ord(c)
-            if c == ' ':
-                xoffset += 500*scaling
-            elif (33 <= ascii_val <= 126) or (ascii_val == 181):
-                for poly in _glyph[ascii_val]:
-                    xpts = np.array(poly)[:, 0]*scaling
-                    ypts = np.array(poly)[:, 1]*scaling
-                    l.add_polygon([xpts + xoffset, ypts + yoffset],
-                                  layer = layer)
-                xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
-            else:
-                valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
-                warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
+        for line in text.split('\n'):
+            l = Device(name = 'textline')
+            for c in line:
+                ascii_val = ord(c)
+                if c == ' ':
+                    xoffset += 500*scaling
+                elif (33 <= ascii_val <= 126) or (ascii_val == 181):
+                    for poly in _glyph[ascii_val]:
+                        xpts = np.array(poly)[:, 0]*scaling
+                        ypts = np.array(poly)[:, 1]*scaling
+                        l.add_polygon([xpts + xoffset, ypts + yoffset],
+                                    layer = layer)
+                    xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
+                else:
+                    valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
+                    warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
+                    'Valid characters: %s' % (chr(ascii_val), ascii_val,
                 'Valid characters: %s' % (chr(ascii_val), ascii_val,        
-                                          valid_chars))
-        t.add_ref(l)
-        yoffset -= 1500*scaling
+                    'Valid characters: %s' % (chr(ascii_val), ascii_val,
+                                            valid_chars))
+            t.add_ref(l)
+            yoffset -= 1500*scaling
             xoffset = 0
     else:
-        from .font import get_font_by_name, get_glyph
+        from .font import get_font_by_name, get_font_by_file, get_glyph
 
         # Load the font
-        font = get_font_by_name(face)
+        # If we've passed a valid file, try to load that, otherwise search system fonts
+        if (face.endswith(".otf") or face.endswith(".ttf")) and os.path.exists(face):
+            font = get_font_by_file(face)
+        else:
+            font = get_font_by_name(face)
 
         # Render each character
         yoffset = 0
