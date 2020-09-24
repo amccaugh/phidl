@@ -2707,14 +2707,16 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 #
 #==============================================================================
 
-def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
-    """ Creates geometries of text written with the majority of English ASCII 
-    characters available.
+def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0):
+    """ Creates geometries of text
 
     Parameters
     ----------
     text : str
         Text string to be written.
+    face: str
+        Font face to use. Default DEPLOF does not require additional libraries, otherwise
+        freetype will be used to load system fonts.
     size : int or float
         Size of the text
     justify : {'left', 'right', 'center'}
@@ -2727,11 +2729,13 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
     t : Device
         A Device containing the text geometry.
     """
-    scaling = size/1000
-    position = (0, 0)
+    t = Device('text')
     xoffset = 0
     yoffset = 0
-    t = Device('text')
+
+    if face == "DEPLOF":
+        scaling = size/1000
+
     for line in text.split('\n'):
         l = Device(name = 'textline')
         for c in line:
@@ -2752,16 +2756,37 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
                                           valid_chars))
         t.add_ref(l)
         yoffset -= 1500*scaling
-        xoffset = position[0]
+            xoffset = 0
+    else:
+        from .font import get_font_by_name, get_glyph
+
+        # Load the font
+        font = get_font_by_name(face)
+
+        # Render each character
+        yoffset = 0
+        for line in text.split('\n'):
+            l = Device('textline')
+            xOffset = 0
+            for letter in line:
+                letter_dev, advance_x = get_glyph(font, letter)
+                ref = l.add_ref(letter_dev)
+                ref.move(destination=(xOffset, 0))
+                ref.magnification = size
+                xOffset += size*advance_x
+            t.add_ref(l)
+            l.move(destination=(0, yoffset))
+            yoffset -= size
+
     justify = justify.lower()
     for l in t.references:
         if justify == 'left': pass
-        if justify == 'right': l.xmax = position[0]
+        if justify == 'right': l.xmax = 0
         if justify == 'center': l.move(origin = l.center,
-                                       destination = position, axis = 'x')
-    t.flatten()
-    return t
+                                    destination = (0, 0), axis = 'x')
 
+    t.flatten(single_layer=layer)
+    return t
 
 #==============================================================================
 # Example code
