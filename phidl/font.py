@@ -16,7 +16,6 @@ except ImportError as imp_err:
                       "\n\n $ pip install freetype") from imp_err
 
 from .device_layout import Device
-from .geometry import boolean
 
 @functools.lru_cache(maxsize=4)
 def get_font_by_file(file):
@@ -64,7 +63,6 @@ def get_glyph(font, letter):
         font_name = font.family_name.replace(" ", "_")
 
     block_name = f"*char_{font_name}_0x{ord(letter):02x}"
-    device = Device(block_name)
 
     # Load control points from font file
     font.load_char(letter, freetype.FT_LOAD_FLAGS['FT_LOAD_NO_BITMAP'])
@@ -75,6 +73,7 @@ def get_glyph(font, letter):
 
     # Add polylines
     start, end = 0, -1
+    polylines = []
     for contour in outline.contours:
         start = end + 1
         end = contour
@@ -170,9 +169,15 @@ def get_glyph(font, letter):
                     cpoint += 1
                 else:
                     raise ValueError("Sequential control points not valid for cubic splines.")
-        new_dev = Device()
-        new_dev.add_polygon(curve.get_points())
-        device = boolean(device, new_dev, operation="xor")
+        polylines.append(gdspy.Polygon(curve.get_points()))
+
+    # Construct the device
+    device = Device(block_name)
+    if polylines:
+        letter_polyline = polylines[0]
+        for polyline in polylines[1:]:
+            letter_polyline = gdspy.boolean(letter_polyline, polyline, "xor")
+        device.add_polygon(letter_polyline)
 
     # Cache the return value and return it
     font.gds_glyphs[letter] = (device, glyph.advance.x/font.size.ascender)

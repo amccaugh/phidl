@@ -2768,18 +2768,21 @@ def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0)
             font = get_font_by_name(face)
 
         # Render each character
-        yoffset = 0
         for line in text.split('\n'):
             l = Device('textline')
-            xOffset = 0
+            xoffset = 0
             for letter in line:
-                letter_dev, advance_x = get_glyph(font, letter)
+                letter_dev = Device("letter")
+                letter_template, advance_x = get_glyph(font, letter)
+                for poly in letter_template.polygons:
+                    letter_dev.add_polygon(poly.polygons, layer=layer)
                 ref = l.add_ref(letter_dev)
-                ref.move(destination=(xOffset, 0))
+                ref.move(destination=(xoffset, 0))
                 ref.magnification = size
-                xOffset += size*advance_x
-            t.add_ref(l)
-            l.move(destination=(0, yoffset))
+                xoffset += size*advance_x
+
+            ref = t.add_ref(l)
+            ref.move(destination=(0, yoffset))
             yoffset -= size
 
     justify = justify.lower()
@@ -2789,7 +2792,7 @@ def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0)
         if justify == 'center': l.move(origin = l.center,
                                     destination = (0, 0), axis = 'x')
 
-    t.flatten(single_layer=layer)
+    t.flatten()
     return t
 
 #==============================================================================
