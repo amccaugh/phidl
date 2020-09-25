@@ -113,7 +113,7 @@ def test_port_geometry():
 
 
 def test_text():
-    valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
+    valid_chars = u'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
     D = pg.text(text = valid_chars, size = 77, justify = 'left', layer = 0)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '6a5eef6483c46cdec54c9c284a5e5002b934a06d')
@@ -130,7 +130,7 @@ def test_truetype():
     from os import path
     cd = path.abspath(path.dirname(__file__))
     font_file = path.join(cd, "SourceCodePro-Regular.ttf")
-    test_text = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
+    test_text = u'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
     
     D = pg.text(text = test_text, face = font_file, size=77, justify='center', layer = 0)
     h = D.hash_geometry(precision = 1e-4)

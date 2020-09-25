@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #==============================================================================
 # Major TODO
 #==============================================================================
@@ -268,7 +269,7 @@ def _line_distances(points, start, end):
 
 
 def _simplify(points, tolerance=0):
-    """ Ramer–Douglas–Peucker algorithm for line simplification.  Takes an
+    """ Ramer–Douglas–Peucker algorithm for line simplification. Takes an
     array of points of shape (N,2) and removes excess points in the line. The
     remaining points form a identical line to within `tolerance` from the
     original """

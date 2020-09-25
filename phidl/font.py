@@ -2,8 +2,9 @@
 Support for font rendering in GDS files.
 """
 
-import functools
+from __future__ import division
 
+import six
 import numpy as np
 from matplotlib import font_manager
 import gdspy
@@ -17,7 +18,6 @@ except ImportError as imp_err:
 
 from .device_layout import Device
 
-@functools.lru_cache(maxsize=4)
 def get_font_by_file(file):
     """
     Load a given font file.
@@ -25,8 +25,15 @@ def get_font_by_file(file):
     Args:
         file [str, BinaryIO]: Load a font face from a given file
     """
+    # Cache opened fonts
+    if getattr(get_font_by_file, "fonts", None) is None:
+        get_font_by_file.fonts = {}
+    if file in get_font_by_file.fonts:
+        return get_font_by_file.fonts[file]
+    
     font_renderer = freetype.Face(file)
     font_renderer.set_char_size(32*64) # 32pt size
+    get_font_by_file.fonts[file] = font_renderer
     return font_renderer
 
 def get_font_by_name(name):
@@ -43,8 +50,8 @@ def get_glyph(font, letter):
     """
     Get a block reference to the given letter
     """
-    if not isinstance(letter, str) and len(letter) == 1:
-        raise TypeError("Letter must be a string of length 1. Got: (%s)." % letter)
+    if not isinstance(letter, six.string_types) and len(letter) == 1:
+        raise TypeError("Letter must be a string of length 1. Got: (%s)." % (letter))
 
     if not isinstance(font, freetype.Face):
         raise TypeError(("font %r must be a freetype font face. "
