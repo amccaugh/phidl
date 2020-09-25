@@ -104,7 +104,9 @@ def get_glyph(font, letter):
                     if cpoint+3 <= end:
                         curve.C(*points[cpoint+1:cpoint+4].flatten())
                     elif cpoint+2 <= end:
-                        curve.C(*points[cpoint+1:cpoint+3].flatten(), *points[start])
+                        plist = list(points[cpoint+1:cpoint+3].flatten())
+                        plist.extend(points[start])
+                        curve.C(*plist)
                     else:
                         raise ValueError("Missing bezier control points. We require at least"
                                          " two control points to get a cubic curve.")
@@ -126,7 +128,7 @@ def get_glyph(font, letter):
                         p2 = (p1 + p2)/2
 
                     # Add the curve
-                    curve.Q(*p1, *p2)
+                    curve.Q(p1[0], p1[1], p2[0], p2[1])
                     cpoint += 2
             else:
                 # We are looking at a control point
@@ -165,7 +167,7 @@ def get_glyph(font, letter):
                         p2 = (p1 + p2)/2
 
                     # And add the segment
-                    curve.Q(*p1, *p2)
+                    curve.Q(p1[0], p1[1], p2[0], p2[1])
                     cpoint += 1
                 else:
                     raise ValueError("Sequential control points not valid for cubic splines.")
