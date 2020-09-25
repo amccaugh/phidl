@@ -2763,10 +2763,16 @@ def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0)
 
         # Load the font
         # If we've passed a valid file, try to load that, otherwise search system fonts
+        font = None
         if (face.endswith(".otf") or face.endswith(".ttf")) and os.path.exists(face):
             font = get_font_by_file(face)
         else:
-            font = get_font_by_name(face)
+            try:
+                font = get_font_by_name(face)
+            except ValueError:
+                pass
+        if font is None:
+            raise ValueError("[PHIDL] Failed to find font: %s" % (face))
 
         # Render each character
         for line in text.split('\n'):

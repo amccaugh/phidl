@@ -13,7 +13,7 @@ try:
 except ImportError as imp_err:
     raise ImportError("PHIDL requires freetype to use real fonts. "
                       "Either use the default DEPLOF font or install the freetype package:"
-                      "\n\n $ pip install freetype") from imp_err
+                      "\n\n $ pip install freetype-py")
 
 from .device_layout import Device
 
@@ -44,11 +44,11 @@ def get_glyph(font, letter):
     Get a block reference to the given letter
     """
     if not isinstance(letter, str) and len(letter) == 1:
-        raise TypeError(f"Letter must be a string of length 1. Got: ({letter}).")
+        raise TypeError("Letter must be a string of length 1. Got: (%s)." % letter)
 
     if not isinstance(font, freetype.Face):
-        raise TypeError(f"font {font} must be a freetype font face. "
-                         "Load a font using get_font_by_name first.")
+        raise TypeError(("font %r must be a freetype font face. "
+                        "Load a font using get_font_by_name first.") % (font))
 
     if getattr(font, "gds_glyphs", None) is None:
         font.gds_glyphs = {}
@@ -62,7 +62,7 @@ def get_glyph(font, letter):
         # If there is no postscript name, use the family name
         font_name = font.family_name.replace(" ", "_")
 
-    block_name = f"*char_{font_name}_0x{ord(letter):02x}"
+    block_name = "*char_%s_0x%2X" % (font_name, ord(letter))
 
     # Load control points from font file
     font.load_char(letter, freetype.FT_LOAD_FLAGS['FT_LOAD_NO_BITMAP'])

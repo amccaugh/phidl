@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 import pytest
 
 from phidl import Device, Layer, LayerSet, make_device, Port
@@ -126,19 +127,33 @@ def test_text():
 
 def test_truetype():
     font = pytest.importorskip("phidl.font", reason="Testing of ttf/otf fonts requires the freetype package.")
+    from os import path
+    cd = path.abspath(path.dirname(__file__))
+    font_file = path.join(cd, "SourceCodePro-Regular.ttf")
     test_text = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
-    test_unicode = 'Árvíztűrő tükörfúrógép'
-    D = pg.text(text = test_text, face = "SourceCodePro-Regular.ttf", size=77, justify='center', layer = 0)
+    
+    D = pg.text(text = test_text, face = font_file, size=77, justify='center', layer = 0)
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '45044fed1303f1b847ecc2522fa02bff36b98e3b')
-    D = pg.text(text = test_unicode, face = "SourceCodePro-Regular.ttf", size=77, justify='center', layer = 0)
-    h = D.hash_geometry(precision = 1e-4)
-    assert(h == 'fc7cac5c10bb38785db8908658afcc82552e916f')
+
     # Test multilayer
     layers = set(((1,0), (2,0), (3,5), 4))
-    D = pg.text(text = test_unicode, face = "SourceCodePro-Regular.ttf", size=77, justify='center', layer = layers)
+    D = pg.text(text = test_text, face = font_file, size=77, justify='center', layer = layers)
     h = D.hash_geometry(precision = 1e-4)
-    assert(h == '64435a47c7b47d06460968313ff90e6a9106a0a8')
+    assert(h == '4ce33f201596995f57432fc30e54b7d78430b8a5')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 0), reason="unicode test requires python3")
+def test_unicode():
+    font = pytest.importorskip("phidl.font", reason="Testing of ttf/otf fonts requires the freetype package.")
+    from os import path
+    cd = path.abspath(path.dirname(__file__))
+    font_file = path.join(cd, "SourceCodePro-Regular.ttf")
+    test_unicode = 'Árvíztűrő tükörfúrógép'
+
+    D = pg.text(text = test_unicode, face = font_file, size=77, justify='center', layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'fc7cac5c10bb38785db8908658afcc82552e916f')
 
 
 def test_copy_deepcopy():
