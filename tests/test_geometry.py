@@ -124,6 +124,23 @@ def test_text():
     assert(h == '6e9d0977b510a079daf15b22387d32222934ba75')
 
 
+def test_truetype():
+    font = pytest.importorskip("phidl.font", reason="Testing of ttf/otf fonts requires the freetype package.")
+    test_text = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
+    test_unicode = 'Árvíztűrő tükörfúrógép'
+    D = pg.text(text = test_text, face = "SourceCodePro-Regular.ttf", size=77, justify='center', layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '45044fed1303f1b847ecc2522fa02bff36b98e3b')
+    D = pg.text(text = test_unicode, face = "SourceCodePro-Regular.ttf", size=77, justify='center', layer = 0)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == 'fc7cac5c10bb38785db8908658afcc82552e916f')
+    # Test multilayer
+    layers = set(((1,0), (2,0), (3,5), 4))
+    D = pg.text(text = test_unicode, face = "SourceCodePro-Regular.ttf", size=77, justify='center', layer = layers)
+    h = D.hash_geometry(precision = 1e-4)
+    assert(h == '64435a47c7b47d06460968313ff90e6a9106a0a8')
+
+
 def test_copy_deepcopy():
     D = Device()
     A = pg.ellipse(radii = (10,5), angle_resolution = 2.5, layer = 1)
