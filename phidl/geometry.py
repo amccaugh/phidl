@@ -2717,7 +2717,8 @@ def text(text = 'abcd', face = "DEPLOF", size = 10, justify = 'left', layer = 0)
         Text string to be written.
     face: str
         Font face to use. Default DEPLOF does not require additional libraries, otherwise
-        freetype will be used to load system fonts.
+        freetype will be used to load fonts. Font can be given either by name (e.g. "Times New Roman"),
+        or by file path. OTF or TTF fonts are supported.
     size : int or float
         Size of the text
     justify : {'left', 'right', 'center'}
