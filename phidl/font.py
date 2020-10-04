@@ -47,7 +47,12 @@ def _get_font_by_name(name):
     Args:
         name [str]: Load a system font
     """
-    font_file = font_manager.findfont(name, fallback_to_default=False)
+    try:
+        font_file = font_manager.findfont(name, fallback_to_default=False)
+    except:
+        raise ValueError(('[PHIDL] Failed to find font: "%s". ' +
+        'Try specifying the exact (full) path to the .ttf or .otf file. ' + 
+        'Otherwise, it might be resolved by rebuilding the matplotlib font cache') % (name))
     return _get_font_by_file(font_file)
 
 def _get_glyph(font, letter):

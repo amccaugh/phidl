@@ -2775,7 +2775,7 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0, font = "DEPLOF")
         if font is None:
             raise ValueError(('[PHIDL] Failed to find font: "%s". ' +
             'Try specifying the exact (full) path to the .ttf or .otf file. ' + 
-            'Otherwise, it may be resolved by rebuilding the matplotlib font cache') % (face))
+            'Otherwise, it might be resolved by rebuilding the matplotlib font cache') % (face))
 
         # Render each character
         for line in text.split('\n'):
