@@ -2708,7 +2708,7 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 #
 #==============================================================================
 
-def text(text = 'abcd', size = 10, justify = 'left', layer = 0, face = "DEPLOF"):
+def text(text = 'abcd', size = 10, justify = 'left', layer = 0, font = "DEPLOF"):
     """ Creates geometries of text
 
     Parameters
@@ -2735,6 +2735,7 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0, face = "DEPLOF")
     xoffset = 0
     yoffset = 0
 
+    face = font
     if face == "DEPLOF":
         scaling = size/1000
 
