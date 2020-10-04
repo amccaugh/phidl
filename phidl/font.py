@@ -24,7 +24,7 @@ except ImportError as imp_err:
                       "from here: https://github.com/ubawurinna/freetype-windows-binaries"
                       " -- be sure to rename 'freetype.dll' to 'libfreetype.dll') ")
 
-def get_font_by_file(file):
+def _get_font_by_file(file):
     """
     Load a given font file.
 
@@ -40,7 +40,7 @@ def get_font_by_file(file):
     _cached_fonts[file] = font_renderer
     return font_renderer
 
-def get_font_by_name(name):
+def _get_font_by_name(name):
     """
     Try and load a system font by name.
 
@@ -48,9 +48,9 @@ def get_font_by_name(name):
         name [str]: Load a system font
     """
     font_file = font_manager.findfont(name, fallback_to_default=False)
-    return get_font_by_file(font_file)
+    return _get_font_by_file(font_file)
 
-def get_glyph(font, letter):
+def _get_glyph(font, letter):
     """
     Get a block reference to the given letter
     """
@@ -59,7 +59,7 @@ def get_glyph(font, letter):
 
     if not isinstance(font, freetype.Face):
         raise TypeError(("font %r must be a freetype font face. "
-                        "Load a font using get_font_by_name first.") % (font))
+                        "Load a font using _get_font_by_name first.") % (font))
 
     if getattr(font, "gds_glyphs", None) is None:
         font.gds_glyphs = {}

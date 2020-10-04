@@ -2715,16 +2715,16 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0, font = "DEPLOF")
     ----------
     text : str
         Text string to be written.
-    face: str
-        Font face to use. Default DEPLOF does not require additional libraries, otherwise
-        freetype will be used to load fonts. Font can be given either by name (e.g. "Times New Roman"),
-        or by file path. OTF or TTF fonts are supported.
     size : int or float
         Size of the text
     justify : {'left', 'right', 'center'}
         Justification of the text.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    font: str
+        Font face to use. Default DEPLOF does not require additional libraries, otherwise
+        freetype will be used to load fonts. Font can be given either by name (e.g. "Times New Roman"),
+        or by file path. OTF or TTF fonts are supported.
 
     Returns
     -------
@@ -2760,16 +2760,16 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0, font = "DEPLOF")
             yoffset -= 1500*scaling
             xoffset = 0
     else:
-        from .font import get_font_by_name, get_font_by_file, get_glyph
+        from .font import _get_font_by_name, _get_font_by_file, _get_glyph
 
         # Load the font
         # If we've passed a valid file, try to load that, otherwise search system fonts
         font = None
         if (face.endswith(".otf") or face.endswith(".ttf")) and os.path.exists(face):
-            font = get_font_by_file(face)
+            font = _get_font_by_file(face)
         else:
             try:
-                font = get_font_by_name(face)
+                font = _get_font_by_name(face)
             except ValueError:
                 pass
         if font is None:
@@ -2783,7 +2783,7 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0, font = "DEPLOF")
             xoffset = 0
             for letter in line:
                 letter_dev = Device("letter")
-                letter_template, advance_x = get_glyph(font, letter)
+                letter_template, advance_x = _get_glyph(font, letter)
                 for poly in letter_template.polygons:
                     letter_dev.add_polygon(poly.polygons, layer=layer)
                 ref = l.add_ref(letter_dev)
