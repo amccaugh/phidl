@@ -1015,8 +1015,6 @@ def _offset_region(all_polygons, bboxes,
     distance d, this function crops out a region (x+2*d, y+2*d) large, offsets 
     that region, then crops it back to size (x, y) to create a valid result.
 
-    FIXME private fill (polygons_offset_cropped)
-
     Parameters
     ----------
     all_polygons : PolygonSet or list of polygons
@@ -1050,11 +1048,12 @@ def _offset_region(all_polygons, bboxes,
     Returns
     -------
     polygons_offset_cropped : 
+        The resulting input polygons that are cropped to be between the
+        coordinates (left, bottom, right, top)
 
     """
         
     # Mark out a region slightly larger than the final desired region
-    # FIXME: Necessary?
     d = distance*1.01
     
     polygons_to_offset = _crop_edge_polygons(all_polygons, bboxes, left-d,
@@ -1102,9 +1101,8 @@ def _offset_polygons_parallel(polygons,
                               precision = 1e-4,
                               join = 'miter',
                               tolerance = 2):
-    """ FIXME private fill description
-
-    FIXME private fill (polygons, offset_polygons)
+    """ Performs the offset function on a list of subsections of the original
+    geometry
 
     Parameters
     ----------
@@ -1224,9 +1222,8 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
                                num_divisions = [10, 10],
                                operation = 'and',
                                precision = 1e-4):
-    """ FIXME private fill description
-
-    FIXME private fill (boolean_polygons)
+    """ Performs the boolean function on a list of subsections of the original
+    geometry
 
     Parameters
     ----------
@@ -1246,6 +1243,7 @@ def _boolean_polygons_parallel(polygons_A, polygons_B,
     Returns
     -------
     boolean_polygons : list of polygons
+        All the booleaned polygons from each of the subsections
 
     """
     # Build bounding boxes
@@ -1399,7 +1397,7 @@ def litho_calipers(notch_size = [2, 5],
 
     Returns
     -------
-    D: Device
+    Device
         A Device containing the caliper structures.
     """
     D = Device('litho_calipers')
@@ -1443,7 +1441,7 @@ def extract(D, layers = [0, 1]):
 
     Returns
     -------
-    D_extracted : Device
+    Device
         A Device containing the extracted polygons.
     """
     D_extracted = Device('extract')
@@ -1468,7 +1466,7 @@ def copy(D):
 
     Returns
     -------
-    D_copy : Device
+    Device
         Copied Device.
     """
     D_copy = Device(name = D._internal_name)
@@ -1503,7 +1501,7 @@ def deepcopy(D):
 
     Returns
     -------
-    D_copy : Device
+    Device
         Deep copied Device.
     """
     D_copy = python_copy.deepcopy(D)
@@ -1535,7 +1533,7 @@ def copy_layer(D, layer = 1, new_layer = 2):
 
     Returns
     -------
-    D_copied_layer : Device
+    Device
         A Device containing the original and copied layers.
     """
     D_copied_layer = extract(D, layers = [layer])
@@ -1544,24 +1542,23 @@ def copy_layer(D, layer = 1, new_layer = 2):
 
 
 def import_gds(filename, cellname = None, flatten = False):
-    """ FIXME fill description
-
-    FIXME fill (filename, cellname, flatten, topdevice, D)
+    """ Imports a GDS file and returns a Device with all the corresponding
+    geometry
 
     Parameters
     ----------
     filename : str
-
-    cellname : str
-
+        Path or name of file to be imported
+    cellname : str or None
+        Name of the cell that will be returned as a Device.  If None,
+        will automatically select the topmost cell
     flatten : bool
-
+        Whether to flatten the imported geometry, removing all cell heirarchy
 
     Returns
     -------
-    topdevice : Device
-
-    D : Device
+    Device
+        A PHIDL Device with all the geometry/labels/etc imported from the GDS file
 
     """
     gdsii_lib = gdspy.GdsLibrary()
@@ -1640,19 +1637,6 @@ def import_gds(filename, cellname = None, flatten = False):
 
 
 def _translate_cell(c):
-    """ FIXME private fill description
-
-    FIXME private fill (c, D)
-
-    Parameters
-    ----------
-    c : Device
-
-    Returns
-    -------
-    D : Device
-
-    """
     D = Device(name = c.name)
     for e in c.elements:
         if isinstance(e, gdspy.PolygonSet):
@@ -1714,7 +1698,7 @@ def preview_layerset(ls, size = 100, spacing = 100):
     return D
 
 class device_lru_cache:
-    """ FIXME class fill """
+    """ Least-recently-used (LRU) cache for Devices  """
     def __init__(self, fn):
         self.maxsize = 32
         self.fn = fn
@@ -2370,9 +2354,7 @@ def _microstrip_Z_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
     return Z
 
 def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
-    """ FIXME private fill description
-
-    FIXME private fill (v)
+    """ Calculates the propagation velocity in a microstrip
 
     Parameters
     ----------
@@ -2387,7 +2369,8 @@ def _microstrip_v_with_Lk(wire_width, dielectric_thickness, eps_r, Lk_per_sq):
 
     Returns
     -------
-    v : 
+    v : float
+        Propagation velocity in the microstrip
 
     Notes
     -----
@@ -2425,7 +2408,7 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness,
 
     Returns
     -------
-    w[0] : float
+    w : float
         Wire width of the microstrip.
 
     Notes
@@ -2455,20 +2438,7 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness,
     return w[0]
 
 def _G_integrand(xip, B):
-    """ FIXME private fill description
-
-    FIXME private fill (xip, B)
-
-    Parameters
-    ----------
-    xip : 
-
-    B : 
-
-
-    Returns
-    -------
-
+    """ Special function for microstrip calculations
     """
     try:
         from scipy.special import iv as besseli
@@ -2479,20 +2449,7 @@ def _G_integrand(xip, B):
 
 
 def _G(xi, B):
-    """ FIXME private fill description
-
-    FIXME private fill (xi, B)
-
-    Parameters
-    ----------
-    xi : 
-
-    B : 
-
-
-    Returns
-    -------
-
+    """ Special function for microstrip calculations
     """
     try:
         import scipy.integrate
@@ -2600,9 +2557,9 @@ def hecken_taper(length = 200, B = 4.0091, dielectric_thickness = 0.25,
 @device_lru_cache
 def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
                   min_spacing = 0.5, layer = 0):
-    """ FIXME fill description
-
-    FIXME fill (meander_length, spacing_factor, min_spacing, D)
+    """ Takes in an array of x-positions and a array of widths (corresponding to
+    each x-position) and creates a meander.  Typically used for creating
+    meandered tapers
 
     Parameters
     ----------
@@ -2611,10 +2568,11 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
     w_taper : array-like[N]
         The y-coordinates of the data points, same length as ``x_taper``.
     meander_length : int or float
-
+        Length of each section of the meander
     spacing_factor : int or float
-
+        Multiplicative spacing factor between adjacent meanders
     min_spacing : int or float
+        Minimum spacing between adjacent meanders
 
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
@@ -3101,31 +3059,6 @@ def _pack_single_bin(rect_dict,
     Will iteratively grow the bin size until everything fits or the bin size 
     reaches `max_size`. Returns a dictionary of the packed rectanglesn in the 
     form {id:(x, y, w, h)}, and a dictionary of remaining unpacked rects.
-
-    FIXME private fill (rect_dict, aspect_ratio, max_size, sort_by_area, 
-    density, verbose, RETURN)
-
-    Parameters
-    ----------
-    rect_dict : dict
-
-    aspect_ratio : 
-
-    max_size : 
-
-    sort_by_area : 
-
-    density : 
-
-    precision : float
-        Desired precision for rounding vertex coordinates.
-    verbose : 
-
-
-    Returns
-    -------
-    (packed_rect_dict, unpacked_rect_dict) : array-like
-
     """
     try:
         import rectpack
@@ -3202,8 +3135,6 @@ def packer(D_list,
            verbose = False):
     """ Packs geometries together into rectangular bins.
 
-    FIXME fill (verbose)
-
     Parameters
     ----------
     D_list : array-like of Devices
@@ -3222,6 +3153,7 @@ def packer(D_list,
     precision : float
         Desired precision for rounding vertex coordinates.
     verbose : bool
+        Whether to display results of packing attempts
 
 
     Returns
@@ -3287,25 +3219,7 @@ def packer(D_list,
 
 def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]],
                         dx = 1, dy = 1):
-    """ FIXME private fill description
-
-    FIXME private fill (polygons, bounds, dy, dy, raster)
-    
-    Parameters
-    ----------
-    polygons : 
-
-    bounds : 
-
-    dx : 
-
-    dy : 
-
-
-    Returns
-    -------
-    raster : 
-
+    """ Converts polygons to a black/white (1/0) matrix
     """
     try:
         from skimage import draw
@@ -3343,29 +3257,7 @@ def _rasterize_polygons(polygons, bounds = [[-100, -100], [100, 100]],
 
 def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]],
                             dx = 1, dy = 1):
-    """ FIXME private fill description
-
-    FIXME private fill (i, j, bounds, dx, dy, x, y)
-
-    Parameters
-    ----------
-    i : int or float
-
-    j : int or float
-
-    bounds : array-like
-
-    dx : int or float
-
-    dy : int or float
-
-
-    Returns
-    -------
-    x : 
-
-    y : 
-
+    """ Converts (i,j) index of raster matrix to real coordinates
     """
     x = (j+0.5)*dx + bounds[0][0]
     y = (i+0.5)*dy + bounds[0][1]
@@ -3373,20 +3265,7 @@ def _raster_index_to_coords(i, j, bounds = [[-100, -100], [100, 100]],
 
 
 def _expand_raster(raster, distance = (4, 2)):
-    """ FIXME private fill description
-
-    FIXME private fill (raster, distance)
-
-    Parameters
-    ----------
-    raster : 
-
-    distance : array-like
-
-
-    Returns
-    -------
-
+    """ Expands all black (1) pixels in the raster
     """
     try:
         from skimage import draw, morphology
@@ -3410,7 +3289,7 @@ def _expand_raster(raster, distance = (4, 2)):
 def _fill_cell_rectangle(size = (20, 20), layers = (0, 1, 3),
                          densities = (0.5, 0.25, 0.7),
                          inverted = (False, False, False)):
-    """ FIXME private fill description
+    """ Creates a single Device on multiple layers to be used as fill
 
     Parameters
     ----------
@@ -3472,31 +3351,30 @@ def fill_rectangle(D, fill_size = (40, 10), avoid_layers = 'all',
                    include_layers = None, margin = 100,
                    fill_layers = (0, 1, 3), fill_densities = (0.5, 0.25, 0.7), 
                    fill_inverted = None, bbox = None):
-    """ FIXME fill description
-
-    FIXME fill (D, fill_size, avoid_layers, include_layers, margin, 
-    fill_layers, fill_densities, fill_inverted, bbox, F)
+    """ Creates a rectangular fill pattern and fills all empty areas
+    in the input device D
 
     Parameters
     ----------
     D : Device
-
-    fill_size : 
-
-    avoid_layers : 
-
+        Device to be filled
+    fill_size : array-like[2]
+        Rectangular size of the fill element
+    avoid_layers : 'all' or list of layers
+        Layers to be avoided (not filled) in D
     include_layers : 
-
-    margin : 
-
-    fill_layers : 
-
-    fill_densities : 
-
-    fill_inverted : 
-
-    bbox : 
-
+        Layers to be included (filled) in D, supercedes avoid_layers
+    margin : int or float
+        Margin spacing around avoided areas -- fill will not come within
+        `margin` of the geometry in D
+    fill_layers : list of layers
+        Defines the fill pattern layers
+    fill_densities : float between 0 and 1
+        Defines the fill pattern density (1.0 == fully filled)
+    fill_inverted : bool
+        Inverts the fill pattern
+    bbox : array-like[2][2]
+        Limit the fill pattern to the area defined by this bounding box
 
     Returns
     -------
@@ -3626,7 +3504,7 @@ def polygon_ports(xpts = [-1, -1, 0, 0],
 def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
             width_grating = 5, length_taper = 10, width = 0.4,
             partial_etch = False):
-    """ FIXME fill description
+    """ Simple grating structure for photonics
 
     Parameters
     ----------
@@ -3710,9 +3588,7 @@ def grating(num_periods = 20, period = 0.75, fill_factor = 0.5,
 # Via Route ----------------------------------------
 def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer,
                   via_layer, via_width):
-    """ FIXME private fill description
-
-    FIXME private fill (VI)
+    """ Helper function for test_via
 
     Parameters
     ----------
@@ -3764,7 +3640,7 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15,
              via_spacing = 40, pad_size = (300, 300), min_pad_spacing = 0,
              pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2,
              via_layer = 3):
-    """ FIXME fill description
+    """ Via chain test structure
 
     Parameters
     ----------
@@ -3915,7 +3791,8 @@ def test_comb(pad_size = (200, 200), wire_width = 1, wire_gap = 3,
               comb_layer = 0, overlap_zigzag_layer = 1,
               comb_pad_layer = None, comb_gnd_layer = None,
               overlap_pad_layer = None):
-    """ FIXME fill description
+    """ Overlap comb test structure for checking whether two layers
+    are electrically isolated
 
     Parameters
     ----------
@@ -4111,22 +3988,6 @@ def test_comb(pad_size = (200, 200), wire_width = 1, wire_gap = 3,
 
 def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
     """ Helper function used to make the IC step wire structure.
-
-    FIXME private fill (thick_width, thin_width)
-
-    Parameters
-    ----------
-    thick_width : 
-
-    thin_width : 
-
-    wire_layer : int, array-like[2], or set
-        Specific layer(s) to put wire geometry on. 
-
-    Returns
-    -------
-    WS4 : Device
-
     """
     WS4 = Device('test_ic_step')
     wire_stepa = WS4.add_ref(optimal_step(thick_width/2, thin_width/2,
@@ -4148,7 +4009,7 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
 def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
             wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200, 200), 
             pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = None):
-    """ FIXME fill description
+    """ Critical current test structure for superconducting wires.
 
     Parameters
     ----------
@@ -4447,9 +4308,6 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
                  width_tol = 1e-3, anticrowding_factor = 1.2,
                  symmetric = False, layer = 0):
     """ Creates an optimally-rounded step geometry.
-
-    FIXME fill (width_tol, anticrowding_factor)
-
     Parameters
     ----------
     start_width : int or float
@@ -4459,10 +4317,11 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
     num_pts : int
         The number of points comprising the entire step geometry.
     width_tol : float
+        Point at which to terminate the calculation of the optimal step
 
     anticrowding_factor : int or float
-        Adjusts the horizontal range of the step. Lower values result in 
-        a horizontally-compressed plot step.
+        Factor to reduce current crowding by elongating
+        the structure and reducing the curvature
     symmetric : bool
         If True, adds a mirrored copy of the step across the x-axis to the 
         geometry and adjusts the width of the ports.
@@ -4836,14 +4695,17 @@ def snspd_expanded(wire_width = 0.2, wire_pitch = 0.6, size = (10,8),
 def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
                 arm_widths = (200, 200), theta = 2.5, theta_resolution = 10,
                 layer = 0):
-    """ FIXME fill description
-
-    FIXME fill (rho, theta_resolution)
+    """ Ytron structure for superconducting nanowires
+    
+    From McCaughan, A. N., Gammell, J. I., Oh, D. M. & Nam,
+    S. W. A high-density customizable microwave vacuum feedthrough for cryogenic
+    applications. Rev. Sci. Instrum. 91, 015114 (2020).
+    http://dx.doi.org/10.1063/1.5133055 
 
     Parameters
     ----------
     rho : int or float
-
+        Radius of curvature of ytron intersection point
     arm_lengths : array-like[2] of int or float
         Lengths of the left and right arms of the yTron, respectively.
     source_length : int or float
@@ -4853,7 +4715,7 @@ def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
     theta : int or float
         Angle between the two yTron arms.
     theta_resolution : int or float
-
+        Angle resolution for curvature of ytron intersection point
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
