@@ -2153,7 +2153,6 @@ def tee(size = (4, 2), stub_size = (2, 1), taper_type = None, layer = 0):
 #
 #==============================================================================
 
-# TODO change this so "width1" and "width2" arguments can accept Port directly
 def taper(length = 10, width1 = 5, width2 = None, port = None, layer = 0):
     """ Creates a tapered trapezoid/rectangle geometry.
 
@@ -2973,21 +2972,20 @@ def grid(device_list,
     spacing : int, float, or array-like[N] of int or float
         Spacing between adjacent elements on the grid, can be a tuple for 
         different distances in height and width.
+    separation : bool
+        If True, guarantees elements are speparated with a fixed spacing between; if  False, elements are spaced evenly along a grid.
     shape : array-like[2]
         x, y shape of the grid (see np.reshape). If no shape is given and the list is 1D, the output is as if np.reshape were run with (1, -1).
-    grid_size : array-like[2]
-        (width, height) of the column and row, used to set the grid center 
-        points of each element.
-    equal_column : bool
-        If True, sets all columns to the same width in the case that 
-        `grid_size` is None or a tuple (None, None).
-    equal_row : bool
-        If True, sets all rows to the same width in the case that  
-        `grid_size` is None or a tuple (None, None).
-    expand_list : bool
-        If False, prevents the function from expanding `device_matrix` with 
-        empty items in the case that there are too few items in `device_list` 
-        for the `shape`.
+    align_x : {'x', 'xmin', 'xmax'}
+        Which edge to perform the x (column) alignment along
+    align_y : {'y', 'ymin', 'ymax'}
+        Which edge to perform the y (row) alignment along
+    edge_x : {'x', 'xmin', 'xmax'}
+        Which edge to perform the x (column) distribution along (unused if
+        separation == True)
+    edge_y : {'y', 'ymin', 'ymax'}
+        Which edge to perform the y (row) distribution along (unused if
+        separation == True)
 
     Returns
     -------
