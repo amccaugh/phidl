@@ -11,6 +11,8 @@ import gdspy
 from .device_layout import Device
 
 
+_cached_fonts = {}
+
 try:
     import freetype
 except ImportError as imp_err:
@@ -30,14 +32,12 @@ def get_font_by_file(file):
         file [str, BinaryIO]: Load a font face from a given file
     """
     # Cache opened fonts
-    if getattr(get_font_by_file, "fonts", None) is None:
-        get_font_by_file.fonts = {}
-    if file in get_font_by_file.fonts:
-        return get_font_by_file.fonts[file]
+    if file in _cached_fonts:
+        return _cached_fonts[file]
     
     font_renderer = freetype.Face(file)
     font_renderer.set_char_size(32*64) # 32pt size
-    get_font_by_file.fonts[file] = font_renderer
+    _cached_fonts[file] = font_renderer
     return font_renderer
 
 def get_font_by_name(name):
