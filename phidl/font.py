@@ -8,15 +8,19 @@ import six
 import numpy as np
 from matplotlib import font_manager
 import gdspy
+from .device_layout import Device
+
 
 try:
     import freetype
 except ImportError as imp_err:
     raise ImportError("PHIDL requires freetype to use real fonts. "
                       "Either use the default DEPLOF font or install the freetype package:"
-                      "\n\n $ pip install freetype-py")
-
-from .device_layout import Device
+                      "\n\n $ pip install freetype-py"
+                      "\n\n (Note: Windows users may have to replace 'libfreetype.dll' in "
+                      "their Python package directory /freetype/ with the correct one"
+                      "from here: https://github.com/ubawurinna/freetype-windows-binaries"
+                      " -- be sure to rename 'freetype.dll' to 'libfreetype.dll') ")
 
 def get_font_by_file(file):
     """
