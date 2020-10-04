@@ -4,6 +4,7 @@ from setuptools import setup
 from io import open
 
 install_requires=[
+   'six',
    'gdspy>=1.5',
    'numpy',
    'matplotlib',

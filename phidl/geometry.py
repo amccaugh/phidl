@@ -1,6 +1,7 @@
 # # -*- coding: utf-8 -*-
 #%%
 from __future__ import division, print_function, absolute_import
+import os.path
 import numpy as np
 import itertools
 from numpy import sqrt, pi, cos, sin, log, exp, sinh
@@ -2707,9 +2708,8 @@ def meander_taper(x_taper, w_taper, meander_length = 1000, spacing_factor = 3,
 #
 #==============================================================================
 
-def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
-    """ Creates geometries of text written with the majority of English ASCII 
-    characters available.
+def text(text = 'abcd', size = 10, justify = 'left', layer = 0, font = "DEPLOF"):
+    """ Creates geometries of text
 
     Parameters
     ----------
@@ -2721,47 +2721,89 @@ def text(text = 'abcd', size = 10, justify = 'left', layer = 0):
         Justification of the text.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    font: str
+        Font face to use. Default DEPLOF does not require additional libraries, otherwise
+        freetype will be used to load fonts. Font can be given either by name (e.g. "Times New Roman"),
+        or by file path. OTF or TTF fonts are supported.
 
     Returns
     -------
     t : Device
         A Device containing the text geometry.
     """
-    scaling = size/1000
-    position = (0, 0)
+    t = Device('text')
     xoffset = 0
     yoffset = 0
-    t = Device('text')
-    for line in text.split('\n'):
-        l = Device(name = 'textline')
-        for c in line:
-            ascii_val = ord(c)
-            if c == ' ':
-                xoffset += 500*scaling
-            elif (33 <= ascii_val <= 126) or (ascii_val == 181):
-                for poly in _glyph[ascii_val]:
-                    xpts = np.array(poly)[:, 0]*scaling
-                    ypts = np.array(poly)[:, 1]*scaling
-                    l.add_polygon([xpts + xoffset, ypts + yoffset],
-                                  layer = layer)
-                xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
-            else:
-                valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
-                warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
-                'Valid characters: %s' % (chr(ascii_val), ascii_val,        
-                                          valid_chars))
-        t.add_ref(l)
-        yoffset -= 1500*scaling
-        xoffset = position[0]
+
+    face = font
+    if face == "DEPLOF":
+        scaling = size/1000
+
+        for line in text.split('\n'):
+            l = Device(name = 'textline')
+            for c in line:
+                ascii_val = ord(c)
+                if c == ' ':
+                    xoffset += 500*scaling
+                elif (33 <= ascii_val <= 126) or (ascii_val == 181):
+                    for poly in _glyph[ascii_val]:
+                        xpts = np.array(poly)[:, 0]*scaling
+                        ypts = np.array(poly)[:, 1]*scaling
+                        l.add_polygon([xpts + xoffset, ypts + yoffset],
+                                    layer = layer)
+                    xoffset += (_width[ascii_val] + _indent[ascii_val])*scaling
+                else:
+                    valid_chars = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ'
+                    warnings.warn('[PHIDL] text(): Warning, some characters ignored, no geometry for character "%s" with ascii value %s. ' \
+                                  'Valid characters: %s' % (chr(ascii_val), ascii_val, valid_chars))
+            t.add_ref(l)
+            yoffset -= 1500*scaling
+            xoffset = 0
+    else:
+        from .font import _get_font_by_name, _get_font_by_file, _get_glyph
+
+        # Load the font
+        # If we've passed a valid file, try to load that, otherwise search system fonts
+        font = None
+        if (face.endswith(".otf") or face.endswith(".ttf")) and os.path.exists(face):
+            font = _get_font_by_file(face)
+        else:
+            try:
+                font = _get_font_by_name(face)
+            except ValueError:
+                pass
+        if font is None:
+            raise ValueError(('[PHIDL] Failed to find font: "%s". ' +
+            'Try specifying the exact (full) path to the .ttf or .otf file. ' + 
+            'Otherwise, it might be resolved by rebuilding the matplotlib font cache') % (face))
+
+        # Render each character
+        for line in text.split('\n'):
+            l = Device('textline')
+            xoffset = 0
+            for letter in line:
+                letter_dev = Device("letter")
+                letter_template, advance_x = _get_glyph(font, letter)
+                for poly in letter_template.polygons:
+                    letter_dev.add_polygon(poly.polygons, layer=layer)
+                ref = l.add_ref(letter_dev)
+                ref.move(destination=(xoffset, 0))
+                ref.magnification = size
+                xoffset += size*advance_x
+
+            ref = t.add_ref(l)
+            ref.move(destination=(0, yoffset))
+            yoffset -= size
+
     justify = justify.lower()
     for l in t.references:
         if justify == 'left': pass
-        if justify == 'right': l.xmax = position[0]
+        if justify == 'right': l.xmax = 0
         if justify == 'center': l.move(origin = l.center,
-                                       destination = position, axis = 'x')
+                                    destination = (0, 0), axis = 'x')
+
     t.flatten()
     return t
-
 
 #==============================================================================
 # Example code
