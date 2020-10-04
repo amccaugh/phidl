@@ -1315,9 +1315,12 @@ class Device(gdspy.Cell, _GeometryHelper):
                 used_names.add(new_name)
                 c.name = new_name
             self.name = cellname
-        # Write the gds
-        gdspy.write_gds(filename, cells=all_cells, name='library',
-                        unit=unit, precision=precision)
+        
+        # Write the gds (catch + discard the annoying deprecation warning)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            gdspy.write_gds(filename, cells=all_cells, name='library',
+                            unit=unit, precision=precision)
         # Return cells to their original names if they were auto-renamed
         if auto_rename == True:
             for n,c in enumerate(all_cells_sorted):
