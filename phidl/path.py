@@ -232,8 +232,6 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
         num_turns2 = np.floor(num_turns) - 1 + 2*diff
     else:
         num_turns2 = np.floor(num_turns)
-    print(num_turns1)
-    print(num_turns2)
 
     # Establishing relevant angles and spiral/centre arc parameters
     a1 = np.pi/2
