@@ -2127,6 +2127,7 @@ class Label(gdspy.Label, _GeometryHelper):
     """
     def __init__(self, *args, **kwargs):      
         super(Label, self).__init__(*args, **kwargs)
+        self.position = np.array(self.position, dtype = 'float64')
 
     @property
     def bbox(self):
