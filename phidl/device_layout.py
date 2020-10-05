@@ -1,24 +1,21 @@
+# -*- coding: utf-8 -*-
 #==============================================================================
 # Major TODO
 #==============================================================================
-# Add D.info['length'] to Devices created from Paths
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# Replace write_gds() with GdsLibrary.write_gds()
+# Add Paths to quickplot2
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
 # check that aliases show up properly in quickplot2
 # phidl add autoarray_xy to pg.geometry()
-# Make get-info which returns a dict of Devices and their Info
 # Allow connect(overlap) to be a tuple (0, 0.7)
 
 #==============================================================================
 # Documentation TODO
 #==============================================================================
-# - Grid() function
-# - All Path functions
 # Tutorials
 # - Using Layers (Layers, LayerSet, {} notation)
 # - Arranging objects together with packer()/grid()/autoarray()
@@ -193,8 +190,7 @@ def _distribute(elements, direction = 'x', spacing = 100, separation = True, edg
     spacing : int or float
         Distance between elements.
     separation : bool
-        If True, guarantees elements are speparated with a fixed spacing between; if 
-        False, elements are spaced evenly along a grid.
+        If True, guarantees elements are speparated with a fixed spacing between; if False, elements are spaced evenly along a grid.
     edge : {'x', 'xmin', 'xmax', 'y', 'ymin', 'ymax'}
         Which edge to perform the distribution along (unused if
         separation == True)
@@ -268,7 +264,7 @@ def _line_distances(points, start, end):
 
 
 def _simplify(points, tolerance=0):
-    """ Ramer–Douglas–Peucker algorithm for line simplification.  Takes an
+    """ Ramer–Douglas–Peucker algorithm for line simplification. Takes an
     array of points of shape (N,2) and removes excess points in the line. The
     remaining points form a identical line to within `tolerance` from the
     original """
@@ -1314,9 +1310,12 @@ class Device(gdspy.Cell, _GeometryHelper):
                 used_names.add(new_name)
                 c.name = new_name
             self.name = cellname
-        # Write the gds
-        gdspy.write_gds(filename, cells=all_cells, name='library',
-                        unit=unit, precision=precision)
+        
+        # Write the gds (catch + discard the annoying deprecation warning)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            gdspy.write_gds(filename, cells=all_cells, name='library',
+                            unit=unit, precision=precision)
         # Return cells to their original names if they were auto-renamed
         if auto_rename == True:
             for n,c in enumerate(all_cells_sorted):
