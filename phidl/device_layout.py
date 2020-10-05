@@ -12,7 +12,8 @@
 # check that aliases show up properly in quickplot2
 # phidl add autoarray_xy to pg.geometry()
 # Allow connect(overlap) to be a tuple (0, 0.7)
-
+# Possibly replace gdspy bezier (font rendering) with
+#   https://stackoverflow.com/a/12644499
 #==============================================================================
 # Documentation TODO
 #==============================================================================
