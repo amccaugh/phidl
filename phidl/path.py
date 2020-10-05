@@ -183,9 +183,10 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
 
 
 def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
-    """ Creates a spiral geometry consisting of two oddly-symmetric 
-    semi-circular arcs in the centre and two Archimedean spiral arms extending 
-    outward from the ends of both arcs.
+    """ Creates a spiral geometry consisting of two oddly-symmetric
+    semi-circular arcs in the centre and two Archimedean (involute) spiral arms
+    extending outward from the ends of both arcs.
+    
     Parameters
     ----------
     num_turns : int or float
@@ -202,12 +203,12 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
         The number of points in the entire spiral. The actual number of points 
         will be slightly different than the specified value, as they are 
         dynamically allocated using the path lengths of the spiral.
+
     Returns
     -------
-    x : ndarray
-        Array of the x-coordinates of the spiral.
-    y : ndarray
-        Array of the y-coordinates of the spiral.
+    Path
+        A Path object forming a spiral
+
     Notes
     -----
     ``num_turns`` usage (x is any whole number):
