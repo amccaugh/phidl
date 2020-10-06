@@ -186,7 +186,7 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     """ Creates a spiral geometry consisting of two oddly-symmetric
     semi-circular arcs in the centre and two Archimedean (involute) spiral arms
     extending outward from the ends of both arcs.
-    
+
     Parameters
     ----------
     num_turns : int or float
@@ -283,6 +283,56 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     return P
 
 
+def segment(
+    points = [(20,0), (40,0), (80,40), (80,10), (100,10),], 
+    radius = 4,
+    corner_fun = euler,
+    **kwargs
+    ):
+
+    points = np.asfarray(points)
+    normals = np.diff(points, axis = 0)
+    normals = (normals.T/np.linalg.norm(normals, axis = 1)).T
+    # normals_rev = normals*np.array([1,-1])
+    dx = np.diff(points[:,0])
+    dy = np.diff(points[:,1])
+    ds = np.sqrt(dx**2 + dy**2)
+    theta = np.degrees(np.arctan2(dy,dx))
+    dtheta = np.diff(theta)
+
+    # FIXME add caching
+    # Create arcs
+    paths = []
+    radii = []
+    for dt in dtheta:
+        P = corner_fun(radius = radius, angle = dt, **kwargs)
+        chord = np.linalg.norm(P.points[-1,:] - P.points[0,:])
+        r = (chord/2)/np.sin(np.radians(dt/2))
+        r = np.abs(r)
+        radii.append(r)
+        paths.append(P)
+
+    d = np.abs(np.array(radii)/np.tan(np.radians(180-dtheta)/2))
+    encroachment = np.concatenate([[0],d]) + np.concatenate([d,[0]])
+    if np.any(encroachment > ds):
+        raise ValueError('[PHIDL] segment(): Not enough distance between points to to fit curves.  Try reducing the radius or spacing the points out farther')
+    p1 = points[1:-1,:] - normals[:-1,:]*d[:,np.newaxis]
+
+    # Move arcs into position
+    new_points = []
+    new_points.append( [points[0,:]] )
+    for n,dt in enumerate(dtheta):
+        P = paths[n]
+        P.rotate(theta[n] - 0)
+        P.move(p1[n])
+        new_points.append(P.points)
+    new_points.append( [points[-1,:]] )
+    new_points = np.concatenate(new_points)
+
+    P = Path(new_points)
+    P.move(points[0,:])
+
+    return P
 
 
 def _sinusoidal_transition(y1, y2):
