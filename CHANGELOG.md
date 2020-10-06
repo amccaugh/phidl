@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.1 (Oct 10, 2020)
+
+### New features
+- Added font support to `pg.text()` - Now you can use built-in fonts or specify a .TTF/.OTF font, including full unicode support (thanks to Sebastian Pauka @spauka)
+- Added new `smooth()` function that allows you to construct a smooth path by defining waypoints.  The corners are smoothed either with the circular `pp.arc()` function or the adiabatic straight-to-bend `pp.euler()` function. See the [path/waveguide tutorial here](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.htmll#Waypoint-based-path-creation)
+
+![phidl example image](https://amccaugh.github.io/phidl/feature-smooth.png)
+
+### Changes
+- Fix to start/end angles for `pp.spiral()`
+- Style consistency fix for `pp.arc()` when angle negative
+
+### Bugfixes
+- Fix to casting issue when moving components with labels #78 (thanks to Joaquin Matres @joamatab)
+
+
 
 ## 1.4.0 (Sept 14, 2020)
 
