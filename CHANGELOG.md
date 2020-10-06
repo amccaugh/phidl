@@ -3,8 +3,8 @@
 ## 1.4.1 (Oct 10, 2020)
 
 ### New features
-- Added font support to `pg.text()` - Now you can use built-in fonts or specify a .TTF/.OTF font, including full unicode support (thanks to Sebastian Pauka @spauka)
-- Added new `smooth()` function that allows you to construct a smooth path by defining waypoints.  The corners are smoothed either with the circular `pp.arc()` function or the adiabatic straight-to-bend `pp.euler()` function. See the [path/waveguide tutorial here](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.htmll#Waypoint-based-path-creation)
+- Added font support to `pg.text()` - Now you can use built-in fonts or specify a .TTF/.OTF font, including full unicode support (thanks to Sebastian Pauka @spauka).  See the [geometry reference library here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Text)
+- Added new `smooth()` function that allows you to construct a smooth path by defining waypoints.  The corners are smoothed either with the circular `pp.arc()` function or the adiabatic straight-to-bend `pp.euler()` function. See the [path/waveguide tutorial here](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Waypoint-based-path-creation)
 
 ![phidl example image](https://amccaugh.github.io/phidl/feature-smooth.png)
 
