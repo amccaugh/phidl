@@ -285,7 +285,7 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     return P
 
 
-def segment(
+def smooth(
     points = [(20,0), (40,0), (80,40), (80,10), (100,10),], 
     radius = 4,
     corner_fun = euler,
@@ -337,7 +337,7 @@ def segment(
     d = np.abs(np.array(radii)/np.tan(np.radians(180-dtheta)/2))
     encroachment = np.concatenate([[0],d]) + np.concatenate([d,[0]])
     if np.any(encroachment > ds):
-        raise ValueError('[PHIDL] segment(): Not enough distance between points to to fit curves.  Try reducing the radius or spacing the points out farther')
+        raise ValueError('[PHIDL] smooth(): Not enough distance between points to to fit curves.  Try reducing the radius or spacing the points out farther')
     p1 = points[1:-1,:] - normals[:-1,:]*d[:,np.newaxis]
 
     # Move arcs into position

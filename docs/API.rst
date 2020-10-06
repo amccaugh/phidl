@@ -368,10 +368,10 @@ euler
 .. autofunction:: phidl.path.euler
 
 
-spiral
+smooth
 ======
 
-.. autofunction:: phidl.path.segment
+.. autofunction:: phidl.path.smooth
 
 
 straight
