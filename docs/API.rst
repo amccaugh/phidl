@@ -368,6 +368,12 @@ euler
 .. autofunction:: phidl.path.euler
 
 
+smooth
+======
+
+.. autofunction:: phidl.path.smooth
+
+
 straight
 ========
 

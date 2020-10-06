@@ -25,13 +25,13 @@ def arc(radius = 10, angle = 90, num_pts = 720):
     t = np.linspace(-90*np.pi/180, (angle-90)*np.pi/180, num_pts)
     x = radius*np.cos(t)
     y = radius*(np.sin(t)+1)
-    points = np.array((x,y)).T
+    points = np.array((x,y)).T * np.sign(angle)
 
     P = Path()
     # Manually add points & adjust start and end angles
     P.points = points
-    P.start_angle = 180*(angle<0)
-    P.end_angle = P.start_angle + angle
+    P.start_angle = 0
+    P.end_angle = angle
     return P
 
 
@@ -183,9 +183,10 @@ def euler(radius = 3, angle = 90, p = 1.0, use_eff = False, num_pts = 720):
 
 
 def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
-    """ Creates a spiral geometry consisting of two oddly-symmetric 
-    semi-circular arcs in the centre and two Archimedean spiral arms extending 
-    outward from the ends of both arcs.
+    """ Creates a spiral geometry consisting of two oddly-symmetric
+    semi-circular arcs in the centre and two Archimedean (involute) spiral arms
+    extending outward from the ends of both arcs.
+
     Parameters
     ----------
     num_turns : int or float
@@ -202,12 +203,12 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
         The number of points in the entire spiral. The actual number of points 
         will be slightly different than the specified value, as they are 
         dynamically allocated using the path lengths of the spiral.
+
     Returns
     -------
-    x : ndarray
-        Array of the x-coordinates of the spiral.
-    y : ndarray
-        Array of the y-coordinates of the spiral.
+    Path
+        A Path object forming a spiral
+
     Notes
     -----
     ``num_turns`` usage (x is any whole number):
@@ -232,8 +233,6 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
         num_turns2 = np.floor(num_turns) - 1 + 2*diff
     else:
         num_turns2 = np.floor(num_turns)
-    print(num_turns1)
-    print(num_turns2)
 
     # Establishing relevant angles and spiral/centre arc parameters
     a1 = np.pi/2
@@ -274,16 +273,88 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     y = np.concatenate([-np.flip(y_spiral[1]), y_centre, y_spiral[0]])
     points = np.array((x,y)).T
 
-    P = Path(points)
+    P = Path()
     # Manually add points & adjust start and end angles
-    # P.points = points
-    # P.start_angle = np.mod(num_turns2*180 + 180, 360)
-    # P.end_angle = np.mod(num_turns1*180 + 180, 360)
+    P.points = points
+    nx1,ny1 =  points[1] - points[0]
+    P.start_angle = np.arctan2(ny1,nx1)/np.pi*180
+    nx2,ny2 =  points[-1] - points[-2]
+    P.end_angle = np.arctan2(ny2,nx2)/np.pi*180
     # print(P.start_angle)
     # print(P.end_angle)
     return P
 
 
+def smooth(
+    points = [(20,0), (40,0), (80,40), (80,10), (100,10),], 
+    radius = 4,
+    corner_fun = euler,
+    **kwargs
+    ):
+    """ Create a smooth path from a series of waypoints. Corners will be rounded
+    using `corner_fun` and any additional key word arguments (for example,
+    `use_eff = True` when `corner_fun = pp.euler`)
+
+    Parameters
+    ----------
+    points : array-like[N][2]
+        List of waypoints for the path to follow
+    radius : int or float
+        Radius of curvature, this argument will be passed to `corner_fun`
+    corner_fun : function
+        The function that controls how the corners are rounded. Typically either
+        `arc()` or `euler()`
+    **kwargs : dict
+        Extra keyword arguments that will be passed to `corner_fun`
+
+    Returns
+    -------
+    Path
+        A Path object with the specified smoothed path.
+    """
+    points = np.asfarray(points)
+    normals = np.diff(points, axis = 0)
+    normals = (normals.T/np.linalg.norm(normals, axis = 1)).T
+    # normals_rev = normals*np.array([1,-1])
+    dx = np.diff(points[:,0])
+    dy = np.diff(points[:,1])
+    ds = np.sqrt(dx**2 + dy**2)
+    theta = np.degrees(np.arctan2(dy,dx))
+    dtheta = np.diff(theta)
+
+    # FIXME add caching
+    # Create arcs
+    paths = []
+    radii = []
+    for dt in dtheta:
+        P = corner_fun(radius = radius, angle = dt, **kwargs)
+        chord = np.linalg.norm(P.points[-1,:] - P.points[0,:])
+        r = (chord/2)/np.sin(np.radians(dt/2))
+        r = np.abs(r)
+        radii.append(r)
+        paths.append(P)
+
+    d = np.abs(np.array(radii)/np.tan(np.radians(180-dtheta)/2))
+    encroachment = np.concatenate([[0],d]) + np.concatenate([d,[0]])
+    if np.any(encroachment > ds):
+        raise ValueError('[PHIDL] smooth(): Not enough distance between points to to fit curves.  Try reducing the radius or spacing the points out farther')
+    p1 = points[1:-1,:] - normals[:-1,:]*d[:,np.newaxis]
+
+    # Move arcs into position
+    new_points = []
+    new_points.append( [points[0,:]] )
+    for n,dt in enumerate(dtheta):
+        P = paths[n]
+        P.rotate(theta[n] - 0)
+        P.move(p1[n])
+        new_points.append(P.points)
+    new_points.append( [points[-1,:]] )
+    new_points = np.concatenate(new_points)
+
+    P = Path(new_points)
+    P.move(points[0,:])
+
+    return P
 
 
 def _sinusoidal_transition(y1, y2):
