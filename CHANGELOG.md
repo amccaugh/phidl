@@ -8,7 +8,7 @@
 
 ![phidl example image](https://amccaugh.github.io/phidl/feature-smooth.png)
 
-- Added `route_turn_manhattan()` function for more flexible manhattan routing (thanks to @ mr-roger-a)
+- Added `route_turn_manhattan()` function for more flexible manhattan routing (thanks to @mr-roger-a)
 
 ### Changes
 - Fix to start/end angles for `pp.spiral()`
