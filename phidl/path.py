@@ -273,11 +273,11 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     y = np.concatenate([-np.flip(y_spiral[1]), y_centre, y_spiral[0]])
     points = np.array((x,y)).T
 
-    P = Path(points)
+    P = Path()
     # Manually add points & adjust start and end angles
-    # P.points = points
-    # P.start_angle = np.mod(num_turns2*180 + 180, 360)
-    # P.end_angle = np.mod(num_turns1*180 + 180, 360)
+    P.points = points
+    P.start_angle = np.mod(num_turns2*180 + 180, 360)
+    P.end_angle = np.mod(num_turns1*180 + 180, 360)
     # print(P.start_angle)
     # print(P.end_angle)
     return P
