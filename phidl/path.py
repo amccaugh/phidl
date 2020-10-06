@@ -276,8 +276,10 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     P = Path()
     # Manually add points & adjust start and end angles
     P.points = points
-    P.start_angle = np.mod(num_turns2*180 + 180, 360)
-    P.end_angle = np.mod(num_turns1*180 + 180, 360)
+    nx1,ny1 =  points[1] - points[0]
+    P.start_angle = np.arctan2(ny1,nx1)/np.pi*180
+    nx2,ny2 =  points[-1] - points[-2]
+    P.end_angle = np.arctan2(ny2,nx2)/np.pi*180
     # print(P.start_angle)
     # print(P.end_angle)
     return P
