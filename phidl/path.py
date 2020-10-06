@@ -289,7 +289,27 @@ def segment(
     corner_fun = euler,
     **kwargs
     ):
+    """ Create a smooth path from a series of waypoints. Corners will be rounded
+    using `corner_fun` and any additional key word arguments (for example,
+    `use_eff = True` when `corner_fun = pp.euler`)
 
+    Parameters
+    ----------
+    points : array-like[N][2]
+        List of waypoints for the path to follow
+    radius : int or float
+        Radius of curvature, this argument will be passed to `corner_fun`
+    corner_fun : function
+        The function that controls how the corners are rounded. Typically either
+        `arc()` or `euler()`
+    **kwargs : dict
+        Extra keyword arguments that will be passed to `corner_fun`
+
+    Returns
+    -------
+    Path
+        A Path object with the specified smoothed path.
+    """
     points = np.asfarray(points)
     normals = np.diff(points, axis = 0)
     normals = (normals.T/np.linalg.norm(normals, axis = 1)).T

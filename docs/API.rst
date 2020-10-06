@@ -368,6 +368,12 @@ euler
 .. autofunction:: phidl.path.euler
 
 
+spiral
+======
+
+.. autofunction:: phidl.path.segment
+
+
 straight
 ========
 
