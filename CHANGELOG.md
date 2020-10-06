@@ -5,9 +5,10 @@
 ### New features
 - Added font support to `pg.text()` - Now you can use built-in fonts or specify a .TTF/.OTF font, including full unicode support (thanks to Sebastian Pauka @spauka).  See the [geometry reference library here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Text)
 - Added new `smooth()` function that allows you to construct a smooth path by defining waypoints.  The corners are smoothed either with the circular `pp.arc()` function or the adiabatic straight-to-bend `pp.euler()` function. See the [path/waveguide tutorial here](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Waypoint-based-path-creation)
-- Added `route_turn_manhattan()` function for more flexible manhattan routing (thanks to @ mr-roger-a)
 
 ![phidl example image](https://amccaugh.github.io/phidl/feature-smooth.png)
+
+- Added `route_turn_manhattan()` function for more flexible manhattan routing (thanks to @ mr-roger-a)
 
 ### Changes
 - Fix to start/end angles for `pp.spiral()`
