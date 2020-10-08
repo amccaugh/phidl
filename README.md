@@ -6,7 +6,7 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.1 (Oct 6, 2020))
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.2 (Oct 7, 2020))
   - Added font support to `pg.text()` [more info here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Text)
   - Added waypoint-based pathing `pp.smooth()`  [more info here](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Waypoint-based-path-creation)
   - You can now easily [`Group` objects together](https://phidl.readthedocs.io/en/latest/tutorials/group.html)
