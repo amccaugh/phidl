@@ -53,7 +53,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 
 #==============================================================================
@@ -1611,9 +1611,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         for e in self.polygons:
             e.translate(dx,dy)
         for e in self.references:
-            e.move(destination = destination, origin = origin)
+            e.move((dx,dy))
         for e in self.labels:
-            e.move(destination = destination, origin = origin)
+            e.move((dx,dy))
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array((dx,dy))
 

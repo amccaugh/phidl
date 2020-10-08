@@ -1,6 +1,14 @@
 # Changelog
 
-## 1.4.1 (Oct 10, 2020)
+## 1.4.2 (Oct 7, 2020)
+
+Bugfix release
+
+### Bugfixes
+- Fix for Device xmin/xmax/ymin/ymax property assignment (e.g. `D.xmin = 30`) causing incorrect movement of references and labels
+
+
+## 1.4.1 (Oct 6, 2020)
 
 ### New features
 - Added font support to `pg.text()` - Now you can use built-in fonts or specify a .TTF/.OTF font, including full unicode support (thanks to Sebastian Pauka @spauka).  See the [geometry reference library here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Text)
