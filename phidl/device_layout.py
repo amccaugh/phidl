@@ -1611,9 +1611,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         for e in self.polygons:
             e.translate(dx,dy)
         for e in self.references:
-            e.move(destination = destination, origin = origin)
+            e.move((dx,dy))
         for e in self.labels:
-            e.move(destination = destination, origin = origin)
+            e.move((dx,dy))
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array((dx,dy))
 
