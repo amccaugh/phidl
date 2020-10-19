@@ -6,6 +6,8 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
+# Add Group.get_polygons()
+# Allow Boolean to use Groups
 # Add Paths to quickplot2
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
