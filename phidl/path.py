@@ -351,7 +351,9 @@ def smooth(
     new_points.append( [points[-1,:]] )
     new_points = np.concatenate(new_points)
 
-    P = Path(new_points)
+    P = Path()
+    P.rotate(theta[0])
+    P.append(new_points)
     P.move(points[0,:])
 
     return P
