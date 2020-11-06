@@ -582,7 +582,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
 
 def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
             join = 'miter', tolerance = 2, join_first = True,
-            max_points = 4000, layer = 0):
+            max_points = 4000, layer = 0, open_ports=-1):
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
 
@@ -613,7 +613,10 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-
+    open_ports : int or float
+        Trims the outline at each port of the element. The value of open_port
+        scales the length of the trim gemoetry (must be positive). 
+        Useful for positive tone layouts. 
     Returns
     -------
     D : Device
@@ -633,6 +636,19 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
     Outline = boolean(A = D_bloated, B = D, operation = 'A-B',
                       num_divisions = num_divisions, max_points = max_points,
                       precision = precision, layer = layer)
+    if open_ports>=0:
+      for i in e.ports:
+          trim = pg.rectangle(size=(distance, e.ports[i].width+open_ports*distance))
+
+          trim.rotate(e.ports[i].orientation)
+          trim.move(trim.center, destination=e.ports[i].midpoint)
+          trim.movex(np.cos(e.ports[i].orientation/180*np.pi)*distance/2)
+          trim.movey(np.sin(e.ports[i].orientation/180*np.pi)*distance/2)
+
+          Outline = pg.boolean(A = Outline, B = trim, operation = 'A-B',
+                     num_divisions = num_divisions, max_points = max_points,
+                     precision = precision, layer = layer)
+      for i in e.ports: Outline.add_port(port=e.ports[i])
     return Outline
 
 
