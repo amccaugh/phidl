@@ -579,10 +579,9 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
          for polygon in polygons]
     return D
 
-
 def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
             join = 'miter', tolerance = 2, join_first = True,
-            max_points = 4000, layer = 0, open_ports=-1):
+            max_points = 4000, layer = 0, open_ports = False):
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
 
@@ -613,10 +612,12 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    open_ports : int or float
-        Trims the outline at each port of the element. The value of open_port
-        scales the length of the trim gemoetry (must be positive). 
-        Useful for positive tone layouts. 
+    open_ports : bool or float
+        If not False, holes will be cut in the outline such that the Ports are
+        not covered. If True, the holes will have the same width as the Ports.
+        If a float, the holes will be be widened by that value (useful for fully
+        clearing the outline around the Ports for positive-tone processes)
+
     Returns
     -------
     D : Device
@@ -633,22 +634,24 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
                        num_divisions = num_divisions, precision = precision,
                        max_points = max_points, join = join,
                        tolerance = tolerance, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B',
+
+    Trim = Device()
+    if open_ports is not False:
+        if open_ports is True:
+            trim_width = 0
+        else:
+            trim_width = open_ports*2
+        for i in e.ports:
+            trim = compass(size=(distance + 6*precision,
+                                 e.ports[i].width + trim_width))
+            trim_ref = Trim << trim
+            trim_ref.connect('E', e.ports[i], overlap = 2*precision)
+
+    Outline = boolean(A = D_bloated, B = [D,Trim], operation = 'A-B',
                       num_divisions = num_divisions, max_points = max_points,
                       precision = precision, layer = layer)
-    if open_ports>=0:
-      for i in e.ports:
-          trim = pg.rectangle(size=(distance, e.ports[i].width+open_ports*distance))
-
-          trim.rotate(e.ports[i].orientation)
-          trim.move(trim.center, destination=e.ports[i].midpoint)
-          trim.movex(np.cos(e.ports[i].orientation/180*np.pi)*distance/2)
-          trim.movey(np.sin(e.ports[i].orientation/180*np.pi)*distance/2)
-
-          Outline = pg.boolean(A = Outline, B = trim, operation = 'A-B',
-                     num_divisions = num_divisions, max_points = max_points,
-                     precision = precision, layer = layer)
-      for i in e.ports: Outline.add_port(port=e.ports[i])
+    if open_ports is not False:
+        for i in e.ports: Outline.add_port(port=e.ports[i])
     return Outline
 
 
