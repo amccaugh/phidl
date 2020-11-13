@@ -625,9 +625,13 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
     """
     D = Device('outline')
     if type(elements) is not list: elements = [elements]
+    port_list = []
     for e in elements:
-        if isinstance(e, Device): D.add_ref(e)
+        if isinstance(e, Device):
+            D.add_ref(e)
+            port_list += list(e.ports.values())
         else: D.add(e)
+    print(port_list)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     D_bloated = offset(D, distance = distance, join_first = join_first,
@@ -641,17 +645,19 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
             trim_width = 0
         else:
             trim_width = open_ports*2
-        for i in e.ports:
+        for port in port_list:
             trim = compass(size=(distance + 6*precision,
-                                 e.ports[i].width + trim_width))
+                                 port.width + trim_width))
             trim_ref = Trim << trim
-            trim_ref.connect('E', e.ports[i], overlap = 2*precision)
+            trim_ref.connect('E', port, overlap = 2*precision)
 
     Outline = boolean(A = D_bloated, B = [D,Trim], operation = 'A-B',
                       num_divisions = num_divisions, max_points = max_points,
                       precision = precision, layer = layer)
-    if open_ports is not False:
-        for i in e.ports: Outline.add_port(port=e.ports[i])
+    if open_ports is not False and len(elements) == 1:
+        for port in port_list:
+            Outline.add_port(port=port)
+            print(port)
     return Outline
 
 
