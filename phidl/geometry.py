@@ -579,10 +579,9 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
          for polygon in polygons]
     return D
 
-
 def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
             join = 'miter', tolerance = 2, join_first = True,
-            max_points = 4000, layer = 0):
+            max_points = 4000, layer = 0, open_ports = False):
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
 
@@ -613,6 +612,11 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
         The maximum number of vertices within the resulting polygon.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    open_ports : bool or float
+        If not False, holes will be cut in the outline such that the Ports are
+        not covered. If True, the holes will have the same width as the Ports.
+        If a float, the holes will be be widened by that value (useful for fully
+        clearing the outline around the Ports for positive-tone processes)
 
     Returns
     -------
@@ -621,18 +625,39 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
     """
     D = Device('outline')
     if type(elements) is not list: elements = [elements]
+    port_list = []
     for e in elements:
-        if isinstance(e, Device): D.add_ref(e)
+        if isinstance(e, Device):
+            D.add_ref(e)
+            port_list += list(e.ports.values())
         else: D.add(e)
+    print(port_list)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     D_bloated = offset(D, distance = distance, join_first = join_first,
                        num_divisions = num_divisions, precision = precision,
                        max_points = max_points, join = join,
                        tolerance = tolerance, layer = layer)
-    Outline = boolean(A = D_bloated, B = D, operation = 'A-B',
+
+    Trim = Device()
+    if open_ports is not False:
+        if open_ports is True:
+            trim_width = 0
+        else:
+            trim_width = open_ports*2
+        for port in port_list:
+            trim = compass(size=(distance + 6*precision,
+                                 port.width + trim_width))
+            trim_ref = Trim << trim
+            trim_ref.connect('E', port, overlap = 2*precision)
+
+    Outline = boolean(A = D_bloated, B = [D,Trim], operation = 'A-B',
                       num_divisions = num_divisions, max_points = max_points,
                       precision = precision, layer = layer)
+    if open_ports is not False and len(elements) == 1:
+        for port in port_list:
+            Outline.add_port(port=port)
+            print(port)
     return Outline
 
 
