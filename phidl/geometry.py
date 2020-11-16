@@ -631,7 +631,6 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
             D.add_ref(e)
             port_list += list(e.ports.values())
         else: D.add(e)
-    print(port_list)
     gds_layer, gds_datatype = _parse_layer(layer)
 
     D_bloated = offset(D, distance = distance, join_first = join_first,
@@ -657,7 +656,6 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
     if open_ports is not False and len(elements) == 1:
         for port in port_list:
             Outline.add_port(port=port)
-            print(port)
     return Outline
 
 
