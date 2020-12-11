@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.3 (Dec 11, 2020)
+
+### New features
+- Added `open_ports` argument to `pg.outline`, which allows you to cut holes in the outline at Port locations on a Device. See the [outline reference here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Outline)
+
+![phidl example image](https://amccaugh.github.io/phidl/outline_open_port.png)
+
+- Easier-to-read quickstart tutorial
+- Added `num_squares` to `info` dictionary of `pg.optimal_step` (thanks Ekkehart Schmidt)
+
+### Bugfixes
+- Fixed bug in `pp.smooth()` that forced paths to start out traveling to the right (orientation = 0 degrees) (thanks to Sebastian Pauka @spauka)
+
+
 ## 1.4.2 (Oct 7, 2020)
 
 Bugfix release

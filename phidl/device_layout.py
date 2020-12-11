@@ -6,6 +6,8 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
+# Add Group.get_polygons()
+# Allow Boolean to use Groups
 # Add Paths to quickplot2
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
@@ -53,7 +55,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 
 #==============================================================================
