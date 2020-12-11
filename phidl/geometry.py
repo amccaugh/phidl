@@ -581,7 +581,7 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
 
 def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
             join = 'miter', tolerance = 2, join_first = True,
-            max_points = 4000, layer = 0, open_ports = False):
+            max_points = 4000, open_ports = False, layer = 0):
     """ Creates an outline around all the polygons passed in the `elements`
     argument. `elements` may be a Device, Polygon, or list of Devices.
 
@@ -610,13 +610,13 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
         adjacent polygon sides.
     max_points : int
         The maximum number of vertices within the resulting polygon.
-    layer : int, array-like[2], or set
-        Specific layer(s) to put polygon geometry on.
     open_ports : bool or float
         If not False, holes will be cut in the outline such that the Ports are
         not covered. If True, the holes will have the same width as the Ports.
         If a float, the holes will be be widened by that value (useful for fully
-        clearing the outline around the Ports for positive-tone processes)
+        clearing the outline around the Ports for positive-tone processes
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.)
 
     Returns
     -------
