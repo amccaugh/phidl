@@ -4430,6 +4430,9 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
 
         ypts[-1] = end_width
         ypts[0] = start_width
+        y_num_sq = np.array(ypts)
+        x_num_sq = np.array(xpts)
+
         if symmetric == False:
             xpts.append(xpts[-1])
             ypts.append(0)
@@ -4468,6 +4471,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
         D.add_port(name = 2, midpoint = [max(xpts), 0], width = end_width,
                    orientation = 0)
 
+    D.info['num_squares'] = np.sum(np.diff(x_num_sq) /((y_num_sq[:-1] + y_num_sq[1:])/2) )
     return D
 
 
