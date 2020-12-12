@@ -3,7 +3,7 @@
 ## 1.4.3 (Dec 11, 2020)
 
 ### New features
-- Added `open_ports` argument to `pg.outline`, which allows you to cut holes in the outline at Port locations on a Device. See the [outline reference here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Outline)
+- Added `open_ports` argument to `pg.outline`, which allows you to cut holes in the outline at Port locations on a Device. See the [outline reference here](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Outline) (thanks to Owen Medeiros @omedeiro)
 
 ![phidl example image](https://amccaugh.github.io/phidl/outline_open_port.png)
 
