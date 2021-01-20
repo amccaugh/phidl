@@ -1608,7 +1608,13 @@ def import_gds(filename, cellname = None, flatten = False):
             D.polygons = cell.polygons
             D.references = cell.references
             D.name = cell.name
-            D.labels = cell.labels
+            for label in cell.labels:
+                D.add_label(text = label.text,
+                            position = np.asfarray(label.position),
+                            anchor = label.anchor,
+                            magnification = label.magnification,
+                            rotation = label.rotation*180/np.pi,
+                            layer = (label.layer, label.texttype))
             c2dmap.update({cell:D})
             D_list += [D]
 
