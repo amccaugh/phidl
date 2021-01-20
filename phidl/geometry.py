@@ -1609,12 +1609,15 @@ def import_gds(filename, cellname = None, flatten = False):
             D.references = cell.references
             D.name = cell.name
             for label in cell.labels:
-                D.add_label(text = label.text,
+                rotation = label.rotation
+                if rotation is None:
+                    rotation = 0
+                l = D.add_label(text = label.text,
                             position = np.asfarray(label.position),
-                            anchor = label.anchor,
                             magnification = label.magnification,
-                            rotation = label.rotation*180/np.pi,
+                            rotation = rotation*180/np.pi,
                             layer = (label.layer, label.texttype))
+                l.anchor = label.anchor
             c2dmap.update({cell:D})
             D_list += [D]
 
