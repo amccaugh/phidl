@@ -645,7 +645,7 @@ def route_turn_manhattan(
     """
     Mahattan routing between two ports. If directions are not cardinal, adds a
     turn to make cardinal and then routes.
-    
+
     Parameters
     ----------
     port1, port2: Port objects
@@ -654,18 +654,18 @@ def route_turn_manhattan(
         Layer to use for the routes
     radius: float (default: 20)
         Curve radius for bends
-        
+
     Returns
     ----------
     Device object
-    
+
     Notes
     ----------
     If direction is not cardinal, will route to nearest cardinal, then call
     route_manhattan.
     """
-    
-    D = Device()    
+
+    D = Device()
     new_ports = []
     for port in (port1, port2):
         if port.orientation % 90 == 0:
@@ -675,15 +675,15 @@ def route_turn_manhattan(
             turn_route = turn(port, radius=radius, angle=turn_angle, layer=layer)
             D.add_ref(turn_route)
             new_ports.append(turn_route.ports[2])
-    
+
     #Manhattan on new ports
     route = route_manhattan(new_ports[0], new_ports[1], bendType='circular', layer=layer,
                        radius=radius)
-    
+
     D.add_ref(route)
-    
+
     return D
-    
+
 
 def to_cardinal(angle):
     """

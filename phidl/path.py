@@ -53,7 +53,7 @@ def straight(length = 5, num_pts = 100):
     x = np.linspace(0, length, num_pts)
     y = x*0
     points = np.array((x,y)).T
-    
+
     P = Path()
     P.append(points)
     return P
@@ -62,7 +62,7 @@ def straight(length = 5, num_pts = 100):
 #### Euler bends
 
 def _cumtrapz(x):
-    """ Numpy-based implementation of the cumulative trapezoidal integration 
+    """ Numpy-based implementation of the cumulative trapezoidal integration
     function usually found in scipy (scipy.integrate.cumtrapz) """
     return np.cumsum((x[1:] + x[:-1])/2)
 
@@ -72,11 +72,11 @@ def _fresnel(R0, s, num_pts, n_iter=8):
     t = np.linspace(0,s/(np.sqrt(2)*R0), num_pts)
     x = np.zeros(num_pts)
     y = np.zeros(num_pts)
-    
+
     for n in range(0,n_iter):
       x += (-1)**n * t**(4*n+1)/(np.math.factorial(2*n) * (4*n+1))
       y += (-1)**n * t**(4*n+3)/(np.math.factorial(2*n+1) * (4*n+3))
-    
+
     return np.array([np.sqrt(2)*R0*x, np.sqrt(2)*R0*y])
 
 
@@ -190,18 +190,18 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     Parameters
     ----------
     num_turns : int or float
-        The number of turns in the spiral. Must be greater than 1. A full 
-        spiral rotation counts as 1 turn, and the center arcs will together 
+        The number of turns in the spiral. Must be greater than 1. A full
+        spiral rotation counts as 1 turn, and the center arcs will together
         always be 0.5 turn.
     gap : int or float
-        The distance between any point on one arm of the spiral and a point 
+        The distance between any point on one arm of the spiral and a point
         with the same angular coordinate on an adjacent arm.
     inner_gap : int or float
-        The inner size of the spiral, equal to twice the chord length of the 
+        The inner size of the spiral, equal to twice the chord length of the
         centre arcs.
     num_pts: int
-        The number of points in the entire spiral. The actual number of points 
-        will be slightly different than the specified value, as they are 
+        The number of points in the entire spiral. The actual number of points
+        will be slightly different than the specified value, as they are
         dynamically allocated using the path lengths of the spiral.
 
     Returns
@@ -212,13 +212,13 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     Notes
     -----
     ``num_turns`` usage (x is any whole number):
-        - ``num_turns = x.0``: Output arm will be extended 0.5 turn to be on 
+        - ``num_turns = x.0``: Output arm will be extended 0.5 turn to be on
         the same side as the input.
-        - ``num_turns < x.5``: Input arm will be extended by the fractional 
+        - ``num_turns < x.5``: Input arm will be extended by the fractional
         amount.
-        - ``num_turns = x.5``: Both arms will be the same length and the input 
+        - ``num_turns = x.5``: Both arms will be the same length and the input
         and output will be on opposite sides.
-        - ``num_turns > x.5``: Output arm will be extended by the fractional 
+        - ``num_turns > x.5``: Output arm will be extended by the fractional
         amount.
     """
     # Establishing number of turns in each arm
@@ -286,7 +286,7 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
 
 
 def smooth(
-    points = [(20,0), (40,0), (80,40), (80,10), (100,10),], 
+    points = [(20,0), (40,0), (80,40), (80,10), (100,10),],
     radius = 4,
     corner_fun = euler,
     **kwargs
@@ -412,7 +412,7 @@ def transition(cross_section1, cross_section2, width_type = 'sine'):
                 width2 = width2(0)
 
             offset_fun = _sinusoidal_transition(offset1, offset2)
-            
+
             if width_type == 'sine':
                 width_fun = _sinusoidal_transition(width1, width2)
             elif width_type == 'linear':
@@ -422,7 +422,7 @@ def transition(cross_section1, cross_section2, width_type = 'sine'):
                     "argument must be one of {'sine','linear'}")
 
             Xtrans.add(width = width_fun, offset = offset_fun,
-                    layer = X1[alias]['layer'], 
+                    layer = X1[alias]['layer'],
                     ports = (X2[alias]['ports'][0], X1[alias]['ports'][1]),
                     name = alias)
 
