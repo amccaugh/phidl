@@ -2,10 +2,14 @@
 #==============================================================================
 # Major TODO
 #==============================================================================
+# Add D.add_gdsii_path() to allow creation of GDSII paths
+# Add D.write_gds(max_points_per_polygon)
+# Fix pg.grid() -- array of 36 devices with shape (4,-1) somehow has 10 cols
 
 #==============================================================================
 # Minor TODO
 #==============================================================================
+# Make pg.vstack() and pg.hstack() -- point to grid()
 # Add Group.get_polygons()
 # Allow Boolean to use Groups
 # Add Paths to quickplot2
