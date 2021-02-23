@@ -321,6 +321,7 @@ def smooth(
     ds = np.sqrt(dx**2 + dy**2)
     theta = np.degrees(np.arctan2(dy,dx))
     dtheta = np.diff(theta)
+    dtheta = dtheta - 360*np.floor((dtheta + 180)/360)
 
     # FIXME add caching
     # Create arcs
