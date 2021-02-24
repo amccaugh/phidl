@@ -8,6 +8,9 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
 - [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.4, Feb 23, 2021)
 
+# Gallery
+
+<img src="https://amccaugh.github.io/phidl/phidl1.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl2.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl3.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl4.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl5.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl6.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl7.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl8.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl9.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl10.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl11.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl12.png" width="30%"></img> 
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
