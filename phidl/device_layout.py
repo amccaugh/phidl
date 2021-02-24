@@ -59,7 +59,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 
 #==============================================================================
