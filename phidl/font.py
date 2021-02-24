@@ -34,7 +34,7 @@ def _get_font_by_file(file):
     # Cache opened fonts
     if file in _cached_fonts:
         return _cached_fonts[file]
-    
+
     font_renderer = freetype.Face(file)
     font_renderer.set_char_size(32*64) # 32pt size
     _cached_fonts[file] = font_renderer
@@ -51,7 +51,7 @@ def _get_font_by_name(name):
         font_file = font_manager.findfont(name, fallback_to_default=False)
     except:
         raise ValueError(('[PHIDL] Failed to find font: "%s". ' +
-        'Try specifying the exact (full) path to the .ttf or .otf file. ' + 
+        'Try specifying the exact (full) path to the .ttf or .otf file. ' +
         'Otherwise, it might be resolved by rebuilding the matplotlib font cache') % (name))
     return _get_font_by_file(font_file)
 

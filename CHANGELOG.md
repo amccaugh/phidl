@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.4 (Feb 23, 2021)
+
+Bugfix release
+
+### Bugfixes
+- Allow labels imported through `import_gds()` to be moved (thanks Joaquin Matres @joamatab)
+- Fix to Path.smooth() to prevent right-angle turns from accidentally having an additional +180 degrees applied to them (thanks Jeffrey Holzgrafe @jolzgrafe)
+
+
 ## 1.4.3 (Dec 11, 2020)
 
 ### New features

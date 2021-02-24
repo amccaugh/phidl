@@ -43,11 +43,11 @@ def quickplot(items, show_ports = True, show_subports = True,
     """ Takes a list of devices/references/polygons or single one of those, and
     plots them.  Also has the option to overlay their ports """
     if matplotlib_imported == False:
-        raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL " + 
+        raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL " +
               "will still work but quickplot() will not.  Try using " +
               "quickplot2() instead (see note in tutorial) ")
 
-    if new_window: 
+    if new_window:
         fig, ax = plt.subplots(1)
         ax.autoscale(enable = True, tight = True)
     else:
@@ -153,7 +153,7 @@ def _draw_polygons(polygons, ax, **kwargs):
     xmax,ymax = np.max(stacked_polygons, axis = 0)
     bbox = [xmin,ymin,xmax,ymax]
     return bbox
-        
+
 from matplotlib.lines import Line2D
 def _draw_line(x, y, ax, **kwargs):
     line = Line2D(x, y, **kwargs)
@@ -667,10 +667,10 @@ class Viewer(QGraphicsView):
 
 def quickplot2(item_list, *args, **kwargs):
     if qt_imported == False:
-        raise ImportError("PHIDL tried to import PyQt5 but it failed. PHIDL will" + 
+        raise ImportError("PHIDL tried to import PyQt5 but it failed. PHIDL will" +
               "still work but quickplot2() may not.  Try using" +
               "quickplot() instead (based on matplotlib)")
-        
+
     global app
     if QCoreApplication.instance() is None:
         app = QApplication(sys.argv)
