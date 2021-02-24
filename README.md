@@ -24,8 +24,6 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 
 *fiddle (verb) - /ˈfidl/ - to make minor manual movements, especially to adjust something*
 
-PHotonic and Integrated Device Layout - GDS CAD layout and geometry creation for photonic and superconducting circuits
-
 PHIDL is an open-source GDS-based CAD tool for Python 2 and 3 that significantly extends the excellent [gdspy](https://github.com/heitzmann/gdspy).  The base installation includes a large library of simple shapes (e.g. rectangles, circles), photonic structures (e.g. sine curve waveguides), and superconducting nanowire shapes (e.g. single photon detectors) that are fully parameterized. It also has a built-in quick-plotting function based on matplotlib (or Qt) that allows you view the state of any GDS object, useful when scripting geometry-making functions. It also has a [__geometry library reference__](https://phidl.readthedocs.io/) and a set of [__very thorough tutorials__](https://phidl.readthedocs.io/en/latest/tutorials.html) that will walk you through the process of getting acquainted with PHIDL.
 
 The goal is to bring the usability of Illustrator / Inkscape drawing programs to the GDS scripting world. Like Python itself, it aims to be readable, and intuitive.  For instance, when building a geometry you don't have to worry about what the exact coordinates are anymore. If you want to separate two ellipses in the x direction by 5 units, you can do things like this:
@@ -80,7 +78,3 @@ pg.packer(D_list, spacing = 1.25, aspect_ratio = (2,1))
 ```
 
 ![phidl example image](https://amccaugh.github.io/phidl/packer.png)
-
-You can also do things like create a backing fill to make sure the resist develops uniformly while still creating a solid ground plane, with user-defined margins.  Below is an image of a device that needed a ground plane.  A single-line fill function was able to fill the required area (purple), electrically connecting all of the ground structures together:
-
-![phidl example image](https://amccaugh.github.io/phidl/readme_6.png)
