@@ -7,6 +7,9 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
 - [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.4, Feb 23, 2021)
+    - Allow labels imported through import_gds() to be moved (thanks Joaquin Matres @joamatab)
+    - Fix to Path.smooth() to prevent right-angle turns from accidentally having an additional +180 degrees applied to them (thanks Jeffrey Holzgrafe @jolzgrafe)
+
 
 # Gallery
 
