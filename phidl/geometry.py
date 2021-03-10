@@ -1989,7 +1989,7 @@ def compass(size=(4,2), layer=0):
     return D
 
 
-def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, layer = 0):
+def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, flip_ports=False, layer = 0):
     """ Creates a rectangular contact pad with multiple ports along the edges
     rectangle (north, south, east, and west).
 
@@ -1999,6 +1999,8 @@ def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, layer = 0):
         Dimensions of the rectangular contact pad.
     ports : dict
         Number of ports on each edge of the rectangle.
+    flip_ports : bool
+        If false, the ports face outward. If true the ports face inward.
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -2013,34 +2015,38 @@ def compass_multi(size = (4, 2), ports = {'N':3,'S':4}, layer = 0):
 
     dx = size[0]/2
     dy = size[1]/2
-
+    
+    flipper = 0
+    if flip_ports:
+        flipper = 180
+        
     if 'N' in ports:
         num_ports = ports['N']
         m = dx - dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('N%s' % (n+1)), midpoint = [p, dy],
-                    width = dx/num_ports * 2, orientation = 90)
+                    width = dx/num_ports * 2, orientation = 90+flipper)
          for n, p in enumerate(p_list)]
     if 'S' in ports:
         num_ports = ports['S']
         m = dx - dx/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('S%s' % (n+1)), midpoint = [p, -dy],
-                    width = dx/num_ports * 2, orientation = -90)
+                    width = dx/num_ports * 2, orientation = -90+flipper)
          for n, p in enumerate(p_list)]
     if 'E' in ports:
         num_ports = ports['E']
         m = dy - dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('E%s' % (n+1)), midpoint = [dx, p],
-                    width = dy/num_ports * 2, orientation = 0)
+                    width = dy/num_ports * 2, orientation = 0+flipper)
          for n, p in enumerate(p_list)]
     if 'W' in ports:
         num_ports = ports['W']
         m = dy - dy/num_ports
         p_list = np.linspace(-m, m, num_ports)
         [D.add_port(name = ('W%s' % (n+1)), midpoint = [-dx, p],
-                    width = dy/num_ports * 2, orientation = 180)
+                    width = dy/num_ports * 2, orientation = 180+flipper)
          for n, p in enumerate(p_list)]
 
     return D
