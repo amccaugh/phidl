@@ -3673,6 +3673,32 @@ def _via_iterable(via_spacing, wire_width, wiring1_layer, wiring2_layer,
 
     return VI
 
+def rotate_ports(D, angle = 180, depth=None):
+    '''
+    Parameters
+    ----------
+    D : Device
+        DESCRIPTION.
+    angle : float, 
+        angle in degrees to be added to the current orientation of each port. 
+        The default is 180.
+
+    Returns
+    -------
+    D : Device
+        The device object with rotated ports.
+
+    '''
+    port_list=[]
+    port_list = D.get_ports(depth)
+    print()
+    for port in port_list:
+        D.remove(D.ports[port.name])
+        port.orientation += angle
+        D.add_port(port=port)
+        
+    return D
+
 def test_via(num_vias = 100, wire_width = 10, via_width = 15,
              via_spacing = 40, pad_size = (300, 300), min_pad_spacing = 0,
              pad_layer = 0, wiring1_layer = 1, wiring2_layer = 2,
