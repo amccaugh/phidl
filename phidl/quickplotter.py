@@ -37,11 +37,109 @@ except:
     QGraphicsView = object
     qt_imported = False
 
+_quickplot_options = {}
+
+
+def _zoom_factory(axis, base_scale=0.4):
+    """returns zooming functionality to axis.
+    From https://gist.github.com/tacaswell/3144287 """
+    def zoom_fun(event, ax, scale):
+        """zoom when scrolling"""
+        if event.inaxes == axis:
+            scale_factor = np.power(scale,-event.step)
+            xdata = event.xdata
+            ydata = event.ydata
+            x_left = xdata - ax.get_xlim()[0]
+            x_right = ax.get_xlim()[1] - xdata
+            y_top = ydata - ax.get_ylim()[0]
+            y_bottom = ax.get_ylim()[1] - ydata
+
+            ax.set_xlim([xdata - x_left * scale_factor,
+                         xdata + x_right * scale_factor])
+            ax.set_ylim([ydata - y_top * scale_factor,
+                         ydata + y_bottom * scale_factor])
+            ax.figure.canvas.draw()
+
+    fig = axis.get_figure()
+    fig.canvas.mpl_connect('scroll_event', lambda event: zoom_fun(
+        event, axis, 1+base_scale))
+
+def set_quickplot_options(show_ports = None, show_subports = None,
+              label_ports = None, label_aliases = None, new_window = None,
+              blocking = None):
+    """ Sets plotting options for quickplot()
+
+    Parameters
+    ----------
+    show_ports : bool
+        Sets whether ports are drawn
+    show_subports : bool
+        Sets whether subports (ports that belong to references) are drawn
+    label_ports : bool
+        Sets whether Ports are labeled with a text name
+    label_aliases : bool
+        Sets whether aliases are labeled with a text name
+    new_window : bool
+        If True, each call to quickplot() will generate a separate window
+    blocking : bool
+        If True, calling quickplot() will pause execution of ("block") the
+        remainder of the python code until the quickplot() window is closed.  If
+        False, the window will be opened and code will continue to run.
+    """              
+    if show_ports is not None:
+        _quickplot_options['show_ports'] = show_ports
+    if show_subports is not None:
+        _quickplot_options['show_subports'] = show_subports
+    if label_ports is not None:
+        _quickplot_options['label_ports'] = label_ports
+    if label_aliases is not None:
+        _quickplot_options['label_aliases'] = label_aliases
+    if new_window is not None:
+        _quickplot_options['new_window'] = new_window
+    if blocking is not None:
+        _quickplot_options['blocking'] = blocking
+
 
 def quickplot(items, show_ports = True, show_subports = True,
-              label_ports = True, label_aliases = False, new_window = False):
+              label_ports = True, label_aliases = False, new_window = False,
+              blocking = False):
     """ Takes a list of devices/references/polygons or single one of those, and
-    plots them.  Also has the option to overlay their ports """
+    plots them.  Also has the option to overlay their ports 
+
+    Parameters
+    ----------
+    items : PHIDL object or list of PHIDL objects
+        The item(s) which are to be plotted
+    show_ports : bool
+        Sets whether ports are drawn
+    show_subports : bool
+        Sets whether subports (ports that belong to references) are drawn
+    label_ports : bool
+        Sets whether Ports are labeled with a text name
+    label_aliases : bool
+        Sets whether aliases are labeled with a text name
+    new_window : bool
+        If True, each call to quickplot() will generate a separate window
+    blocking : bool
+        If True, calling quickplot() will pause execution of ("block") the
+        remainder of the python code until the quickplot() window is closed.  If
+        False, the window will be opened and code will continue to run."""
+
+    # Override default options with _quickplot_options
+    if 'show_ports' in _quickplot_options:
+        show_ports = _quickplot_options['show_ports']
+    if 'show_subports' in _quickplot_options:
+        show_subports = _quickplot_options['show_subports']
+    if 'label_ports' in _quickplot_options:
+        label_ports = _quickplot_options['label_ports']
+    if 'label_aliases' in _quickplot_options:
+        label_aliases = _quickplot_options['label_aliases']
+    if 'new_window' in _quickplot_options:
+        new_window = _quickplot_options['new_window']
+    if 'blocking' in _quickplot_options:
+        blocking = _quickplot_options['blocking']
+
+
     if matplotlib_imported == False:
         raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL " +
               "will still work but quickplot() will not.  Try using " +
@@ -49,14 +147,17 @@ def quickplot(items, show_ports = True, show_subports = True,
 
     if new_window:
         fig, ax = plt.subplots(1)
+        _zoom_factory(ax)
         ax.autoscale(enable = True, tight = True)
     else:
         if plt.fignum_exists(num='PHIDL quickplot'):
             fig = plt.figure('PHIDL quickplot')
             plt.clf() # Erase figure so toolbar at top works correctly
             ax = fig.add_subplot(111)
+            _zoom_factory(ax)
         else:
             fig,ax = plt.subplots(num='PHIDL quickplot')
+            _zoom_factory(ax)
     ax.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
@@ -114,7 +215,7 @@ def quickplot(items, show_ports = True, show_subports = True,
     ax.set_ylim([bbox[1]-ymargin, bbox[3]+ymargin])
     # print(bbox)
     plt.draw()
-    plt.show(block = False)
+    plt.show(block = blocking)
 
 
 def _update_bbox(bbox, new_bbox):
