@@ -17,7 +17,9 @@ _PORT_RGB = (190,0,0)
 
 try:
     from matplotlib import pyplot as plt
+    import matplotlib
     from matplotlib.collections import PolyCollection
+    from matplotlib.widgets  import RectangleSelector
     matplotlib_imported = True
 except:
     matplotlib_imported = False
@@ -37,10 +39,18 @@ except:
     QGraphicsView = object
     qt_imported = False
 
-_quickplot_options = {}
+_quickplot_options = dict(
+    show_ports = True,
+    show_subports = True,
+    label_ports = True,
+    label_aliases = False,
+    new_window = False,
+    blocking = False,
+    zoom_factor = 1.4,
+    )
 
 
-def _zoom_factory(axis, base_scale=0.4):
+def _zoom_factory(axis, scale_factor=1.4):
     """returns zooming functionality to axis.
     From https://gist.github.com/tacaswell/3144287 """
     def zoom_fun(event, ax, scale):
@@ -59,14 +69,39 @@ def _zoom_factory(axis, base_scale=0.4):
             ax.set_ylim([ydata - y_top * scale_factor,
                          ydata + y_bottom * scale_factor])
             ax.figure.canvas.draw()
+            # Update toolbar so back/forward buttons work
+            fig.canvas.toolbar.push_current()
 
     fig = axis.get_figure()
     fig.canvas.mpl_connect('scroll_event', lambda event: zoom_fun(
-        event, axis, 1+base_scale))
+        event, axis, scale_factor))
+
+_qp_objects = {}
+def _rectangle_selector_factory(fig, ax):
+
+    def line_select_callback(eclick, erelease):
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+        left = min(x1,x2)
+        right = max(x1,x2)
+        bottom = min(y1,y2)
+        top = max(y1,y2)
+        ax.set_xlim([left, right])
+        ax.set_ylim([bottom,top])
+        # Update toolbar so back/forward buttons work
+        fig.canvas.toolbar.push_current()
+
+
+    rs = RectangleSelector(ax, line_select_callback,
+                        drawtype='box', useblit=False, button=[1,3], 
+                        minspanx=5, minspany=5, spancoords='pixels', 
+                        interactive=False)
+    return rs
+
 
 def set_quickplot_options(show_ports = None, show_subports = None,
               label_ports = None, label_aliases = None, new_window = None,
-              blocking = None):
+              blocking = None, zoom_factor = None):
     """ Sets plotting options for quickplot()
 
     Parameters
@@ -85,6 +120,9 @@ def set_quickplot_options(show_ports = None, show_subports = None,
         If True, calling quickplot() will pause execution of ("block") the
         remainder of the python code until the quickplot() window is closed.  If
         False, the window will be opened and code will continue to run.
+    zoom_factor : float
+        Sets the scaling factor when zooming the quickplot window with the
+        mousewheel/trackpad
     """              
     if show_ports is not None:
         _quickplot_options['show_ports'] = show_ports
@@ -97,7 +135,9 @@ def set_quickplot_options(show_ports = None, show_subports = None,
     if new_window is not None:
         _quickplot_options['new_window'] = new_window
     if blocking is not None:
-        _quickplot_options['blocking'] = blocking
+        _quickplot_options['blocking'] = blockin
+    if zoom_factor is not None:
+        _quickplot_options['zoom_factor'] = zoom_factor
 
 
 def quickplot(items, show_ports = True, show_subports = True,
@@ -110,20 +150,7 @@ def quickplot(items, show_ports = True, show_subports = True,
     ----------
     items : PHIDL object or list of PHIDL objects
         The item(s) which are to be plotted
-    show_ports : bool
-        Sets whether ports are drawn
-    show_subports : bool
-        Sets whether subports (ports that belong to references) are drawn
-    label_ports : bool
-        Sets whether Ports are labeled with a text name
-    label_aliases : bool
-        Sets whether aliases are labeled with a text name
-    new_window : bool
-        If True, each call to quickplot() will generate a separate window
-    blocking : bool
-        If True, calling quickplot() will pause execution of ("block") the
-        remainder of the python code until the quickplot() window is closed.  If
-        False, the window will be opened and code will continue to run."""
+    """
 
     # Override default options with _quickplot_options
     if 'show_ports' in _quickplot_options:
@@ -147,22 +174,25 @@ def quickplot(items, show_ports = True, show_subports = True,
 
     if new_window:
         fig, ax = plt.subplots(1)
-        _zoom_factory(ax)
         ax.autoscale(enable = True, tight = True)
     else:
         if plt.fignum_exists(num='PHIDL quickplot'):
             fig = plt.figure('PHIDL quickplot')
             plt.clf() # Erase figure so toolbar at top works correctly
             ax = fig.add_subplot(111)
-            _zoom_factory(ax)
         else:
             fig,ax = plt.subplots(num='PHIDL quickplot')
-            _zoom_factory(ax)
+
     ax.axis('equal')
     ax.grid(True, which='both', alpha = 0.4)
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
     bbox = None
+
+    # Need to hang on to RectangleSelector so it doesn't get garbage collected
+    _qp_objects['rectangle_selector'] = _rectangle_selector_factory(fig, ax)
+    _zoom_factory(ax, scale_factor = _quickplot_options['zoom_factor'])
+
 
     # Iterate through each each Device/DeviceReference/Polygon
     if type(items) is not list:  items = [items]
@@ -216,6 +246,10 @@ def quickplot(items, show_ports = True, show_subports = True,
     # print(bbox)
     plt.draw()
     plt.show(block = blocking)
+
+    # Update matplotlib toolbar so the Home button works
+    fig.canvas.toolbar.update()
+    fig.canvas.toolbar.push_current()
 
 
 def _update_bbox(bbox, new_bbox):
