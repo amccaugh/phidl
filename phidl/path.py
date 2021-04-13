@@ -284,6 +284,18 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     # print(P.end_angle)
     return P
 
+def _compute_segments(points):
+    points = np.asfarray(points)
+    normals = np.diff(points, axis = 0)
+    normals = (normals.T/np.linalg.norm(normals, axis = 1)).T
+    dx = np.diff(points[:,0])
+    dy = np.diff(points[:,1])
+    ds = np.sqrt(dx**2 + dy**2)
+    theta = np.degrees(np.arctan2(dy,dx))
+    dtheta = np.diff(theta)
+    dtheta = dtheta - 360*np.floor((dtheta + 180)/360)
+    return points, normals, ds, theta, dtheta
+
 
 def smooth(
     points = [(20,0), (40,0), (80,40), (80,10), (100,10),],
@@ -312,16 +324,16 @@ def smooth(
     Path
         A Path object with the specified smoothed path.
     """
-    points = np.asfarray(points)
-    normals = np.diff(points, axis = 0)
-    normals = (normals.T/np.linalg.norm(normals, axis = 1)).T
-    # normals_rev = normals*np.array([1,-1])
-    dx = np.diff(points[:,0])
-    dy = np.diff(points[:,1])
-    ds = np.sqrt(dx**2 + dy**2)
-    theta = np.degrees(np.arctan2(dy,dx))
-    dtheta = np.diff(theta)
-    dtheta = dtheta - 360*np.floor((dtheta + 180)/360)
+
+    points, normals, ds, theta, dtheta = _compute_segments(points)
+    colinear_elements = np.concatenate([[False], np.abs(dtheta) < 1e-6, [False]])
+    if np.any(colinear_elements):
+        new_points = points[~colinear_elements,:]
+        points, normals, ds, theta, dtheta = _compute_segments(new_points)
+
+    if np.any(np.abs(np.abs(dtheta)-180) < 1e-6):
+        raise ValueError('[PHIDL] smooth() received points which double-back on themselves' +
+        '--turns cannot be computed when going forwards then exactly backwards.')
 
     # FIXME add caching
     # Create arcs
