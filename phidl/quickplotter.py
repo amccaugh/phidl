@@ -88,12 +88,13 @@ def _rectangle_selector_factory(fig, ax):
         top = max(y1,y2)
         ax.set_xlim([left, right])
         ax.set_ylim([bottom,top])
+        ax.figure.canvas.draw()
         # Update toolbar so back/forward buttons work
         fig.canvas.toolbar.push_current()
 
 
     rs = RectangleSelector(ax, line_select_callback,
-                        drawtype='box', useblit=False, button=[1,3], 
+                        drawtype='box', useblit=True, button=[1,3], 
                         minspanx=5, minspany=5, spancoords='pixels', 
                         interactive=False)
     return rs
@@ -169,8 +170,7 @@ def quickplot(items, show_ports = True, show_subports = True,
 
     if matplotlib_imported == False:
         raise ImportError("PHIDL tried to import matplotlib but it failed. PHIDL " +
-              "will still work but quickplot() will not.  Try using " +
-              "quickplot2() instead (see note in tutorial) ")
+              "will still work but quickplot() will not")
 
     if new_window:
         fig, ax = plt.subplots(1)
@@ -188,10 +188,6 @@ def quickplot(items, show_ports = True, show_subports = True,
     ax.axhline(y=0, color='k', alpha = 0.2, linewidth = 1)
     ax.axvline(x=0, color='k', alpha = 0.2, linewidth = 1)
     bbox = None
-
-    # Need to hang on to RectangleSelector so it doesn't get garbage collected
-    _qp_objects['rectangle_selector'] = _rectangle_selector_factory(fig, ax)
-    _zoom_factory(ax, scale_factor = _quickplot_options['zoom_factor'])
 
 
     # Iterate through each each Device/DeviceReference/Polygon
@@ -243,13 +239,20 @@ def quickplot(items, show_ports = True, show_subports = True,
     ymargin = (bbox[3]-bbox[1])*0.1 + 1e-9
     ax.set_xlim([bbox[0]-xmargin, bbox[2]+xmargin])
     ax.set_ylim([bbox[1]-ymargin, bbox[3]+ymargin])
-    # print(bbox)
+
+    # When using inline Jupyter notebooks, this may fail so allow it to fail gracefully
+    try:
+        # Need to hang on to RectangleSelector so it doesn't get garbage collected
+        _zoom_factory(ax, scale_factor = _quickplot_options['zoom_factor'])
+        _qp_objects['rectangle_selector'] = _rectangle_selector_factory(fig, ax)
+        # Update matplotlib toolbar so the Home button works
+        fig.canvas.toolbar.update()
+        fig.canvas.toolbar.push_current()
+    except:
+        pass
+    
     plt.draw()
     plt.show(block = blocking)
-
-    # Update matplotlib toolbar so the Home button works
-    fig.canvas.toolbar.update()
-    fig.canvas.toolbar.push_current()
 
 
 def _update_bbox(bbox, new_bbox):
