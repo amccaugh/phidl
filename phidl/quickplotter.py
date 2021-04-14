@@ -136,7 +136,7 @@ def set_quickplot_options(show_ports = None, show_subports = None,
     if new_window is not None:
         _quickplot_options['new_window'] = new_window
     if blocking is not None:
-        _quickplot_options['blocking'] = blockin
+        _quickplot_options['blocking'] = blocking
     if zoom_factor is not None:
         _quickplot_options['zoom_factor'] = zoom_factor
 
