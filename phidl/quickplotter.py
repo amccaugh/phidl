@@ -42,7 +42,6 @@ except:
 _quickplot_options = dict(
     show_ports = True,
     show_subports = True,
-    label_ports = True,
     label_aliases = False,
     new_window = False,
     blocking = False,
@@ -111,8 +110,6 @@ def set_quickplot_options(show_ports = None, show_subports = None,
         Sets whether ports are drawn
     show_subports : bool
         Sets whether subports (ports that belong to references) are drawn
-    label_ports : bool
-        Sets whether Ports are labeled with a text name
     label_aliases : bool
         Sets whether aliases are labeled with a text name
     new_window : bool
@@ -129,8 +126,6 @@ def set_quickplot_options(show_ports = None, show_subports = None,
         _quickplot_options['show_ports'] = show_ports
     if show_subports is not None:
         _quickplot_options['show_subports'] = show_subports
-    if label_ports is not None:
-        _quickplot_options['label_ports'] = label_ports
     if label_aliases is not None:
         _quickplot_options['label_aliases'] = label_aliases
     if new_window is not None:
@@ -141,11 +136,10 @@ def set_quickplot_options(show_ports = None, show_subports = None,
         _quickplot_options['zoom_factor'] = zoom_factor
 
 
-def quickplot(items, show_ports = True, show_subports = True,
-              label_ports = True, label_aliases = False, new_window = False,
-              blocking = False):
+def quickplot(items):
     """ Takes a list of devices/references/polygons or single one of those, and
-    plots them.  Also has the option to overlay their ports 
+    plots them. Use `set_quickplot_options()` to modify the viewer behavior
+    (e.g. displaying ports, creating new windows, etc)
 
     Parameters
     ----------
@@ -154,18 +148,11 @@ def quickplot(items, show_ports = True, show_subports = True,
     """
 
     # Override default options with _quickplot_options
-    if 'show_ports' in _quickplot_options:
-        show_ports = _quickplot_options['show_ports']
-    if 'show_subports' in _quickplot_options:
-        show_subports = _quickplot_options['show_subports']
-    if 'label_ports' in _quickplot_options:
-        label_ports = _quickplot_options['label_ports']
-    if 'label_aliases' in _quickplot_options:
-        label_aliases = _quickplot_options['label_aliases']
-    if 'new_window' in _quickplot_options:
-        new_window = _quickplot_options['new_window']
-    if 'blocking' in _quickplot_options:
-        blocking = _quickplot_options['blocking']
+    show_ports = _quickplot_options['show_ports']
+    show_subports = _quickplot_options['show_subports']
+    label_aliases = _quickplot_options['label_aliases']
+    new_window = _quickplot_options['new_window']
+    blocking = _quickplot_options['blocking']
 
 
     if matplotlib_imported == False:
@@ -202,7 +189,7 @@ def quickplot(items, show_ports = True, show_subports = True,
                                edgecolor = 'k', alpha = layerprop['alpha'])
                 bbox = _update_bbox(bbox, new_bbox)
             # If item is a Device or DeviceReference, draw ports
-            if isinstance(item, (Device, DeviceReference)):
+            if isinstance(item, (Device, DeviceReference)) and show_ports is True:
                 for name, port in item.ports.items():
                     if (port.width is None) or (port.width == 0):
                         new_bbox = _draw_port_as_point(ax, port)
