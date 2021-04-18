@@ -1710,7 +1710,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         for layer in sorted_layers:
             layer_hash = hashlib.sha1(layer.astype(np.int64)).digest()
             polygons = polygons_by_spec[tuple(layer)]
-            polygons = [((p/precision) + magic_offset).astype(np.int64) for p in polygons]
+            polygons = [np.ascontiguousarray((p/precision) + magic_offset, dtype  = np.int64) for p in polygons]
             polygon_hashes = np.sort([hashlib.sha1(p).digest() for p in polygons])
             final_hash.update(layer_hash)
             for ph in polygon_hashes:
