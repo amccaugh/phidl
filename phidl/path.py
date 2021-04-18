@@ -407,6 +407,11 @@ def transition(cross_section1, cross_section2, width_type = 'sine'):
     X1 = cross_section1
     X2 = cross_section2
     Xtrans = CrossSection()
+
+    if not X1.aliases or not X2.aliases:
+        raise ValueError("""[PHIDL] transition() found no named sections in one
+        or both inputs (cross_section1/cross_section2).""")
+
     for alias in X1.aliases.keys():
         if alias in X2.aliases:
 
