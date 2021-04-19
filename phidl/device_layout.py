@@ -9,14 +9,10 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# Add D.get_info()
-# Make pg.vstack() and pg.hstack() -- point to grid()
 # Add Group.get_polygons()
 # Allow Boolean to use Groups
-# Add Paths to quickplot2
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
-# check that aliases show up properly in quickplot2
 # phidl add autoarray_xy to pg.geometry()
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
