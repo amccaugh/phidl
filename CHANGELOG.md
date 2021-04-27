@@ -1,5 +1,22 @@
 # Changelog
 
+
+## 1.5.0 (April 19, 2021)
+
+### New features
+- Better interactive windows for `quickplot()`! Now you can use the mousewheel/trackpad scroll to zoom in and out, and right-click or left-click to zoom to a region.
+- Added `blocking` option for `quickplot()` (thanks @giumc)
+
+### Changes
+- Quickplot options (such as displaying ports, subports, or aliases) are now set using `set_quickplot_options()`
+
+### Bugfixes
+- Fix for Path function `smooth()`, which broke when sequential waypoints were co-linear (thanks @giumc)
+- Fix for non-C-continguous arrays in `hash_geometry()`  (thanks Joaquin Matres @joamatab)
+
+
+### Bugfixes
+
 ## 1.4.4 (Feb 23, 2021)
 
 Bugfix release

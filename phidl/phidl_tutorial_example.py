@@ -777,8 +777,8 @@ D['circle2'].x += 10            # Moving the second circle over by 10
 D['circle3'].x += 15            # Moving the second circle over by 15
 # Note that at this point, D['circle2'] is equivalent to the variable c2
 # we made above
-qp(D['circle2'], label_aliases = True)
-qp(D, label_aliases = True)
+qp(D['circle2'])
+qp(D)
 
 # You can also access the list of aliases for your Device whenever you want
 # to by accessing Device.aliases, which is a Python dictionary.  For example:

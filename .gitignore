@@ -83,3 +83,5 @@ target/
 *.bat
 *.lyp
 *.oas
+
+.vscode/

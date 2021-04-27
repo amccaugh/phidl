@@ -4332,13 +4332,12 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
     return D
 
 
-# TODO Include parameter which specifies "half" (one edge flat) vs
-# "full" (both edges curved)
 @device_lru_cache
 def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
                  width_tol = 1e-3, anticrowding_factor = 1.2,
                  symmetric = False, layer = 0):
     """ Creates an optimally-rounded step geometry.
+
     Parameters
     ----------
     start_width : int or float
@@ -4349,7 +4348,6 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
         The number of points comprising the entire step geometry.
     width_tol : float
         Point at which to terminate the calculation of the optimal step
-
     anticrowding_factor : int or float
         Factor to reduce current crowding by elongating
         the structure and reducing the curvature

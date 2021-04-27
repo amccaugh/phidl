@@ -9,13 +9,10 @@
 #==============================================================================
 # Minor TODO
 #==============================================================================
-# Make pg.vstack() and pg.hstack() -- point to grid()
 # Add Group.get_polygons()
 # Allow Boolean to use Groups
-# Add Paths to quickplot2
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
-# check that aliases show up properly in quickplot2
 # phidl add autoarray_xy to pg.geometry()
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
@@ -59,7 +56,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.4.4'
+__version__ = '1.5.0'
 
 
 #==============================================================================
@@ -1701,7 +1698,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         for layer in sorted_layers:
             layer_hash = hashlib.sha1(layer.astype(np.int64)).digest()
             polygons = polygons_by_spec[tuple(layer)]
-            polygons = [((p/precision) + magic_offset).astype(np.int64) for p in polygons]
+            polygons = [np.ascontiguousarray((p/precision) + magic_offset, dtype  = np.int64) for p in polygons]
             polygon_hashes = np.sort([hashlib.sha1(p).digest() for p in polygons])
             final_hash.update(layer_hash)
             for ph in polygon_hashes:
@@ -2256,7 +2253,7 @@ class Group(_GeometryHelper):
         else:
             raise ValueError('[PHIDL] add() Could not add element to Group, the only ' \
                              'allowed element types are ' \
-                             '(Device, DeviceReference, Port, Polygon, CellArray, Label, Group)')
+                             '(Device, DeviceReference, Polygon, CellArray, Label, Group)')
         # Remove non-unique entries
         used = set()
         self.elements = [x for x in self.elements if x not in used and (used.add(x) or True)]
@@ -2344,7 +2341,10 @@ class Group(_GeometryHelper):
         _align(elements = self.elements, alignment = alignment)
         return self
 
-PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
+
+
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Polygon, CellArray, Label, Group)
 
 
 
