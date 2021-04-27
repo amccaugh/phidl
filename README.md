@@ -6,9 +6,10 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.4.4, Feb 23, 2021)
-    - Allow labels imported through import_gds() to be moved (thanks Joaquin Matres @joamatab)
-    - Fix to Path.smooth() to prevent right-angle turns from accidentally having an additional +180 degrees applied to them (thanks Jeffrey Holzgrafe @jolzgrafe)
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.5.0 on April 27, 2021)
+  - Better interactive windows for `quickplot()`! Now you can use the mousewheel/trackpad scroll to zoom in and out, and right-click or left-click to zoom to a region.
+  - Quickplot options (such as displaying ports, subports, or aliases) are now set using `set_quickplot_options()`
+  - A few bugfixes
 
 
 # Gallery
