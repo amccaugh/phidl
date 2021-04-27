@@ -2253,7 +2253,7 @@ class Group(_GeometryHelper):
         else:
             raise ValueError('[PHIDL] add() Could not add element to Group, the only ' \
                              'allowed element types are ' \
-                             '(Device, DeviceReference, Port, Polygon, CellArray, Label, Group)')
+                             '(Device, DeviceReference, Polygon, CellArray, Label, Group)')
         # Remove non-unique entries
         used = set()
         self.elements = [x for x in self.elements if x not in used and (used.add(x) or True)]
@@ -2341,7 +2341,10 @@ class Group(_GeometryHelper):
         _align(elements = self.elements, alignment = alignment)
         return self
 
-PHIDL_ELEMENTS = (Device, DeviceReference, Port, Polygon, CellArray, Label, Group)
+
+
+
+PHIDL_ELEMENTS = (Device, DeviceReference, Polygon, CellArray, Label, Group)
 
 
 
