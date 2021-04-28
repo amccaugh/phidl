@@ -1644,22 +1644,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
-        """
-        .. deprecated:: 1.3.0
-            `reflect` will be removed in May 2021, please replace with
-            `mirror`.
-        """
-        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
-        return self.mirror(p1, p2)
-
-
     def hash_geometry(self, precision = 1e-4):
         """ Computes an SHA1 hash of the geometry in the Device. For each layer,
-            each polygon is individually hashed and then the polygon hashes
-            are sorted, to ensure the hash stays constant regardless of the
-            ordering the polygons.  Similarly, the layers are sorted by
-            (layer, datatype)
+        each polygon is individually hashed and then the polygon hashes are
+        sorted, to ensure the hash stays constant regardless of the ordering
+        the polygons.  Similarly, the layers are sorted by (layer, datatype)
 
         Parameters
         ----------
@@ -1672,17 +1661,21 @@ class Device(gdspy.Cell, _GeometryHelper):
         str
             Hash result in the form of an SHA1 hex digest string
 
-        ...
+        Notes
+        -----
         Algorithm:
-        hash(
-            hash(First layer information: [layer1, datatype1]),
-            hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-            hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
-            hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-            hash(Second layer information: [layer2, datatype2]),
-            hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
-            hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-        )
+        
+        .. code-block:: python
+        
+            hash(
+                hash(First layer information: [layer1, datatype1]),
+                hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Second layer information: [layer2, datatype2]),
+                hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            )
         """
         polygons_by_spec = self.get_polygons(by_spec = True)
         layers = np.array(list(polygons_by_spec.keys()))

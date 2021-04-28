@@ -176,7 +176,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     Parameters
     ----------
     radius : int or float
-        Middle radius of the ring.
+        Radius of the ring centerline
     width : int or float
         Width of the ring.
     angle_resolution : int or float
@@ -4277,7 +4277,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
 
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
-        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     #==========================================================================
     #  Create the basic geometry
@@ -4366,7 +4366,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
     -----
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
-        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     #==========================================================================
     #  Create the basic geometry
@@ -4507,7 +4507,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     -----
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
-        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     D = Device()
 
