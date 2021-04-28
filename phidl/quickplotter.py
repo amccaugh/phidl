@@ -100,7 +100,7 @@ def _rectangle_selector_factory(fig, ax):
 
 
 def set_quickplot_options(show_ports = None, show_subports = None,
-              label_ports = None, label_aliases = None, new_window = None,
+              label_aliases = None, new_window = None,
               blocking = None, zoom_factor = None):
     """ Sets plotting options for quickplot()
 
