@@ -1447,6 +1447,55 @@ def litho_calipers(notch_size = [2, 5],
     return(D)
 
 
+def litho_ruler(
+    height = 2 ,
+    width = 0.5,
+    spacing = 1.2,
+    scale = [3,1,1,1,1,2,1,1,1,1],
+    num_marks = 21,
+    layer = 0,
+    ):
+    """ Creates a ruler structure for lithographic measurement with marks of
+    varying scales to allow for easy reading by eye.
+
+    Parameters
+    ----------
+    height : float
+        Height of the ruling marks.
+    width : float
+        Width of the ruling marks.
+    spacing : float
+        Center-to-center spacing of the ruling marks
+    scale : array-like
+        Height scale pattern of marks
+    num_marks : int
+        Total number of marks to generate
+    num_marks : int
+        Total number of marks to generate
+    layer : int, array-like[2], or set
+        Specific layer(s) to put the ruler geometry on.
+
+    Returns
+    -------
+    Device
+        A Device containing the ruler structure
+    """
+
+    D = Device('litho_ruler')
+    for n in range(num_marks):
+        h = height*scale[n % len(scale)]
+        rect = D << rectangle(size = (width, h), layer = layer)
+
+    D.distribute(
+        direction = 'x',
+        spacing = spacing,
+        separation = False,
+        edge = 'x')
+    D.align(alignment='ymin')
+    D.flatten()
+    return D
+
+
 #==============================================================================
 #
 # Utility functions

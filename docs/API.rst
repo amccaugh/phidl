@@ -184,6 +184,13 @@ litho_steps
 .. autofunction:: phidl.geometry.litho_steps
 
 
+litho_ruler
+===========
+
+.. autofunction:: phidl.geometry.litho_ruler
+
+
+
 meander_taper
 =============
 
