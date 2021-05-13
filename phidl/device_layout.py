@@ -953,9 +953,9 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
         # Allow name to be set like Device('arc') or Device(name = 'arc')
-        if 'name' in kwargs: _internal_name = kwargs['name']
-        elif (len(args) == 1) and (len(kwargs) == 0): _internal_name = args[0]
-        else: _internal_name = 'Unnamed'
+        if 'name' in kwargs: name = kwargs['name']
+        elif (len(args) == 1) and (len(kwargs) == 0): name = args[0]
+        else: name = 'Unnamed'
 
         # Make a new blank device
         self.ports = {}
@@ -964,10 +964,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         # self.a = self.aliases
         # self.p = self.ports
         self.uid = Device._next_uid
-        self._internal_name = _internal_name
-        gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
-        super(Device, self).__init__(name = gds_name,
-                                     exclude_from_current=True)
+        super(Device, self).__init__(name = name)
         Device._next_uid += 1
 
 
@@ -997,7 +994,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         return ('Device (name "%s" (uid %s), ports %s, aliases %s, %s '
                 'polygons, %s references)' % \
-                (self._internal_name, self.uid, list(self.ports.keys()),
+                (self.name, self.uid, list(self.ports.keys()),
                  list(self.aliases.keys()), len(self.polygons),
                  len(self.references)))
 
@@ -1213,7 +1210,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 orientation = orientation, parent = self)
         if name is not None: p.name = name
         if p.name in self.ports:
-            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid))
+            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self.name, self.uid))
         self.ports[p.name] = p
         return p
 
@@ -1297,15 +1294,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            # all_cells_names = [c._internal_name for c in all_cells_sorted]
             all_cells_original_names = [c.name for c in all_cells_sorted]
             used_names = {cellname}
             n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
-                    new_name = c._internal_name[:max_cellname_length]
+                    new_name = c.name[:max_cellname_length]
                 else:
-                    new_name = c._internal_name
+                    new_name = c.name
                 temp_name = new_name
                 while temp_name in used_names:
                     n += 1
@@ -1315,11 +1311,9 @@ class Device(gdspy.Cell, _GeometryHelper):
                 c.name = new_name
             self.name = cellname
 
-        # Write the gds (catch + discard the annoying deprecation warning)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            gdspy.write_gds(filename, cells=all_cells, name='library',
-                            unit=unit, precision=precision)
+        # Write the gds
+        lib = gdspy.GdsLibrary(unit=unit, precision=precision)
+        lib.write_gds(filename, cells=all_cells)
         # Return cells to their original names if they were auto-renamed
         if auto_rename == True:
             for n,c in enumerate(all_cells_sorted):

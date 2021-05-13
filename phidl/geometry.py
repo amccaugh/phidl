@@ -1542,7 +1542,7 @@ def copy(D):
     Device
         Copied Device.
     """
-    D_copy = Device(name = D._internal_name)
+    D_copy = Device(name = D.name)
     D_copy.info = python_copy.deepcopy(D.info)
     for ref in D.references:
         new_ref = DeviceReference(device = ref.parent,
@@ -1580,9 +1580,7 @@ def deepcopy(D):
     D_copy = python_copy.deepcopy(D)
     D_copy.uid = Device._next_uid
     Device._next_uid += 1
-    D_copy._internal_name = D._internal_name
-    # Write name e.g. 'Unnamed000005'
-    D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid)
+    D_copy.name = D.name
     # Make sure _bb_valid is set to false for these new objects so new
     # bounding boxes are created in the cache
     for D in D_copy.get_dependencies(True):
