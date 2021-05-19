@@ -145,6 +145,15 @@ def quickplot(items):
     ----------
     items : PHIDL object or list of PHIDL objects
         The item(s) which are to be plotted
+
+    Examples
+    --------
+    >>> R = pg.rectangle()
+    >>> quickplot(R)
+
+    >>> R = pg.rectangle()
+    >>> E = pg.ellipse()
+    >>> quickplot([R, E])
     """
 
     # Override default options with _quickplot_options

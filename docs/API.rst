@@ -3,18 +3,24 @@ API Reference
 #############
 
 
+*********
+Quickplot
+*********
+
+quickplot
+=========
+
+.. autofunction:: phidl.quickplot
+
+set_quickplot_options
+=====================
+
+.. autofunction:: phidl.set_quickplot_options
+
+
 ****************
 Geometry Library
 ****************
-
-device_lru_cache
-================
-
-.. autoclass:: phidl.geometry.device_lru_cache
-   :members:
-   :inherited-members:
-   :show-inheritance:
-
 
 arc
 ===
@@ -357,6 +363,15 @@ ytron_round
 ===========
 
 .. autofunction:: phidl.geometry.ytron_round
+
+
+device_lru_cache
+================
+
+.. autoclass:: phidl.geometry.device_lru_cache
+   :members:
+   :inherited-members:
+   :show-inheritance:
 
 
 ************
