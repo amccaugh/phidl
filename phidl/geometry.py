@@ -10,7 +10,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 import gdspy
 from gdspy import clipper
 from phidl.device_layout import Device, Port, Polygon, CellArray, Group
-from phidl.device_layout import _parse_layer, DeviceReference
+from phidl.device_layout import _parse_layer, DeviceReference, make_device
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -3126,12 +3126,33 @@ def grid(device_list,
     # return device_matrix
     return D
 
+
+
+def _parameter_combinations(parameters_dict):
+    """ Creates parameter combinations from a dict filled with list values, e.g.
+    parameters_dict = {
+        'width' : [0.1,0.2],
+        'length' : [4,5,6],
+        'height' : [22]
+        }
+    Will produce a list of dictionaries, each of which can be used as kwargs input:
+        [{'height': 22, 'length': 4, 'width': 0.1},
+         {'height': 22, 'length': 5, 'width': 0.1},
+         {'height': 22, 'length': 6, 'width': 0.1},
+         {'height': 22, 'length': 4, 'width': 0.2},
+         {'height': 22, 'length': 5, 'width': 0.2},
+         {'height': 22, 'length': 6, 'width': 0.2}]
+"""
+    value_combinations = list(itertools.product(*parameters_dict.values()))
+    keys = list(parameters_dict.keys())
+    return [{keys[n]:values[n] for n in range(len(keys))} for values in value_combinations]
+
+
 def _gen_param_variations(
     function,
-    param_defaults = {},
     param_variations,
+    param_defaults = {},
     param_override = {},
-    device_rotation = 0,
     label_layer = 255
     ):
     """ Takes e.g.
@@ -3146,7 +3167,7 @@ def _gen_param_variations(
             gate_width = [0.1,0.2,0.4],
             )
     """
-    parameter_list = parameter_combinations(param_variations)
+    parameter_list = _parameter_combinations(param_variations)
 
     D_list = []
     for params in parameter_list:
@@ -3155,54 +3176,117 @@ def _gen_param_variations(
         for name, value in params.items():
             label_text += ('%s=%s' % (name,value)) + '\n'
         if label_layer is not None:
-            D_new.label(text = label_text, position = D_new.center, layer = label_layer)
-        D_new.rotate(device_rotation)
+            D_new.add_label(text = label_text, position = D_new.center, layer = label_layer)
 
         D_list.append(D_new)
     return D_list
 
-def autogrid(
+
+def gridsweep(
     function,
+    param_x = {'width' : [1,5,6,7]},
+    param_y = {'length' : [1.1,2,70]},
     param_defaults = {},
     param_override = {},
-    param_variations_x = {'width' : [1,5,6,7]},
-    param_variations_y = {'length' : [1.1,2,70]},
-    device_rotation = 0,
-    x_spacing = 50,
-    y_spacing = 50,
-    align = 'ymax',
+    spacing = (50,100),
+    separation = True,
+    align_x = 'x',
+    align_y = 'y',
+    edge_x = 'x',
+    edge_y = 'ymin',
     label_layer = 255,
     ):
+    """ Creates a parameter sweep of devices and places them on a grid with
+    labels for each device. For instance, given a function defined like
+    `myshape(width, height, offset, layer)` and the following parameters:
+        param_x = {'width' :  [4, 5, 6]  },
+        param_y = {'height' : [7, 9],
+                   'layer' :  [1, 2, 3]  },
+        param_defaults = {'scale' : 1}
+
+    gridsweep() produce a grid of devices with the following layout/parameters:
+        (w=4, h=7, s=1, l=1)    (w=5, h=7, s=1, l=1)    (w=6, h=7, s=1, l=1)
+        (w=4, h=7, s=1, l=2)    (w=5, h=7, s=1, l=2)    (w=6, h=7, s=1, l=2)
+        (w=4, h=7, s=1, l=3)    (w=5, h=7, s=1, l=3)    (w=6, h=7, s=1, l=3)
+        (w=4, h=9, s=1, l=1)    (w=5, h=9, s=1, l=1)    (w=6, h=9, s=1, l=1)
+        (w=4, h=9, s=1, l=2)    (w=5, h=9, s=1, l=2)    (w=6, h=9, s=1, l=2)
+        (w=4, h=9, s=1, l=3)    (w=5, h=9, s=1, l=3)    (w=6, h=9, s=1, l=3)
+
+
+    Parameters
+    ----------
+    function : function that produces a Device
+        The function which will be used to create the individual devices in the
+        grid.  Must only return a single Device (e.g. any of the functions in
+        pg.geometry)
+    param_x : dict
+        A dictionary of one or more parameters to sweep in the x-direction
+    param_y : dict
+        A dictionary of one or more parameters to sweep in the y-direction
+    param_defaults : dict
+        Default parameters to pass to every device in the grid
+    param_override : dict
+        Parameters that will override `param_defaults`, equivalent to changing
+        param_defaults (useful )
+    spacing : int, float, or array-like[N] of int or float
+        Spacing between adjacent elements on the grid, can be a tuple for
+        different distances in height and width.
+    separation : bool
+        If True, guarantees elements are separated with a fixed spacing
+        between; if False, elements are spaced evenly along a grid.
+    shape : array-like[2]
+        x, y shape of the grid (see np.reshape). If no shape is given and the
+        list is 1D, the output is as if np.reshape were run with (1, -1).
+    align_x : {'x', 'xmin', 'xmax'}
+        Which edge to perform the x (column) alignment along
+    align_y : {'y', 'ymin', 'ymax'}
+        Which edge to perform the y (row) alignment along
+    edge_x : {'x', 'xmin', 'xmax'}
+        Which edge to perform the x (column) distribution along (unused if
+        separation == True)
+    edge_y : {'y', 'ymin', 'ymax'}
+        Which edge to perform the y (row) distribution along (unused if
+        separation == True)
+    label_layer : None or layer
+        If not None, will place a label that describes the parameters on the device
+
+    Returns
+    -------
+    device_matrix : Device
+        A Device containing all the Devices in `device_list` in a grid.
+    """
+    
 
     param_variations = OrderedDict()
-    param_variations.update(param_variations_y)
-    param_variations.update(param_variations_x)
+    param_variations.update(param_y)
+    param_variations.update(param_x)
 
     D_list = _gen_param_variations(
         function = function,
+        param_variations = param_variations,
         param_defaults = param_defaults,
         param_override = param_override,
-        param_variations = param_variations,
-        device_rotation = device_rotation,
         label_layer = label_layer)
 
-    num_xvals = len(list(param_variations_x.values())[0])
-    D = arrange_array(
-        D_list = D_list,
-        x_spacing = x_spacing,
-        y_spacing = y_spacing,
-        align = align,
-        max_row_devices = num_xvals,
-        )
+    num_x_parameters = len(_parameter_combinations(param_x))
+    num_y_parameters = len(_parameter_combinations(param_y))
+    D = grid(D_list,
+                spacing = spacing,
+                separation = separation,
+                shape = (num_y_parameters, num_x_parameters),
+                align_x = align_x,
+                align_y = align_y,
+                edge_x = edge_x,
+                edge_y = edge_y,
+                    )
 
     label_text = {}
     label_text.update(param_defaults)
     label_text.update(param_override)
     if label_layer is not None:
-        D.label(text = pp.pformat(label_text), position = (D.xmin, D.ymin), layer = label_layer)
+        D.add_label(text = str(label_text), position = (D.xmin, D.ymin), layer = label_layer)
 
     return D
-
 
 
 
