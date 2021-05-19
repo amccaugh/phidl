@@ -4,7 +4,6 @@
 #==============================================================================
 # Add D.add_gdsii_path() to allow creation of GDSII paths
 # Add D.write_gds(max_points_per_polygon)
-# Fix pg.grid() -- array of 36 devices with shape (4,-1) somehow has 10 cols
 
 #==============================================================================
 # Minor TODO
@@ -13,7 +12,6 @@
 # Allow Boolean to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
-# phidl add autoarray_xy to pg.geometry()
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
 #   https://stackoverflow.com/a/12644499
@@ -21,11 +19,8 @@
 # Documentation TODO
 #==============================================================================
 # Tutorials
-# - Using Layers (Layers, LayerSet, {} notation)
-# - Arranging objects together with packer()/grid()/autoarray()
 # - Using Aliases
 # - Boolean operations
-# - Quickplot usage (quickplot, quickplot2, inline jupyter notebook)
 # - Advanced and Misc (simplify)
 
 # Examples
@@ -1087,7 +1082,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return d                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = None):
+    def add_polygon(self, points, layer = np.nan):
         """ Adds a Polygon to the Device.
 
         Parameters
@@ -1097,6 +1092,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         layer : int, array-like[2], or set
             Specific layer(s) to put polygon geometry on.
         """
+        if layer is None:
+            return None
+
         # Check if input a list of polygons by seeing if it's 3 levels deep
         try:
             points[0][0][0] # Try to access first x point
@@ -1104,11 +1102,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         except: pass # Verified points is not a list of polygons, continue on
 
         if isinstance(points, gdspy.PolygonSet):
-            if layer is None:   layers = zip(points.layers, points.datatypes)
+            if layer is np.nan:   layers = zip(points.layers, points.datatypes)
             else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer)
                     for p, layer in zip(points.polygons, layers)]
 
+        if layer is np.nan:
+            layer = 0
+            
         # Check if layer is actually a list of Layer objects
         try:
             if isinstance(layer, LayerSet):
@@ -1119,10 +1120,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             elif all([isinstance(l, (Layer)) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
             elif len(layer) > 2: # Someone wrote e.g. layer = [1,4,5]
-                raise ValueError(""" [PHIDL] When using add_polygon() with
-                    multiple layers, each element in your `layer` argument
-                    list must be of type Layer(), e.g.:
-                    `layer = [Layer(1,0), my_layer, Layer(4)]""")
+                raise ValueError(""" [PHIDL] If specifying multiple layers
+                you must use set notation, e.g. {1,5,8} """)
         except: pass
 
         # If in the form [[1,3,5],[2,4,6]]
@@ -1235,6 +1234,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         layer : int, array-like[2], or set
             Specific layer(s) to put Label on.
         """
+        if layer is None:
+            return None
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)

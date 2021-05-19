@@ -4036,8 +4036,8 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15,
 
 def test_comb(pad_size = (200, 200), wire_width = 1, wire_gap = 3,
               comb_layer = 0, overlap_zigzag_layer = 1,
-              comb_pad_layer = None, comb_gnd_layer = None,
-              overlap_pad_layer = None):
+              comb_pad_layer = 2, comb_gnd_layer = 3,
+              overlap_pad_layer = 4):
     """ Overlap comb test structure for checking whether two layers
     are electrically isolated
 
@@ -4079,9 +4079,9 @@ def test_comb(pad_size = (200, 200), wire_width = 1, wire_gap = 3,
     """
     CI = Device("test_comb")
 
-    if comb_pad_layer is None: comb_pad_layer = comb_layer
-    if comb_gnd_layer is None: comb_gnd_layer = comb_layer
-    if overlap_pad_layer is None: overlap_pad_layer = overlap_zigzag_layer
+    # if comb_pad_layer is None: comb_pad_layer = comb_layer
+    # if comb_gnd_layer is None: comb_gnd_layer = comb_layer
+    # if overlap_pad_layer is None: overlap_pad_layer = overlap_zigzag_layer
     wire_spacing = wire_width + wire_gap*2
 
     # pad overlays
@@ -4255,7 +4255,7 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
 
 def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
             wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200, 200),
-            pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = None):
+            pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = 1):
     """ Critical current test structure for superconducting wires.
 
     Parameters
@@ -4303,7 +4303,7 @@ def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
     """
     ICS = Device('test_ic')
 
-    if gnd_layer is None: gnd_layer = pad_layer
+    # if gnd_layer is None: gnd_layer = pad_layer
     translation = 0
     padb = ICS.add_ref(
         rectangle(
@@ -4357,8 +4357,8 @@ def test_res(pad_size = [50, 50],
              num_squares = 1000,
              width = 1,
              res_layer = 0,
-             pad_layer = None,
-             gnd_layer = None):
+             pad_layer = 1,
+             gnd_layer = 2):
     """ Creates an efficient resonator structure for a wafer layout.
 
     Parameters
