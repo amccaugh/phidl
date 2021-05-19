@@ -142,6 +142,12 @@ grid
 .. autofunction:: phidl.geometry.grid
 
 
+gridsweep
+=========
+
+.. autofunction:: phidl.geometry.gridsweep
+
+
 hecken_taper
 ============
 
