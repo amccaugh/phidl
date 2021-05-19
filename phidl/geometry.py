@@ -3049,9 +3049,9 @@ def grid(device_list,
     ----------
     device_list : array-like[N] of Device
         Devices to be placed onto a grid.
-    spacing : int, float, or array-like[N] of int or float
+    spacing : int, float, or array-like[2] of int or float
         Spacing between adjacent elements on the grid, can be a tuple for
-        different distances in height and width.
+        different distances in width and height (x,y).
     separation : bool
         If True, guarantees elements are speparated with a fixed spacing
         between; if  False, elements are spaced evenly along a grid.
@@ -3075,6 +3075,8 @@ def grid(device_list,
         A Device containing all the Devices in `device_list` in a grid.
     """
 
+    # Change (y,x) shape to (x,y) shape
+    shape = shape[::-1]
     device_array = np.asarray(device_list)
     # Check arguments
     if device_array.ndim not in (1,2):
@@ -3092,11 +3094,13 @@ def grid(device_list,
         raise ValueError("[PHIDL] grid() The shape is too small for all the items in device_list")
     else:
         if np.min(shape) == -1:
-            remainder = np.max(shape) - device_array.size % np.max(shape)
+            max_shape = np.max(shape)
+            min_devices = int(np.ceil(device_array.size / max_shape) * max_shape)
+            extra_devices = min_devices - device_array.size
         else:
-            remainder = shape[0]*shape[1] - device_array.size
-        if remainder != 0:
-            device_array = np.append(device_array, [None,]*remainder)
+            extra_devices = shape[0]*shape[1] - device_array.size
+        if extra_devices != 0:
+            device_array = np.append(device_array, [None,]*extra_devices)
     device_array = np.reshape(device_array, shape)
 
     # Create a blank Device and reference all the Devices in it
@@ -3228,9 +3232,9 @@ def gridsweep(
     param_override : dict
         Parameters that will override `param_defaults`, equivalent to changing
         param_defaults (useful )
-    spacing : int, float, or array-like[N] of int or float
+    spacing : int, float, or array-like[2] of int or float
         Spacing between adjacent elements on the grid, can be a tuple for
-        different distances in height and width.
+        different distances in width and height (x,y).
     separation : bool
         If True, guarantees elements are separated with a fixed spacing
         between; if False, elements are spaced evenly along a grid.
@@ -3273,7 +3277,7 @@ def gridsweep(
     D = grid(D_list,
                 spacing = spacing,
                 separation = separation,
-                shape = (num_y_parameters, num_x_parameters),
+                shape = (num_x_parameters, num_y_parameters),
                 align_x = align_x,
                 align_y = align_y,
                 edge_x = edge_x,
