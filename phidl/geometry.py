@@ -3053,9 +3053,11 @@ def grid(device_list,
         Spacing between adjacent elements on the grid, can be a tuple for
         different distances in height and width.
     separation : bool
-        If True, guarantees elements are speparated with a fixed spacing between; if  False, elements are spaced evenly along a grid.
+        If True, guarantees elements are speparated with a fixed spacing
+        between; if  False, elements are spaced evenly along a grid.
     shape : array-like[2]
-        x, y shape of the grid (see np.reshape). If no shape is given and the list is 1D, the output is as if np.reshape were run with (1, -1).
+        x, y shape of the grid (see np.reshape). If no shape is given and the
+        list is 1D, the output is as if np.reshape were run with (1, -1).
     align_x : {'x', 'xmin', 'xmax'}
         Which edge to perform the x (column) alignment along
     align_y : {'y', 'ymin', 'ymax'}
@@ -3123,6 +3125,85 @@ def grid(device_list,
 
     # return device_matrix
     return D
+
+def _gen_param_variations(
+    function,
+    param_defaults = {},
+    param_variations,
+    param_override = {},
+    device_rotation = 0,
+    label_layer = 255
+    ):
+    """ Takes e.g.
+
+    param_variations = {
+            'channel_width' : [1,2,3]
+            'gate_width' : [0.1,0.2,0.4],
+            }
+       or equivalently
+    param_variations = dict(
+            channel_width = [1,2,3],
+            gate_width = [0.1,0.2,0.4],
+            )
+    """
+    parameter_list = parameter_combinations(param_variations)
+
+    D_list = []
+    for params in parameter_list:
+        D_new = make_device(function, config = param_defaults, **params, **param_override)
+        label_text = ''
+        for name, value in params.items():
+            label_text += ('%s=%s' % (name,value)) + '\n'
+        if label_layer is not None:
+            D_new.label(text = label_text, position = D_new.center, layer = label_layer)
+        D_new.rotate(device_rotation)
+
+        D_list.append(D_new)
+    return D_list
+
+def autogrid(
+    function,
+    param_defaults = {},
+    param_override = {},
+    param_variations_x = {'width' : [1,5,6,7]},
+    param_variations_y = {'length' : [1.1,2,70]},
+    device_rotation = 0,
+    x_spacing = 50,
+    y_spacing = 50,
+    align = 'ymax',
+    label_layer = 255,
+    ):
+
+    param_variations = OrderedDict()
+    param_variations.update(param_variations_y)
+    param_variations.update(param_variations_x)
+
+    D_list = _gen_param_variations(
+        function = function,
+        param_defaults = param_defaults,
+        param_override = param_override,
+        param_variations = param_variations,
+        device_rotation = device_rotation,
+        label_layer = label_layer)
+
+    num_xvals = len(list(param_variations_x.values())[0])
+    D = arrange_array(
+        D_list = D_list,
+        x_spacing = x_spacing,
+        y_spacing = y_spacing,
+        align = align,
+        max_row_devices = num_xvals,
+        )
+
+    label_text = {}
+    label_text.update(param_defaults)
+    label_text.update(param_override)
+    if label_layer is not None:
+        D.label(text = pp.pformat(label_text), position = (D.xmin, D.ymin), layer = label_layer)
+
+    return D
+
+
 
 
 def _pack_single_bin(rect_dict,
