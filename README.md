@@ -6,10 +6,21 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.5.0 on April 27, 2021)
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.5.1 on May 19, 2021)
   - Better interactive windows for `quickplot()`! Now you can use the mousewheel/trackpad scroll to zoom in and out, and right-click or left-click to zoom to a region.
-  - Quickplot options (such as displaying ports, subports, or aliases) are now set using `set_quickplot_options()`
-  - A few bugfixes
+  - New `pg.gridsweep()` function, allowing for easy creation of parameter sweeps on a grid.  See [the documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Gridsweep) for details. 
+
+```
+D = pg.gridsweep(
+      function = custom_ellipse,
+      param_x = {'width' :  [40, 80, 120, 160]},
+      param_y = {'height' : [10, 50],
+                 'layer' :  [1, 2, 3]  },
+      spacing = (30,10))
+```
+
+![phidl example image](https://phidl.readthedocs.io/en/dev/_images/geometry_reference_36_0.png)
+
 
 
 # Gallery

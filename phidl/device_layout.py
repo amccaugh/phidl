@@ -4,7 +4,6 @@
 #==============================================================================
 # Add D.add_gdsii_path() to allow creation of GDSII paths
 # Add D.write_gds(max_points_per_polygon)
-# Fix pg.grid() -- array of 36 devices with shape (4,-1) somehow has 10 cols
 
 #==============================================================================
 # Minor TODO
@@ -13,7 +12,6 @@
 # Allow Boolean to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # add wire_basic to phidl.routing.  also add endcap parameter
-# phidl add autoarray_xy to pg.geometry()
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
 #   https://stackoverflow.com/a/12644499
@@ -21,11 +19,8 @@
 # Documentation TODO
 #==============================================================================
 # Tutorials
-# - Using Layers (Layers, LayerSet, {} notation)
-# - Arranging objects together with packer()/grid()/autoarray()
 # - Using Aliases
 # - Boolean operations
-# - Quickplot usage (quickplot, quickplot2, inline jupyter notebook)
 # - Advanced and Misc (simplify)
 
 # Examples
@@ -56,7 +51,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 
 #==============================================================================
@@ -953,9 +948,9 @@ class Device(gdspy.Cell, _GeometryHelper):
 
 
         # Allow name to be set like Device('arc') or Device(name = 'arc')
-        if 'name' in kwargs: _internal_name = kwargs['name']
-        elif (len(args) == 1) and (len(kwargs) == 0): _internal_name = args[0]
-        else: _internal_name = 'Unnamed'
+        if 'name' in kwargs: name = kwargs['name']
+        elif (len(args) == 1) and (len(kwargs) == 0): name = args[0]
+        else: name = 'Unnamed'
 
         # Make a new blank device
         self.ports = {}
@@ -964,10 +959,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         # self.a = self.aliases
         # self.p = self.ports
         self.uid = Device._next_uid
-        self._internal_name = _internal_name
-        gds_name = '%s%06d' % (self._internal_name[:20], self.uid) # Write name e.g. 'Unnamed000005'
-        super(Device, self).__init__(name = gds_name,
-                                     exclude_from_current=True)
+        super(Device, self).__init__(name = name)
         Device._next_uid += 1
 
 
@@ -997,7 +989,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         return ('Device (name "%s" (uid %s), ports %s, aliases %s, %s '
                 'polygons, %s references)' % \
-                (self._internal_name, self.uid, list(self.ports.keys()),
+                (self.name, self.uid, list(self.ports.keys()),
                  list(self.aliases.keys()), len(self.polygons),
                  len(self.references)))
 
@@ -1090,7 +1082,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return d                # Return the DeviceReference (CellReference)
 
 
-    def add_polygon(self, points, layer = None):
+    def add_polygon(self, points, layer = np.nan):
         """ Adds a Polygon to the Device.
 
         Parameters
@@ -1100,6 +1092,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         layer : int, array-like[2], or set
             Specific layer(s) to put polygon geometry on.
         """
+        if layer is None:
+            return None
+
         # Check if input a list of polygons by seeing if it's 3 levels deep
         try:
             points[0][0][0] # Try to access first x point
@@ -1107,11 +1102,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         except: pass # Verified points is not a list of polygons, continue on
 
         if isinstance(points, gdspy.PolygonSet):
-            if layer is None:   layers = zip(points.layers, points.datatypes)
+            if layer is np.nan:   layers = zip(points.layers, points.datatypes)
             else:   layers = [layer]*len(points.polygons)
             return [self.add_polygon(p, layer)
                     for p, layer in zip(points.polygons, layers)]
 
+        if layer is np.nan:
+            layer = 0
+            
         # Check if layer is actually a list of Layer objects
         try:
             if isinstance(layer, LayerSet):
@@ -1122,10 +1120,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             elif all([isinstance(l, (Layer)) for l in layer]):
                 return [self.add_polygon(points, l) for l in layer]
             elif len(layer) > 2: # Someone wrote e.g. layer = [1,4,5]
-                raise ValueError(""" [PHIDL] When using add_polygon() with
-                    multiple layers, each element in your `layer` argument
-                    list must be of type Layer(), e.g.:
-                    `layer = [Layer(1,0), my_layer, Layer(4)]""")
+                raise ValueError(""" [PHIDL] If specifying multiple layers
+                you must use set notation, e.g. {1,5,8} """)
         except: pass
 
         # If in the form [[1,3,5],[2,4,6]]
@@ -1213,7 +1209,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 orientation = orientation, parent = self)
         if name is not None: p.name = name
         if p.name in self.ports:
-            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self._internal_name, self.uid))
+            raise ValueError('[DEVICE] add_port() error: Port name "%s" already exists in this Device (name "%s", uid %s)' % (p.name, self.name, self.uid))
         self.ports[p.name] = p
         return p
 
@@ -1238,6 +1234,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         layer : int, array-like[2], or set
             Specific layer(s) to put Label on.
         """
+        if layer is None:
+            return None
         if len(text) >= 1023:
             raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
@@ -1297,15 +1295,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         # Autofix names so there are no duplicates
         if auto_rename == True:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
-            # all_cells_names = [c._internal_name for c in all_cells_sorted]
             all_cells_original_names = [c.name for c in all_cells_sorted]
             used_names = {cellname}
             n = 1
             for c in all_cells_sorted:
                 if max_cellname_length is not None:
-                    new_name = c._internal_name[:max_cellname_length]
+                    new_name = c.name[:max_cellname_length]
                 else:
-                    new_name = c._internal_name
+                    new_name = c.name
                 temp_name = new_name
                 while temp_name in used_names:
                     n += 1
@@ -1315,11 +1312,9 @@ class Device(gdspy.Cell, _GeometryHelper):
                 c.name = new_name
             self.name = cellname
 
-        # Write the gds (catch + discard the annoying deprecation warning)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            gdspy.write_gds(filename, cells=all_cells, name='library',
-                            unit=unit, precision=precision)
+        # Write the gds
+        lib = gdspy.GdsLibrary(unit=unit, precision=precision)
+        lib.write_gds(filename, cells=all_cells)
         # Return cells to their original names if they were auto-renamed
         if auto_rename == True:
             for n,c in enumerate(all_cells_sorted):
@@ -1644,22 +1639,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
 
-    def reflect(self, p1 = (0,1), p2 = (0,0)):
-        """
-        .. deprecated:: 1.3.0
-            `reflect` will be removed in May 2021, please replace with
-            `mirror`.
-        """
-        warnings.warn('[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()')
-        return self.mirror(p1, p2)
-
-
     def hash_geometry(self, precision = 1e-4):
         """ Computes an SHA1 hash of the geometry in the Device. For each layer,
-            each polygon is individually hashed and then the polygon hashes
-            are sorted, to ensure the hash stays constant regardless of the
-            ordering the polygons.  Similarly, the layers are sorted by
-            (layer, datatype)
+        each polygon is individually hashed and then the polygon hashes are
+        sorted, to ensure the hash stays constant regardless of the ordering
+        the polygons.  Similarly, the layers are sorted by (layer, datatype)
 
         Parameters
         ----------
@@ -1672,17 +1656,21 @@ class Device(gdspy.Cell, _GeometryHelper):
         str
             Hash result in the form of an SHA1 hex digest string
 
-        ...
+        Notes
+        -----
         Algorithm:
-        hash(
-            hash(First layer information: [layer1, datatype1]),
-            hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-            hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
-            hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-            hash(Second layer information: [layer2, datatype2]),
-            hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
-            hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
-        )
+        
+        .. code-block:: python
+        
+            hash(
+                hash(First layer information: [layer1, datatype1]),
+                hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Second layer information: [layer2, datatype2]),
+                hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            )
         """
         polygons_by_spec = self.get_polygons(by_spec = True)
         layers = np.array(list(polygons_by_spec.keys()))

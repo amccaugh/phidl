@@ -3,18 +3,24 @@ API Reference
 #############
 
 
+*********
+Quickplot
+*********
+
+quickplot
+=========
+
+.. autofunction:: phidl.quickplot
+
+set_quickplot_options
+=====================
+
+.. autofunction:: phidl.set_quickplot_options
+
+
 ****************
 Geometry Library
 ****************
-
-device_lru_cache
-================
-
-.. autoclass:: phidl.geometry.device_lru_cache
-   :members:
-   :inherited-members:
-   :show-inheritance:
-
 
 arc
 ===
@@ -136,6 +142,12 @@ grid
 .. autofunction:: phidl.geometry.grid
 
 
+gridsweep
+=========
+
+.. autofunction:: phidl.geometry.gridsweep
+
+
 hecken_taper
 ============
 
@@ -182,6 +194,13 @@ litho_steps
 ===========
 
 .. autofunction:: phidl.geometry.litho_steps
+
+
+litho_ruler
+===========
+
+.. autofunction:: phidl.geometry.litho_ruler
+
 
 
 meander_taper
@@ -350,6 +369,15 @@ ytron_round
 ===========
 
 .. autofunction:: phidl.geometry.ytron_round
+
+
+device_lru_cache
+================
+
+.. autoclass:: phidl.geometry.device_lru_cache
+   :members:
+   :inherited-members:
+   :show-inheritance:
 
 
 ************

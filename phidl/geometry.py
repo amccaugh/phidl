@@ -10,7 +10,7 @@ from numpy import sqrt, pi, cos, sin, log, exp, sinh
 import gdspy
 from gdspy import clipper
 from phidl.device_layout import Device, Port, Polygon, CellArray, Group
-from phidl.device_layout import _parse_layer, DeviceReference
+from phidl.device_layout import _parse_layer, DeviceReference, make_device
 import copy as python_copy
 from collections import OrderedDict
 import pickle
@@ -176,7 +176,7 @@ def ring(radius = 10, width = 0.5, angle_resolution = 2.5, layer = 0):
     Parameters
     ----------
     radius : int or float
-        Middle radius of the ring.
+        Radius of the ring centerline
     width : int or float
         Width of the ring.
     angle_resolution : int or float
@@ -1447,6 +1447,55 @@ def litho_calipers(notch_size = [2, 5],
     return(D)
 
 
+def litho_ruler(
+    height = 2 ,
+    width = 0.5,
+    spacing = 1.2,
+    scale = [3,1,1,1,1,2,1,1,1,1],
+    num_marks = 21,
+    layer = 0,
+    ):
+    """ Creates a ruler structure for lithographic measurement with marks of
+    varying scales to allow for easy reading by eye.
+
+    Parameters
+    ----------
+    height : float
+        Height of the ruling marks.
+    width : float
+        Width of the ruling marks.
+    spacing : float
+        Center-to-center spacing of the ruling marks
+    scale : array-like
+        Height scale pattern of marks
+    num_marks : int
+        Total number of marks to generate
+    num_marks : int
+        Total number of marks to generate
+    layer : int, array-like[2], or set
+        Specific layer(s) to put the ruler geometry on.
+
+    Returns
+    -------
+    Device
+        A Device containing the ruler structure
+    """
+
+    D = Device('litho_ruler')
+    for n in range(num_marks):
+        h = height*scale[n % len(scale)]
+        rect = D << rectangle(size = (width, h), layer = layer)
+
+    D.distribute(
+        direction = 'x',
+        spacing = spacing,
+        separation = False,
+        edge = 'x')
+    D.align(alignment='ymin')
+    D.flatten()
+    return D
+
+
 #==============================================================================
 #
 # Utility functions
@@ -1493,7 +1542,7 @@ def copy(D):
     Device
         Copied Device.
     """
-    D_copy = Device(name = D._internal_name)
+    D_copy = Device(name = D.name)
     D_copy.info = python_copy.deepcopy(D.info)
     for ref in D.references:
         new_ref = DeviceReference(device = ref.parent,
@@ -1531,9 +1580,7 @@ def deepcopy(D):
     D_copy = python_copy.deepcopy(D)
     D_copy.uid = Device._next_uid
     Device._next_uid += 1
-    D_copy._internal_name = D._internal_name
-    # Write name e.g. 'Unnamed000005'
-    D_copy.name = '%s%06d' % (D_copy._internal_name[:20], D_copy.uid)
+    D_copy.name = D.name
     # Make sure _bb_valid is set to false for these new objects so new
     # bounding boxes are created in the cache
     for D in D_copy.get_dependencies(True):
@@ -3002,13 +3049,15 @@ def grid(device_list,
     ----------
     device_list : array-like[N] of Device
         Devices to be placed onto a grid.
-    spacing : int, float, or array-like[N] of int or float
+    spacing : int, float, or array-like[2] of int or float
         Spacing between adjacent elements on the grid, can be a tuple for
-        different distances in height and width.
+        different distances in width and height (x,y).
     separation : bool
-        If True, guarantees elements are speparated with a fixed spacing between; if  False, elements are spaced evenly along a grid.
+        If True, guarantees elements are speparated with a fixed spacing
+        between; if  False, elements are spaced evenly along a grid.
     shape : array-like[2]
-        x, y shape of the grid (see np.reshape). If no shape is given and the list is 1D, the output is as if np.reshape were run with (1, -1).
+        x, y shape of the grid (see np.reshape). If no shape is given and the
+        list is 1D, the output is as if np.reshape were run with (1, -1).
     align_x : {'x', 'xmin', 'xmax'}
         Which edge to perform the x (column) alignment along
     align_y : {'y', 'ymin', 'ymax'}
@@ -3026,6 +3075,8 @@ def grid(device_list,
         A Device containing all the Devices in `device_list` in a grid.
     """
 
+    # Change (y,x) shape to (x,y) shape
+    shape = shape[::-1]
     device_array = np.asarray(device_list)
     # Check arguments
     if device_array.ndim not in (1,2):
@@ -3043,11 +3094,13 @@ def grid(device_list,
         raise ValueError("[PHIDL] grid() The shape is too small for all the items in device_list")
     else:
         if np.min(shape) == -1:
-            remainder = np.max(shape) - device_array.size % np.max(shape)
+            max_shape = np.max(shape)
+            min_devices = int(np.ceil(device_array.size / max_shape) * max_shape)
+            extra_devices = min_devices - device_array.size
         else:
-            remainder = shape[0]*shape[1] - device_array.size
-        if remainder != 0:
-            device_array = np.append(device_array, [None,]*remainder)
+            extra_devices = shape[0]*shape[1] - device_array.size
+        if extra_devices != 0:
+            device_array = np.append(device_array, [None,]*extra_devices)
     device_array = np.reshape(device_array, shape)
 
     # Create a blank Device and reference all the Devices in it
@@ -3076,6 +3129,169 @@ def grid(device_list,
 
     # return device_matrix
     return D
+
+
+
+def _parameter_combinations(parameters_dict):
+    """ Creates parameter combinations from a dict filled with list values, e.g.
+    parameters_dict = {
+        'width' : [0.1,0.2],
+        'length' : [4,5,6],
+        'height' : [22]
+        }
+    Will produce a list of dictionaries, each of which can be used as kwargs input:
+        [{'height': 22, 'length': 4, 'width': 0.1},
+         {'height': 22, 'length': 5, 'width': 0.1},
+         {'height': 22, 'length': 6, 'width': 0.1},
+         {'height': 22, 'length': 4, 'width': 0.2},
+         {'height': 22, 'length': 5, 'width': 0.2},
+         {'height': 22, 'length': 6, 'width': 0.2}]
+"""
+    value_combinations = list(itertools.product(*parameters_dict.values()))
+    keys = list(parameters_dict.keys())
+    return [{keys[n]:values[n] for n in range(len(keys))} for values in value_combinations]
+
+
+def _gen_param_variations(
+    function,
+    param_variations,
+    param_defaults = {},
+    param_override = {},
+    label_layer = 255
+    ):
+    """ Takes e.g.
+
+    param_variations = {
+            'channel_width' : [1,2,3]
+            'gate_width' : [0.1,0.2,0.4],
+            }
+       or equivalently
+    param_variations = dict(
+            channel_width = [1,2,3],
+            gate_width = [0.1,0.2,0.4],
+            )
+    """
+    parameter_list = _parameter_combinations(param_variations)
+
+    D_list = []
+    for params in parameter_list:
+        D_new = make_device(function, config = param_defaults, **params, **param_override)
+        label_text = ''
+        for name, value in params.items():
+            label_text += ('%s=%s' % (name,value)) + '\n'
+        if label_layer is not None:
+            D_new.add_label(text = label_text, position = D_new.center, layer = label_layer)
+
+        D_list.append(D_new)
+    return D_list
+
+
+def gridsweep(
+    function,
+    param_x = {'width' : [1,5,6,7]},
+    param_y = {'length' : [1.1,2,70]},
+    param_defaults = {},
+    param_override = {},
+    spacing = (50,100),
+    separation = True,
+    align_x = 'x',
+    align_y = 'y',
+    edge_x = 'x',
+    edge_y = 'ymin',
+    label_layer = 255,
+    ):
+    """ Creates a parameter sweep of devices and places them on a grid with
+    labels for each device. For instance, given a function defined like
+    `myshape(width, height, offset, layer)` and the following parameters:
+        param_x = {'width' :  [4, 5, 6]  },
+        param_y = {'height' : [7, 9],
+                   'layer' :  [1, 2, 3]  },
+        param_defaults = {'scale' : 1}
+
+    gridsweep() produce a grid of devices with the following layout/parameters:
+        (w=4, h=7, s=1, l=1)    (w=5, h=7, s=1, l=1)    (w=6, h=7, s=1, l=1)
+        (w=4, h=7, s=1, l=2)    (w=5, h=7, s=1, l=2)    (w=6, h=7, s=1, l=2)
+        (w=4, h=7, s=1, l=3)    (w=5, h=7, s=1, l=3)    (w=6, h=7, s=1, l=3)
+        (w=4, h=9, s=1, l=1)    (w=5, h=9, s=1, l=1)    (w=6, h=9, s=1, l=1)
+        (w=4, h=9, s=1, l=2)    (w=5, h=9, s=1, l=2)    (w=6, h=9, s=1, l=2)
+        (w=4, h=9, s=1, l=3)    (w=5, h=9, s=1, l=3)    (w=6, h=9, s=1, l=3)
+
+
+    Parameters
+    ----------
+    function : function that produces a Device
+        The function which will be used to create the individual devices in the
+        grid.  Must only return a single Device (e.g. any of the functions in
+        pg.geometry)
+    param_x : dict
+        A dictionary of one or more parameters to sweep in the x-direction
+    param_y : dict
+        A dictionary of one or more parameters to sweep in the y-direction
+    param_defaults : dict
+        Default parameters to pass to every device in the grid
+    param_override : dict
+        Parameters that will override `param_defaults`, equivalent to changing
+        param_defaults (useful )
+    spacing : int, float, or array-like[2] of int or float
+        Spacing between adjacent elements on the grid, can be a tuple for
+        different distances in width and height (x,y).
+    separation : bool
+        If True, guarantees elements are separated with a fixed spacing
+        between; if False, elements are spaced evenly along a grid.
+    shape : array-like[2]
+        x, y shape of the grid (see np.reshape). If no shape is given and the
+        list is 1D, the output is as if np.reshape were run with (1, -1).
+    align_x : {'x', 'xmin', 'xmax'}
+        Which edge to perform the x (column) alignment along
+    align_y : {'y', 'ymin', 'ymax'}
+        Which edge to perform the y (row) alignment along
+    edge_x : {'x', 'xmin', 'xmax'}
+        Which edge to perform the x (column) distribution along (unused if
+        separation == True)
+    edge_y : {'y', 'ymin', 'ymax'}
+        Which edge to perform the y (row) distribution along (unused if
+        separation == True)
+    label_layer : None or layer
+        If not None, will place a label that describes the parameters on the device
+
+    Returns
+    -------
+    device_matrix : Device
+        A Device containing all the Devices in `device_list` in a grid.
+    """
+    
+
+    param_variations = OrderedDict()
+    param_variations.update(param_y)
+    param_variations.update(param_x)
+
+    D_list = _gen_param_variations(
+        function = function,
+        param_variations = param_variations,
+        param_defaults = param_defaults,
+        param_override = param_override,
+        label_layer = label_layer)
+
+    num_x_parameters = len(_parameter_combinations(param_x))
+    num_y_parameters = len(_parameter_combinations(param_y))
+    D = grid(D_list,
+                spacing = spacing,
+                separation = separation,
+                shape = (num_x_parameters, num_y_parameters),
+                align_x = align_x,
+                align_y = align_y,
+                edge_x = edge_x,
+                edge_y = edge_y,
+                    )
+
+    label_text = {}
+    label_text.update(param_defaults)
+    label_text.update(param_override)
+    if label_layer is not None:
+        D.add_label(text = str(label_text), position = (D.xmin, D.ymin), layer = label_layer)
+
+    return D
+
 
 
 def _pack_single_bin(rect_dict,
@@ -3820,8 +4036,8 @@ def test_via(num_vias = 100, wire_width = 10, via_width = 15,
 
 def test_comb(pad_size = (200, 200), wire_width = 1, wire_gap = 3,
               comb_layer = 0, overlap_zigzag_layer = 1,
-              comb_pad_layer = None, comb_gnd_layer = None,
-              overlap_pad_layer = None):
+              comb_pad_layer = 2, comb_gnd_layer = 3,
+              overlap_pad_layer = 4):
     """ Overlap comb test structure for checking whether two layers
     are electrically isolated
 
@@ -3863,9 +4079,9 @@ def test_comb(pad_size = (200, 200), wire_width = 1, wire_gap = 3,
     """
     CI = Device("test_comb")
 
-    if comb_pad_layer is None: comb_pad_layer = comb_layer
-    if comb_gnd_layer is None: comb_gnd_layer = comb_layer
-    if overlap_pad_layer is None: overlap_pad_layer = overlap_zigzag_layer
+    # if comb_pad_layer is None: comb_pad_layer = comb_layer
+    # if comb_gnd_layer is None: comb_gnd_layer = comb_layer
+    # if overlap_pad_layer is None: overlap_pad_layer = overlap_zigzag_layer
     wire_spacing = wire_width + wire_gap*2
 
     # pad overlays
@@ -4039,7 +4255,7 @@ def _test_ic_wire_step(thick_width = 10, thin_width = 1, wire_layer = 2):
 
 def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
             wire_widths_wide = [0.75, 1.5, 3, 4, 6], pad_size = (200, 200),
-            pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = None):
+            pad_gap = 75, wire_layer = 0, pad_layer = 1, gnd_layer = 1):
     """ Critical current test structure for superconducting wires.
 
     Parameters
@@ -4087,7 +4303,7 @@ def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
     """
     ICS = Device('test_ic')
 
-    if gnd_layer is None: gnd_layer = pad_layer
+    # if gnd_layer is None: gnd_layer = pad_layer
     translation = 0
     padb = ICS.add_ref(
         rectangle(
@@ -4141,8 +4357,8 @@ def test_res(pad_size = [50, 50],
              num_squares = 1000,
              width = 1,
              res_layer = 0,
-             pad_layer = None,
-             gnd_layer = None):
+             pad_layer = 1,
+             gnd_layer = 2):
     """ Creates an efficient resonator structure for a wafer layout.
 
     Parameters
@@ -4277,7 +4493,7 @@ def optimal_hairpin(width = 0.2, pitch = 0.6, length = 10, turn_ratio = 4,
 
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
-        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     #==========================================================================
     #  Create the basic geometry
@@ -4366,7 +4582,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
     -----
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
-        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     #==========================================================================
     #  Create the basic geometry
@@ -4507,7 +4723,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     -----
     Optimal structure from https://doi.org/10.1103/PhysRevB.84.174510
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
-        superconducting nanocircuits. Physical Review B, 84(17), 1–27.
+    superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
     D = Device()
 

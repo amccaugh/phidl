@@ -100,7 +100,7 @@ def _rectangle_selector_factory(fig, ax):
 
 
 def set_quickplot_options(show_ports = None, show_subports = None,
-              label_ports = None, label_aliases = None, new_window = None,
+              label_aliases = None, new_window = None,
               blocking = None, zoom_factor = None):
     """ Sets plotting options for quickplot()
 
@@ -145,6 +145,15 @@ def quickplot(items):
     ----------
     items : PHIDL object or list of PHIDL objects
         The item(s) which are to be plotted
+
+    Examples
+    --------
+    >>> R = pg.rectangle()
+    >>> quickplot(R)
+
+    >>> R = pg.rectangle()
+    >>> E = pg.ellipse()
+    >>> quickplot([R, E])
     """
 
     # Override default options with _quickplot_options
