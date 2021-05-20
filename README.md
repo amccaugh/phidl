@@ -10,6 +10,15 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
   - Better interactive windows for `quickplot()`! Now you can use the mousewheel/trackpad scroll to zoom in and out, and right-click or left-click to zoom to a region.
   - New `pg.gridsweep()` function, allowing for easy creation of parameter sweeps on a grid.  See [the documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Gridsweep) for details. 
 
+```
+D = pg.gridsweep(
+      function = custom_ellipse,
+      param_x = {'width' :  [40, 80, 120, 160]},
+      param_y = {'height' : [10, 50],
+                 'layer' :  [1, 2, 3]  },
+      spacing = (30,10))
+```
+
 ![phidl example image](https://phidl.readthedocs.io/en/dev/_images/geometry_reference_36_0.png)
 
 
