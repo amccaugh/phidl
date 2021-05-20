@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.5.2 (May 19, 2021)
+- Hotfix to guarantee Python 2 compatibility
 
 ## 1.5.1 (May 19, 2021)
 
