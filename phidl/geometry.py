@@ -3175,7 +3175,10 @@ def _gen_param_variations(
 
     D_list = []
     for params in parameter_list:
-        D_new = make_device(function, config = param_defaults, **params, **param_override)
+        new_params = dict()
+        new_params.update(params)
+        new_params.update(param_override)
+        D_new = make_device(function, config = param_defaults, **new_params)
         label_text = ''
         for name, value in params.items():
             label_text += ('%s=%s' % (name,value)) + '\n'
