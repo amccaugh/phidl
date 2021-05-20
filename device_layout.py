@@ -792,6 +792,25 @@ class Port(object):
                                        center = center)
         return self
 
+    def __eq__(self,new_port):
+
+        if not isinstance(new_port,self.__class__):
+
+            raise ValueError(f"{new_port.__class__.__name__} is not a Port, cannot compare")
+
+        else:
+
+            if self.name==new_port.name:
+
+                if np.array_equal(self.midpoint,new_port.midpoint):
+
+                    if self.width==new_port.width:
+
+                        if self.orientation==new_port.orientation:
+
+                            return True
+
+        return False
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
     """ Polygonal geometric object.
@@ -1109,7 +1128,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         if layer is np.nan:
             layer = 0
-            
+
         # Check if layer is actually a list of Layer objects
         try:
             if isinstance(layer, LayerSet):
@@ -1659,9 +1678,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         Notes
         -----
         Algorithm:
-        
+
         .. code-block:: python
-        
+
             hash(
                 hash(First layer information: [layer1, datatype1]),
                 hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
