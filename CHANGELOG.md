@@ -1,6 +1,22 @@
 # Changelog
 
 
+## 1.5.1 (May 19, 2021)
+
+### New features
+- New `pg.gridsweep()` function, allowing for easy creation of parameter sweeps on a grid.  See [the documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Gridsweep) for details. 
+
+![phidl example image](https://phidl.readthedocs.io/en/dev/_images/geometry_reference_36_0.png)
+
+- New [tutorial on layers](https://phidl.readthedocs.io/en/latest/tutorials/layers.html)
+- Can now define layer to be `None` to prevent creation of polygons
+- Added `pg.litho_ruler()` for creation of lithographic rulers/measurement
+
+### Bugfixes
+- pg.grid() bugfix: `shape` now in format (x,y), and array size correctly calculated when making `shape` e.g. (4,-1)
+
+
+
 ## 1.5.0 (April 19, 2021)
 
 ### New features
