@@ -184,6 +184,8 @@ def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width
 # vector of ports provided to it, allowing easy connecting of many objects.
 
 
+class RoutingError(ValueError):
+    pass
 
 
 def route_manhattan(
@@ -195,6 +197,31 @@ def route_manhattan(
     ):
     #route along cardinal directions between any two ports placed diagonally
     #from each other
+
+    valid_bend_types = ["circular", "gradual"]
+
+    if bendType not in valid_bend_types:
+        raise ValueError(f"bendType={bendType} not in {valid_bend_types}")
+
+    if bendType == "gradual":
+        b = _gradual_bend(radius=radius)
+        radius_eff = b.xsize
+    else:
+        radius_eff = radius
+
+    if (
+        abs(port1.midpoint[0] - port2.midpoint[0]) < 2 * radius_eff
+        or abs(port1.midpoint[1] - port2.midpoint[1]) < 2 * radius_eff
+    ):
+        raise RoutingError(
+            f"bend does not fit (radius = {radius_eff}) you need radius <",
+            min(
+                [
+                    abs(port1.midpoint[0] - port2.midpoint[0]) / 2,
+                    abs(port1.midpoint[1] - port2.midpoint[1]) / 2,
+                ]
+            ),
+        )
 
     Total = Device()
     width=port1.width
