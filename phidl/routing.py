@@ -201,7 +201,7 @@ def route_manhattan(
     valid_bend_types = ["circular", "gradual"]
 
     if bendType not in valid_bend_types:
-        raise ValueError(f"bendType={bendType} not in {valid_bend_types}")
+        raise ValueError("bendType%s= not in %s" % (bendType, valid_bend_types))
 
     if bendType == "gradual":
         b = _gradual_bend(radius=radius)
@@ -214,7 +214,7 @@ def route_manhattan(
         or abs(port1.midpoint[1] - port2.midpoint[1]) < 2 * radius_eff
     ):
         raise RoutingError(
-            f"bend does not fit (radius = {radius_eff}) you need radius <",
+            "bend does not fit (radius = %s) you need radius <" % radius_eff,
             min(
                 [
                     abs(port1.midpoint[0] - port2.midpoint[0]) / 2,
