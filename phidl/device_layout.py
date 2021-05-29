@@ -40,7 +40,7 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-from copy import deepcopy
+from copy import deepcopy as _deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
@@ -769,7 +769,7 @@ class Port(object):
         new_port = Port(name = self.name, midpoint = self.midpoint,
                         width = self.width, orientation = self.orientation,
                         parent = self.parent)
-        new_port.info = deepcopy(self.info)
+        new_port.info = _deepcopy(self.info)
         if new_uid == False:
             new_port.uid = self.uid
             Port._next_uid -= 1
