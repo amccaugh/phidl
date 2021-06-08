@@ -4949,10 +4949,9 @@ def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
                 layer = 0):
     """ Ytron structure for superconducting nanowires
 
-    From McCaughan, A. N., Gammell, J. I., Oh, D. M. & Nam,
-    S. W. A high-density customizable microwave vacuum feedthrough for cryogenic
-    applications. Rev. Sci. Instrum. 91, 015114 (2020).
-    http://dx.doi.org/10.1063/1.5133055
+    McCaughan, A. N., Abebe, N. S., Zhao, Q.-Y. & Berggren, K. K. 
+    Using Geometry To Sense Current. Nano Lett. 16, 7626–7631 (2016).
+    http://dx.doi.org/10.1021/acs.nanolett.6b03593 
 
     Parameters
     ----------
