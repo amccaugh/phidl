@@ -5,6 +5,7 @@
 # Add D.add_gdsii_path() to allow creation of GDSII paths
 # Add D.write_gds(max_points_per_polygon)
 # Remove Device.add()
+# Show labels in quickplot
 
 #==============================================================================
 # Minor TODO
@@ -21,7 +22,6 @@
 #==============================================================================
 # Tutorials
 # - Using Aliases
-# - Boolean operations
 # - Advanced and Misc (simplify)
 
 # Examples
