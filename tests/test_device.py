@@ -25,7 +25,7 @@ def test_add_polygon3():
     D.add_polygon( [(8,1), (6,8), (7,9), (9,5)], layer = (9,1))
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '96abc3c9e30f3bbb32c5a39aeea2ba0fa3b13ebe')
-    
+
 def test_bbox():
     D = Device()
     D.add_polygon( [(0,0), (10,0), (10,10), (0,10)], layer = 2)
@@ -48,7 +48,6 @@ def test_bbox():
     assert(e1.bbox.tolist() == [[0,0], [100,100]])
     assert(e2.bbox.tolist() == [[30,0], [130,100]])
 
-
 def test_add_array():
     D = Device()
     E = Device()
@@ -61,7 +60,7 @@ def test_add_array():
     A.get_polygons()
     h = D.hash_geometry(precision = 1e-4)
     assert(h == '418b7503baff80fbe93031d45d87557c277f07b4')
-    
+
     F = Device()
     f1 = F << D
     f2 = F << D
@@ -69,8 +68,8 @@ def test_add_array():
     f2.rotate(45)
     h = F.hash_geometry(precision = 1e-4)
     assert(h == 'fd7c2b4adb811342b836d9fca13992eff951630d')
-    
-    
+
+
 # Test polygon manipulation
 def test_move():
     # Test polygon move
@@ -154,6 +153,22 @@ def test_port_reference_manipulate():
         (-2.474873734152916, 11.950104602052654)))
     assert(d.ports['test123'].orientation == 37+45)
 
+
+def test_port_eq():
+
+    from phidl.device_layout import Port
+    # import pytest
+
+    p1=Port(name='test0',midpoint=(5,10),width=50,orientation=120)
+    p2=Port(name='test1',midpoint=(5,10),width=50,orientation=120)
+    p3=Port(name='test2',midpoint=(5,10),width=2,orientation=120)
+
+    with pytest.raises(TypeError) as e_info:
+
+        p1==3
+
+    assert(p1==p2)
+    assert( not p1==p3)
 
 def test_port_remove():
     D = Device()

@@ -698,6 +698,26 @@ class Port(object):
         return ('Port (name %s, midpoint %s, width %s, orientation %s)' % \
                 (self.name, self.midpoint, self.width, self.orientation))
 
+    def __eq__(self,other_port):
+
+        if not isinstance(other_port,Port):
+
+            raise TypeError(f"""[PHIDL] a Port can be compared
+                only to another Port,
+                (type {other_port.__class__.__name__} was passed) .""")
+
+        else:
+
+            if np.array_equal(self.midpoint,other_port.midpoint):
+
+                if self.orientation==other_port.orientation:
+
+                    if self.width==other_port.width:
+
+                        return True
+
+            return False
+
     @property
     def endpoints(self):
         """ Returns the endpoints of the Port. """
@@ -1110,7 +1130,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         if layer is np.nan:
             layer = 0
-            
+
         # Check if layer is actually a list of Layer objects
         try:
             if isinstance(layer, LayerSet):
@@ -1660,9 +1680,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         Notes
         -----
         Algorithm:
-        
+
         .. code-block:: python
-        
+
             hash(
                 hash(First layer information: [layer1, datatype1]),
                 hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
