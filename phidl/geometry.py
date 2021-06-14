@@ -1395,7 +1395,8 @@ def litho_calipers(notch_size = [2, 5],
                    offset_per_notch = 0.1,
                    row_spacing = 0,
                    layer1 = 1,
-                   layer2 = 2):
+                   layer2 = 2,
+                   reversed=False):
     """ Creates a vernier caliper structure for lithography alignment
     tests. Vernier structure is made horizontally.
 
@@ -1418,6 +1419,9 @@ def litho_calipers(notch_size = [2, 5],
         Specific layer(s) to put the control geometry on.
     layer2 : int, array-like[2], or set
         Specific layer(s) to put the non-control geometry on.
+    reversed : boolean
+        if True, an opening is created in layer 2 so that layer 1 alignment
+        features are visible.
 
     Returns
     -------
@@ -1443,6 +1447,26 @@ def litho_calipers(notch_size = [2, 5],
              .movex(i * (notch_size[0] + notch_spacing)
                     + offset_per_notch * (centre_notch - i))\
              .movey(-notch_size[1] - row_spacing)
+
+    if reversed :
+
+        D.flatten()
+
+        frame_elems=D.get_polygons(by_spec=(layer1,0))
+
+        replica=Device()
+
+        replica.add(gdspy.PolygonSet(frame_elems,layer=layer1))
+
+        frame=Device()
+
+        frame.add(gdspy.PolygonSet(
+            bbox(replica.bbox,layer=layer2).copy('tmp',scale=1.2).get_polygons(),
+            layer=layer2))
+
+        frame.move(origin=(frame.x,frame.ymin),destination=(replica.x,replica.ymin))
+
+        D<<frame
 
     return(D)
 
@@ -3262,7 +3286,7 @@ def gridsweep(
     device_matrix : Device
         A Device containing all the Devices in `device_list` in a grid.
     """
-    
+
 
     param_variations = OrderedDict()
     param_variations.update(param_y)
@@ -4949,9 +4973,9 @@ def ytron_round(rho = 1, arm_lengths = (500, 300), source_length = 500,
                 layer = 0):
     """ Ytron structure for superconducting nanowires
 
-    McCaughan, A. N., Abebe, N. S., Zhao, Q.-Y. & Berggren, K. K. 
+    McCaughan, A. N., Abebe, N. S., Zhao, Q.-Y. & Berggren, K. K.
     Using Geometry To Sense Current. Nano Lett. 16, 7626–7631 (2016).
-    http://dx.doi.org/10.1021/acs.nanolett.6b03593 
+    http://dx.doi.org/10.1021/acs.nanolett.6b03593
 
     Parameters
     ----------
