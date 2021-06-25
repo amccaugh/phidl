@@ -46,6 +46,7 @@ _quickplot_options = dict(
     new_window = False,
     blocking = False,
     zoom_factor = 1.4,
+    interactive_zoom = None,
     )
 
 
@@ -101,7 +102,8 @@ def _rectangle_selector_factory(fig, ax):
 
 def set_quickplot_options(show_ports = None, show_subports = None,
               label_aliases = None, new_window = None,
-              blocking = None, zoom_factor = None):
+              blocking = None, zoom_factor = None,
+              interactive_zoom = None):
     """ Sets plotting options for quickplot()
 
     Parameters
@@ -121,6 +123,8 @@ def set_quickplot_options(show_ports = None, show_subports = None,
     zoom_factor : float
         Sets the scaling factor when zooming the quickplot window with the
         mousewheel/trackpad
+    interactive_zoom : bool
+        Enables/disables the ability to use mousewheel/trackpad to zoom
     """              
     if show_ports is not None:
         _quickplot_options['show_ports'] = show_ports
@@ -134,6 +138,9 @@ def set_quickplot_options(show_ports = None, show_subports = None,
         _quickplot_options['blocking'] = blocking
     if zoom_factor is not None:
         _quickplot_options['zoom_factor'] = zoom_factor
+    if interactive_zoom is not None:
+        _quickplot_options['interactive_zoom'] = interactive_zoom
+
 
 
 def quickplot(items):
@@ -238,8 +245,9 @@ def quickplot(items):
 
     # When using inline Jupyter notebooks, this may fail so allow it to fail gracefully
     try:
+        if _use_interactive_zoom():
+            _zoom_factory(ax, scale_factor = _quickplot_options['zoom_factor'])
         # Need to hang on to RectangleSelector so it doesn't get garbage collected
-        _zoom_factory(ax, scale_factor = _quickplot_options['zoom_factor'])
         _qp_objects['rectangle_selector'] = _rectangle_selector_factory(fig, ax)
         # Update matplotlib toolbar so the Home button works
         fig.canvas.toolbar.update()
@@ -249,6 +257,17 @@ def quickplot(items):
     
     plt.draw()
     plt.show(block = blocking)
+
+def _use_interactive_zoom():
+    """ Checks whether the current matplotlib backend is compatible with
+    interactive zoom """
+    if _quickplot_options['interactive_zoom'] is not None:
+        return  _quickplot_options['interactive_zoom']
+    forbidden_backends = ['nbagg']
+    backend = matplotlib.get_backend().lower()
+    usable = not any([(fb.lower() in backend) for fb in forbidden_backends])
+    return usable
+
 
 
 def _update_bbox(bbox, new_bbox):
