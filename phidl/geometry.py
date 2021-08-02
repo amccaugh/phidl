@@ -4264,16 +4264,13 @@ def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
     Parameters
     ----------
     wire_widths : array-like[N]
-        The widths of the thinnest parts of the wire connecting the pads and
-        the IC.
+        The widths of the thinnest parts of the test wires.
     wire_widths_wide : array-like[N]
-        The widths of the thickest parts of the wire connecting the pads and
-        the IC.
+        The widths of the thickest parts of the test wires.
     pad_size : array-like[2] of int or float
         (width, height) of the pads.
     pad_gap : int or float
-        Distance between the pads and the IC (also the length of the wire
-        connecting the pads and the IC).
+        Distance between the pads and the ground plane.
     wire_layer : int
         Specific layer(s) to put the wires on.
     pad_layer : int
@@ -4283,26 +4280,8 @@ def test_ic(wire_widths = [0.25, 0.5, 1, 2, 4],
 
     Returns
     -------
-    ICS : Device
-        A Device containing the test IC structure.
-
-    Notes
-    -----
-    Call ic_test_structure() with either a list of widths for the thickest
-    part of each wire to test and a list for the thinnest parts of each wire.
-    Alternatively, specify a list of widths for the thinnest part of each wire
-    and ignore the wire_widths parameter.
-    Instead you should specify the width_growth_factor which indicates by what
-    factor the thick part of the wire will be larger than the thin part.
-    Ex::
-
-        ic_test_structure(wire_widths = [5, 10, 10, 10, 10],
-                          thin_width = [0.5, 1, 2, 3, 4])
-
-    - or -::
-
-        ic_test_structure(width_growth_factor = 5,
-                          thin_width = [0.5, 1, 2, 3, 4])
+    Device
+        A Device containing the critical-current test structure.
     """
     ICS = Device('test_ic')
 
