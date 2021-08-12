@@ -2,11 +2,20 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import sqrt, pi, cos, sin, log, exp, sinh, mod
 from numpy.linalg import norm
-from phidl.device_layout import Device
+from phidl.device_layout import Device, CrossSection
 from phidl.device_layout import _parse_layer
 from phidl.geometry import turn
+import phidl.path as pp
 import gdspy
 
+
+def _get_rotated_basis(theta):
+    """Returns basis vectors rotated CCW by theta (in degrees)
+    """
+    theta = np.radians(theta)
+    e1 = np.array([np.cos(theta), np.sin(theta)])
+    e2 = np.array([-1*np.sin(theta), np.cos(theta)])
+    return e1, e2
 
 def _arc(radius = 10, width = 0.5, theta = 45, start_angle = 0, angle_resolution = 2.5, layer = 0):
     """ Creates an arc of arclength ``theta`` starting at angle ``start_angle`` """
@@ -165,6 +174,337 @@ def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width
     D.rotate(angle =  180 + port1.orientation - p1.orientation, center = p1.midpoint)
     D.move(origin = p1, destination = port1)
     return D
+
+def route_smooth(
+    port1, 
+    port2, 
+    radius=5, 
+    route_type='L', 
+    manual_points=None, 
+    width_type='linear',
+    smooth_options={'corner_fun':pp.euler, 'use_eff':True}, 
+    layer=0, 
+    **kwargs
+    ):
+    """ Route between ports using pp.smooth, with several waypoint route type options.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    radius : int or float
+        Bend radius passed to pp.smooth
+    route_type : {'manual', 'L', 'U', 'J', 'C', 'manhattan_auto', 'V', 'Z'}
+        Method of path waypoint creation. Should be one of
+            - 'straight' - straight path for ports that point at each other (see route_waypoints_straight).
+            - 'L' - L-shaped path for orthogonal ports that can be directly connected (see route_waypoints_L).
+            - 'U' - U-shaped path for parrallel or facing ports (see route_waypoints_U).
+            - 'J' - J-shaped path for orthogonal ports that cannot be directly connected (see route_waypoints_J).
+            - 'C' - C-shaped path for ports that face away from each other (see route_waypoints_C).
+            - 'manhattan_auto' - automatic manhattan routing (see route_waypoints_manhattan_auto).
+            - 'Z' - Z-shaped path with three segments for ports at any angles (see route_waypoints_Z).
+            - 'V' - V-shaped path with two segments for ports at any angles (see route_waypoints_V).
+            - 'manual' - use an explicit list of waypoints provided in manual_points.
+    manual_points : array-like[N][2] or Path
+        Path for creating a manual route
+    width_type : {'linear', 'sine'}
+        Width type parameter passed to pp.transition
+    smooth_options: dict
+        Keyword arguments passed to pp.smooth
+    layer : int or array-like[2]
+        Layer to put route on.
+    **kwargs :
+        Keyword arguments passed to the route waypoint function.
+
+    Returns
+    ----------
+    D : Device
+        A Device containing the route
+    """
+    if route_type == 'straight':
+        pts = route_waypoints_straight(port1, port2)
+    if route_type == 'manual':
+        pts = manual_points
+    if route_type == 'L':
+        pts = route_waypoints_L(port1, port2)
+    if route_type == 'U':
+        pts = route_waypoints_U(port1, port2, **kwargs)
+    if route_type == 'J':
+        pts = route_waypoints_J(port1, port2, **kwargs)
+    if route_type == 'C':
+        pts = route_waypoints_C(port1, port2, **kwargs)
+    if route_type == 'manhattan_auto':
+        pts = route_waypoints_manhattan_auto(port1, port2, radius90=radius)
+    if route_type == 'Z':
+        pts = route_waypoints_Z(port1, port2, **kwargs)
+    if route_type == 'V':
+        pts = route_waypoints_V(port1, port2)
+
+    P = pp.smooth(points= pts, radius=radius, **smooth_options)
+    X1 = CrossSection().add(width=port1.width, ports=(1,2), layer=layer, name='a')
+    X2 = CrossSection().add(width=port2.width, ports=(1,2), layer=layer, name='a')
+    X = pp.transition(cross_section1=X1, cross_section2=X2, width_type=width_type)
+    D = P.extrude(cross_section=X)
+    return D
+
+def route_waypoints_straight(port1, port2):
+    """Return waypoints between port1 and port2 in a straight line. Useful when ports
+    point directly at each other
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+
+    Returns
+    ----------
+    points : array[2][2]
+        Waypoints for the route path to follow.
+    """
+    delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3)
+    e1, e2 = _get_rotated_basis(port1.orientation)
+    displacement = port2.midpoint - port1.midpoint
+    xrel = np.round(np.dot(displacement, e1), 3) #relative position of port 2, forward/backward
+    yrel = np.round(np.dot(displacement, e2), 3) #relative position of port 2, left/right
+    if (delta_orientation not in (0, 180, 360)) or (yrel!=0) or (xrel<=0):
+        raise ValueError('straight route error: ports must point directly at each other.')
+    return np.array([port1.midpoint, port2.midpoint])
+
+def route_waypoints_L(port1, port2):
+    """Return waypoints between port1 and port2 in an L shape. Useful when
+    ports are orthogonal and can be directly connected with one turn.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+
+    Returns
+    ----------
+    points : array[3][2]
+        Waypoints for the route path to follow.
+    """
+    delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3)
+    if delta_orientation not in (90, 270):
+        raise ValueError('L Route error: ports must be orthogonal.')
+    e1, e2 = _get_rotated_basis(port1.orientation)
+    #assemble waypoints
+    pt1 = port1.midpoint
+    pt3 = port2.midpoint
+    delta_vec = pt3-pt1
+    pt2 = pt1 + np.dot(delta_vec, e1)*e1
+    return np.array([pt1, pt2, pt3])
+
+def route_waypoints_U(port1, port2, length1=200):
+    """Return waypoints between port1 and port2 in a U shape. Useful when
+    ports face the same direction or toward each other.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    length1 : int or float
+        Length of route segment coming out of port1. Should be larger than bend radius.
+
+    Returns
+    ----------
+    points : array[4][2]
+        Waypoints for the route path to follow.
+    """
+    delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3)
+    if delta_orientation not in (0, 180, 360):
+        raise ValueError('U Route error: ports must be parrallel.')
+    theta = np.radians(port1.orientation)
+    e1 = np.array([np.cos(theta), np.sin(theta)])
+    e2 = np.array([-1*np.sin(theta), np.cos(theta)])
+    #assemble waypoints
+    pt1 = port1.midpoint
+    pt4 = port2.midpoint
+    pt2 = pt1 + length1*e1 #outward by length distance
+    delta_vec = pt4-pt2
+    pt3 = pt2 + np.dot(delta_vec, e2)*e2
+    points = np.array([pt1, pt2, pt3, pt4])
+    return points
+
+def route_waypoints_J(port1, port2, length1=200, length2=200):
+    """Return waypoints between port1 and port2 in a J shape. Useful when
+    ports are orthogonal but cannot be connected directly with an L shape.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    length1 : int or float
+        Length of route segment coming out of port1. Should be larger than bend radius.
+    length2 : int or float
+        Length of route segment coming out of port2. Should be larger than bend radius.
+
+    Returns
+    ----------
+    points : array[5][2]
+        Waypoints for the route path to follow.
+    """
+    delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3)
+    if delta_orientation not in (90, 270):
+        raise ValueError('J Route error: ports must be orthogonal.')
+    e1, _ = _get_rotated_basis(port1.orientation)
+    e2, _ = _get_rotated_basis(port2.orientation)
+    #assemble waypoints
+    pt1 = port1.midpoint 
+    pt2 = pt1 + length1*e1 #outward from port1 by length1
+    pt5 = port2.midpoint
+    pt4 = pt5 + length2*e2 #outward from port2 by length2
+    delta_vec = pt4-pt2 
+    pt3 = pt2 + np.dot(delta_vec, e2)*e2 #move orthogonally in e2 direction
+    return np.array([pt1, pt2, pt3, pt4, pt5])
+
+def route_waypoints_C(port1, port2, length1=100, left1=100, length2=100):
+    """Return waypoints between port1 and port2 in a C shape. Useful when
+    ports are parrallel and face away from each other.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    length1 : int or float
+        Length of route segment coming out of port1. Should be at larger than bend radius.
+    left1 : int or float
+        Length of route segment that turns left (or right if negative) from port1. Should be larger
+        than twice the bend radius.
+    length2 : int or float
+        Length of route segment coming out of port2. Should be larger than bend radius.
+
+    Returns
+    ----------
+    points : array-like[6][2]
+        Waypoints for the route path to follow.
+    """
+    delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3)
+    if delta_orientation not in (0, 180, 360):
+        raise ValueError('C Route error: ports must be parrallel.')
+    e1, e_left = _get_rotated_basis(port1.orientation)
+    e2, _ = _get_rotated_basis(port2.orientation)
+    #assemble route  points
+    pt1 = port1.midpoint 
+    pt2 = pt1 + length1*e1 #outward from port1 by length1
+    pt3 = pt2 + left1*e_left #leftward by left1
+    pt6 = port2.midpoint
+    pt5 = pt6 + length2*e2 #outward from port2 by length2
+    delta_vec = pt5-pt3 
+    pt4 = pt3 + np.dot(delta_vec, e1)*e1 #move orthogonally in e1 direction
+    return np.array([pt1, pt2, pt3, pt4, pt5, pt6])
+
+def route_waypoints_manhattan_auto(port1, port2, radius90):
+    """Return waypoints between port1 and port2 using manhattan routing. Routing
+    is performed using straight, L, U, J, or C route waypoints as needed. Ports
+    must face orthogonal or parallel directions. 
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    radius90 : float or int
+        Bend radius for 90 degree bend.
+
+    Returns
+    ----------
+    points : array[N][2]
+        Waypoints for the route path to follow.
+    """
+    radius90 = radius90 + 0.1
+    e1, e2 = _get_rotated_basis(port1.orientation)
+    displacement = port2.midpoint - port1.midpoint
+    xrel = np.round(np.dot(displacement, e1), 3) #relative position of port2, forward (+) / backward (-) from port 1
+    yrel = np.round(np.dot(displacement, e2), 3) #relative position of port 2, left (+) / right (-) from port1 
+    orel = np.round(np.abs(np.mod(port2.orientation - port1.orientation,360)),3) #relative orientation of port2 from port1
+    if orel not in (0, 90, 180, 270, 360):
+        raise ValueError('manhattan_auto route error: ports must face parrallel or orthogonal directions.')
+    if orel in (90, 270): #orthogonal case
+        if (((orel==90 and yrel<-1*radius90) or (orel==270 and yrel>radius90)) and xrel>radius90):
+            pts = route_waypoints_L(port1, port2)
+        else:
+            #ensure intermediate segments are long enough to fit bends by adjusting length1 and length2
+            direction = -1 if orel==270 else 1
+            length2 = 2*radius90-direction*yrel if np.abs(radius90+direction*yrel)<2*radius90 else radius90
+            length1 = 2*radius90+xrel if np.abs(radius90-xrel)<2*radius90 else radius90
+            pts = route_waypoints_J(port1, port2, length1=length1, length2=length2)
+    else: #parrallel case
+        if orel==180 and yrel == 0 and xrel>0:
+            pts = route_waypoints_straight(port1, port2)
+        #C cases have messy logic here that mostly works. There may be a more systematic way to set parameters.
+        elif orel==180 and xrel<=2*radius90:
+            if np.abs(yrel) < 4*radius90:
+                left1 = max([2*radius90, yrel+2*radius90])
+            else:
+                direction = -1 if yrel<0 else 1
+                left1 = direction*2*radius90
+            length1 = radius90+xrel if xrel>0 else radius90
+            pts = route_waypoints_C(port1, port2, length1=length1, length2=radius90, left1=left1)
+        elif np.abs(yrel)<2*radius90:
+            if np.abs(yrel) < 4*radius90:
+                left1 = max([2*radius90, yrel+2*radius90])
+            else:
+                direction = -1 if yrel<0 else 1
+                left1 = direction*2*radius90
+            pts = route_waypoints_C(port1, port2, length1=radius90, length2=radius90, left1=left1)
+        else:
+            #ensure port2 comes out correct direction by adjusting length1
+            length1 = radius90+xrel if (orel==0 and xrel>0) else radius90
+            pts = route_waypoints_U(port1, port2, length1=length1)
+    return pts
+
+def route_waypoints_Z(port1, port2, length1=100, length2=100):
+    """Return waypoints between port1 and port2 in a Z shape. Ports can have any relative
+    orientation.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    length1 : int or float
+        Length of route segment coming out of port1.
+    length2 : int or float
+        Length of route segment coming out of port2.
+
+    Returns
+    ----------
+    points : array[4][2]
+        Waypoints for the route path to follow.
+    """
+    #get basis vectors in port directions
+    e1, _ = _get_rotated_basis(port1.orientation)
+    e2, _ = _get_rotated_basis(port2.orientation)
+    #assemble route  points
+    pt1 = port1.midpoint 
+    pt2 = pt1 + length1*e1 #outward from port1 by length1
+    pt4 = port2.midpoint
+    pt3 = pt4 + length2*e2 #outward from port2 by length2
+    return np.array([pt1, pt2, pt3, pt4])
+
+def route_waypoints_V(port1, port2):
+    """Return waypoints between port1 and port2 in a V shape. Useful when
+    ports point to a single connecting point
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+
+    Returns
+    ----------
+    points : array[3][2]
+        Waypoints for the route path to follow.
+    """
+    #get basis vectors in port directions
+    e1, _ = _get_rotated_basis(port1.orientation)
+    e2, _ = _get_rotated_basis(port2.orientation)
+    #assemble route  points
+    pt1 = port1.midpoint 
+    pt3 = port2.midpoint
+    #solve for intersection
+    E = np.column_stack((e1, -1*e2))
+    pt2 = np.matmul(np.linalg.inv(E), pt3-pt1)[0]*e1 + pt1
+    return np.array([pt1, pt2, pt3])
 
 
 # ################
