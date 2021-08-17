@@ -234,7 +234,7 @@ def route_smooth(
     if route_type == 'C':
         pts = route_waypoints_C(port1, port2, **kwargs)
     if route_type == 'manhattan_auto':
-        pts = route_waypoints_manhattan_auto(port1, port2, radius90=radius)
+        pts = route_waypoints_manhattan_auto(port1, port2, radius=radius)
     if route_type == 'Z':
         pts = route_waypoints_Z(port1, port2, **kwargs)
     if route_type == 'V':
@@ -394,7 +394,7 @@ def route_waypoints_C(port1, port2, length1=100, left1=100, length2=100):
     pt4 = pt3 + np.dot(delta_vec, e1)*e1 #move orthogonally in e1 direction
     return np.array([pt1, pt2, pt3, pt4, pt5, pt6])
 
-def route_waypoints_manhattan_auto(port1, port2, radius90):
+def route_waypoints_manhattan_auto(port1, port2, radius):
     """Return waypoints between port1 and port2 using manhattan routing. Routing
     is performed using straight, L, U, J, or C route waypoints as needed. Ports
     must face orthogonal or parallel directions. 
@@ -403,7 +403,7 @@ def route_waypoints_manhattan_auto(port1, port2, radius90):
     ----------
     port1, port2 : Port objects
         Ports to route between.
-    radius90 : float or int
+    radius : float or int
         Bend radius for 90 degree bend.
 
     Returns
@@ -411,7 +411,7 @@ def route_waypoints_manhattan_auto(port1, port2, radius90):
     points : array[N][2]
         Waypoints for the route path to follow.
     """
-    radius90 = radius90 + 0.1
+    radius = radius + 0.1
     e1, e2 = _get_rotated_basis(port1.orientation)
     displacement = port2.midpoint - port1.midpoint
     xrel = np.round(np.dot(displacement, e1), 3) #relative position of port2, forward (+) / backward (-) from port 1
@@ -419,37 +419,36 @@ def route_waypoints_manhattan_auto(port1, port2, radius90):
     orel = np.round(np.abs(np.mod(port2.orientation - port1.orientation,360)),3) #relative orientation of port2 from port1
     if orel not in (0, 90, 180, 270, 360):
         raise ValueError('manhattan_auto route error: ports must face parrallel or orthogonal directions.')
-    if orel in (90, 270): #orthogonal case
-        if (((orel==90 and yrel<-1*radius90) or (orel==270 and yrel>radius90)) and xrel>radius90):
+    if orel in (90, 270): 
+        # Orthogonal case
+        if (((orel==90 and yrel<-1*radius) or (orel==270 and yrel>radius)) and xrel>radius):
             pts = route_waypoints_L(port1, port2)
         else:
-            #ensure intermediate segments are long enough to fit bends by adjusting length1 and length2
+            # Adjust length1 and length2 to ensure intermediate segments fit bend radius
             direction = -1 if orel==270 else 1
-            length2 = 2*radius90-direction*yrel if np.abs(radius90+direction*yrel)<2*radius90 else radius90
-            length1 = 2*radius90+xrel if np.abs(radius90-xrel)<2*radius90 else radius90
+            length2 = 2*radius-direction*yrel if np.abs(radius+direction*yrel)<2*radius else radius
+            length1 = 2*radius+xrel if np.abs(radius-xrel)<2*radius else radius
             pts = route_waypoints_J(port1, port2, length1=length1, length2=length2)
-    else: #parrallel case
-        if orel==180 and yrel == 0 and xrel>0:
+    else: 
+        # Parrallel case
+        if orel==180 and yrel==0 and xrel>0:
             pts = route_waypoints_straight(port1, port2)
-        #C cases have messy logic here that mostly works. There may be a more systematic way to set parameters.
-        elif orel==180 and xrel<=2*radius90:
-            if np.abs(yrel) < 4*radius90:
-                left1 = max([2*radius90, yrel+2*radius90])
+        elif (orel==180 and xrel<=2*radius) or (np.abs(yrel)<2*radius):
+            # Adjust length1 and left1 to ensure intermediate segments fit bend radius
+            left1 = np.abs(yrel)+2*radius if np.abs(yrel)<4*radius else 2*radius
+            y_direction = -1 if yrel<0 else 1
+            left1 = y_direction*left1
+            length2 = radius
+            x_direction = -1 if orel==180 else 1
+            segmentx_length = np.abs(xrel+x_direction*length2-radius)
+            if segmentx_length<2*radius:
+                length1 = xrel+x_direction*length2+2*radius
             else:
-                direction = -1 if yrel<0 else 1
-                left1 = direction*2*radius90
-            length1 = radius90+xrel if xrel>0 else radius90
-            pts = route_waypoints_C(port1, port2, length1=length1, length2=radius90, left1=left1)
-        elif np.abs(yrel)<2*radius90:
-            if np.abs(yrel) < 4*radius90:
-                left1 = max([2*radius90, yrel+2*radius90])
-            else:
-                direction = -1 if yrel<0 else 1
-                left1 = direction*2*radius90
-            pts = route_waypoints_C(port1, port2, length1=radius90, length2=radius90, left1=left1)
+                length1 = radius
+            pts = route_waypoints_C(port1, port2, length1=length1, length2=length2, left1=left1)
         else:
-            #ensure port2 comes out correct direction by adjusting length1
-            length1 = radius90+xrel if (orel==0 and xrel>0) else radius90
+            # Adjust length1 to ensure segment comes out of port2
+            length1 = radius+xrel if (orel==0 and xrel>0) else radius
             pts = route_waypoints_U(port1, port2, length1=length1)
     return pts
 
