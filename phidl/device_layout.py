@@ -2381,7 +2381,7 @@ class Path(_GeometryHelper):
             points = path.points
         # If array[N][2]
         elif (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
-            points = path
+            points = np.asfarray(path)
             nx1,ny1 =  points[1] - points[0]
             start_angle = np.arctan2(ny1,nx1)/np.pi*180
             nx2,ny2 =  points[-1] - points[-2]
