@@ -35,7 +35,7 @@ def arc(radius = 10, angle = 90, num_pts = 720):
     return P
 
 
-def straight(length = 5, num_pts = 100):
+def straight(length = 5, num_pts = 2):
     """ Creates a straight Path
 
     Parameters
