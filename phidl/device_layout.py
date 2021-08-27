@@ -4,6 +4,8 @@
 #==============================================================================
 # Add D.add_gdsii_path() to allow creation of GDSII paths
 # Add D.write_gds(max_points_per_polygon)
+# Remove Device.add()
+# Show labels in quickplot
 
 #==============================================================================
 # Minor TODO
@@ -20,7 +22,6 @@
 #==============================================================================
 # Tutorials
 # - Using Aliases
-# - Boolean operations
 # - Advanced and Misc (simplify)
 
 # Examples
@@ -39,7 +40,7 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-from copy import deepcopy
+from copy import deepcopy as _deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
@@ -768,7 +769,7 @@ class Port(object):
         new_port = Port(name = self.name, midpoint = self.midpoint,
                         width = self.width, orientation = self.orientation,
                         parent = self.parent)
-        new_port.info = deepcopy(self.info)
+        new_port.info = _deepcopy(self.info)
         if new_uid == False:
             new_port.uid = self.uid
             Port._next_uid -= 1
@@ -2351,7 +2352,15 @@ class Path(_GeometryHelper):
         self.end_angle = 0
         self.info = {}
         if path is not None:
-            self.append(path)
+            # If array[N][2]
+            if (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
+                self.points = np.array(path, dtype = np.float)
+                nx1,ny1 =  self.points[1] - self.points[0]
+                self.start_angle = np.arctan2(ny1,nx1)/np.pi*180
+                nx2,ny2 =  self.points[-1] - self.points[-2]
+                self.end_angle = np.arctan2(ny2,nx2)/np.pi*180
+            else:
+                self.append(path)
 
     def __len__(self):
         return len(self.points)
@@ -2380,7 +2389,7 @@ class Path(_GeometryHelper):
             points = path.points
         # If array[N][2]
         elif (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
-            points = path
+            points = np.asfarray(path)
             nx1,ny1 =  points[1] - points[0]
             start_angle = np.arctan2(ny1,nx1)/np.pi*180
             nx2,ny2 =  points[-1] - points[-2]
@@ -2457,9 +2466,9 @@ class Path(_GeometryHelper):
             else:
                 pass
 
-            points1 = self._parametric_offset_curve(points, offset_distance = offset + width/2,
+            points1 = self._centerpoint_offset_curve(points, offset_distance = offset + width/2,
                                     start_angle = start_angle, end_angle = end_angle)
-            points2 = self._parametric_offset_curve(points, offset_distance = offset - width/2,
+            points2 = self._centerpoint_offset_curve(points, offset_distance = offset - width/2,
                                     start_angle = start_angle, end_angle = end_angle)
 
             # Simplify lines using the Ramer–Douglas–Peucker algorithm
@@ -2509,7 +2518,7 @@ class Path(_GeometryHelper):
             lengths = np.cumsum(np.sqrt((dx)**2 + (dy)**2))
             lengths = np.concatenate([[0], lengths])
             # Create list of offset points and perform offset
-            points = self._parametric_offset_curve(self.points,
+            points = self._centerpoint_offset_curve(self.points,
                                 offset_distance = offset(lengths / lengths[-1]),
                                 start_angle = self.start_angle, end_angle = self.end_angle)
             # Numerically compute start and end angles
@@ -2523,7 +2532,7 @@ class Path(_GeometryHelper):
             end_angle = np.round(end_angle, decimals = 6)
 
         else: # Offset is just a number
-            points = self._parametric_offset_curve(self.points, offset_distance = offset,
+            points = self._centerpoint_offset_curve(self.points, offset_distance = offset,
                                 start_angle = self.start_angle, end_angle = self.end_angle)
             start_angle = self.start_angle
             end_angle = self.end_angle
@@ -2611,6 +2620,27 @@ class Path(_GeometryHelper):
         if self.end_angle is not None:
             self.end_angle = mod(2*angle - self.end_angle, 360)
         return self
+
+    def _centerpoint_offset_curve(self, points, offset_distance, start_angle, end_angle):
+        """ Creates a offset curve (but does not account for cusps etc)
+        by computing the centerpoint offset of the supplied x and y points """
+        new_points = np.array(points, dtype = np.float)
+        dx = np.diff(points[:,0])
+        dy = np.diff(points[:,1])
+        theta = np.arctan2(dy,dx)
+        theta = np.concatenate([theta[0:1], theta, theta[-1:]])
+        theta_mid = (np.pi+theta[1:]+theta[:-1])/2 # Mean angle between segments
+        dtheta_int = np.pi+theta[:-1]-theta[1:] # Internal angle between segments
+        offset_distance = offset_distance/np.sin(dtheta_int/2)
+        new_points[:,0] -= offset_distance*np.cos(theta_mid)
+        new_points[:,1] -= offset_distance*np.sin(theta_mid)
+        if start_angle is not None:
+            new_points[0,:] = points[0,:] + (np.sin(start_angle*np.pi/180)*offset_distance[0],
+                                            -np.cos(start_angle*np.pi/180)*offset_distance[0])
+        if end_angle is not None:
+            new_points[-1,:] = points[-1,:] + (np.sin(end_angle*np.pi/180)*offset_distance[-1],
+                                            -np.cos(end_angle*np.pi/180)*offset_distance[-1])
+        return new_points
 
 
     def _parametric_offset_curve(self, points, offset_distance, start_angle, end_angle):
