@@ -2352,7 +2352,15 @@ class Path(_GeometryHelper):
         self.end_angle = 0
         self.info = {}
         if path is not None:
-            self.append(path)
+            # If array[N][2]
+            if (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
+                self.points = np.array(path, dtype = np.float)
+                nx1,ny1 =  self.points[1] - self.points[0]
+                self.start_angle = np.arctan2(ny1,nx1)/np.pi*180
+                nx2,ny2 =  self.points[-1] - self.points[-2]
+                self.end_angle = np.arctan2(ny2,nx2)/np.pi*180
+            else:
+                self.append(path)
 
     def __len__(self):
         return len(self.points)
