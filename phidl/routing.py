@@ -608,7 +608,7 @@ def route_manhattan(
 
     #if it is parallel or anti-parallel, route with 180 option
     if (np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3) == 180) or (np.round(np.abs(np.mod(port1.orientation - port2.orientation,360)),3) == 0):
-        R1 = route_manhattan180(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
+        R1 = _route_manhattan180(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
         r1 = Total.add_ref(R1)
 
     else:
@@ -616,7 +616,7 @@ def route_manhattan(
         if (p2[1] > p1[1]) & (p2[0] > p1[0]):
             #simple 90 degree single-bend case
             if port2.orientation == port1.orientation-90 or port2.orientation == port1.orientation+270:
-                R1 = route_manhattan90(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
+                R1 = _route_manhattan90(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
                 r1 = Total.add_ref(R1)
             elif port2.orientation == port1.orientation+90 or port2.orientation == port1.orientation-270:
                 if bendType == 'circular':
@@ -628,7 +628,7 @@ def route_manhattan(
                 b1=Total.add_ref(B1)
                 b1.connect(port=1,destination=port1)
 
-                R1 = route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                R1 = _route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
                 r1 = Total.add_ref(R1)
         #second quadrant case
         if (p2[1] > p1[1]) & (p2[0] < p1[0]):
@@ -641,7 +641,7 @@ def route_manhattan(
                     radiusEff=B1.xsize-width/2
                 b1=Total.add_ref(B1)
                 b1.connect(port=1,destination=port1)
-                R1 = route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                R1 = _route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
                 r1 = Total.add_ref(R1)
         #third quadrant case
         if (p2[1] < p1[1]) & (p2[0] < p1[0]):
@@ -654,13 +654,13 @@ def route_manhattan(
                     radiusEff=B1.xsize-width/2
                 b1=Total.add_ref(B1)
                 b1.connect(port=1,destination=port1)
-                R1 = route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                R1 = _route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
                 r1 = Total.add_ref(R1)
         #fourth quadrant case
         if (p2[1] < p1[1]) & (p2[0] > p1[0]):
             #simple 90 degree single-bend case
             if port2.orientation == port1.orientation+90 or port2.orientation == port1.orientation-270:
-                R1 = route_manhattan90(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
+                R1 = _route_manhattan90(port1=port1,port2=port2,bendType=bendType,layer=layer,radius=radius)
                 r1 = Total.add_ref(R1)
             elif port2.orientation == port1.orientation-90 or port2.orientation == port1.orientation+270:
                 if bendType == 'circular':
@@ -671,11 +671,11 @@ def route_manhattan(
                     radiusEff=B1.xsize-width/2
                 b1=Total.add_ref(B1)
                 b1.connect(port=1,destination=port1)
-                R1 = route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
+                R1 = _route_manhattan180(port1=b1.ports[2],port2=port2,bendType=bendType,layer=layer,radius=radius)
                 r1 = Total.add_ref(R1)
     return Total
 
-def route_manhattan180(
+def _route_manhattan180(
     port1,
     port2,
     bendType='circular',
@@ -930,7 +930,7 @@ def route_manhattan180(
     Total.move(origin = Total.ports['t1'], destination = port1)
     return Total
 
-def route_manhattan90(
+def _route_manhattan90(
     port1,
     port2,
     bendType='circular',
