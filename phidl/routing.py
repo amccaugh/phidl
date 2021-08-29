@@ -196,7 +196,12 @@ def route_smooth(
         **kwargs
         ):
 
-    """ Route between ports using pp.smooth, with several waypoint route type options.
+    """ Convenience function that routes a path between ports using pp.smooth(),
+    then immediately extrudes the path to create polygons. Has several waypoint
+    route type options.  Equivalent to e.g.
+        >>> pts = pr.path_manhattan(port1, port2, radius) 
+        >>> P = pp.smooth(pts, radius)
+        >>> D = P.extrude(X)
 
     Parameters
     ----------
@@ -204,26 +209,26 @@ def route_smooth(
         Ports to route between.
     radius : int or float
         Bend radius passed to pp.smooth
-    route_type : {'manual', 'L', 'U', 'J', 'C', 'manhattan_auto', 'V', 'Z'}
+    route_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
         Method of path waypoint creation. Should be one of
-            - 'straight' - straight path for ports that face each other 
-              (see path_straight).
-            - 'L' - L-shaped path for orthogonal ports that can be directly 
-                    connected (see path_L).
-            - 'U' - U-shaped path for parrallel or facing ports
-                    (see path_U).
-            - 'J' - J-shaped path for orthogonal ports that cannot be 
-                    directly connected (see path_J).
-            - 'C' - C-shaped path for ports that face away from each 
-                    other (see path_C).
             - 'manhattan' - automatic manhattan routing 
-                                 (see path_manhattan).
+                    (see path_manhattan() ).
+            - 'L' - L-shaped path for orthogonal ports that can be directly 
+                    connected (see path_L() ).
+            - 'U' - U-shaped path for parrallel or facing ports
+                    (see path_U() ).
+            - 'J' - J-shaped path for orthogonal ports that cannot be 
+                    directly connected (see path_J() ).
+            - 'C' - C-shaped path for ports that face away from each 
+                    other (see path_C() ).
             - 'Z' - Z-shaped path with three segments for ports at any 
-                    angles (see path_Z).
+                    angles (see path_Z() ).
             - 'V' - V-shaped path with two segments for ports at any 
-                    angles (see path_V).
+                    angles (see path_V() ).
+            - 'straight' - straight path for ports that face each other 
+                    see path_straight() ).
             - 'manual' - use an explicit list of waypoints provided 
-                         in manual_points.
+                    in manual_points.
     manual_points : array-like[N][2] or Path
         Waypoints for creating a manual route
     width_type : {'linear', 'sine'}
