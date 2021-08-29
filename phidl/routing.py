@@ -6,6 +6,7 @@ from phidl.device_layout import Device, CrossSection
 from phidl.device_layout import _parse_layer
 from phidl.geometry import turn
 import phidl.path as pp
+from phidl import Path
 import gdspy
 import warnings
 
@@ -200,21 +201,21 @@ def route_smooth(
     route_type : {'manual', 'L', 'U', 'J', 'C', 'manhattan_auto', 'V', 'Z'}
         Method of path waypoint creation. Should be one of
             - 'straight' - straight path for ports that face each other 
-              (see route_waypoints_straight).
+              (see path_straight).
             - 'L' - L-shaped path for orthogonal ports that can be directly 
-                    connected (see route_waypoints_L).
+                    connected (see path_L).
             - 'U' - U-shaped path for parrallel or facing ports
-                    (see route_waypoints_U).
+                    (see path_U).
             - 'J' - J-shaped path for orthogonal ports that cannot be 
-                    directly connected (see route_waypoints_J).
+                    directly connected (see path_J).
             - 'C' - C-shaped path for ports that face away from each 
-                    other (see route_waypoints_C).
-            - 'manhattan_auto' - automatic manhattan routing 
-                                 (see route_waypoints_manhattan_auto).
+                    other (see path_C).
+            - 'manhattan' - automatic manhattan routing 
+                                 (see path_manhattan).
             - 'Z' - Z-shaped path with three segments for ports at any 
-                    angles (see route_waypoints_Z).
+                    angles (see path_Z).
             - 'V' - V-shaped path with two segments for ports at any 
-                    angles (see route_waypoints_V).
+                    angles (see path_V).
             - 'manual' - use an explicit list of waypoints provided 
                          in manual_points.
     manual_points : array-like[N][2] or Path
@@ -234,25 +235,25 @@ def route_smooth(
         A Device containing the route
     """
     if route_type == 'straight':
-        pts = route_waypoints_straight(port1, port2)
+        P = path_straight(port1, port2)
     if route_type == 'manual':
-        pts = manual_points
+        P = manual_points
     if route_type == 'L':
-        pts = route_waypoints_L(port1, port2)
+        P = path_L(port1, port2)
     if route_type == 'U':
-        pts = route_waypoints_U(port1, port2, **kwargs)
+        P = path_U(port1, port2, **kwargs)
     if route_type == 'J':
-        pts = route_waypoints_J(port1, port2, **kwargs)
+        P = path_J(port1, port2, **kwargs)
     if route_type == 'C':
-        pts = route_waypoints_C(port1, port2, **kwargs)
-    if route_type == 'manhattan_auto':
-        pts = route_waypoints_manhattan_auto(port1, port2, radius=radius)
+        P = path_C(port1, port2, **kwargs)
+    if route_type == 'manhattan':
+        P = path_manhattan(port1, port2, radius=radius)
     if route_type == 'Z':
-        pts = route_waypoints_Z(port1, port2, **kwargs)
+        P = path_Z(port1, port2, **kwargs)
     if route_type == 'V':
-        pts = route_waypoints_V(port1, port2)
+        P = path_V(port1, port2)
 
-    P = pp.smooth(points=pts, radius=radius, **smooth_options)
+    P = pp.smooth(points=P, radius=radius, **smooth_options)
     X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
     X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
     X = pp.transition(cross_section1=X1, cross_section2=X2, width_type=width_type)
@@ -260,7 +261,7 @@ def route_smooth(
     return D
 
 
-def route_waypoints_straight(port1, port2):
+def path_straight(port1, port2):
     """Return waypoints between port1 and port2 in a straight line. 
     Useful when ports point directly at each other.
 
@@ -281,10 +282,10 @@ def route_waypoints_straight(port1, port2):
     yrel = np.round(np.dot(displacement, e2), 3)  # relative position of port 2, left/right
     if (delta_orientation not in (0, 180, 360)) or (yrel != 0) or (xrel <= 0):
         raise ValueError('straight route error: ports must point directly at each other.')
-    return np.array([port1.midpoint, port2.midpoint])
+    return Path(np.array([port1.midpoint, port2.midpoint]))
 
 
-def route_waypoints_L(port1, port2):
+def path_L(port1, port2):
     """Return waypoints between port1 and port2 in an L shape. Useful 
     when orthogonal ports can be directly connected with one turn.
 
@@ -307,10 +308,10 @@ def route_waypoints_L(port1, port2):
     pt3 = port2.midpoint
     delta_vec = pt3-pt1
     pt2 = pt1 + np.dot(delta_vec, e1)*e1
-    return np.array([pt1, pt2, pt3])
+    return Path(np.array([pt1, pt2, pt3]))
 
 
-def route_waypoints_U(port1, port2, length1=200):
+def path_U(port1, port2, length1=200):
     """Return waypoints between port1 and port2 in a U shape. Useful 
     when ports face the same direction or toward each other.
 
@@ -338,10 +339,10 @@ def route_waypoints_U(port1, port2, length1=200):
     pt2 = pt1 + length1*e1  # outward by length1 distance
     delta_vec = pt4-pt2
     pt3 = pt2 + np.dot(delta_vec, e2)*e2
-    return np.array([pt1, pt2, pt3, pt4])
+    return Path(np.array([pt1, pt2, pt3, pt4]))
 
 
-def route_waypoints_J(port1, port2, length1=200, length2=200):
+def path_J(port1, port2, length1=200, length2=200):
     """Return waypoints between port1 and port2 in a J shape. Useful 
     when orthogonal ports cannot be connected directly with an L shape.
 
@@ -371,10 +372,10 @@ def route_waypoints_J(port1, port2, length1=200, length2=200):
     pt4 = pt5 + length2*e2  # outward from port2 by length2
     delta_vec = pt4-pt2 
     pt3 = pt2 + np.dot(delta_vec, e2)*e2  # move orthogonally in e2 direction
-    return np.array([pt1, pt2, pt3, pt4, pt5])
+    return Path(np.array([pt1, pt2, pt3, pt4, pt5]))
 
 
-def route_waypoints_C(port1, port2, length1=100, left1=100, length2=100):
+def path_C(port1, port2, length1=100, left1=100, length2=100):
     """Return waypoints between port1 and port2 in a C shape. Useful 
     when ports are parrallel and face away from each other.
 
@@ -410,10 +411,10 @@ def route_waypoints_C(port1, port2, length1=100, left1=100, length2=100):
     pt5 = pt6 + length2*e2  # outward from port2 by length2
     delta_vec = pt5-pt3 
     pt4 = pt3 + np.dot(delta_vec, e1)*e1  # move orthogonally in e1 direction
-    return np.array([pt1, pt2, pt3, pt4, pt5, pt6])
+    return Path(np.array([pt1, pt2, pt3, pt4, pt5, pt6]))
 
 
-def route_waypoints_manhattan_auto(port1, port2, radius):
+def path_manhattan(port1, port2, radius):
     """Return waypoints between port1 and port2 using manhattan routing.
     Routing is performed using straight, L, U, J, or C route waypoints 
     as needed. Ports must face orthogonal or parallel directions. 
@@ -441,17 +442,17 @@ def route_waypoints_manhattan_auto(port1, port2, radius):
     if orel in (90, 270): 
         # Orthogonal case
         if ((orel == 90 and yrel < -1*radius) or (orel == 270 and yrel > radius)) and xrel > radius:
-            pts = route_waypoints_L(port1, port2)
+            pts = path_L(port1, port2)
         else:
             # Adjust length1 and length2 to ensure intermediate segments fit bend radius
             direction = -1 if (orel == 270) else 1
             length2 = 2*radius-direction*yrel if (np.abs(radius+direction*yrel) < 2*radius) else radius
             length1 = 2*radius+xrel if (np.abs(radius-xrel) < 2*radius) else radius
-            pts = route_waypoints_J(port1, port2, length1=length1, length2=length2)
+            pts = path_J(port1, port2, length1=length1, length2=length2)
     else: 
         # Parrallel case
         if orel == 180 and yrel == 0 and xrel > 0:
-            pts = route_waypoints_straight(port1, port2)
+            pts = path_straight(port1, port2)
         elif (orel == 180 and xrel <= 2*radius) or (np.abs(yrel) < 2*radius):
             # Adjust length1 and left1 to ensure intermediate segments fit bend radius
             left1 = np.abs(yrel)+2*radius if (np.abs(yrel) < 4*radius) else 2*radius
@@ -464,15 +465,15 @@ def route_waypoints_manhattan_auto(port1, port2, radius):
                 length1 = xrel+x_direction*length2+2*radius
             else:
                 length1 = radius
-            pts = route_waypoints_C(port1, port2, length1=length1, length2=length2, left1=left1)
+            pts = path_C(port1, port2, length1=length1, length2=length2, left1=left1)
         else:
             # Adjust length1 to ensure segment comes out of port2
             length1 = radius+xrel if (orel == 0 and xrel > 0) else radius
-            pts = route_waypoints_U(port1, port2, length1=length1)
+            pts = path_U(port1, port2, length1=length1)
     return pts
 
 
-def route_waypoints_Z(port1, port2, length1=100, length2=100):
+def path_Z(port1, port2, length1=100, length2=100):
     """Return waypoints between port1 and port2 in a Z shape. Ports can have any relative
     orientation.
 
@@ -498,10 +499,10 @@ def route_waypoints_Z(port1, port2, length1=100, length2=100):
     pt2 = pt1 + length1*e1  # outward from port1 by length1
     pt4 = port2.midpoint
     pt3 = pt4 + length2*e2  # outward from port2 by length2
-    return np.array([pt1, pt2, pt3, pt4])
+    return Path(np.array([pt1, pt2, pt3, pt4]))
 
 
-def route_waypoints_V(port1, port2):
+def path_V(port1, port2):
     """Return waypoints between port1 and port2 in a V shape. Useful when
     ports point to a single connecting point
 
@@ -524,7 +525,7 @@ def route_waypoints_V(port1, port2):
     # solve for intersection
     E = np.column_stack((e1, -1*e2))
     pt2 = np.matmul(np.linalg.inv(E), pt3-pt1)[0]*e1 + pt1
-    return np.array([pt1, pt2, pt3])
+    return Path(np.array([pt1, pt2, pt3]))
 
 
 # ################
