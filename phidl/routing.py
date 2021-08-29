@@ -117,7 +117,7 @@ def _gradual_bend(
 def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width1 = None, width2 = None, num_path_pts = 99, layer = 0):
     """
     .. deprecated:: 1.6.0
-        `route_basic` will be removed in May 2021, please replace with
+        `route_basic` will be removed in August 2022, please replace with
         `path_manhattan() or route_smooth()`.
     """
     warnings.warn("""[PHIDL] Warning: route_basic() will be deprecated 
@@ -569,7 +569,7 @@ def route_manhattan(
     ):
     """
     .. deprecated:: 1.6.0
-        `route_manhattan` will be removed in May 2021, please replace with
+        `route_manhattan` will be removed in August 2022, please replace with
         `path_manhattan() or route_smooth()`.
     """
     warnings.warn("""[PHIDL] Warning: route_manhattan() will be deprecated 
@@ -1077,7 +1077,7 @@ def route_turn_manhattan(
         if port.orientation % 90 == 0:
             new_ports.append(port)
         else:
-            turn_angle = get_turn_angle(port.orientation, to_cardinal(port.orientation))
+            turn_angle = _get_turn_angle(port.orientation, _to_cardinal(port.orientation))
             turn_route = turn(port, radius=radius, angle=turn_angle, layer=layer)
             D.add_ref(turn_route)
             new_ports.append(turn_route.ports[2])
@@ -1091,7 +1091,7 @@ def route_turn_manhattan(
     return D
 
 
-def to_cardinal(angle):
+def _to_cardinal(angle):
     """
     Determines which cardinal direction is closest to input angle
 
@@ -1105,7 +1105,7 @@ def to_cardinal(angle):
         Which cardinal direction is closest to the input angle
     """
 
-    angle = map_to_pm180(angle)
+    angle = _map_to_pm180(angle)
 
     cardinals = np.array([-180, -90, 0, 90])
 
@@ -1114,11 +1114,11 @@ def to_cardinal(angle):
     return cardinals[arg]
 
 
-def map_to_pm180(angle):
+def _map_to_pm180(angle):
     """converts an angle to an angle between -180 (inclusive) to +180 (exclusive)"""
     return np.mod(angle + 180,360)-180
 
-def get_turn_angle(start_angle, target_angle):
+def _get_turn_angle(start_angle, target_angle):
     """
     Difference in angle in the range -180 to +180 (where negative is counter clockwise)
 
@@ -1131,7 +1131,7 @@ def get_turn_angle(start_angle, target_angle):
     float
         difference in angle.
     """
-    return map_to_pm180(target_angle - start_angle)
+    return _map_to_pm180(target_angle - start_angle)
 
 
 #==============================================================================
@@ -1169,24 +1169,3 @@ def get_turn_angle(start_angle, target_angle):
 # quickplot(D)
 
 
-
-def point_path(points = [(0,0), (4,0), (4,8)], width = 1, layer = 0):
-    points = np.asarray(points)
-    dxdy = points[1:] - points[:-1]
-    angles = (np.arctan2(dxdy[:,1], dxdy[:,0])).tolist()
-    angles = np.array([angles[0]] + angles + [angles[-1]])
-    diff_angles = (angles[1:] - angles[:-1])
-    mean_angles = (angles[1:] + angles[:-1])/2
-    dx = width/2*np.cos((mean_angles - pi/2))/np.cos((diff_angles/2))
-    dy = width/2*np.sin((mean_angles - pi/2))/np.cos((diff_angles/2))
-    left_points =  points.T - np.array([dx,dy])
-    right_points = points.T + np.array([dx,dy])
-    all_points = np.concatenate([left_points.T, right_points.T[::-1]])
-
-    D = Device()
-    D.add_polygon(all_points, layer = layer)
-    D.add_port(name = 1, midpoint = points[0],  width = width, orientation = angles[0]*180/pi+180)
-    D.add_port(name = 2, midpoint = points[-1], width = width, orientation = angles[-1]*180/pi)
-    return D
-
-# quickplot(point_path())
