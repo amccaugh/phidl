@@ -7,6 +7,7 @@ from phidl.device_layout import _parse_layer
 from phidl.geometry import turn
 import phidl.path as pp
 import gdspy
+import warnings
 
 
 def _get_rotated_basis(theta):
@@ -554,6 +555,13 @@ def route_manhattan(
     layer=0,
     radius=20
     ):
+    """
+    .. deprecated:: 1.6.0
+        `route_manhattan` will be removed in May 2021, please replace with
+        `path_manhattan() or route_smooth()`.
+    """
+    warnings.warn("""[PHIDL] Warning: route_manhattan() will be deprecated 
+    in August 2022, please replace with `path_manhattan() or route_smooth()""")
     #route along cardinal directions between any two ports placed diagonally
     #from each other
 
