@@ -247,22 +247,25 @@ def route_smooth(
     """
     if route_type == 'straight':
         P = path_straight(port1, port2)
-    if route_type == 'manual':
+    elif route_type == 'manual':
         P = manual_points
-    if route_type == 'L':
+    elif route_type == 'L':
         P = path_L(port1, port2)
-    if route_type == 'U':
+    elif route_type == 'U':
         P = path_U(port1, port2, **kwargs)
-    if route_type == 'J':
+    elif route_type == 'J':
         P = path_J(port1, port2, **kwargs)
-    if route_type == 'C':
+    elif route_type == 'C':
         P = path_C(port1, port2, **kwargs)
-    if route_type == 'manhattan':
+    elif route_type == 'manhattan':
         P = path_manhattan(port1, port2, radius=radius)
-    if route_type == 'Z':
+    elif route_type == 'Z':
         P = path_Z(port1, port2, **kwargs)
-    if route_type == 'V':
+    elif route_type == 'V':
         P = path_V(port1, port2)
+    else:
+        raise ValueError("""[PHIDL] route_smooth() received an invalid route_type.  Must be one of
+        {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
 
     P = pp.smooth(points=P, radius=radius, **smooth_options)
     X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
