@@ -275,6 +275,90 @@ def route_smooth(
     return D
 
 
+def route_sharp(
+        port1, 
+        port2, 
+        path_type='manhattan', 
+        manual_path=None, 
+        width_type='linear',
+        layer=0, 
+        **kwargs
+        ):
+
+    """ Convenience function that routes a path between ports and immediately 
+    extrudes the path to create polygons. Has several waypoint route type 
+    options.  Equivalent to e.g.
+        >>> P = pr.path_manhattan(port1, port2, radius) 
+        >>> D = P.extrude(X)
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    path_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
+        Method of path waypoint creation. Should be one of
+            - 'manhattan' - automatic manhattan routing 
+                    (see path_manhattan() ).
+            - 'L' - L-shaped path for orthogonal ports that can be directly 
+                    connected (see path_L() ).
+            - 'U' - U-shaped path for parrallel or facing ports
+                    (see path_U() ).
+            - 'J' - J-shaped path for orthogonal ports that cannot be 
+                    directly connected (see path_J() ).
+            - 'C' - C-shaped path for ports that face away from each 
+                    other (see path_C() ).
+            - 'Z' - Z-shaped path with three segments for ports at any 
+                    angles (see path_Z() ).
+            - 'V' - V-shaped path with two segments for ports at any 
+                    angles (see path_V() ).
+            - 'straight' - straight path for ports that face each other 
+                    see path_straight() ).
+            - 'manual' - use an explicit list of waypoints provided 
+                    in manual_path.
+    manual_path : array-like[N][2] or Path
+        Waypoints for creating a manual route
+    width_type : {'linear', 'sine'}
+        Width type parameter passed to pp.transition
+    layer : int or array-like[2]
+        Layer to put route on.
+    **kwargs :
+        Keyword arguments passed to the route waypoint function.
+
+    Returns
+    ----------
+    D : Device
+        A Device containing the route
+    """
+    if path_type == 'straight':
+        P = path_straight(port1, port2)
+    elif path_type == 'manual':
+        P = manual_path
+    elif path_type == 'L':
+        P = path_L(port1, port2)
+    elif path_type == 'U':
+        P = path_U(port1, port2, **kwargs)
+    elif path_type == 'J':
+        P = path_J(port1, port2, **kwargs)
+    elif path_type == 'C':
+        P = path_C(port1, port2, **kwargs)
+    elif path_type == 'manhattan':
+        radius = max(port1.width, port2.width)
+        P = path_manhattan(port1, port2, radius=radius)
+    elif path_type == 'Z':
+        P = path_Z(port1, port2, **kwargs)
+    elif path_type == 'V':
+        P = path_V(port1, port2)
+    else:
+        raise ValueError("""[PHIDL] route_sharp() received an invalid path_type.  Must be one of
+        {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
+
+    X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
+    X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
+    X = pp.transition(cross_section1=X1, cross_section2=X2, width_type=width_type)
+    D = P.extrude(cross_section=X)
+    return D
+
+
 def path_straight(port1, port2):
     """Return waypoints between port1 and port2 in a straight line. 
     Useful when ports point directly at each other.
