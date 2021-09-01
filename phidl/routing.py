@@ -188,8 +188,8 @@ def route_smooth(
         port1, 
         port2, 
         radius=5, 
-        route_type='L', 
-        manual_points=None, 
+        path_type='manhattan', 
+        manual_path=None, 
         width_type='linear',
         smooth_options={'corner_fun': pp.euler, 'use_eff': True}, 
         layer=0, 
@@ -209,7 +209,7 @@ def route_smooth(
         Ports to route between.
     radius : int or float
         Bend radius passed to pp.smooth
-    route_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
+    path_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
         Method of path waypoint creation. Should be one of
             - 'manhattan' - automatic manhattan routing 
                     (see path_manhattan() ).
@@ -228,8 +228,8 @@ def route_smooth(
             - 'straight' - straight path for ports that face each other 
                     see path_straight() ).
             - 'manual' - use an explicit list of waypoints provided 
-                    in manual_points.
-    manual_points : array-like[N][2] or Path
+                    in manual_path.
+    manual_path : array-like[N][2] or Path
         Waypoints for creating a manual route
     width_type : {'linear', 'sine'}
         Width type parameter passed to pp.transition
@@ -245,26 +245,26 @@ def route_smooth(
     D : Device
         A Device containing the route
     """
-    if route_type == 'straight':
+    if path_type == 'straight':
         P = path_straight(port1, port2)
-    elif route_type == 'manual':
-        P = manual_points
-    elif route_type == 'L':
+    elif path_type == 'manual':
+        P = manual_path
+    elif path_type == 'L':
         P = path_L(port1, port2)
-    elif route_type == 'U':
+    elif path_type == 'U':
         P = path_U(port1, port2, **kwargs)
-    elif route_type == 'J':
+    elif path_type == 'J':
         P = path_J(port1, port2, **kwargs)
-    elif route_type == 'C':
+    elif path_type == 'C':
         P = path_C(port1, port2, **kwargs)
-    elif route_type == 'manhattan':
+    elif path_type == 'manhattan':
         P = path_manhattan(port1, port2, radius=radius)
-    elif route_type == 'Z':
+    elif path_type == 'Z':
         P = path_Z(port1, port2, **kwargs)
-    elif route_type == 'V':
+    elif path_type == 'V':
         P = path_V(port1, port2)
     else:
-        raise ValueError("""[PHIDL] route_smooth() received an invalid route_type.  Must be one of
+        raise ValueError("""[PHIDL] route_smooth() received an invalid path_type.  Must be one of
         {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
 
     P = pp.smooth(points=P, radius=radius, **smooth_options)
