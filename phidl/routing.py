@@ -190,7 +190,7 @@ def route_smooth(
         radius=5, 
         path_type='manhattan', 
         manual_path=None, 
-        width_type='linear',
+        cross_section=None,
         smooth_options={'corner_fun': pp.euler, 'use_eff': True}, 
         layer=0, 
         **kwargs
@@ -230,9 +230,10 @@ def route_smooth(
             - 'manual' - use an explicit list of waypoints provided 
                     in manual_path.
     manual_path : array-like[N][2] or Path
-        Waypoints for creating a manual route
-    width_type : {'linear', 'sine'}
-        Width type parameter passed to pp.transition
+        Waypoint Path for creating a manual route
+    cross_section : CrossSection or None
+        CrossSection for the Path extrusion. If None, a CrossSection that tapers
+        linearly between the widths the ports is used. 
     smooth_options: dict
         Keyword arguments passed to pp.smooth
     layer : int or array-like[2]
@@ -268,10 +269,11 @@ def route_smooth(
         {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
 
     P = pp.smooth(points=P, radius=radius, **smooth_options)
-    X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
-    X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
-    X = pp.transition(cross_section1=X1, cross_section2=X2, width_type=width_type)
-    D = P.extrude(cross_section=X)
+    if cross_section is None:
+        X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
+        X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
+        cross_section = pp.transition(cross_section1=X1, cross_section2=X2, width_type='linear')
+    D = P.extrude(cross_section=cross_section)
     return D
 
 
@@ -280,7 +282,7 @@ def route_sharp(
         port2, 
         path_type='manhattan', 
         manual_path=None, 
-        width_type='linear',
+        cross_section=None,
         layer=0, 
         **kwargs
         ):
@@ -317,8 +319,9 @@ def route_sharp(
                     in manual_path.
     manual_path : array-like[N][2] or Path
         Waypoints for creating a manual route
-    width_type : {'linear', 'sine'}
-        Width type parameter passed to pp.transition
+    cross_section : CrossSection or None
+        CrossSection for the Path extrusion. If None, a CrossSection that tapers
+        linearly between the widths the ports is used. 
     layer : int or array-like[2]
         Layer to put route on.
     **kwargs :
@@ -351,11 +354,11 @@ def route_sharp(
     else:
         raise ValueError("""[PHIDL] route_sharp() received an invalid path_type.  Must be one of
         {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
-
-    X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
-    X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
-    X = pp.transition(cross_section1=X1, cross_section2=X2, width_type=width_type)
-    D = P.extrude(cross_section=X)
+    if cross_section is None:
+        X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
+        X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
+        cross_section = pp.transition(cross_section1=X1, cross_section2=X2, width_type='linear')
+    D = P.extrude(cross_section=cross_section)
     return D
 
 
