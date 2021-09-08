@@ -188,9 +188,9 @@ def route_smooth(
         port1, 
         port2, 
         radius=5, 
+        width=None,
         path_type='manhattan', 
         manual_path=None, 
-        cross_section=None,
         smooth_options={'corner_fun': pp.euler, 'use_eff': True}, 
         layer=0, 
         **kwargs
@@ -209,6 +209,12 @@ def route_smooth(
         Ports to route between.
     radius : int or float
         Bend radius passed to pp.smooth
+    width : None, int, float, array-like[2], or CrossSection
+        If None, the route linearly tapers between the widths the ports
+        If set to a single number (e.g. `width=1.7`): makes a fixed-width route
+        If set to a 2-element array (e.g. `width=[1.8,2.5]`): makes a route
+            whose width varies linearly from width[0] to width[1]
+        If set to a CrossSection: uses the CrossSection parameters for the route
     path_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
         Method of path waypoint creation. Should be one of
             - 'manhattan' - automatic manhattan routing 
@@ -231,9 +237,6 @@ def route_smooth(
                     in manual_path.
     manual_path : array-like[N][2] or Path
         Waypoint Path for creating a manual route
-    cross_section : CrossSection or None
-        CrossSection for the Path extrusion. If None, a CrossSection that tapers
-        linearly between the widths the ports is used. 
     smooth_options: dict
         Keyword arguments passed to pp.smooth
     layer : int or array-like[2]
@@ -269,20 +272,22 @@ def route_smooth(
         {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
 
     P = pp.smooth(points=P, radius=radius, **smooth_options)
-    if cross_section is None:
+    if width is None:
         X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
         X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
         cross_section = pp.transition(cross_section1=X1, cross_section2=X2, width_type='linear')
-    D = P.extrude(cross_section=cross_section)
+        D = P.extrude(width=cross_section)
+    else:
+        D = P.extrude(width=width, layer=layer)
     return D
 
 
 def route_sharp(
         port1, 
         port2, 
+        width=None,
         path_type='manhattan', 
         manual_path=None, 
-        cross_section=None,
         layer=0, 
         **kwargs
         ):
@@ -297,6 +302,12 @@ def route_sharp(
     ----------
     port1, port2 : Port objects
         Ports to route between.
+    width : None, int, float, array-like[2], or CrossSection
+        If None, the route linearly tapers between the widths the ports
+        If set to a single number (e.g. `width=1.7`): makes a fixed-width route
+        If set to a 2-element array (e.g. `width=[1.8,2.5]`): makes a route
+            whose width varies linearly from width[0] to width[1]
+        If set to a CrossSection: uses the CrossSection parameters for the route
     path_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
         Method of path waypoint creation. Should be one of
             - 'manhattan' - automatic manhattan routing 
@@ -319,9 +330,6 @@ def route_sharp(
                     in manual_path.
     manual_path : array-like[N][2] or Path
         Waypoints for creating a manual route
-    cross_section : CrossSection or None
-        CrossSection for the Path extrusion. If None, a CrossSection that tapers
-        linearly between the widths the ports is used. 
     layer : int or array-like[2]
         Layer to put route on.
     **kwargs :
@@ -354,11 +362,13 @@ def route_sharp(
     else:
         raise ValueError("""[PHIDL] route_sharp() received an invalid path_type.  Must be one of
         {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}""")
-    if cross_section is None:
+    if width is None:
         X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
         X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
         cross_section = pp.transition(cross_section1=X1, cross_section2=X2, width_type='linear')
-    D = P.extrude(cross_section=cross_section)
+        D = P.extrude(cross_section=cross_section)
+    else:
+        D = P.extrude(width=width, layer=layer)
     return D
 
 
