@@ -405,7 +405,7 @@ def route_sharp(
         X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
         X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
         cross_section = pp.transition(cross_section1=X1, cross_section2=X2, width_type='linear')
-        D = P.extrude(cross_section=cross_section)
+        D = P.extrude(width=cross_section)
     else:
         D = P.extrude(width=width, layer=layer)
     return D
