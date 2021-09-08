@@ -184,6 +184,45 @@ def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width
     return D
 
 
+def route_quad(port1, port2, width1=None, width2=None, layer=0):
+    """Routes a basic quadrilateral polygon directly between two ports.
+
+    Parameters
+    ----------
+    port1, port2 : Port objects
+        Ports to route between.
+    width1, width2 : int, float or None
+        Width of quadrilateral at ports. If None, uses port widths.
+    layer : int or array-like[2]
+        Layer to put the route on.
+
+    Returns
+    ---------
+    D : Device
+        A Device containing the route
+    """
+    def get_port_edges(port, width):
+        _, e1 = _get_rotated_basis(port.orientation)
+        pt1 = port.midpoint + e1*width/2
+        pt2 = port.midpoint - e1*width/2
+        return pt1, pt2
+    if width1 is None:
+        width1 = port1.width
+    if width2 is None:
+        width2 = port2.width
+    vertices = np.array(get_port_edges(port1, width1) + get_port_edges(port2, width2))
+    center = np.mean(vertices, axis=0)
+    displacements = vertices-center
+    # sort vertices by angle from center of quadrilateral to make convex polygon
+    angles = np.array([np.arctan2(disp[0], disp[1]) for disp in displacements])
+    vertices = [vert for _, vert in sorted(zip(angles, vertices), key=lambda x: x[0])]
+    D = Device()
+    D.add_polygon(points=vertices, layer=layer)
+    D.add_port(name=1, midpoint=port1.midpoint, orientation=port1.orientation+180, width=width1)
+    D.add_port(name=2, midpoint=port2.midpoint, orientation=port2.orientation+180, width=width2) 
+    return D
+
+
 def route_smooth(
         port1, 
         port2, 
