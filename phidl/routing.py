@@ -301,6 +301,11 @@ def route_smooth(
     elif path_type == 'C':
         P = path_C(port1, port2, **kwargs)
     elif path_type == 'manhattan':
+        if smooth_options['corner_fun'] == pp.euler:
+            use_eff = smooth_options.get('use_eff')
+            if use_eff is None or use_eff == False:
+                raise ValueError("""[PHIDL] route_smooth(): when using manhattan path type with euler
+                    bends, smooth_options['use_eff'] must be True.""")
         P = path_manhattan(port1, port2, radius=radius)
     elif path_type == 'Z':
         P = path_Z(port1, port2, **kwargs)
