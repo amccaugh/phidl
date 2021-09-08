@@ -231,7 +231,7 @@ def route_smooth(
         path_type='manhattan', 
         manual_path=None, 
         smooth_options={'corner_fun': pp.euler, 'use_eff': True}, 
-        layer=0, 
+        layer=None, 
         **kwargs
         ):
 
@@ -240,7 +240,7 @@ def route_smooth(
     route type options.  Equivalent to e.g.
         >>> pts = pr.path_manhattan(port1, port2, radius) 
         >>> P = pp.smooth(pts, radius)
-        >>> D = P.extrude(X)
+        >>> D = P.extrude(width)
 
     Parameters
     ----------
@@ -327,7 +327,7 @@ def route_sharp(
         width=None,
         path_type='manhattan', 
         manual_path=None, 
-        layer=0, 
+        layer=None, 
         **kwargs
         ):
 
@@ -335,7 +335,7 @@ def route_sharp(
     extrudes the path to create polygons. Has several waypoint route type 
     options.  Equivalent to e.g.
         >>> P = pr.path_manhattan(port1, port2, radius) 
-        >>> D = P.extrude(X)
+        >>> D = P.extrude(width)
 
     Parameters
     ----------
