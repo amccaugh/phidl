@@ -2332,6 +2332,9 @@ class Group(_GeometryHelper):
 
 
 
+def _linear_transition(y1, y2):
+    dx = y2 - y1
+    return lambda t: y1 + t*dx
 
 PHIDL_ELEMENTS = (Device, DeviceReference, Polygon, CellArray, Label, Group)
 
@@ -2416,13 +2419,18 @@ class Path(_GeometryHelper):
         return self
 
 
-    def extrude(self, cross_section, simplify = None):
-        """ Combines the 1D Path with a 1D CrossSection to form 2D polygons.
+    def extrude(self, width, layer = None, simplify = None):
+        """ Combines the 1D Path with a 1D cross-section to form 2D polygons.
 
         Parameters
         ----------
-        cross_section : CrossSection
-            The CrossSection that the Path will extrude along
+        width : int, float, array-like[2], or CrossSection
+            If set to a single number (e.g. `width=1.7`): makes a fixed-width extrusion
+            If set to a 2-element array (e.g. `width=[1.8,2.5]`): makes an extrusion
+                whose width varies linearly from width[0] to width[1]
+            If set to a CrossSection: uses the CrossSection parameters for extrusion
+        layer : int, tuple of int, or set of int
+            The layer to put the extruded polygons on
         simplify : float
             Tolerance value for the simplification algorithm.  All points that
             can be removed without changing the resulting polygon by more than
@@ -2433,9 +2441,29 @@ class Path(_GeometryHelper):
         -------
         Device
             A Device with polygons added that correspond to the extrusion of the
-            Path with the CrossSection
+            Path
         """
-        X = cross_section
+
+        if isinstance(width, CrossSection):
+            if layer is not None: 
+                raise ValueError("""[PHIDL] extrude(): when using a CrossSection as the
+                `width` argument cannot also define the layer (layer must be None)""")
+            X = width
+        elif np.size(width)==1:
+            if layer is None: 
+                raise ValueError("""[PHIDL] extrude(): when using a number as the
+                `width` argument you must also define the `layer`""")
+            X = CrossSection()
+            X.add(width = width, layer = layer)
+        elif np.size(width)==2:
+            if layer is None: 
+                raise ValueError("""[PHIDL] extrude(): when using an array as the
+                `width` argument you must also define the `layer`""")
+            X = CrossSection()
+            X.add(width = _linear_transition(width[0], width[1]), layer = layer)
+        else:
+            raise ValueError("""[PHIDL] extrude(): width argument must be one of
+                int, float, array-like[2], or CrossSection""")
 
         D = Device()
         for section in X.sections:
