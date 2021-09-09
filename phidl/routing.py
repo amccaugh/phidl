@@ -199,7 +199,7 @@ def route_quad(port1, port2, width1=None, width2=None, layer=0):
     Returns
     ---------
     D : Device
-        A Device containing the route
+        A Device containing the route and two ports (`1` and `2`) on either end.
     """
     def get_port_edges(port, width):
         _, e1 = _get_rotated_basis(port.orientation)
@@ -237,7 +237,7 @@ def route_smooth(
 
     """ Convenience function that routes a path between ports using pp.smooth(),
     then immediately extrudes the path to create polygons. Has several waypoint
-    route type options.  Equivalent to e.g.
+    path type options.  Equivalent to e.g.
         >>> pts = pr.path_manhattan(port1, port2, radius) 
         >>> P = pp.smooth(pts, radius)
         >>> D = P.extrude(width)
@@ -255,7 +255,7 @@ def route_smooth(
             whose width varies linearly from width[0] to width[1]
         If set to a CrossSection: uses the CrossSection parameters for the route
     path_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
-        Method of path waypoint creation. Should be one of
+        Method of waypoint path creation. Should be one of
             - 'manhattan' - automatic manhattan routing 
                     (see path_manhattan() ).
             - 'L' - L-shaped path for orthogonal ports that can be directly 
@@ -272,21 +272,21 @@ def route_smooth(
                     angles (see path_V() ).
             - 'straight' - straight path for ports that face each other 
                     see path_straight() ).
-            - 'manual' - use an explicit list of waypoints provided 
+            - 'manual' - use an explicit waypoint path provided 
                     in manual_path.
     manual_path : array-like[N][2] or Path
-        Waypoint Path for creating a manual route
+        Waypoint path for creating a manual route
     smooth_options: dict
         Keyword arguments passed to pp.smooth
     layer : int or array-like[2]
         Layer to put route on.
     **kwargs :
-        Keyword arguments passed to the route waypoint function.
+        Keyword arguments passed to the waypoint path function.
 
     Returns
     ----------
     D : Device
-        A Device containing the route
+        A Device containing the route and two ports (`1` and `2`) on either end.
     """
     if path_type == 'straight':
         P = path_straight(port1, port2)
@@ -337,7 +337,7 @@ def route_sharp(
         ):
 
     """ Convenience function that routes a path between ports and immediately 
-    extrudes the path to create polygons. Has several waypoint route type 
+    extrudes the path to create polygons. Has several waypoint path type 
     options.  Equivalent to e.g.
         >>> P = pr.path_manhattan(port1, port2, radius) 
         >>> D = P.extrude(width)
@@ -353,7 +353,7 @@ def route_sharp(
             whose width varies linearly from width[0] to width[1]
         If set to a CrossSection: uses the CrossSection parameters for the route
     path_type : {'manhattan', 'L', 'U', 'J', 'C', 'V', 'Z', 'straight', 'manual'}
-        Method of path waypoint creation. Should be one of
+        Method of waypoint path creation. Should be one of
             - 'manhattan' - automatic manhattan routing 
                     (see path_manhattan() ).
             - 'L' - L-shaped path for orthogonal ports that can be directly 
@@ -370,19 +370,19 @@ def route_sharp(
                     angles (see path_V() ).
             - 'straight' - straight path for ports that face each other 
                     see path_straight() ).
-            - 'manual' - use an explicit list of waypoints provided 
+            - 'manual' - use an explicit waypoint path provided 
                     in manual_path.
     manual_path : array-like[N][2] or Path
-        Waypoints for creating a manual route
+        Waypoint path for creating a manual route
     layer : int or array-like[2]
         Layer to put route on.
     **kwargs :
-        Keyword arguments passed to the route waypoint function.
+        Keyword arguments passed to the waypoint path function.
 
     Returns
     ----------
     D : Device
-        A Device containing the route
+        A Device containing the route and two ports (`1` and `2`) on either end.
     """
     if path_type == 'straight':
         P = path_straight(port1, port2)
@@ -417,7 +417,7 @@ def route_sharp(
 
 
 def path_straight(port1, port2):
-    """Return waypoints between port1 and port2 in a straight line. 
+    """Return waypoint path between port1 and port2 in a straight line. 
     Useful when ports point directly at each other.
 
     Parameters
@@ -441,7 +441,7 @@ def path_straight(port1, port2):
 
 
 def path_L(port1, port2):
-    """Return waypoints between port1 and port2 in an L shape. Useful 
+    """Return waypoint path between port1 and port2 in an L shape. Useful 
     when orthogonal ports can be directly connected with one turn.
 
     Parameters
@@ -451,7 +451,7 @@ def path_L(port1, port2):
 
     Returns
     ----------
-    points : array[3][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3)
@@ -467,7 +467,7 @@ def path_L(port1, port2):
 
 
 def path_U(port1, port2, length1=200):
-    """Return waypoints between port1 and port2 in a U shape. Useful 
+    """Return waypoint path between port1 and port2 in a U shape. Useful 
     when ports face the same direction or toward each other.
 
     Parameters
@@ -479,7 +479,7 @@ def path_U(port1, port2, length1=200):
 
     Returns
     ----------
-    points : array[4][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3)
@@ -498,7 +498,7 @@ def path_U(port1, port2, length1=200):
 
 
 def path_J(port1, port2, length1=200, length2=200):
-    """Return waypoints between port1 and port2 in a J shape. Useful 
+    """Return waypoint path between port1 and port2 in a J shape. Useful 
     when orthogonal ports cannot be connected directly with an L shape.
 
     Parameters
@@ -512,7 +512,7 @@ def path_J(port1, port2, length1=200, length2=200):
 
     Returns
     ----------
-    points : array[5][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3)
@@ -531,7 +531,7 @@ def path_J(port1, port2, length1=200, length2=200):
 
 
 def path_C(port1, port2, length1=100, left1=100, length2=100):
-    """Return waypoints between port1 and port2 in a C shape. Useful 
+    """Return waypoint path between port1 and port2 in a C shape. Useful 
     when ports are parrallel and face away from each other.
 
     Parameters
@@ -550,7 +550,7 @@ def path_C(port1, port2, length1=100, left1=100, length2=100):
 
     Returns
     ----------
-    points : array-like[6][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     delta_orientation = np.round(np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3)
@@ -570,8 +570,8 @@ def path_C(port1, port2, length1=100, left1=100, length2=100):
 
 
 def path_manhattan(port1, port2, radius):
-    """Return waypoints between port1 and port2 using manhattan routing.
-    Routing is performed using straight, L, U, J, or C route waypoints 
+    """Return waypoint path between port1 and port2 using manhattan routing.
+    Routing is performed using straight, L, U, J, or C  waypoint path
     as needed. Ports must face orthogonal or parallel directions. 
 
     Parameters
@@ -583,7 +583,7 @@ def path_manhattan(port1, port2, radius):
 
     Returns
     ----------
-    points : array[N][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     radius = radius + 0.1  # ensure space for bend radius
@@ -629,7 +629,7 @@ def path_manhattan(port1, port2, radius):
 
 
 def path_Z(port1, port2, length1=100, length2=100):
-    """Return waypoints between port1 and port2 in a Z shape. Ports can have any relative
+    """Return waypoint path between port1 and port2 in a Z shape. Ports can have any relative
     orientation.
 
     Parameters
@@ -643,7 +643,7 @@ def path_Z(port1, port2, length1=100, length2=100):
 
     Returns
     ----------
-    points : array[4][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     # get basis vectors in port directions
@@ -658,7 +658,7 @@ def path_Z(port1, port2, length1=100, length2=100):
 
 
 def path_V(port1, port2):
-    """Return waypoints between port1 and port2 in a V shape. Useful when
+    """Return waypoint path between port1 and port2 in a V shape. Useful when
     ports point to a single connecting point
 
     Parameters
@@ -668,7 +668,7 @@ def path_V(port1, port2):
 
     Returns
     ----------
-    points : array[3][2]
+    points : Path
         Waypoints for the route path to follow.
     """
     # get basis vectors in port directions
