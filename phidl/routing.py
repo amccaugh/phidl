@@ -291,7 +291,7 @@ def route_smooth(
     if path_type == 'straight':
         P = path_straight(port1, port2)
     elif path_type == 'manual':
-        P = manual_path
+        P = Path(manual_path)
     elif path_type == 'L':
         P = path_L(port1, port2)
     elif path_type == 'U':
@@ -387,7 +387,7 @@ def route_sharp(
     if path_type == 'straight':
         P = path_straight(port1, port2)
     elif path_type == 'manual':
-        P = manual_path
+        P = Path(manual_path)
     elif path_type == 'L':
         P = path_L(port1, port2)
     elif path_type == 'U':
