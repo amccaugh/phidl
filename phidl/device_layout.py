@@ -2419,7 +2419,7 @@ class Path(_GeometryHelper):
         return self
 
 
-    def extrude(self, width, layer = None, simplify = None):
+    def extrude(self, width, layer = np.nan, simplify = None):
         """ Combines the 1D Path with a 1D cross-section to form 2D polygons.
 
         Parameters
@@ -2430,7 +2430,7 @@ class Path(_GeometryHelper):
                 whose width varies linearly from width[0] to width[1]
             If set to a CrossSection: uses the CrossSection parameters for extrusion
         layer : int, tuple of int, or set of int
-            The layer to put the extruded polygons on
+            The layer to put the extruded polygons on. `layer=0` is used by default.
         simplify : float
             Tolerance value for the simplification algorithm.  All points that
             can be removed without changing the resulting polygon by more than
@@ -2444,21 +2444,17 @@ class Path(_GeometryHelper):
             Path
         """
 
-        if isinstance(width, CrossSection):
-            if layer is not None: 
-                raise ValueError("""[PHIDL] extrude(): when using a CrossSection as the
+        if isinstance(width, CrossSection) and (layer is not np.nan):
+            raise ValueError("""[PHIDL] extrude(): when using a CrossSection as the
                 `width` argument cannot also define the layer (layer must be None)""")
+        if not isinstance(width, CrossSection) and (layer is np.nan):
+            layer = 0
+        if isinstance(width, CrossSection):
             X = width
         elif np.size(width)==1:
-            if layer is None: 
-                raise ValueError("""[PHIDL] extrude(): when using a number as the
-                `width` argument you must also define the `layer`""")
             X = CrossSection()
             X.add(width = width, layer = layer)
         elif np.size(width)==2:
-            if layer is None: 
-                raise ValueError("""[PHIDL] extrude(): when using an array as the
-                `width` argument you must also define the `layer`""")
             X = CrossSection()
             X.add(width = _linear_transition(width[0], width[1]), layer = layer)
         else:

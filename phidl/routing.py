@@ -231,7 +231,7 @@ def route_smooth(
         path_type='manhattan', 
         manual_path=None, 
         smooth_options={'corner_fun': pp.euler, 'use_eff': True}, 
-        layer=None, 
+        layer=np.nan, 
         **kwargs
         ):
 
@@ -279,7 +279,7 @@ def route_smooth(
     smooth_options: dict
         Keyword arguments passed to pp.smooth
     layer : int or array-like[2]
-        Layer to put route on.
+        Layer to put route on. `layer=0` is used by default.  
     **kwargs :
         Keyword arguments passed to the waypoint path function.
 
@@ -332,7 +332,7 @@ def route_sharp(
         width=None,
         path_type='manhattan', 
         manual_path=None, 
-        layer=None, 
+        layer=np.nan, 
         **kwargs
         ):
 
@@ -375,7 +375,7 @@ def route_sharp(
     manual_path : array-like[N][2] or Path
         Waypoint path for creating a manual route
     layer : int or array-like[2]
-        Layer to put route on.
+        Layer to put route on. `layer=0` is used by default. 
     **kwargs :
         Keyword arguments passed to the waypoint path function.
 
