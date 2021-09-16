@@ -118,10 +118,10 @@ def route_basic(port1, port2, path_type = 'sine', width_type = 'straight', width
     """
     .. deprecated:: 1.6.0
         `route_basic` will be removed in August 2022, please replace with
-        `path_manhattan() or route_smooth()`.
+        `route_quad()` or `route_smooth()`.
     """
     warnings.warn("""[PHIDL] Warning: route_basic() will be deprecated 
-    in August 2022, please replace with `path_manhattan() or route_smooth()""")
+    in August 2022, please replace with `route_quad()` or `route_smooth()`""")
     # Assuming they're both Ports for now
     point_a = np.array(port1.midpoint)
     if width1 is None:  width1 = port1.width
@@ -714,10 +714,10 @@ def route_manhattan(
     """
     .. deprecated:: 1.6.0
         `route_manhattan` will be removed in August 2022, please replace with
-        `path_manhattan() or route_smooth()`.
+        `route_smooth()`.
     """
     warnings.warn("""[PHIDL] Warning: route_manhattan() will be deprecated 
-    in August 2022, please replace with `path_manhattan() or route_smooth()""")
+    in August 2022, please replace with `route_smooth()`""")
     #route along cardinal directions between any two ports placed diagonally
     #from each other
 
