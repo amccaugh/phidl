@@ -2362,8 +2362,17 @@ class Path(_GeometryHelper):
                 self.start_angle = np.arctan2(ny1,nx1)/np.pi*180
                 nx2,ny2 =  self.points[-1] - self.points[-2]
                 self.end_angle = np.arctan2(ny2,nx2)/np.pi*180
-            else:
+            elif isinstance(path, Path):
+                self.points = np.array(path.points, dtype = np.float)
+                self.start_angle = path.start_angle
+                self.end_angle = path.end_angle
+                self.info = {}
+            elif np.size(path) > 1:
                 self.append(path)
+            else:
+                raise ValueError('[PHIDL] Path() the "path" argument must be either ' +
+                        'blank, a Path object, an array-like[N][2] list of points, or a list of these')
+
 
     def __len__(self):
         return len(self.points)
