@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import sqrt, pi, cos, sin, log, exp, sinh, mod
 from numpy.linalg import norm
-from phidl.device_layout import Device, CrossSection
+from phidl.device_layout import Device, CrossSection, Port
 from phidl.device_layout import _parse_layer
 from phidl.geometry import turn
 import phidl.path as pp
@@ -326,6 +326,15 @@ def route_smooth(
         D = P.extrude(width=cross_section)
     else:
         D = P.extrude(width=width, layer=layer)
+        if not isinstance(width, CrossSection):
+            newport1 = D.add_port(port = port1, name = 1).rotate(180)
+            newport2 = D.add_port(port = port2, name = 2).rotate(180)
+            if np.size(width) == 1:
+                newport1.width = width
+                newport2.width = width
+            if np.size(width) == 2:
+                newport1.width = width[0]
+                newport2.width = width[1]
     return D
 
 
@@ -419,6 +428,15 @@ def route_sharp(
         D = P.extrude(width=cross_section)
     else:
         D = P.extrude(width=width, layer=layer)
+        if not isinstance(width, CrossSection):
+            newport1 = D.add_port(port = port1, name = 1).rotate(180)
+            newport2 = D.add_port(port = port2, name = 2).rotate(180)
+            if np.size(width) == 1:
+                newport1.width = width
+                newport2.width = width
+            if np.size(width) == 2:
+                newport1.width = width[0]
+                newport2.width = width[1]
     return D
 
 
