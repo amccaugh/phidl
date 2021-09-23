@@ -2434,7 +2434,7 @@ class Path(_GeometryHelper):
         Parameters
         ----------
         width : int, float, array-like[2], or CrossSection
-            If set to a single number (e.g. `width=1.7`): makes a fixed-width extrusion
+            If set to a single number (e.g. `width=1.7`): makes a constant-width extrusion
             If set to a 2-element array (e.g. `width=[1.8,2.5]`): makes an extrusion
                 whose width varies linearly from width[0] to width[1]
             If set to a CrossSection: uses the CrossSection parameters for extrusion
@@ -2455,7 +2455,7 @@ class Path(_GeometryHelper):
 
         if isinstance(width, CrossSection) and (layer is not np.nan):
             raise ValueError("""[PHIDL] extrude(): when using a CrossSection as the
-                `width` argument cannot also define the layer (layer must be None)""")
+                `width` argument cannot also define the `layer` argument""")
         if not isinstance(width, CrossSection) and (layer is np.nan):
             layer = 0
         if isinstance(width, CrossSection):
@@ -2563,7 +2563,6 @@ class Path(_GeometryHelper):
             ny2 =  offset(1) - offset(1 - ds)
             end_angle = np.arctan2(-ny2,tol)/np.pi*180 + self.end_angle
             end_angle = np.round(end_angle, decimals = 6)
-
         else: # Offset is just a number
             points = self._centerpoint_offset_curve(self.points, offset_distance = offset,
                                 start_angle = self.start_angle, end_angle = self.end_angle)
