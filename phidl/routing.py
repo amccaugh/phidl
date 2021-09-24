@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import sqrt, pi, cos, sin, log, exp, sinh, mod
 from numpy.linalg import norm
-from phidl.device_layout import Device, CrossSection
+from phidl.device_layout import Device, CrossSection, Port
 from phidl.device_layout import _parse_layer
 from phidl.geometry import turn
 import phidl.path as pp
@@ -326,6 +326,15 @@ def route_smooth(
         D = P.extrude(width=cross_section)
     else:
         D = P.extrude(width=width, layer=layer)
+        if not isinstance(width, CrossSection):
+            newport1 = D.add_port(port = port1, name = 1).rotate(180)
+            newport2 = D.add_port(port = port2, name = 2).rotate(180)
+            if np.size(width) == 1:
+                newport1.width = width
+                newport2.width = width
+            if np.size(width) == 2:
+                newport1.width = width[0]
+                newport2.width = width[1]
     return D
 
 
@@ -419,6 +428,15 @@ def route_sharp(
         D = P.extrude(width=cross_section)
     else:
         D = P.extrude(width=width, layer=layer)
+        if not isinstance(width, CrossSection):
+            newport1 = D.add_port(port = port1, name = 1).rotate(180)
+            newport2 = D.add_port(port = port2, name = 2).rotate(180)
+            if np.size(width) == 1:
+                newport1.width = width
+                newport2.width = width
+            if np.size(width) == 2:
+                newport1.width = width[0]
+                newport2.width = width[1]
     return D
 
 
@@ -688,6 +706,93 @@ def path_V(port1, port2):
     pt2 = np.matmul(np.linalg.inv(E), pt3-pt1)[0]*e1 + pt1
     return Path(np.array([pt1, pt2, pt3]))
 
+
+
+def path_xy(port1, port2, directions = 'xxyx'):
+    """ Creates a Path that travels only in x and y directions (manhattan) from
+    one point (or Port) to another. The `directions` string determines the order
+    of the x/y steps. Example: `directions = 'xyx'` will travel
+        1/2 the distance in x from p1 to p2
+        The whole distance in y from p1 to p2
+        1/2 of the distance in x from p1 to p2
+
+    Parameters
+    ----------
+    p1, p2 : array-like[2] points or Port objects
+        Points to route between.
+    directions : string of {'x','y'} characters
+        Directions the Path will be routed along
+
+    Returns
+    ----------
+    Path
+        Waypoints for the route path to follow.
+    """
+    if isinstance(port1, Port): p1 = port1.midpoint
+    elif np.size(port1) == 2:   p1 = port1
+    if isinstance(port2, Port): p2 = port2.midpoint
+    elif np.size(port2) == 2:   p2 = port2
+
+    directions = directions.lower()
+    num_x = sum([xy == 'x' for xy in directions])
+    num_y = sum([xy == 'y' for xy in directions])
+    distance = np.asarray(p2)-p1
+
+    points = [p1]
+    for xy in directions:
+        if xy == 'x':
+            travel = np.array([distance[0]/num_x, 0])
+            new_point = points[-1] + travel
+        elif xy == 'y':
+            travel = np.array([0, distance[1]/num_y])
+            new_point = points[-1] + travel
+        else:
+            raise ValueError('[PHIDL] path_xy() directions argument must be string with only "x" or "y" characters')
+        if np.abs(np.sum(travel)) > 1e-6: # Only add point if traveling some significant distance
+            points.append(new_point)
+
+    return Path(np.array(points))
+
+def route_xy(port1, port2, directions = 'xxyx', width = None, layer = np.nan):
+    """ Routes a path in x and y directions (manhattan) from one point (or Port)
+    to another. The `directions` string determines the order of the x/y steps.
+    Example: `directions = 'xyx'` will travel
+        1/2 the distance in x from p1 to p2
+        The whole distance in y from p1 to p2
+        1/2 of the distance in x from p1 to p2
+
+    Parameters
+    ----------
+    port1, port2 : Ports pr array-like[2] points or Port objects
+        Points to route between.
+    directions : string of {'x','y'} characters
+        Directions the Path will be routed along
+
+    Returns
+    ----------
+    D : Device
+        A Device containing the route and two ports (`1` and `2`) on either end.
+    """
+
+    P = path_xy(port1, port2, directions = directions)
+    if width is None:
+        X1 = CrossSection().add(width=port1.width, ports=(1, 2), layer=layer, name='a')
+        X2 = CrossSection().add(width=port2.width, ports=(1, 2), layer=layer, name='a')
+        cross_section = pp.transition(cross_section1=X1, cross_section2=X2, width_type='linear')
+        D = P.extrude(width=cross_section)
+    else:
+        D = P.extrude(width=width, layer=layer)
+        if not isinstance(width, CrossSection):
+            newport1 = D.add_port(port = port1, name = 1).rotate(180)
+            newport2 = D.add_port(port = port2, name = 2).rotate(180)
+            if np.size(width) == 1:
+                newport1.width = width
+                newport2.width = width
+            if np.size(width) == 2:
+                newport1.width = width[0]
+                newport2.width = width[1]
+    # D = P.extrude(width, layer = layer)
+    return D
 
 # ################
 # gradual_bend() - variable radius-of-curvature bends for low-loss routing
