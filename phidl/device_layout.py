@@ -2350,7 +2350,7 @@ class Path(_GeometryHelper):
         Points or Paths to append() initially
     """
     def __init__(self, path = None):
-        self.points = np.array([[0,0]])
+        self.points = np.array([[0,0]], dtype = np.float64)
         self.start_angle = 0
         self.end_angle = 0
         self.info = {}
