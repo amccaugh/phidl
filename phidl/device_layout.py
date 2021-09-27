@@ -2737,6 +2737,50 @@ class Path(_GeometryHelper):
         K = np.gradient(theta,s, edge_order = 2)
         return s, K
 
+    def hash_geometry(self, precision = 1e-4):
+        """ Computes an SHA1 hash of the points in the Path and the start_angle
+        and end_angle
+
+        Parameters
+        ----------
+        precision : float
+            Roudning precision for the the objects in the Device.  For instance,
+            a precision of 1e-2 will round a point at (0.124, 1.748) to (0.12, 1.75)
+
+        Returns
+        -------
+        str
+            Hash result in the form of an SHA1 hex digest string
+
+        Notes
+        -----
+        Algorithm:
+        
+        .. code-block:: python
+        
+            hash(
+                hash(First layer information: [layer1, datatype1]),
+                hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Second layer information: [layer2, datatype2]),
+                hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            )
+        """
+        # A random offset which fixes common rounding errors intrinsic
+        # to floating point math. Example: with a precision of 0.1, the
+        # floating points 7.049999 and 7.050001 round to different values
+        # (7.0 and 7.1), but offset values (7.220485 and 7.220487) don't
+        magic_offset = .17048614
+
+        final_hash = hashlib.sha1()
+        p = np.ascontiguousarray((self.points/precision) + magic_offset, dtype  = np.int64)
+        final_hash.update(p)
+        p = np.ascontiguousarray((self.start_angle, self.end_angle), dtype  = np.float64)
+        final_hash.update(p)
+        return final_hash.hexdigest()
+
 class CrossSection(object):
     """ The CrossSection object for extruding a Path.  To be used in
     combination with a Path to create a Device.
