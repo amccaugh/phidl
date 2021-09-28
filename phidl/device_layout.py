@@ -4,6 +4,8 @@
 #==============================================================================
 # Add D.add_gdsii_path() to allow creation of GDSII paths
 # Add D.write_gds(max_points_per_polygon)
+# Remove Device.add()
+# Show labels in quickplot
 
 #==============================================================================
 # Minor TODO
@@ -20,7 +22,6 @@
 #==============================================================================
 # Tutorials
 # - Using Aliases
-# - Boolean operations
 # - Advanced and Misc (simplify)
 
 # Examples
@@ -39,7 +40,7 @@ from __future__ import print_function # Use print('hello') instead of print 'hel
 from __future__ import absolute_import
 
 import gdspy
-from copy import deepcopy
+from copy import deepcopy as _deepcopy
 import numpy as np
 from numpy import sqrt, mod, pi, sin, cos
 from numpy.linalg import norm
@@ -51,7 +52,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 import gdspy.library
 gdspy.library.use_current_library = False
 
-__version__ = '1.5.2'
+__version__ = '1.6.0'
 
 
 #==============================================================================
@@ -768,7 +769,7 @@ class Port(object):
         new_port = Port(name = self.name, midpoint = self.midpoint,
                         width = self.width, orientation = self.orientation,
                         parent = self.parent)
-        new_port.info = deepcopy(self.info)
+        new_port.info = _deepcopy(self.info)
         if new_uid == False:
             new_port.uid = self.uid
             Port._next_uid -= 1
@@ -2331,6 +2332,9 @@ class Group(_GeometryHelper):
 
 
 
+def _linear_transition(y1, y2):
+    dx = y2 - y1
+    return lambda t: y1 + t*dx
 
 PHIDL_ELEMENTS = (Device, DeviceReference, Polygon, CellArray, Label, Group)
 
@@ -2346,12 +2350,29 @@ class Path(_GeometryHelper):
         Points or Paths to append() initially
     """
     def __init__(self, path = None):
-        self.points = np.array([[0,0]])
+        self.points = np.array([[0,0]], dtype = np.float64)
         self.start_angle = 0
         self.end_angle = 0
         self.info = {}
         if path is not None:
-            self.append(path)
+            # If array[N][2]
+            if (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
+                self.points = np.array(path, dtype = np.float)
+                nx1,ny1 =  self.points[1] - self.points[0]
+                self.start_angle = np.arctan2(ny1,nx1)/np.pi*180
+                nx2,ny2 =  self.points[-1] - self.points[-2]
+                self.end_angle = np.arctan2(ny2,nx2)/np.pi*180
+            elif isinstance(path, Path):
+                self.points = np.array(path.points, dtype = np.float)
+                self.start_angle = path.start_angle
+                self.end_angle = path.end_angle
+                self.info = {}
+            elif np.size(path) > 1:
+                self.append(path)
+            else:
+                raise ValueError('[PHIDL] Path() the "path" argument must be either ' +
+                        'blank, a Path object, an array-like[N][2] list of points, or a list of these')
+
 
     def __len__(self):
         return len(self.points)
@@ -2380,7 +2401,7 @@ class Path(_GeometryHelper):
             points = path.points
         # If array[N][2]
         elif (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
-            points = path
+            points = np.asfarray(path)
             nx1,ny1 =  points[1] - points[0]
             start_angle = np.arctan2(ny1,nx1)/np.pi*180
             nx2,ny2 =  points[-1] - points[-2]
@@ -2407,13 +2428,18 @@ class Path(_GeometryHelper):
         return self
 
 
-    def extrude(self, cross_section, simplify = None):
-        """ Combines the 1D Path with a 1D CrossSection to form 2D polygons.
+    def extrude(self, width, layer = np.nan, simplify = None):
+        """ Combines the 1D Path with a 1D cross-section to form 2D polygons.
 
         Parameters
         ----------
-        cross_section : CrossSection
-            The CrossSection that the Path will extrude along
+        width : int, float, array-like[2], or CrossSection
+            If set to a single number (e.g. `width=1.7`): makes a constant-width extrusion
+            If set to a 2-element array (e.g. `width=[1.8,2.5]`): makes an extrusion
+                whose width varies linearly from width[0] to width[1]
+            If set to a CrossSection: uses the CrossSection parameters for extrusion
+        layer : int, tuple of int, or set of int
+            The layer to put the extruded polygons on. `layer=0` is used by default.
         simplify : float
             Tolerance value for the simplification algorithm.  All points that
             can be removed without changing the resulting polygon by more than
@@ -2424,9 +2450,25 @@ class Path(_GeometryHelper):
         -------
         Device
             A Device with polygons added that correspond to the extrusion of the
-            Path with the CrossSection
+            Path
         """
-        X = cross_section
+
+        if isinstance(width, CrossSection) and (layer is not np.nan):
+            raise ValueError("""[PHIDL] extrude(): when using a CrossSection as the
+                `width` argument cannot also define the `layer` argument""")
+        if not isinstance(width, CrossSection) and (layer is np.nan):
+            layer = 0
+        if isinstance(width, CrossSection):
+            X = width
+        elif np.size(width)==1:
+            X = CrossSection()
+            X.add(width = width, layer = layer)
+        elif np.size(width)==2:
+            X = CrossSection()
+            X.add(width = _linear_transition(width[0], width[1]), layer = layer)
+        else:
+            raise ValueError("""[PHIDL] extrude(): width argument must be one of
+                int, float, array-like[2], or CrossSection""")
 
         D = Device()
         for section in X.sections:
@@ -2457,9 +2499,9 @@ class Path(_GeometryHelper):
             else:
                 pass
 
-            points1 = self._parametric_offset_curve(points, offset_distance = offset + width/2,
+            points1 = self._centerpoint_offset_curve(points, offset_distance = offset + width/2,
                                     start_angle = start_angle, end_angle = end_angle)
-            points2 = self._parametric_offset_curve(points, offset_distance = offset - width/2,
+            points2 = self._centerpoint_offset_curve(points, offset_distance = offset - width/2,
                                     start_angle = start_angle, end_angle = end_angle)
 
             # Simplify lines using the Ramer–Douglas–Peucker algorithm
@@ -2509,7 +2551,7 @@ class Path(_GeometryHelper):
             lengths = np.cumsum(np.sqrt((dx)**2 + (dy)**2))
             lengths = np.concatenate([[0], lengths])
             # Create list of offset points and perform offset
-            points = self._parametric_offset_curve(self.points,
+            points = self._centerpoint_offset_curve(self.points,
                                 offset_distance = offset(lengths / lengths[-1]),
                                 start_angle = self.start_angle, end_angle = self.end_angle)
             # Numerically compute start and end angles
@@ -2521,9 +2563,8 @@ class Path(_GeometryHelper):
             ny2 =  offset(1) - offset(1 - ds)
             end_angle = np.arctan2(-ny2,tol)/np.pi*180 + self.end_angle
             end_angle = np.round(end_angle, decimals = 6)
-
         else: # Offset is just a number
-            points = self._parametric_offset_curve(self.points, offset_distance = offset,
+            points = self._centerpoint_offset_curve(self.points, offset_distance = offset,
                                 start_angle = self.start_angle, end_angle = self.end_angle)
             start_angle = self.start_angle
             end_angle = self.end_angle
@@ -2612,6 +2653,27 @@ class Path(_GeometryHelper):
             self.end_angle = mod(2*angle - self.end_angle, 360)
         return self
 
+    def _centerpoint_offset_curve(self, points, offset_distance, start_angle, end_angle):
+        """ Creates a offset curve (but does not account for cusps etc)
+        by computing the centerpoint offset of the supplied x and y points """
+        new_points = np.array(points, dtype = np.float)
+        dx = np.diff(points[:,0])
+        dy = np.diff(points[:,1])
+        theta = np.arctan2(dy,dx)
+        theta = np.concatenate([theta[0:1], theta, theta[-1:]])
+        theta_mid = (np.pi+theta[1:]+theta[:-1])/2 # Mean angle between segments
+        dtheta_int = np.pi+theta[:-1]-theta[1:] # Internal angle between segments
+        offset_distance = offset_distance/np.sin(dtheta_int/2)
+        new_points[:,0] -= offset_distance*np.cos(theta_mid)
+        new_points[:,1] -= offset_distance*np.sin(theta_mid)
+        if start_angle is not None:
+            new_points[0,:] = points[0,:] + (np.sin(start_angle*np.pi/180)*offset_distance[0],
+                                            -np.cos(start_angle*np.pi/180)*offset_distance[0])
+        if end_angle is not None:
+            new_points[-1,:] = points[-1,:] + (np.sin(end_angle*np.pi/180)*offset_distance[-1],
+                                            -np.cos(end_angle*np.pi/180)*offset_distance[-1])
+        return new_points
+
 
     def _parametric_offset_curve(self, points, offset_distance, start_angle, end_angle):
         """ Creates a parametric offset (does not account for cusps etc)
@@ -2674,6 +2736,50 @@ class Path(_GeometryHelper):
 
         K = np.gradient(theta,s, edge_order = 2)
         return s, K
+
+    def hash_geometry(self, precision = 1e-4):
+        """ Computes an SHA1 hash of the points in the Path and the start_angle
+        and end_angle
+
+        Parameters
+        ----------
+        precision : float
+            Roudning precision for the the objects in the Device.  For instance,
+            a precision of 1e-2 will round a point at (0.124, 1.748) to (0.12, 1.75)
+
+        Returns
+        -------
+        str
+            Hash result in the form of an SHA1 hex digest string
+
+        Notes
+        -----
+        Algorithm:
+        
+        .. code-block:: python
+        
+            hash(
+                hash(First layer information: [layer1, datatype1]),
+                hash(Polygon 1 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Polygon 2 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 3 on layer 1 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+                hash(Second layer information: [layer2, datatype2]),
+                hash(Polygon 1 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3),(x4,y4)] ),
+                hash(Polygon 2 on layer 2 points: [(x1,y1),(x2,y2),(x3,y3)] ),
+            )
+        """
+        # A random offset which fixes common rounding errors intrinsic
+        # to floating point math. Example: with a precision of 0.1, the
+        # floating points 7.049999 and 7.050001 round to different values
+        # (7.0 and 7.1), but offset values (7.220485 and 7.220487) don't
+        magic_offset = .17048614
+
+        final_hash = hashlib.sha1()
+        p = np.ascontiguousarray((self.points/precision) + magic_offset, dtype  = np.int64)
+        final_hash.update(p)
+        p = np.ascontiguousarray((self.start_angle, self.end_angle), dtype  = np.float64)
+        final_hash.update(p)
+        return final_hash.hexdigest()
 
 class CrossSection(object):
     """ The CrossSection object for extruding a Path.  To be used in

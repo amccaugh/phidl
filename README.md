@@ -6,20 +6,17 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/en/latest/geometry_reference.html)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.5.2 on May 19, 2021)
-  - Better interactive windows for `quickplot()`! Now you can use the mousewheel/trackpad scroll to zoom in and out, and right-click or left-click to zoom to a region.
-  - New `pg.gridsweep()` function, allowing for easy creation of parameter sweeps on a grid.  See [the documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Gridsweep) for details. 
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.6.0 on Sept 28, 2021)
+    - Huge new routing rewrite for `phidl.routing`, including automatic manhattan routing with custom cross-sections!  See [the routing documentation](https://phidl.readthedocs.io/en/latest/tutorials/routing.html) for details. Big thanks to Jeffrey Holzgrafe @jolzgrafe for this contribution
+    - `Path`s can now be used to produce sharp angles, in addition to smooth bends. See [the Path documentation](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Sharp/angular-paths) 
 
-```
-D = pg.gridsweep(
-      function = custom_ellipse,
-      param_x = {'width' :  [40, 80, 120, 160]},
-      param_y = {'height' : [10, 50],
-                 'layer' :  [1, 2, 3]  },
-      spacing = (30,10))
+```python
+import phidl.routing as pr
+D_left = pr.route_smooth(port1, port2, radius=8, layer = 2)
+D_right = pr.route_sharp(port1, port2, layer = 2)
 ```
 
-![phidl example image](https://phidl.readthedocs.io/en/dev/_images/geometry_reference_36_0.png)
+![phidl example image](https://amccaugh.github.io/phidl/readme_9.png)
 
 
 
