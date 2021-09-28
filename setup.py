@@ -18,7 +18,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 
 setup(name='phidl',
-      version='1.5.2',
+      version='1.6.0',
       description='PHIDL',
       long_description = long_description,
       long_description_content_type='text/markdown',
