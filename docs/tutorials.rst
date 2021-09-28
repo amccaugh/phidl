@@ -17,4 +17,5 @@ Tutorials for `PHIDL <https://github.com/amccaugh/phidl>`_
    tutorials/layers
    tutorials/group
    tutorials/waveguides
+   tutorials/routing
 

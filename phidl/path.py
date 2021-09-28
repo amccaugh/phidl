@@ -35,7 +35,7 @@ def arc(radius = 10, angle = 90, num_pts = 720):
     return P
 
 
-def straight(length = 5, num_pts = 2):
+def straight(length = 5, num_pts = 100):
     """ Creates a straight Path
 
     Parameters
@@ -309,7 +309,7 @@ def smooth(
 
     Parameters
     ----------
-    points : array-like[N][2]
+    points : array-like[N][2] or Path
         List of waypoints for the path to follow
     radius : int or float
         Radius of curvature, this argument will be passed to `corner_fun`
@@ -324,6 +324,8 @@ def smooth(
     Path
         A Path object with the specified smoothed path.
     """
+
+    if isinstance(points, Path): points = points.points
 
     points, normals, ds, theta, dtheta = _compute_segments(points)
     colinear_elements = np.concatenate([[False], np.abs(dtheta) < 1e-6, [False]])
