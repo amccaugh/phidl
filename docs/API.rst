@@ -414,6 +414,73 @@ spiral
 .. autofunction:: phidl.path.spiral
 
 
+***************
+Routing Library
+***************
+
+route_sharp
+===========
+
+.. autofunction:: phidl.routing.route_sharp
+
+
+route_smooth
+============
+
+.. autofunction:: phidl.routing.route_smooth
+
+route_quad
+==========
+
+.. autofunction:: phidl.routing.route_quad
+
+route_xy
+========
+
+.. autofunction:: phidl.routing.route_xy
+
+path_manhattan
+==============
+
+.. autofunction:: phidl.routing.path_manhattan
+
+path_straight
+=============
+
+.. autofunction:: phidl.routing.path_straight
+
+path_L
+======
+
+.. autofunction:: phidl.routing.path_L
+
+path_U
+======
+
+.. autofunction:: phidl.routing.path_U
+
+path_J
+======
+
+.. autofunction:: phidl.routing.path_J
+
+path_C
+======
+
+.. autofunction:: phidl.routing.path_C
+
+path_V
+======
+
+.. autofunction:: phidl.routing.path_V
+
+path_Z
+======
+
+.. autofunction:: phidl.routing.path_Z
+
+
+
 **************
 Layout Classes
 **************
