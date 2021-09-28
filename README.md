@@ -11,6 +11,7 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
     - `Path`s can now be used to produce sharp angles, in addition to smooth bends. See [the Path documentation](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Sharp/angular-paths) 
 
 ```
+import phidl.routing as pr
 D_left = pr.route_smooth(port1, port2, radius=8, layer = 2)
 D_right = pr.route_sharp(port1, port2, layer = 2)
 ```
