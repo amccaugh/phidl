@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/amccaugh/phidl)
+[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/github/amccaugh/phidl)
 
 # PHIDL
 GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
