@@ -10,7 +10,7 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
     - Huge new routing rewrite for `phidl.routing`, including automatic manhattan routing with custom cross-sections!  See [the routing documentation](https://phidl.readthedocs.io/en/latest/tutorials/routing.html) for details. Big thanks to Jeffrey Holzgrafe @jolzgrafe for this contribution
     - `Path`s can now be used to produce sharp angles, in addition to smooth bends. See [the Path documentation](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Sharp/angular-paths) 
 
-```
+```python
 import phidl.routing as pr
 D_left = pr.route_smooth(port1, port2, radius=8, layer = 2)
 D_right = pr.route_sharp(port1, port2, layer = 2)
