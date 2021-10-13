@@ -75,7 +75,7 @@ def test_path_arc():
 def test_path_spiral():
     P = pp.spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000)
     h = P.hash_geometry(precision = 1e-4)
-    assert(h == '46c5da60268d4fb308b81e0a6de416af332b91fc')
+    assert(h == '1d46b2f8ab45f35ce781083755df41609d2ee628')
 
 def test_path_smooth1():
     P = pp.spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000)
