@@ -265,12 +265,12 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     pts = _rotate_points(arc(Rc, theta, 360*num_pts0/theta).points, -theta/2+90)
     x_centre = pts[:,0] + x_spiral[0][0] - pts[:,0][-1]
     y_centre = pts[:,1] + y_spiral[0][0] - pts[:,1][-1]
-    x_centre = np.concatenate([-np.flip(x_centre), x_centre])
-    y_centre = np.concatenate([-np.flip(y_centre), y_centre])
+    x_centre = np.concatenate([-np.flip(x_centre), x_centre[1:]])
+    y_centre = np.concatenate([-np.flip(y_centre), y_centre[1:]])
 
     # Combining into final spiral
-    x = np.concatenate([-np.flip(x_spiral[1]), x_centre, x_spiral[0]])
-    y = np.concatenate([-np.flip(y_spiral[1]), y_centre, y_spiral[0]])
+    x = np.concatenate([-np.flip(x_spiral[1]), x_centre[1:-1], x_spiral[0]])
+    y = np.concatenate([-np.flip(y_spiral[1]), y_centre[1:-1], y_spiral[0]])
     points = np.array((x,y)).T
 
     P = Path()
@@ -280,9 +280,9 @@ def spiral(num_turns = 5, gap = 1, inner_gap = 2, num_pts = 10000):
     P.start_angle = np.arctan2(ny1,nx1)/np.pi*180
     nx2,ny2 =  points[-1] - points[-2]
     P.end_angle = np.arctan2(ny2,nx2)/np.pi*180
-    # print(P.start_angle)
-    # print(P.end_angle)
+
     return P
+
 
 def _compute_segments(points):
     points = np.asfarray(points)
