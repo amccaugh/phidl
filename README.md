@@ -18,7 +18,10 @@ D_right = pr.route_sharp(port1, port2, layer = 2)
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_9.png)
 
+# Citation
 
+If you found PHIDL useful, please consider citing it in (just one!) of your publications -- we appreciate it greatly. ([BibTeX](https://raw.githubusercontent.com/amccaugh/phidl/master/CITATION.bib))
+ - McCaughan, A. N., et. al. PHIDL: Python-based layout and geometry creation for nanolithography. *J. Vac. Sci. Technol. B* 39, 062601 (2021). http://dx.doi.org/10.1116/6.0001203 
 
 # Gallery
 
