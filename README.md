@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/amccaugh/phidl)
+[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/github/amccaugh/phidl)
 
 # PHIDL
 GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
@@ -18,7 +18,10 @@ D_right = pr.route_sharp(port1, port2, layer = 2)
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_9.png)
 
+# Citation
 
+If you found PHIDL useful, please consider citing it in (just one!) of your publications -- we appreciate it greatly. ([BibTeX](https://raw.githubusercontent.com/amccaugh/phidl/master/CITATION.bib))
+ - McCaughan, A. N., et. al. PHIDL: Python-based layout and geometry creation for nanolithography. *J. Vac. Sci. Technol. B* 39, 062601 (2021). http://dx.doi.org/10.1116/6.0001203 
 
 # Gallery
 
@@ -28,8 +31,7 @@ D_right = pr.route_sharp(port1, port2, layer = 2)
 - Install or upgrade with `pip install -U phidl`
 - Python 2 >=2.6 or Python 3 >=3.5
 - If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
-    - For Windows + Python 3, install ["Build Tools for Visual Studio"](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2017) (make sure to check the "C++ build tools" checkbox when installing)
-    - For Windows + Python 2, install [Microsoft Visual C++ Compiler for Python 2.7](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+    - For Windows + Python 3, install ["Build Tools for Visual Studio"](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019) (make sure to check the "C++ build tools" checkbox when installing)
     - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
 
 # About PHIDL
