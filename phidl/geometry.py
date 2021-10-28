@@ -4613,6 +4613,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
     else:
         reverse = False
 
+    D = Device(name = 'step')
     if start_width == end_width: # Just return a square
         if symmetric == True:
             ypts = [-start_width/2, start_width/2,
@@ -4621,6 +4622,7 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
         if symmetric == False:
             ypts = [0, start_width, start_width, 0]
             xpts = [0, 0, start_width, start_width]
+        D.info['num_squares'] = 1
     else:
         xmin, ymin = invert_step_point(y_desired = start_width*(1+width_tol),
                                        W = start_width, a = end_width)
@@ -4659,11 +4661,12 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
         if reverse is True:
             xpts = (-np.array(xpts)).tolist()
             start_width, end_width = end_width, start_width
+            
+        D.info['num_squares'] = np.sum(np.diff(x_num_sq) /((y_num_sq[:-1] + y_num_sq[1:])/2) )
 
     #==========================================================================
     #  Create a blank device, add the geometry, and define the ports
     #==========================================================================
-    D = Device(name = 'step')
     D.add_polygon([xpts, ypts], layer = layer)
 
     if symmetric == False:
@@ -4677,7 +4680,6 @@ def optimal_step(start_width = 10, end_width = 22, num_pts = 50,
         D.add_port(name = 2, midpoint = [max(xpts), 0], width = end_width,
                    orientation = 0)
 
-    D.info['num_squares'] = np.sum(np.diff(x_num_sq) /((y_num_sq[:-1] + y_num_sq[1:])/2) )
     return D
 
 
