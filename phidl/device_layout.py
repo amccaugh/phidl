@@ -2861,7 +2861,7 @@ class CrossSection(object):
             A Device with polygons added that correspond to the extrusion of the
             Path with the CrossSection
         """
-        D = path.extrude(cross_section = self, simplify = simplify)
+        D = path.extrude(width = self, simplify = simplify)
         return D
 
 
