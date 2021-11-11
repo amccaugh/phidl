@@ -1526,6 +1526,14 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         return port_list
 
+    def get_info(self):
+        """ FIXME Write docstring """
+        D_list = self.get_dependencies(recursive=True)
+        info_list = []
+        for D in D_list:
+            info_list.append(D.info.copy())
+        return info_list
+
 
     def remove(self, items):
         """ Removes items from a Device, which can include Ports, PolygonSets,
