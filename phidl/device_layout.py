@@ -1527,7 +1527,20 @@ class Device(gdspy.Cell, _GeometryHelper):
         return port_list
 
     def get_info(self):
-        """ FIXME Write docstring """
+        """ Gathers the .info dictionaries from every sub-Device and returns
+        them in a list.
+
+        Parameters
+        ----------
+        depth : int or None
+            If not None, defines from how many reference levels to
+            retrieve Ports from.
+
+        Returns
+        -------
+        list of dictionaries
+            List of the ".info" property dictionaries from all sub-Devices
+        """
         D_list = self.get_dependencies(recursive=True)
         info_list = []
         for D in D_list:
