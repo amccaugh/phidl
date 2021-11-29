@@ -13,7 +13,6 @@
 # Add Group.get_polygons()
 # Allow Boolean to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
-# add wire_basic to phidl.routing.  also add endcap parameter
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
 #   https://stackoverflow.com/a/12644499
@@ -22,6 +21,7 @@
 #==============================================================================
 # Tutorials
 # - Using Aliases
+# - "Using info / metadata" tutorial with .info explanation and tutorial of get_info
 # - Advanced and Misc (simplify)
 
 # Examples
