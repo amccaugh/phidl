@@ -2378,13 +2378,13 @@ class Path(_GeometryHelper):
         if path is not None:
             # If array[N][2]
             if (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
-                self.points = np.array(path, dtype = np.float)
+                self.points = np.array(path, dtype = np.float64)
                 nx1,ny1 =  self.points[1] - self.points[0]
                 self.start_angle = np.arctan2(ny1,nx1)/np.pi*180
                 nx2,ny2 =  self.points[-1] - self.points[-2]
                 self.end_angle = np.arctan2(ny2,nx2)/np.pi*180
             elif isinstance(path, Path):
-                self.points = np.array(path.points, dtype = np.float)
+                self.points = np.array(path.points, dtype = np.float64)
                 self.start_angle = path.start_angle
                 self.end_angle = path.end_angle
                 self.info = {}
@@ -2677,7 +2677,7 @@ class Path(_GeometryHelper):
     def _centerpoint_offset_curve(self, points, offset_distance, start_angle, end_angle):
         """ Creates a offset curve (but does not account for cusps etc)
         by computing the centerpoint offset of the supplied x and y points """
-        new_points = np.array(points, dtype = np.float)
+        new_points = np.array(points, dtype = np.float64)
         dx = np.diff(points[:,0])
         dy = np.diff(points[:,1])
         theta = np.arctan2(dy,dx)
