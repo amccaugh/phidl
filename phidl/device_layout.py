@@ -1237,8 +1237,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         if layer is None:
             return None
-        if len(text) >= 1023:
-            raise ValueError('[DEVICE] label() error: Text too long (limit 1024 chars)')
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str: text = str(text)
