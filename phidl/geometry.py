@@ -442,7 +442,7 @@ def offset(elements, distance = 0.1, join_first = True, precision = 1e-4,
     D : Device
         A Device containing a polygon(s) with the specified offset applied.
     """
-    if type(elements) is not list: elements = [elements]
+    if not hasattr(elements, "__iter__"): elements = [elements]
     polygons_to_offset = []
     for e in elements:
         if isinstance(e, (Device, DeviceReference)):
@@ -523,8 +523,8 @@ def boolean(A, B, operation, precision = 1e-4, num_divisions = [1, 1],
 
     A_polys = []
     B_polys = []
-    if type(A) is not list: A = [A]
-    if type(B) is not list: B = [B]
+    if not hasattr(A, "__iter__"): A = [A]
+    if not hasattr(B, "__iter__"): B = [B]
     for e in A:
         if isinstance(e, Device): A_polys += e.get_polygons()
         elif isinstance(e, DeviceReference): A_polys += e.get_polygons()
@@ -625,7 +625,7 @@ def outline(elements, distance = 1, precision = 1e-4, num_divisions = [1, 1],
         A Device containing the outlined polygon(s).
     """
     D = Device('outline')
-    if type(elements) is not list: elements = [elements]
+    if not hasattr(elements, "__iter__"): elements = [elements]
     port_list = []
     for e in elements:
         if isinstance(e, Device):
@@ -697,7 +697,7 @@ def invert(elements, border = 10, precision = 1e-4, num_divisions = [1, 1],
         corresponding border(s).
     """
     Temp = Device()
-    if type(elements) is not list: elements = [elements]
+    if not hasattr(elements, "__iter__"): elements = [elements]
     for e in elements:
         if isinstance(e, Device): Temp.add_ref(e)
         else: Temp.add(e)
