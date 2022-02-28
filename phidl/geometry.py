@@ -1223,12 +1223,7 @@ def _polygons_to_bboxes(polygons):
     #    Build bounding boxes
     bboxes = np.empty([len(polygons), 4])
     for n, p in enumerate(polygons):
-        try:
-            left, bottom = np.min(p, axis=0)
-        except:
-            import pdb
-
-            pdb.set_trace()
+        left, bottom = np.min(p, axis=0)
         right, top = np.max(p, axis=0)
         bboxes[n] = [left, bottom, right, top]
     return bboxes
