@@ -39,7 +39,8 @@ def write_docstring(
     be created.
 
     Classes are placed at the top of the document, with functions following,
-    and both are internally sorted alphabetically. Functions that have leading underscores will be ignored.
+    and both are internally sorted alphabetically. Functions that have leading
+    underscores will be ignored.
     Ex:
         def _z(*):
         class Z(*):
@@ -134,7 +135,7 @@ if args[1][-4:] == ".rst":
     args = args[2:]
     try:
         os.remove(join(source_path, fwrite))
-    except:
+    except Exception:
         pass
 elif args[1] == "add":
     fwrite = args[2]

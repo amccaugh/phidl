@@ -53,7 +53,7 @@ def _get_font_by_name(name):
     """
     try:
         font_file = font_manager.findfont(name, fallback_to_default=False)
-    except:
+    except Exception:
         raise ValueError(
             (
                 '[PHIDL] Failed to find font: "%s". '

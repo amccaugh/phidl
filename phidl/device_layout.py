@@ -233,7 +233,7 @@ def _distribute(elements, direction="x", spacing=100, separation=True, edge=None
     if (
         (direction == "x")
         and (edge not in ({"x", "xmin", "xmax"}))
-        and (separation == False)
+        and (not separation)
     ):
         raise ValueError(
             "[PHIDL] distribute(): When `separation` == False and direction == 'x',"
@@ -242,7 +242,7 @@ def _distribute(elements, direction="x", spacing=100, separation=True, edge=None
     if (
         (direction == "y")
         and (edge not in ({"y", "ymin", "ymax"}))
-        and (separation == False)
+        and (not separation)
     ):
         raise ValueError(
             "[PHIDL] distribute(): When `separation` == False and direction == 'y',"
@@ -419,7 +419,7 @@ class LayerSet(object):
         """
         try:
             return self._layers[val]
-        except:
+        except Exception:
             raise ValueError(
                 "[PHIDL] LayerSet: Tried to access layer "
                 'named "%s"' % (val) + " which does not exist"
@@ -497,7 +497,7 @@ class Layer(object):
                 self.color = color
             else:  # in named format 'gold'
                 self.color = _CSS3_NAMES_TO_HEX[color.lower()]
-        except:
+        except Exception:
             raise ValueError(
                 "[PHIDL] Layer() color must be specified as a "
                 + "0-1 RGB triplet, (e.g. [0.5, 0.1, 0.9]), an HTML hex color string "
@@ -1084,7 +1084,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         try:
             return self.aliases[key]
-        except:
+        except Exception:
             raise ValueError(
                 '[PHIDL] Tried to access alias "%s" in Device '
                 '"%s", which does not exist' % (key, self.name)
@@ -1215,7 +1215,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:
             points[0][0][0]  # Try to access first x point
             return [self.add_polygon(p, layer) for p in points]
-        except:
+        except Exception:
             pass  # Verified points is not a list of polygons, continue on
 
         if isinstance(points, gdspy.PolygonSet):
@@ -1243,7 +1243,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                     """ [PHIDL] If specifying multiple layers
                 you must use set notation, e.g. {1,5,8} """
                 )
-        except:
+        except Exception:
             pass
 
         # If in the form [[1,3,5],[2,4,6]]
@@ -1442,13 +1442,13 @@ class Device(gdspy.Cell, _GeometryHelper):
         try:
             if filename[-4:] != ".gds":
                 filename += ".gds"
-        except:
+        except Exception:
             pass
         referenced_cells = list(self.get_dependencies(recursive=True))
         all_cells = [self] + referenced_cells
 
         # Autofix names so there are no duplicates
-        if auto_rename == True:
+        if auto_rename:
             all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
             all_cells_original_names = [c.name for c in all_cells_sorted]
             used_names = {cellname}
@@ -1471,7 +1471,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         lib = gdspy.GdsLibrary(unit=unit, precision=precision)
         lib.write_gds(filename, cells=all_cells)
         # Return cells to their original names if they were auto-renamed
-        if auto_rename == True:
+        if auto_rename:
             for n, c in enumerate(all_cells_sorted):
                 c.name = all_cells_original_names[n]
         return filename
@@ -1500,7 +1500,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                         new_layer = layermap[original_layer]
                         p.layers[n] = new_layer[0]
                         p.datatypes[n] = new_layer[1]
-            if include_labels == True:
+            if include_labels:
                 for l in D.labels:
                     original_layer = (l.layer, l.texttype)
                     original_layer = _parse_layer(original_layer)
@@ -1541,7 +1541,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                     p for p, keep in zip(polygonset.datatypes, polygons_to_keep) if keep
                 ]
 
-            if include_labels == True:
+            if include_labels:
                 new_labels = []
                 for l in D.labels:
                     original_layer = (l.layer, l.texttype)
@@ -1717,7 +1717,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             if isinstance(item, Port):
                 try:
                     self.ports = {k: v for k, v in self.ports.items() if v != item}
-                except:
+                except Exception:
                     raise ValueError(
                         """[PHIDL] Device.remove() cannot find the
                                      Port
@@ -1734,7 +1734,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                     if isinstance(item, gdspy.Label):
                         self.labels.remove(item)
                     self.aliases = {k: v for k, v in self.aliases.items() if v != item}
-                except:
+                except Exception:
                     raise ValueError(
                         """[PHIDL] Device.remove() cannot find the
                                      item
@@ -1956,7 +1956,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         """
         try:
             alias_device = self.parent[val]
-        except:
+        except KeyError:
             raise ValueError(
                 '[PHIDL] Tried to access alias "%s" from parent '
                 'Device "%s", which does not exist' % (val, self.parent.name)
@@ -3179,7 +3179,7 @@ class CrossSection(object):
         """
         try:
             return self.aliases[key]
-        except:
+        except KeyError:
             raise ValueError(
                 '[PHIDL] Tried to access name "%s" in CrossSection '
                 "which does not exist" % (key)

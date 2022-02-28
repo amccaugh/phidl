@@ -526,7 +526,7 @@ def offset(
     return D
 
 
-def boolean(
+def boolean(  # noqa: C901
     A, B, operation, precision=1e-4, num_divisions=[1, 1], max_points=4000, layer=0
 ):
     """Performs boolean operations between 2 Device/DeviceReference objects
@@ -2713,7 +2713,7 @@ def _find_microstrip_wire_width(Z_target, dielectric_thickness, eps_r, Lk_per_sq
     x0 = dielectric_thickness
     try:
         from scipy.optimize import fmin
-    except:
+    except Exception:
         raise ImportError(
             " [PHIDL] To run the microstrip functions you "
             "need scipy, please install it with "
@@ -2727,7 +2727,7 @@ def _G_integrand(xip, B):
     """Special function for microstrip calculations"""
     try:
         from scipy.special import iv as besseli
-    except:
+    except Exception:
         """[PHIDL] To run this function you need scipy, please install it with
         pip install scipy"""
     return besseli(0, B * sqrt(1 - xip**2))
@@ -2737,7 +2737,7 @@ def _G(xi, B):
     """Special function for microstrip calculations"""
     try:
         import scipy.integrate
-    except:
+    except Exception:
         raise ImportError(
             " [PHIDL] To run the microstrip functions you "
             "need scipy, please install it with "
@@ -3588,7 +3588,7 @@ def _pack_single_bin(
     """
     try:
         import rectpack
-    except:
+    except Exception:
         raise ImportError(
             "[PHIDL] The packer() function requires the "
             'module "rectpack" to operate.  Please retry '
@@ -3762,7 +3762,7 @@ def _rasterize_polygons(polygons, bounds=[[-100, -100], [100, 100]], dx=1, dy=1)
     """Converts polygons to a black/white (1/0) matrix"""
     try:
         from skimage import draw
-    except:
+    except Exception:
         raise ImportError(
             "The fill function requires the module "
             '"scikit-image" to operate.  Please retry '
@@ -3809,7 +3809,7 @@ def _expand_raster(raster, distance=(4, 2)):
     """Expands all black (1) pixels in the raster"""
     try:
         from skimage import draw, morphology
-    except:
+    except Exception:
         raise ImportError(
             "The fill function requires the module "
             '"scikit-image" to operate.  Please retry '
@@ -5028,7 +5028,7 @@ def optimal_step(
 
         try:
             from scipy.optimize import fminbound
-        except:
+        except Exception:
             raise ImportError(
                 " [PHIDL] To run the optimal-curve geometry "
                 "functions you need scipy, please install "

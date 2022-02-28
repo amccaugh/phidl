@@ -4,12 +4,12 @@ import warnings
 
 import gdspy
 import numpy as np
-from numpy import cos, exp, log, mod, pi, sin, sinh, sqrt
+from numpy import cos, mod, pi, sin
 from numpy.linalg import norm
 
 import phidl.path as pp
 from phidl import Path
-from phidl.device_layout import CrossSection, Device, Port, _parse_layer
+from phidl.device_layout import CrossSection, Device, Port
 from phidl.geometry import turn
 
 
@@ -83,19 +83,19 @@ def _gradual_bend(
 
     # construct a series of sub-arcs with equal angles but gradually decreasing bend radius
     arcs = []
-    for x in range(num_steps):
+    for i in range(num_steps):
         A = _arc(
-            radius=1 / ((x + 1) * inc_rad),
+            radius=1 / ((i + 1) * inc_rad),
             width=width,
             theta=np.rad2deg(angle_step),
-            start_angle=x * np.rad2deg(angle_step),
+            start_angle=i * np.rad2deg(angle_step),
             angle_resolution=angle_resolution,
             layer=layer,
         )
         a = D.add_ref(A)
         arcs.append(a)
-        if x > 0:
-            a.connect(port=1, destination=prevPort)
+        if i > 0:
+            a.connect(port=1, destination=prevPort)  # noqa: F821
         prevPort = a.ports[2]
     D.add_port(name=1, port=arcs[0].ports[1])
 
@@ -226,7 +226,7 @@ def route_basic(
     D = Device()
     D.add_polygon(route_path_polygons, layer=layer)
     p1 = D.add_port(name=1, midpoint=(0, 0), width=width1, orientation=180)
-    p2 = D.add_port(
+    p2 = D.add_port(  # noqa: F841
         name=2,
         midpoint=[forward_distance, lateral_distance],
         width=width2,
@@ -373,7 +373,7 @@ def route_smooth(
     elif path_type == "manhattan":
         if smooth_options["corner_fun"] == pp.euler:
             use_eff = smooth_options.get("use_eff")
-            if use_eff is None or use_eff == False:
+            if use_eff is None or not use_eff:
                 raise ValueError(
                     """[PHIDL] route_smooth(): when using manhattan path type with euler
                     bends, smooth_options['use_eff'] must be True."""
@@ -937,7 +937,9 @@ class RoutingError(ValueError):
     pass
 
 
-def route_manhattan(port1, port2, bendType="circular", layer=0, radius=20):
+def route_manhattan(  # noqa: C901
+    port1, port2, bendType="circular", layer=0, radius=20
+):
     """
     .. deprecated:: 1.6.0
         `route_manhattan` will be removed in August 2022, please replace with
@@ -1179,7 +1181,9 @@ def route_manhattan(port1, port2, bendType="circular", layer=0, radius=20):
     return Total
 
 
-def _route_manhattan180(port1, port2, bendType="circular", layer=0, radius=20):
+def _route_manhattan180(  # noqa: C901
+    port1, port2, bendType="circular", layer=0, radius=20
+):
     # this is a subroutine of route_manhattan() and should not be used by itself.
     Total = Device()
     width = port1.width

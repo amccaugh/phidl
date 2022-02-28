@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, print_function
 
-import warnings
-
 import numpy as np
 
 from phidl.device_layout import CrossSection, Path, _rotate_points
@@ -168,7 +166,7 @@ def euler(radius=3, angle=90, p=1.0, use_eff=False, num_pts=720):
         Reff = points[-1][1] / 2
 
     # Scale curve to either match Reff or Rmin
-    if use_eff == True:
+    if use_eff:
         scale = radius / Reff
     else:
         scale = radius / Rmin
@@ -181,7 +179,7 @@ def euler(radius=3, angle=90, p=1.0, use_eff=False, num_pts=720):
     P.end_angle = end_angle
     P.info["Reff"] = Reff * scale
     P.info["Rmin"] = Rmin * scale
-    if mirror == True:
+    if mirror:
         P.mirror((1, 0))
     return P
 

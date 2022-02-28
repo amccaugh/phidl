@@ -97,7 +97,7 @@ def load_lyp(filename):
     """Creates a LayerSet object from a lyp file that is XML"""
     try:
         import xmltodict
-    except:
+    except Exception:
         raise ImportError(
             """This function is in development, and currently requires
             the module "xmltodict" to operate.  Please retry after installing xmltodict

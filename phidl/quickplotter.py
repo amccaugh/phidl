@@ -5,10 +5,10 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-import warnings
 
 import gdspy
 import numpy as np
+from matplotlib.lines import Line2D
 
 import phidl
 from phidl.device_layout import (
@@ -31,7 +31,7 @@ try:
     from matplotlib.widgets import RectangleSelector
 
     matplotlib_imported = True
-except:
+except ImportError:
     matplotlib_imported = False
 
 try:
@@ -63,7 +63,7 @@ try:
     SUBPORT_COLOR = QColor(*_SUBPORT_RGB)
     OUTLINE_PEN = QColor(200, 200, 200)
     qt_imported = True
-except:
+except ImportError:
     QMainWindow = object
     QGraphicsView = object
     qt_imported = False
@@ -184,7 +184,7 @@ def set_quickplot_options(
         _quickplot_options["interactive_zoom"] = interactive_zoom
 
 
-def quickplot(items):
+def quickplot(items):  # noqa: C901
     """Takes a list of devices/references/polygons or single one of those, and
     plots them. Use `set_quickplot_options()` to modify the viewer behavior
     (e.g. displaying ports, creating new windows, etc)
@@ -211,7 +211,7 @@ def quickplot(items):
     new_window = _quickplot_options["new_window"]
     blocking = _quickplot_options["blocking"]
 
-    if matplotlib_imported == False:
+    if not matplotlib_imported:
         raise ImportError(
             "PHIDL tried to import matplotlib but it failed. PHIDL "
             + "will still work but quickplot() will not"
@@ -306,7 +306,7 @@ def quickplot(items):
             )
             bbox = _update_bbox(bbox, new_bbox)
 
-    if bbox == None:
+    if bbox is None:
         bbox = [-1, -1, 1, 1]
     xmargin = (bbox[2] - bbox[0]) * 0.1 + 1e-9
     ymargin = (bbox[3] - bbox[1]) * 0.1 + 1e-9
@@ -322,7 +322,7 @@ def quickplot(items):
         # Update matplotlib toolbar so the Home button works
         fig.canvas.toolbar.update()
         fig.canvas.toolbar.push_current()
-    except:
+    except Exception:
         pass
 
     plt.draw()
@@ -341,7 +341,7 @@ def _use_interactive_zoom():
 
 
 def _update_bbox(bbox, new_bbox):
-    if bbox == None:
+    if bbox is None:
         return new_bbox
     if new_bbox[0] < bbox[0]:
         bbox[0] = new_bbox[0]  # xmin
@@ -371,10 +371,10 @@ def _get_layerprop(layer, datatype):
         "#e5520e",
     ]
 
-    l = Layer.layer_dict.get((layer, datatype))
-    if l is not None:
-        color = l.color
-        alpha = l.alpha
+    layer = Layer.layer_dict.get((layer, datatype))
+    if layer is not None:
+        color = layer.color
+        alpha = layer.alpha
         if color is None:
             color = layer_colors[np.mod(layer, len(layer_colors))]
     else:
@@ -391,9 +391,6 @@ def _draw_polygons(polygons, ax, **kwargs):
     xmax, ymax = np.max(stacked_polygons, axis=0)
     bbox = [xmin, ymin, xmax, ymax]
     return bbox
-
-
-from matplotlib.lines import Line2D
 
 
 def _draw_line(x, y, ax, **kwargs):
@@ -710,11 +707,11 @@ class Viewer(QGraphicsView):
         grid_snaps = [1, 2, 4]
 
         # Number of pixels in the viewer
-        view_width, view_height = self.rect().width(), self.rect().height()
+        view_width, _ = self.rect().width(), self.rect().height()
         # Rectangle of viewport in terms of scene coordinates
         r = self.mapToScene(self.rect()).boundingRect()
         width, height = r.width(), r.height()
-        xmin, ymin, xmax, ymax = r.x(), r.y(), r.x() + width, r.y() + height
+        xmin, ymin, _, _ = r.x(), r.y(), r.x() + width, r.y() + height
 
         grid_size = grid_pixels * (width / view_width)
         exponent = np.floor(np.log10(grid_size))
@@ -854,7 +851,7 @@ class Viewer(QGraphicsView):
         # # Useful debug
         # try:
         #     self.debug_label.setText(str(itemsBoundingRect_nogrid().width()))
-        # except:
+        # except Exception:
         #     print('Debug statement failed')
 
         # Update the X,Y label indicating where the mouse is on the geometry
@@ -937,7 +934,7 @@ class Viewer(QGraphicsView):
 
 
 def quickplot2(item_list, *args, **kwargs):
-    if qt_imported == False:
+    if not qt_imported:
         raise ImportError(
             "PHIDL tried to import PyQt5 but it failed. PHIDL will"
             + "still work but quickplot2() may not.  Try using"
