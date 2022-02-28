@@ -1,10 +1,8 @@
 import numpy as np
-import pytest
 
-import phidl.geometry as pg
 import phidl.path as pp
 import phidl.routing as pr
-from phidl import Device, Group, Path
+from phidl import Device
 
 # import phidl.utilities as pu
 

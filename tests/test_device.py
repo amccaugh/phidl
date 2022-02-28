@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 import phidl.geometry as pg
 from phidl import Device, Group  # , Layer, LayerSet, make_device, Port
@@ -34,18 +33,18 @@ def test_add_polygon3():
 def test_bbox():
     D = Device()
     D.add_polygon([(0, 0), (10, 0), (10, 10), (0, 10)], layer=2)
-    assert D._bb_valid == False
+    assert D._bb_valid is False
     # Calculating the bbox should change _bb_valid to True once it's cached
     assert D.bbox.tolist() == [[0, 0], [10, 10]]
-    assert D._bb_valid == True
+    assert D._bb_valid is True
 
     E = Device()
     e1 = E.add_ref(D)
     e2 = E.add_ref(D)
     e2.movex(30)
-    assert E._bb_valid == False
+    assert E._bb_valid is False
     assert E.bbox.tolist() == [[0, 0], [40, 10]]
-    assert E._bb_valid == True
+    assert E._bb_valid is True
 
     D.add_polygon([(0, 0), (100, 0), (100, 100), (0, 100)], layer=2)
     D.add_polygon([(0, 0), (100, 0), (100, 100), (0, 100)], layer=2)
@@ -100,16 +99,16 @@ def test_move():
     # Test label move
     D = Device()
     D.add_polygon([(8, 8, 8, 8), (6, 6, 6, 6)])
-    l = D.add_label("testing", position=D.center)
-    print(all(l.center == D.center))
+    label = D.add_label("testing", position=D.center)
+    print(all(label.center == D.center))
     D.rotate(45)
-    print(np.allclose(l.center, D.center))
+    print(np.allclose(label.center, D.center))
     D.move([70000.5, 30000.5])
-    print(np.allclose(l.center, D.center))
+    print(np.allclose(label.center, D.center))
     D.rotate(75)
-    print(np.allclose(l.center, D.center))
+    print(np.allclose(label.center, D.center))
     D.mirror([7, 5])
-    print(np.allclose(l.center, D.center))
+    print(np.allclose(label.center, D.center))
 
 
 def test_rotate():

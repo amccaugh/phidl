@@ -1,9 +1,7 @@
 import numpy as np
-import pytest
 
-import phidl.geometry as pg
 import phidl.path as pp
-from phidl import CrossSection, Device, Group, Path
+from phidl import CrossSection, Path
 
 # import phidl.utilities as pu
 
@@ -91,7 +89,7 @@ def test_path_spiral():
     assert h == "46c5da60268d4fb308b81e0a6de416af332b91fc"
 
 
-def test_path_smooth1():
+def test_path_smooth0():
     P = pp.spiral(num_turns=5, gap=1, inner_gap=2, num_pts=10000)
     h = P.hash_geometry(precision=1e-4)
     assert h == "46c5da60268d4fb308b81e0a6de416af332b91fc"

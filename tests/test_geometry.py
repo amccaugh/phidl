@@ -5,9 +5,7 @@ import numpy as np
 import pytest
 
 import phidl.geometry as pg
-import phidl.routing as pr
-import phidl.utilities as pu
-from phidl import Device, Layer, LayerSet, Port, make_device
+from phidl import Device, Port
 
 
 def test_rectangle():
@@ -132,7 +130,7 @@ def test_port_geometry():
 
 
 def test_text():
-    valid_chars = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ"
+    valid_chars = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ"  # noqa: E501
     D = pg.text(text=valid_chars, size=77, justify="left", layer=0)
     h = D.hash_geometry(precision=1e-4)
     assert h == "6a5eef6483c46cdec54c9c284a5e5002b934a06d"
@@ -145,14 +143,14 @@ def test_text():
 
 
 def test_truetype():
-    font = pytest.importorskip(
+    _ = pytest.importorskip(
         "phidl.font", reason="Testing of ttf/otf fonts requires the freetype package."
     )
     from os import path
 
     cd = path.abspath(path.dirname(__file__))
     font_file = path.join(cd, "SourceCodePro-Regular.ttf")
-    test_text = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ"
+    test_text = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~µ"  # noqa: E501
 
     D = pg.text(text=test_text, font=font_file, size=77, justify="center", layer=0)
     h = D.hash_geometry(precision=1e-4)
@@ -167,7 +165,7 @@ def test_truetype():
 
 @pytest.mark.skipif(sys.version_info < (3, 0), reason="unicode test requires python3")
 def test_unicode():
-    font = pytest.importorskip(
+    _ = pytest.importorskip(
         "phidl.font", reason="Testing of ttf/otf fonts requires the freetype package."
     )
     from os import path
@@ -185,9 +183,9 @@ def test_copy_deepcopy():
     D = Device()
     A = pg.ellipse(radii=(10, 5), angle_resolution=2.5, layer=1)
     B = pg.ellipse(radii=(10, 5), angle_resolution=2.5, layer=1)
-    a = D << A
-    b1 = D << B
-    b2 = D << B
+    a = D << A  # noqa: F841
+    b1 = D << B  # noqa: F841
+    b2 = D << B  # noqa: F841
 
     Dcopy = pg.copy(D)
     Ddeepcopy = pg.deepcopy(D)
