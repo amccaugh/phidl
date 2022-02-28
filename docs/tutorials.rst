@@ -18,4 +18,3 @@ Tutorials for `PHIDL <https://github.com/amccaugh/phidl>`_
    tutorials/group
    tutorials/waveguides
    tutorials/routing
-
