@@ -17,8 +17,16 @@ from gdspy import clipper
 from numpy import cos, exp, log, pi, sin, sinh, sqrt
 
 from phidl.constants import _glyph, _indent, _width
-from phidl.device_layout import (CellArray, Device, DeviceReference, Group,
-                                 Polygon, Port, _parse_layer, make_device)
+from phidl.device_layout import (
+    CellArray,
+    Device,
+    DeviceReference,
+    Group,
+    Polygon,
+    Port,
+    _parse_layer,
+    make_device,
+)
 
 # from scipy.interpolate import interp1d
 

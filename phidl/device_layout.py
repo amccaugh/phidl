@@ -36,8 +36,7 @@
 # ==============================================================================
 
 from __future__ import division  # Otherwise integer division e.g.  20 / 7 = 2
-from __future__ import \
-    print_function  # Use print('hello') instead of print 'hello'
+from __future__ import print_function  # Use print('hello') instead of print 'hello'
 from __future__ import absolute_import
 
 import hashlib
@@ -45,6 +44,7 @@ import warnings
 from copy import deepcopy as _deepcopy
 
 import gdspy
+
 # Remove this once gdspy fully deprecates current_library
 import gdspy.library
 import numpy as np

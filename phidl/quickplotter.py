@@ -11,8 +11,15 @@ import gdspy
 import numpy as np
 
 import phidl
-from phidl.device_layout import (CellArray, Device, DeviceReference, Layer,
-                                 Path, Polygon, _rotate_points)
+from phidl.device_layout import (
+    CellArray,
+    Device,
+    DeviceReference,
+    Layer,
+    Path,
+    Polygon,
+    _rotate_points,
+)
 
 _SUBPORT_RGB = (0, 120, 120)
 _PORT_RGB = (190, 0, 0)
@@ -29,12 +36,28 @@ except:
 
 try:
     from PyQt5 import QtCore, QtGui
-    from PyQt5.QtCore import (QCoreApplication, QLineF, QPoint, QPointF, QRect,
-                              QRectF, QSize, QSizeF, Qt)
+    from PyQt5.QtCore import (
+        QCoreApplication,
+        QLineF,
+        QPoint,
+        QPointF,
+        QRect,
+        QRectF,
+        QSize,
+        QSizeF,
+        Qt,
+    )
     from PyQt5.QtGui import QColor, QPen, QPolygonF
-    from PyQt5.QtWidgets import (QApplication, QGraphicsItem, QGraphicsScene,
-                                 QGraphicsView, QLabel, QMainWindow,
-                                 QMessageBox, QRubberBand)
+    from PyQt5.QtWidgets import (
+        QApplication,
+        QGraphicsItem,
+        QGraphicsScene,
+        QGraphicsView,
+        QLabel,
+        QMainWindow,
+        QMessageBox,
+        QRubberBand,
+    )
 
     PORT_COLOR = QColor(*_PORT_RGB)
     SUBPORT_COLOR = QColor(*_SUBPORT_RGB)
