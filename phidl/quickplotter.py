@@ -371,10 +371,10 @@ def _get_layerprop(layer, datatype):
         "#e5520e",
     ]
 
-    layer = Layer.layer_dict.get((layer, datatype))
-    if layer is not None:
-        color = layer.color
-        alpha = layer.alpha
+    _layer = Layer.layer_dict.get((layer, datatype))
+    if _layer is not None:
+        color = _layer.color
+        alpha = _layer.alpha
         if color is None:
             color = layer_colors[np.mod(layer, len(layer_colors))]
     else:
