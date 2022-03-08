@@ -732,7 +732,7 @@ def xor_diff(A, B, precision = 1e-4):
         A Device containing a polygon(s) defined by the XOR difference result
         between A and B.
     """
-    D = Device()
+    D = Device('xor_diff')
     A_polys = A.get_polygons(by_spec = True)
     B_polys = B.get_polygons(by_spec = True)
     A_layers = A_polys.keys()
@@ -782,7 +782,7 @@ def union(D, by_layer = False, precision = 1e-4, join_first = True,
     U : Device
         A Device containing the union of the polygons within the input Device.
     """
-    U = Device()
+    U = Device('union')
 
     if by_layer == True:
         all_polygons = D.get_polygons(by_spec = True)
@@ -1754,7 +1754,7 @@ def preview_layerset(ls, size = 100, spacing = 100):
         A Device containing a representation of all the layers in the input
         LayerSet.
     """
-    D = Device()
+    D = Device('layerset')
     scale = size/100
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
@@ -4418,7 +4418,7 @@ def test_res(pad_size = [50, 50],
     d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
 
     # Creating pads
-    P = Device('pads')
+    P = Device('test_res')
     Pad1 = rectangle(size = (x, z), layer = pad_layer)
     Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
     Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
@@ -4709,7 +4709,7 @@ def optimal_90deg(width = 100.0, num_pts = 15, length_adjust = 1, layer = 0):
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
     superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
-    D = Device()
+    D = Device('90deg')
 
     # Get points of ideal curve
     a = 2*width

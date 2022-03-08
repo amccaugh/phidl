@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1 (March 8, 2022)
+
+### Bugfixes
+- Fixed naming of some previously-unnamed geometries
+
 ## 1.6.0 (Sept 28, 2021)
 
 ### New features

@@ -2491,7 +2491,7 @@ class Path(_GeometryHelper):
             raise ValueError("""[PHIDL] extrude(): width argument must be one of
                 int, float, array-like[2], or CrossSection""")
 
-        D = Device()
+        D = Device('extrude')
         for section in X.sections:
             width = section['width']
             offset = section['offset']

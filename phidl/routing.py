@@ -216,7 +216,7 @@ def route_quad(port1, port2, width1=None, width2=None, layer=0):
     # sort vertices by angle from center of quadrilateral to make convex polygon
     angles = np.array([np.arctan2(disp[0], disp[1]) for disp in displacements])
     vertices = [vert for _, vert in sorted(zip(angles, vertices), key=lambda x: x[0])]
-    D = Device()
+    D = Device('route_quad')
     D.add_polygon(points=vertices, layer=layer)
     D.add_port(name=1, midpoint=port1.midpoint, orientation=port1.orientation+180, width=width1)
     D.add_port(name=2, midpoint=port2.midpoint, orientation=port2.orientation+180, width=width2) 
