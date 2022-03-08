@@ -15,7 +15,7 @@ _cached_fonts = {}
 
 try:
     import freetype
-except ImportError as imp_err:
+except ImportError:
     raise ImportError(
         "PHIDL requires freetype to use real fonts. "
         "Either use the default DEPLOF font or install the freetype package:"
@@ -65,7 +65,7 @@ def _get_font_by_name(name):
     return _get_font_by_file(font_file)
 
 
-def _get_glyph(font, letter):
+def _get_glyph(font, letter):  # noqa: C901
     """
     Get a block reference to the given letter
     """

@@ -1,5 +1,5 @@
 # # -*- coding: utf-8 -*-
-#%%
+
 from __future__ import absolute_import, division, print_function
 
 import copy as python_copy
@@ -27,9 +27,6 @@ from phidl.device_layout import (
     _parse_layer,
     make_device,
 )
-
-# from scipy.interpolate import interp1d
-
 
 ##### Categories:
 # Polygons / shapes
@@ -886,7 +883,7 @@ def union(D, by_layer=False, precision=1e-4, join_first=True, max_points=4000, l
     """
     U = Device()
 
-    if by_layer == True:
+    if by_layer:
         all_polygons = D.get_polygons(by_spec=True)
         for layer, polygons in all_polygons.items():
             unioned_polygons = _union_polygons(
@@ -1479,15 +1476,15 @@ def litho_steps(line_widths=[1, 2, 4, 8, 16], line_spacing=10, height=100, layer
     T1 = text(
         text="%s" % str(line_widths[-1]), size=height, justify="center", layer=layer
     )
-    t1 = D.add_ref(T1).rotate(90).movex(-height / 10)
+    _ = D.add_ref(T1).rotate(90).movex(-height / 10)
     R1 = rectangle(size=(line_spacing, height), layer=layer)
-    r1 = D.add_ref(R1).movey(-height)
+    D.add_ref(R1).movey(-height)
     count = 0
     for i in reversed(line_widths):
         count += line_spacing + i
         R2 = rectangle(size=(i, height), layer=layer)
-        r1 = D.add_ref(R1).movex(count).movey(-height)
-        r2 = D.add_ref(R2).movex(count - i)
+        D.add_ref(R1).movex(count).movey(-height)
+        D.add_ref(R2).movex(count - i)
 
     return D
 
@@ -1567,12 +1564,12 @@ def litho_calipers(
     R2 = rectangle(size=(notch_size), layer=layer2)
     for i in range(num_notches_total):
         if i == centre_notch:
-            r1 = (
+            (
                 D.add_ref(R1)
                 .movex(i * (notch_size[0] + notch_spacing))
                 .movey(notch_size[1])
             )
-            r2 = (
+            (
                 D.add_ref(R2)
                 .movex(
                     i * (notch_size[0] + notch_spacing)
@@ -1580,8 +1577,8 @@ def litho_calipers(
                 )
                 .movey(-2 * notch_size[1] - row_spacing)
             )
-        r1 = D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
-        r2 = (
+        D.add_ref(R1).movex(i * (notch_size[0] + notch_spacing))
+        (
             D.add_ref(R2)
             .movex(
                 i * (notch_size[0] + notch_spacing)
@@ -1630,7 +1627,7 @@ def litho_ruler(
     D = Device("litho_ruler")
     for n in range(num_marks):
         h = height * scale[n % len(scale)]
-        rect = D << rectangle(size=(width, h), layer=layer)
+        D << rectangle(size=(width, h), layer=layer)
 
     D.distribute(direction="x", spacing=spacing, separation=False, edge="x")
     D.align(alignment="ymin")
@@ -1803,7 +1800,7 @@ def import_gds(filename, cellname=None, flatten=False):
             "one of them"
         )
 
-    if flatten == False:
+    if not flatten:
         D_list = []
         c2dmap = {}
         for cell in gdsii_lib.cells.values():
@@ -1864,7 +1861,7 @@ def import_gds(filename, cellname=None, flatten=False):
         topdevice = c2dmap[topcell]
         return topdevice
 
-    elif flatten == True:
+    elif flatten:
         D = Device("import_gds")
         polygons = topcell.get_polygons(by_spec=True)
 
@@ -2397,8 +2394,8 @@ def tee(size=(4, 2), stub_size=(2, 1), taper_type=None, layer=0):
         taper_amount = min([abs(f[0] - p[0]), abs(p[1])])
         pad_poly.fillet([0, 0, taper_amount, 0, 0, taper_amount, 0, 0])
     elif taper_type == "straight":
-        taper_poly1 = D.add_polygon([xpts[1:4], ypts[1:4]], layer=layer)
-        taper_poly2 = D.add_polygon([xpts[4:7], ypts[4:7]], layer=layer)
+        D.add_polygon([xpts[1:4], ypts[1:4]], layer=layer)  # taper_poly1
+        D.add_polygon([xpts[4:7], ypts[4:7]], layer=layer)  # taper_poly2
 
     D.add_port(name=1, midpoint=[f[0] / 2, f[1] / 2], width=f[1], orientation=0)
     D.add_port(name=2, midpoint=[-f[0] / 2, f[1] / 2], width=f[1], orientation=180)
@@ -2852,7 +2849,6 @@ def hecken_taper(
     D.info["time_length"] = np.sum(
         np.diff(D.info["x"] * 1e-6) / (D.info["v/c"][:-1] * 3e8)
     )
-    BetaLmin = sqrt(B**2 + 6.523)
     D.info["f_cutoff"] = 1 / (2 * D.info["time_length"])
     D.info["length"] = length
 
@@ -3606,7 +3602,7 @@ def _pack_single_bin(
     # Setup variables
     box_size = np.asarray(aspect_ratio * np.sqrt(total_area), dtype=np.float64)
     box_size = np.clip(box_size, None, max_size)
-    if sort_by_area == True:
+    if sort_by_area:
         rp_sort = rectpack.SORT_AREA
     else:
         rp_sort = rectpack.SORT_NONE
@@ -3632,7 +3628,7 @@ def _pack_single_bin(
         # Adjust the box size for next time
         box_size *= density  # Increase area to try to fit
         box_size = np.clip(box_size, None, max_size)
-        if verbose == True:
+        if verbose:
             print(
                 "Trying to pack in bin size "
                 "(%0.2f, %0.2f)" % tuple(box_size * precision)
@@ -3641,11 +3637,11 @@ def _pack_single_bin(
         # Quit the loop if we've packed all the rectangles
         # or reached the max size
         if len(rect_packer.rect_list()) == len(rect_dict):
-            if verbose == True:
+            if verbose:
                 print("Success!")
             break
         elif all(box_size >= max_size):
-            if verbose == True:
+            if verbose:
                 print("Reached max_size, creating " "an additional bin")
             break
 
@@ -4159,7 +4155,7 @@ def grating(
         p.midpoint = p.midpoint + np.array([(1 - fill_factor) * period, 0])
 
         # draw the deep etched square around the grating
-        deepbox = G.add_ref(
+        G.add_ref(  # deepbox
             compass(size=[num_periods * period, width_grating], layer=0)
         )
     return G
@@ -4377,10 +4373,10 @@ def test_via(
             compass(size=(3 * wire_width, wire_width), layer=wiring1_layer)
         )
 
-    if up == True and edge != True:
+    if up and not edge:
         tail.connect(port="W", destination=obj.ports["S"], overlap=wire_width)
         tail_overlay.connect(port="W", destination=obj.ports["S"], overlap=wire_width)
-    elif down == True and edge != True:
+    elif down and not edge:
         tail.connect(port="W", destination=obj.ports["N"], overlap=wire_width)
         tail_overlay.connect(port="W", destination=obj.ports["N"], overlap=wire_width)
     else:
@@ -4801,7 +4797,7 @@ def test_res(
     Row = rectangle(size=(length_row, width), layer=res_layer)
     Col = rectangle(size=(width, width), layer=res_layer)
 
-    row = T.add_ref(Row)
+    T.add_ref(Row)
     col = T.add_ref(Col)
     col.move([length_row - width, -width])
 
@@ -4828,9 +4824,9 @@ def test_res(
     Gnd2 = offset(Pad2, distance=-5, layer=gnd_layer)
     pad1 = P.add_ref(Pad1).movex(-x - width)
     pad2 = P.add_ref(Pad1).movex(length_row + width)
-    gnd1 = P.add_ref(Gnd1).center = pad1.center
+    P.add_ref(Gnd1).center = pad1.center  # gnd1
     gnd2 = P.add_ref(Gnd2)
-    nets = P.add_ref(N).y = pad1.y
+    P.add_ref(N).y = pad1.y  # nets
     gnd2.center = pad2.center
     gnd2.movex(2.5)
 
@@ -5044,7 +5040,7 @@ def optimal_step(
         reverse = False
 
     if start_width == end_width:  # Just return a square
-        if symmetric == True:
+        if symmetric:
             ypts = [
                 -start_width / 2,
                 start_width / 2,
@@ -5052,7 +5048,7 @@ def optimal_step(
                 -start_width / 2,
             ]
             xpts = [0, 0, start_width, start_width]
-        if symmetric == False:
+        if not symmetric:
             ypts = [0, start_width, start_width, 0]
             xpts = [0, 0, start_width, start_width]
     else:
@@ -5074,7 +5070,7 @@ def optimal_step(
         y_num_sq = np.array(ypts)
         x_num_sq = np.array(xpts)
 
-        if symmetric == False:
+        if not symmetric:
             xpts.append(xpts[-1])
             ypts.append(0)
             xpts.append(xpts[0])
@@ -5101,7 +5097,7 @@ def optimal_step(
     D = Device(name="step")
     D.add_polygon([xpts, ypts], layer=layer)
 
-    if symmetric == False:
+    if not symmetric:
         D.add_port(
             name=1,
             midpoint=[min(xpts), start_width / 2],
@@ -5111,7 +5107,7 @@ def optimal_step(
         D.add_port(
             name=2, midpoint=[max(xpts), end_width / 2], width=end_width, orientation=0
         )
-    if symmetric == True:
+    if symmetric:
         D.add_port(name=1, midpoint=[min(xpts), 0], width=start_width, orientation=180)
         D.add_port(name=2, midpoint=[max(xpts), 0], width=end_width, orientation=0)
 

@@ -256,7 +256,7 @@ def _distribute(elements, direction="x", spacing=100, separation=True, edge=None
 
     spacing = np.array([spacing] * len(elements))
 
-    if separation == True:  # Then `edge` doesn't apply
+    if separation:  # Then `edge` doesn't apply
         if direction == "x":
             edge = "xmin"
         if direction == "y":
@@ -863,7 +863,7 @@ class Port(object):
             parent=self.parent,
         )
         new_port.info = _deepcopy(self.info)
-        if new_uid == False:
+        if not new_uid:
             new_port.uid = self.uid
             Port._next_uid -= 1
         return new_port
@@ -1529,7 +1529,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             for polygonset in D.polygons:
                 polygon_layers = zip(polygonset.layers, polygonset.datatypes)
                 polygons_to_keep = [(pl in layers) for pl in polygon_layers]
-                if invert_selection == False:
+                if not invert_selection:
                     polygons_to_keep = [(not p) for p in polygons_to_keep]
                 polygonset.polygons = [
                     p for p, keep in zip(polygonset.polygons, polygons_to_keep) if keep

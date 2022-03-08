@@ -1144,7 +1144,7 @@ def route_manhattan(  # noqa: C901
                     layer=layer,
                     radius=radius,
                 )
-                r1 = Total.add_ref(R1)
+                r1 = Total.add_ref(R1)  # noqa: F841
             elif (
                 port2.orientation == port1.orientation - 90
                 or port2.orientation == port1.orientation + 270
@@ -1167,7 +1167,7 @@ def route_manhattan(  # noqa: C901
                         start_angle=port1.orientation,
                         direction="cw",
                     )
-                    radiusEff = B1.xsize - width / 2
+                    radiusEff = B1.xsize - width / 2  # noqa: F841
                 b1 = Total.add_ref(B1)
                 b1.connect(port=1, destination=port1)
                 R1 = _route_manhattan180(
@@ -1177,7 +1177,7 @@ def route_manhattan(  # noqa: C901
                     layer=layer,
                     radius=radius,
                 )
-                r1 = Total.add_ref(R1)
+                Total.add_ref(R1)
     return Total
 
 
@@ -1797,7 +1797,7 @@ def route_manhattan_auto(ports, bendType="circular", layer=0, radius=20):
             layer=layer,
             radius=radius,
         )
-        r = Total.add_ref(R)
+        Total.add_ref(R)
 
     return Total
 

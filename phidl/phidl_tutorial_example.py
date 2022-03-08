@@ -115,7 +115,6 @@ D << pg.litho_steps(
 
 qp(D)  # quickplot it!
 
-#%%
 
 # ==============================================================================
 # Manipulating geometry 1 - Basic movement and rotation
@@ -302,7 +301,7 @@ qp(D2)
 # ==============================================================================
 # Usually at the beginning of a phidl file we import the phidl.geometry module
 # as ``pg``, like this:
-import phidl.geometry as pg
+import phidl.geometry as pg  # noqa: E402
 
 # The ``pg`` module contains dozens of premade shapes and structures, ranging
 # from simple ones like ellipses to complex photonic structures.  Let's create
@@ -710,8 +709,6 @@ P.write_gds("MyLayerSetPreview.gds")
 
 # We can even save the LayerSet as a KLayout .lyp file ("layer properties" file)
 # useful for getting the color scheme in KLayout to match quickplot
-import phidl.utilities as pu
-
 pu.write_lyp("MyLayerSetPreview.lyp", layerset=ls)
 
 
@@ -1076,7 +1073,7 @@ qp(D)
 # For figure-quality publications sometimes you want to save your geometry
 # as a more convenient vector file format like SVG (for Inkscape, Illustrator,
 # etc). For that purpose you can use the write_svg() command
-from phidl.utilities import write_svg
+from phidl.utilities import write_svg  # noqa: E402
 
 D = Device()
 D << pg.snspd_expanded(layer=1)
@@ -1091,9 +1088,9 @@ write_svg(D, filename="MyGeometryFigure.svg")
 # for instance because it requires extensive computations to calculate polygon
 # points.  PHIDL has a LRU cache decorator you can use, similar to the
 # built-in Python functools.lru_cache.  The cache can significantly speed up
-import time
+import time  # noqa: E402
 
-from phidl import device_lru_cache
+from phidl import device_lru_cache  # noqa: E402
 
 
 @device_lru_cache
