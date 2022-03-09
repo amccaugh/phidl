@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.com/amccaugh/phidl.svg?branch=master)](https://travis-ci.com/github/amccaugh/phidl)
+[![pytest](https://github.com/basnijholt/phidl/actions/workflows/pytest.yml/badge.svg)](https://github.com/basnijholt/phidl/actions/workflows/pytest.yml)
+[![pre-commit](https://github.com/basnijholt/phidl/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/basnijholt/phidl/actions/workflows/pre-commit.yml)
 
 # PHIDL
 GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
