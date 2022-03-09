@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ==============================================================================
 # Major TODO
 # ==============================================================================
@@ -35,9 +34,6 @@
 # Imports
 # ==============================================================================
 
-from __future__ import division  # Otherwise integer division e.g.  20 / 7 = 2
-from __future__ import print_function  # Use print('hello') instead of print 'hello'
-from __future__ import absolute_import
 
 import hashlib
 import warnings
@@ -343,7 +339,7 @@ def reset():
     Device._next_uid = 0
 
 
-class LayerSet(object):
+class LayerSet:
     """Set of layer objects."""
 
     def __init__(self):
@@ -430,7 +426,7 @@ class LayerSet(object):
         return "LayerSet (%s layers total)" % (len(self._layers))
 
 
-class Layer(object):
+class Layer:
     """Layer object.
 
     Parameters
@@ -555,7 +551,7 @@ def _parse_layer(layer):
     return (gds_layer, gds_datatype)
 
 
-class _GeometryHelper(object):
+class _GeometryHelper:
     """This is a helper class. It can be added to any other class which has
     the functions move() and the property ``bbox`` (as in self.bbox). It uses
     that function+property to enable you to do things like check what the
@@ -745,7 +741,7 @@ class _GeometryHelper(object):
         return G
 
 
-class Port(object):
+class Port:
     """Port object that can be used to easily snap together other geometric objects
 
     Parameters
@@ -903,9 +899,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
 
     def __init__(self, points, gds_layer, gds_datatype, parent):
         self.parent = parent
-        super(Polygon, self).__init__(
-            points=points, layer=gds_layer, datatype=gds_datatype
-        )
+        super().__init__(points=points, layer=gds_layer, datatype=gds_datatype)
 
     @property
     def bbox(self):
@@ -922,7 +916,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         center : array-like[2] or None
             Midpoint of the Polygon.
         """
-        super(Polygon, self).rotate(angle=angle * pi / 180, center=center)
+        super().rotate(angle=angle * pi / 180, center=center)
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
@@ -944,7 +938,7 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
         """
         dx, dy = _parse_move(origin, destination, axis)
 
-        super(Polygon, self).translate(dx, dy)
+        super().translate(dx, dy)
         if self.parent is not None:
             self.parent._bb_valid = False
         return self
@@ -1065,7 +1059,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         # self.a = self.aliases
         # self.p = self.ports
         self.uid = Device._next_uid
-        super(Device, self).__init__(name=name)
+        super().__init__(name=name)
         Device._next_uid += 1
 
     def __getitem__(self, key):
@@ -1617,12 +1611,12 @@ class Device(gdspy.Cell, _GeometryHelper):
             If not None, all polygons are moved to the specified
         """
         if single_layer is None:
-            super(Device, self).flatten(
+            super().flatten(
                 single_layer=None, single_datatype=None, single_texttype=None
             )
         else:
             gds_layer, gds_datatype = _parse_layer(single_layer)
-            super(Device, self).flatten(
+            super().flatten(
                 single_layer=gds_layer,
                 single_datatype=gds_datatype,
                 single_texttype=gds_datatype,
@@ -1922,7 +1916,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
     def __init__(
         self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False
     ):
-        super(DeviceReference, self).__init__(
+        super().__init__(
             ref_cell=device,
             origin=origin,
             rotation=rotation,
@@ -2252,7 +2246,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         magnification=None,
         x_reflection=False,
     ):
-        super(CellArray, self).__init__(
+        super().__init__(
             columns=columns,
             rows=rows,
             spacing=spacing,
@@ -2375,7 +2369,7 @@ class Label(gdspy.Label, _GeometryHelper):
     """
 
     def __init__(self, *args, **kwargs):
-        super(Label, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.position = np.array(self.position, dtype="float64")
 
     @property
@@ -3087,7 +3081,7 @@ class Path(_GeometryHelper):
         return final_hash.hexdigest()
 
 
-class CrossSection(object):
+class CrossSection:
     """The CrossSection object for extruding a Path.  To be used in
     combination with a Path to create a Device.
 

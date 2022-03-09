@@ -2,8 +2,6 @@
 # TODO: alias font should be slightly transparent
 
 
-from __future__ import absolute_import, division, print_function
-
 import sys
 
 import gdspy
@@ -464,7 +462,7 @@ def _draw_port_as_point(ax, port, **kwargs):
 
 class ViewerWindow(QMainWindow):
     def __init__(self):
-        super(ViewerWindow, self).__init__()
+        super().__init__()
 
         self.setGeometry(QRect(100, 100, 800, 600))
         self.setWindowTitle("PHIDL quickplot")

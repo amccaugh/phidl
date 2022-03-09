@@ -16,7 +16,7 @@ repos:
   rev: v2.31.0
   hooks:
   - id: pyupgrade
-    args: []
+    args: [--py3-plus]
 - repo: https://github.com/timothycrosley/isort
   rev: 5.10.1
   hooks:

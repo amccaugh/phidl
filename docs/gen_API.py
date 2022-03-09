@@ -52,7 +52,7 @@ def write_docstring(
         will be sorted as B, G, Z, a, f.
     """
     os.chdir(main_path)
-    fr = open(fread, "r")
+    fr = open(fread)
     flines = fr.readlines()
     fr.close()
     os.chdir(source_path)

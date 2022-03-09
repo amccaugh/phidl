@@ -2,11 +2,9 @@
 Support for font rendering in GDS files.
 """
 
-from __future__ import division
 
 import gdspy
 import numpy as np
-import six
 from matplotlib import font_manager
 
 from .device_layout import Device
@@ -69,7 +67,7 @@ def _get_glyph(font, letter):  # noqa: C901
     """
     Get a block reference to the given letter
     """
-    if not isinstance(letter, six.string_types) and len(letter) == 1:
+    if not isinstance(letter, str) and len(letter) == 1:
         raise TypeError("Letter must be a string of length 1. Got: (%s)." % (letter))
 
     if not isinstance(font, freetype.Face):

@@ -1,9 +1,9 @@
+import sys
+
 import numpy as np
 
 import phidl.path as pp
 from phidl import CrossSection, Path
-
-# import phidl.utilities as pu
 
 
 def test_path_extrude_width1_constant():
@@ -24,7 +24,10 @@ def test_path_extrude_simplify():
     P = pp.arc(radius=10, angle=90, num_pts=300)
     D = P.extrude(width=1, layer=3, simplify=1e-1)
     h = D.hash_geometry(precision=1e-4)
-    assert h == "92a41fb5afa37cde3b06b521ff14d8445d962069"
+    if sys.version_info >= (3, 8):
+        assert h == "eb36d790b478134fa14a08f43fe28f112839ab2d"
+    else:
+        assert h == "92a41fb5afa37cde3b06b521ff14d8445d962069"
 
 
 def test_path_extrude_width2_linearly_varying():
@@ -99,7 +102,10 @@ def test_path_arc():
 def test_path_spiral():
     P = pp.spiral(num_turns=5, gap=1, inner_gap=2, num_pts=10000)
     h = P.hash_geometry(precision=1e-4)
-    assert h == "1d46b2f8ab45f35ce781083755df41609d2ee628"
+    if sys.version_info >= (3, 8):
+        assert h == "14ca1131f89458c5716fab3c7c7d7ef6b2d52820"
+    else:
+        assert h == "1d46b2f8ab45f35ce781083755df41609d2ee628"
 
 
 def test_path_smooth1():
