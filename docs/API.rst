@@ -594,5 +594,3 @@ reset
 =====
 
 .. autofunction:: phidl.device_layout.reset
-
-

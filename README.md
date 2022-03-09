@@ -8,7 +8,7 @@ GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/en/latest/geometry_reference.html)
 - [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.6.0 on Sept 28, 2021)
     - Huge new routing rewrite for `phidl.routing`, including automatic manhattan routing with custom cross-sections!  See [the routing documentation](https://phidl.readthedocs.io/en/latest/tutorials/routing.html) for details. Big thanks to Jeffrey Holzgrafe @jolzgrafe for this contribution
-    - `Path`s can now be used to produce sharp angles, in addition to smooth bends. See [the Path documentation](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Sharp/angular-paths) 
+    - `Path`s can now be used to produce sharp angles, in addition to smooth bends. See [the Path documentation](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Sharp/angular-paths)
 
 ```python
 import phidl.routing as pr
@@ -21,11 +21,11 @@ D_right = pr.route_sharp(port1, port2, layer = 2)
 # Citation
 
 If you found PHIDL useful, please consider citing it in (just one!) of your publications -- we appreciate it greatly. ([BibTeX](https://raw.githubusercontent.com/amccaugh/phidl/master/CITATION.bib))
- - McCaughan, A. N., et. al. PHIDL: Python-based layout and geometry creation for nanolithography. *J. Vac. Sci. Technol. B* 39, 062601 (2021). http://dx.doi.org/10.1116/6.0001203 
+ - McCaughan, A. N., et. al. PHIDL: Python-based layout and geometry creation for nanolithography. *J. Vac. Sci. Technol. B* 39, 062601 (2021). http://dx.doi.org/10.1116/6.0001203
 
 # Gallery
 
-<img src="https://amccaugh.github.io/phidl/phidl1.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl2.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl3.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl4.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl5.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl6.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl7.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl8.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl9.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl10.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl11.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl12.png" width="30%"></img> 
+<img src="https://amccaugh.github.io/phidl/phidl1.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl2.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl3.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl4.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl5.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl6.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl7.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl8.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl9.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl10.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl11.png" width="30%"></img> <img src="https://amccaugh.github.io/phidl/phidl12.png" width="30%"></img>
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
@@ -63,7 +63,7 @@ It also allows you to do things like add text and create smooth or straight rout
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_3.png)
 ![phidl example image](https://amccaugh.github.io/phidl/readme_4.png)
-    
+
 
 Other useful functionality available are standard operations like booleans:
 
@@ -74,7 +74,7 @@ Other useful functionality available are standard operations like booleans:
 `pg.outline(D, distance = 0.7, layer = 4)`
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_5.png)
- 
+
 The geometry library also has useful resolution test-structures built into it, for instance
 
 ```
