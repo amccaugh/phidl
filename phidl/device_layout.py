@@ -13,7 +13,6 @@
 # Add Group.get_polygons()
 # Allow Boolean to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
-# add wire_basic to phidl.routing.  also add endcap parameter
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
 #   https://stackoverflow.com/a/12644499
@@ -22,6 +21,7 @@
 # ==============================================================================
 # Tutorials
 # - Using Aliases
+# - "Using info / metadata" tutorial with .info explanation and tutorial of get_info
 # - Advanced and Misc (simplify)
 
 # Examples
@@ -1702,6 +1702,31 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         return port_list
 
+
+    def get_info(self):
+        """ Gathers the .info dictionaries from every sub-Device and returns
+        them in a list.
+
+        Parameters
+        ----------
+        depth : int or None
+            If not None, defines from how many reference levels to
+            retrieve Ports from.
+
+        Returns
+        -------
+        list of dictionaries
+            List of the ".info" property dictionaries from all sub-Devices
+        """
+        D_list = self.get_dependencies(recursive=True)
+        info_list = []
+        for D in D_list:
+            info_list.append(D.info.copy())
+        return info_list
+
+
+
+      
     def remove(self, items):
         """Removes items from a Device, which can include Ports, PolygonSets,
         CellReferences, and Labels.
@@ -2603,18 +2628,14 @@ class Path(_GeometryHelper):
         self.info = {}
         if path is not None:
             # If array[N][2]
-            if (
-                (np.ndim(path) == 2)
-                and np.issubdtype(np.array(path).dtype, np.number)
-                and (np.shape(path)[1] == 2)
-            ):
-                self.points = np.array(path, dtype=np.float)
-                nx1, ny1 = self.points[1] - self.points[0]
-                self.start_angle = np.arctan2(ny1, nx1) / np.pi * 180
-                nx2, ny2 = self.points[-1] - self.points[-2]
-                self.end_angle = np.arctan2(ny2, nx2) / np.pi * 180
+            if (np.ndim(path) == 2) and np.issubdtype(np.array(path).dtype, np.number) and (np.shape(path)[1] == 2):
+                self.points = np.array(path, dtype = np.float64)
+                nx1,ny1 =  self.points[1] - self.points[0]
+                self.start_angle = np.arctan2(ny1,nx1)/np.pi*180
+                nx2,ny2 =  self.points[-1] - self.points[-2]
+                self.end_angle = np.arctan2(ny2,nx2)/np.pi*180
             elif isinstance(path, Path):
-                self.points = np.array(path.points, dtype=np.float)
+                self.points = np.array(path.points, dtype = np.float64)
                 self.start_angle = path.start_angle
                 self.end_angle = path.end_angle
                 self.info = {}
@@ -2733,7 +2754,7 @@ class Path(_GeometryHelper):
                 int, float, array-like[2], or CrossSection"""
             )
 
-        D = Device()
+        D = Device('extrude')
         for section in X.sections:
             width = section["width"]
             offset = section["offset"]
@@ -2930,15 +2951,14 @@ class Path(_GeometryHelper):
             self.end_angle = mod(2 * angle - self.end_angle, 360)
         return self
 
-    def _centerpoint_offset_curve(
-        self, points, offset_distance, start_angle, end_angle
-    ):
-        """Creates a offset curve (but does not account for cusps etc)
-        by computing the centerpoint offset of the supplied x and y points"""
-        new_points = np.array(points, dtype=np.float)
-        dx = np.diff(points[:, 0])
-        dy = np.diff(points[:, 1])
-        theta = np.arctan2(dy, dx)
+
+    def _centerpoint_offset_curve(self, points, offset_distance, start_angle, end_angle):
+        """ Creates a offset curve (but does not account for cusps etc)
+        by computing the centerpoint offset of the supplied x and y points """
+        new_points = np.array(points, dtype = np.float64)
+        dx = np.diff(points[:,0])
+        dy = np.diff(points[:,1])
+        theta = np.arctan2(dy,dx)
         theta = np.concatenate([theta[0:1], theta, theta[-1:]])
         theta_mid = (np.pi + theta[1:] + theta[:-1]) / 2  # Mean angle between segments
         dtheta_int = np.pi + theta[:-1] - theta[1:]  # Internal angle between segments
@@ -3150,7 +3170,8 @@ class CrossSection(object):
             A Device with polygons added that correspond to the extrusion of the
             Path with the CrossSection
         """
-        D = path.extrude(cross_section=self, simplify=simplify)
+
+        D = path.extrude(width = self, simplify = simplify)
         return D
 
     def copy(self):
