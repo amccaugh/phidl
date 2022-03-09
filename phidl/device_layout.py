@@ -1372,7 +1372,10 @@ class Device(gdspy.Cell, _GeometryHelper):
         if layer is None:
             return None
         if len(text) >= 1023:
-            raise ValueError("[DEVICE] label() error: Text too long (limit 1024 chars)")
+            warnings.warn(
+                "[PHIDL] add_label(): Label text exceeds 1023 characters, "
+                + "this may affect compatibility with some GDS readers"
+            )
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str:
@@ -2619,7 +2622,7 @@ class Path(_GeometryHelper):
         if path is not None:
             # If array[N][2]
             if (
-                (np.ndim(path) == 2)
+                (np.asarray(path, dtype=object).ndim == 2)
                 and np.issubdtype(np.array(path).dtype, np.number)
                 and (np.shape(path)[1] == 2)
             ):
@@ -2633,7 +2636,7 @@ class Path(_GeometryHelper):
                 self.start_angle = path.start_angle
                 self.end_angle = path.end_angle
                 self.info = {}
-            elif np.size(path) > 1:
+            elif np.asarray(path, dtype=object).size > 1:
                 self.append(path)
             else:
                 raise ValueError(
@@ -2670,7 +2673,7 @@ class Path(_GeometryHelper):
             points = path.points
         # If array[N][2]
         elif (
-            (np.ndim(path) == 2)
+            (np.asarray(path, dtype=object).ndim == 2)
             and np.issubdtype(np.array(path).dtype, np.number)
             and (np.shape(path)[1] == 2)
         ):
