@@ -9,7 +9,7 @@ jobs:
   pytest:
     strategy:
       matrix:
-        python-version: [2.7, 3.5, 3.6, 3.7]
+        python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
