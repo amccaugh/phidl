@@ -253,10 +253,10 @@ def spiral(num_turns=5, gap=1, inner_gap=2, num_pts=10000):
     # Forming both spiral arms
     arm1 = np.linspace(a1, a2[0], num_pts1)
     arm2 = np.linspace(a2[0], a2[1], num_pts2)[1:]
-    a_spiral = np.array([arm1, np.concatenate([arm1, arm2])])
-    r_spiral = a + b * a_spiral
-    x_spiral = np.array([np.zeros(num_pts1), np.zeros(len(a_spiral[1]))])
-    y_spiral = np.array([np.zeros(num_pts1), np.zeros(len(a_spiral[1]))])
+    a_spiral = [arm1, np.concatenate([arm1, arm2])]
+    r_spiral = [a + b * a_spiral[0], a + b * a_spiral[1]]
+    x_spiral = [np.zeros(num_pts1), np.zeros(len(a_spiral[1]))]
+    y_spiral = [np.zeros(num_pts1), np.zeros(len(a_spiral[1]))]
     for i in range(2):
         x_spiral[i] = r_spiral[i] * np.cos(a_spiral[i])
         y_spiral[i] = r_spiral[i] * np.sin(a_spiral[i])
