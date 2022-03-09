@@ -108,7 +108,7 @@ def load_lyp(filename):
 
     if filename[-4:] != ".lyp":
         filename = filename + ".lyp"
-    with open(filename, "r") as fx:
+    with open(filename) as fx:
         lyp_dict = xmltodict.parse(fx.read(), process_namespaces=True)
     # lyp files have a top level that just has one dict: layer-properties
     # That has multiple children 'properties', each for a layer. So it gives a list
@@ -160,7 +160,7 @@ def name2shortName(name_str):
         phidl.utilities.name2shortName = someOtherFunction(string)
     """
     if name_str is None:
-        raise IOError("This layer has no name")
+        raise OSError("This layer has no name")
     components = name_str.split(" - ")
     if len(components) > 1:
         short_name = components[1]
@@ -183,7 +183,7 @@ def name2description(name_str):
         phidl.utilities.name2description = someOtherFunction(string)
     """
     if name_str is None:
-        raise IOError("This layer has no name")
+        raise OSError("This layer has no name")
     components = name_str.split(" - ")
     description = ""
     if len(components) > 2:
