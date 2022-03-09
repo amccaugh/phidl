@@ -96,9 +96,9 @@ def test_path_arc():
 
 def test_path_spiral():
     P = pp.spiral(num_turns=3, gap=1, inner_gap=2, num_pts=500)
-    P.move([1.59, 1.59])
+    P.move([1.5917, 1.5917])
     h = P.hash_geometry(precision=1e-4)
-    assert h == "40b92cdf9f2052e7c1b0ec97a26a47a5fafe72ff"
+    assert h == "9cb07589c753de5e0af2d0a065aee5014175e2df"
 
 
 def test_path_smooth1():
