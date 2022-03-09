@@ -5,7 +5,6 @@ from os import path
 from setuptools import setup
 
 install_requires = [
-    "six",
     "gdspy>=1.5",
     "numpy",
     "matplotlib",
