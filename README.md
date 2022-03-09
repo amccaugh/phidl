@@ -1,5 +1,5 @@
-[![pytest](https://github.com/basnijholt/phidl/actions/workflows/pytest.yml/badge.svg)](https://github.com/basnijholt/phidl/actions/workflows/pytest.yml)
-[![pre-commit](https://github.com/basnijholt/phidl/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/basnijholt/phidl/actions/workflows/pre-commit.yml)
+[![pytest](https://github.com/amccaugh/phidl/actions/workflows/pytest.yml/badge.svg)](https://github.com/amccaugh/phidl/actions/workflows/pytest.yml)
+[![pre-commit](https://github.com/amccaugh/phidl/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/amccaugh/phidl/actions/workflows/pre-commit.yml)
 
 # PHIDL
 GDS scripting that's intuitive, fast, and powerful.  For Python 2 and 3.
