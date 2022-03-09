@@ -829,9 +829,9 @@ def xor_diff(A, B, precision=1e-4):
         between A and B.
     """
 
-    D = Device('xor_diff')
-    A_polys = A.get_polygons(by_spec = True)
-    B_polys = B.get_polygons(by_spec = True)
+    D = Device("xor_diff")
+    A_polys = A.get_polygons(by_spec=True)
+    B_polys = B.get_polygons(by_spec=True)
     A_layers = A_polys.keys()
     B_layers = B_polys.keys()
     all_layers = set()
@@ -882,7 +882,7 @@ def union(D, by_layer=False, precision=1e-4, join_first=True, max_points=4000, l
     U : Device
         A Device containing the union of the polygons within the input Device.
     """
-    U = Device('union')
+    U = Device("union")
 
     if by_layer:
         all_polygons = D.get_polygons(by_spec=True)
@@ -1912,8 +1912,8 @@ def preview_layerset(ls, size=100, spacing=100):
         LayerSet.
     """
 
-    D = Device('layerset')
-    scale = size/100
+    D = Device("layerset")
+    scale = size / 100
     num_layers = len(ls._layers)
     matrix_size = int(np.ceil(np.sqrt(num_layers)))
     sorted_layers = sorted(
@@ -4819,11 +4819,11 @@ def test_res(
     d = N.add_ref(Col).move([length_row, -(n - 2) * T.ysize])
 
     # Creating pads
-    P = Device('test_res')
-    Pad1 = rectangle(size = (x, z), layer = pad_layer)
-    Pad2 = rectangle(size = (x + 5, z), layer = pad_layer)
-    Gnd1 = offset(Pad1, distance = -5, layer = gnd_layer)
-    Gnd2 = offset(Pad2, distance = -5, layer = gnd_layer)
+    P = Device("test_res")
+    Pad1 = rectangle(size=(x, z), layer=pad_layer)
+    Pad2 = rectangle(size=(x + 5, z), layer=pad_layer)
+    Gnd1 = offset(Pad1, distance=-5, layer=gnd_layer)
+    Gnd2 = offset(Pad2, distance=-5, layer=gnd_layer)
     pad1 = P.add_ref(Pad1).movex(-x - width)
     pad2 = P.add_ref(Pad1).movex(length_row + width)
     P.add_ref(Gnd1).center = pad1.center  # gnd1
@@ -5041,17 +5041,20 @@ def optimal_step(
     else:
         reverse = False
 
-
-    D = Device(name = 'step')
-    if start_width == end_width: # Just return a square
-        if symmetric == True:
-            ypts = [-start_width/2, start_width/2,
-                    start_width/2, -start_width/2]
+    D = Device(name="step")
+    if start_width == end_width:  # Just return a square
+        if symmetric:
+            ypts = [
+                -start_width / 2,
+                start_width / 2,
+                start_width / 2,
+                -start_width / 2,
+            ]
             xpts = [0, 0, start_width, start_width]
         if not symmetric:
             ypts = [0, start_width, start_width, 0]
             xpts = [0, 0, start_width, start_width]
-        D.info['num_squares'] = 1
+        D.info["num_squares"] = 1
     else:
         xmin, ymin = invert_step_point(
             y_desired=start_width * (1 + width_tol), W=start_width, a=end_width
@@ -5091,25 +5094,30 @@ def optimal_step(
         if reverse is True:
             xpts = (-np.array(xpts)).tolist()
             start_width, end_width = end_width, start_width
-            
-        D.info['num_squares'] = np.sum(np.diff(x_num_sq) /((y_num_sq[:-1] + y_num_sq[1:])/2) )
+
+        D.info["num_squares"] = np.sum(
+            np.diff(x_num_sq) / ((y_num_sq[:-1] + y_num_sq[1:]) / 2)
+        )
 
     # ==========================================================================
     #  Create a blank device, add the geometry, and define the ports
-    #==========================================================================
-    D.add_polygon([xpts, ypts], layer = layer)
+    # ==========================================================================
+    D.add_polygon([xpts, ypts], layer=layer)
 
-    if symmetric == False:
-        D.add_port(name = 1, midpoint = [min(xpts), start_width/2],
-                   width = start_width, orientation = 180)
-        D.add_port(name = 2, midpoint = [max(xpts), end_width/2],
-                   width = end_width, orientation = 0)
-    if symmetric == True:
-        D.add_port(name = 1, midpoint = [min(xpts), 0], width = start_width,
-                   orientation = 180)
-        D.add_port(name = 2, midpoint = [max(xpts), 0], width = end_width,
-                   orientation = 0)
-        
+    if not symmetric:
+        D.add_port(
+            name=1,
+            midpoint=[min(xpts), start_width / 2],
+            width=start_width,
+            orientation=180,
+        )
+        D.add_port(
+            name=2, midpoint=[max(xpts), end_width / 2], width=end_width, orientation=0
+        )
+    if symmetric:
+        D.add_port(name=1, midpoint=[min(xpts), 0], width=start_width, orientation=180)
+        D.add_port(name=2, midpoint=[max(xpts), 0], width=end_width, orientation=0)
+
     return D
 
 
@@ -5139,7 +5147,7 @@ def optimal_90deg(width=100.0, num_pts=15, length_adjust=1, layer=0):
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
     superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
-    D = Device('90deg')
+    D = Device("90deg")
 
     # Get points of ideal curve
     a = 2 * width

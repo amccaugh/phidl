@@ -51,13 +51,14 @@ def test_path_extrude_CrossSection():
     # Create a blank CrossSection
     X = CrossSection()
     # Add a a few "sections" to the cross-section
-    X.add(width = 1, offset = 0, layer = 0, ports = ('in','out'))
-    X.add(width = 3, offset = 2, layer = 2)
-    X.add(width = 3, offset = -2, layer = 2)
-    P = pp.arc(radius = 10, angle = 90, num_pts = 720)
-    D = X.extrude(path = P, simplify = None)
-    h = D.hash_geometry(precision = 1e-4)
-    assert(h == 'e17c4ed7a7467412728dc893610006fa2d9982b0')
+    X.add(width=1, offset=0, layer=0, ports=("in", "out"))
+    X.add(width=3, offset=2, layer=2)
+    X.add(width=3, offset=-2, layer=2)
+    P = pp.arc(radius=10, angle=90, num_pts=720)
+    D = X.extrude(path=P, simplify=None)
+    h = D.hash_geometry(precision=1e-4)
+    assert h == "e17c4ed7a7467412728dc893610006fa2d9982b0"
+
 
 def test_blank_path():
     P = Path()
