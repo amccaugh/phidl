@@ -21,13 +21,10 @@ def test_path_extrude_layer():
 
 
 def test_path_extrude_simplify():
-    P = pp.arc(radius=10, angle=90, num_pts=300)
-    D = P.extrude(width=1, layer=3, simplify=1e-1)
+    P = pp.arc(radius=10, angle=90, num_pts=900)
+    D = P.extrude(width=1, layer=3, simplify=1e-2)
     h = D.hash_geometry(precision=1e-4)
-    if sys.version_info >= (3, 8):
-        assert h == "eb36d790b478134fa14a08f43fe28f112839ab2d"
-    else:
-        assert h == "92a41fb5afa37cde3b06b521ff14d8445d962069"
+    assert h == "ad53c18e34eb12e552d147a175a67e5fcc372ebe"
 
 
 def test_path_extrude_width2_linearly_varying():
@@ -100,12 +97,9 @@ def test_path_arc():
 
 
 def test_path_spiral():
-    P = pp.spiral(num_turns=5, gap=1, inner_gap=2, num_pts=10000)
+    P = pp.spiral(num_turns=3, gap=1, inner_gap=2, num_pts=1000)
     h = P.hash_geometry(precision=1e-4)
-    if sys.version_info >= (3, 8):
-        assert h == "14ca1131f89458c5716fab3c7c7d7ef6b2d52820"
-    else:
-        assert h == "1d46b2f8ab45f35ce781083755df41609d2ee628"
+    assert h == "403c2ed74f2370c6b99a14490545dc28763dc0c3"
 
 
 def test_path_smooth1():
