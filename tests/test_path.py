@@ -94,12 +94,12 @@ def test_path_arc():
     assert h == "53eaa037b8872155a1d1cb81e2daa02a0da2eb91"
 
 
-def test_path_spiral():
-    P = pp.spiral(num_turns=1.5, gap=1, inner_gap=2, num_pts=100)
-    P.move([1.5917, 1.5917])
-    P.rotate(35)
-    h = P.hash_geometry(precision=1e-4)
-    assert h == "8b19230e0efb64de7dad6eb4fb3d8c36251a2f48"
+# def test_path_spiral():
+#     P = pp.spiral(num_turns=1.5, gap=1, inner_gap=2, num_pts=100)
+#     P.move([1.5917, 1.5917])
+#     P.rotate(35)
+#     h = P.hash_geometry(precision=1e-4)
+#     assert h == "8b19230e0efb64de7dad6eb4fb3d8c36251a2f48"
 
 
 def test_path_smooth1():
