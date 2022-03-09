@@ -1371,7 +1371,11 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         if layer is None:
             return None
-
+        if len(text) >= 1023:
+            warnings.warn(
+                "[PHIDL] add_label(): Label text exceeds 1023 characters, "
+                + "this may affect compatibility with some GDS readers"
+            )
         gds_layer, gds_datatype = _parse_layer(layer)
 
         if type(text) is not str:
