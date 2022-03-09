@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1 (March 8, 2022)
+
+### Bugfixes
+- Fixed naming of some previously-unnamed geometries
+
 ## 1.6.0 (Sept 28, 2021)
 
 ### New features
@@ -18,7 +23,7 @@
 ## 1.5.1 (May 19, 2021)
 
 ### New features
-- New `pg.gridsweep()` function, allowing for easy creation of parameter sweeps on a grid.  See [the documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Gridsweep) for details. 
+- New `pg.gridsweep()` function, allowing for easy creation of parameter sweeps on a grid.  See [the documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Gridsweep) for details.
 
 ![phidl example image](https://phidl.readthedocs.io/en/dev/_images/geometry_reference_36_0.png)
 
@@ -166,7 +171,7 @@ Huge update with lots of quality-of-life improvements.
 - New geometry documentation with quick picture references and code examples! See [**Geometry + function documentation**](https://phidl.readthedocs.io/)
 
 ### Changes
-- Big update to `quickplot()`, should be faster now and not have issues with overlapping polygons generating whitespace. 
+- Big update to `quickplot()`, should be faster now and not have issues with overlapping polygons generating whitespace.
 - Can now use `port.center`, which is identical to `port.midpoint`
 
 
@@ -263,7 +268,7 @@ Huge update with lots of quality-of-life improvements.
 - New documentation backend (contribution thanks to Alex Tait @atait)
 - Added `D.remap_layers()` which allows you to to move all polygons contained on a layer within your Device to another layer. See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
 - Added `D.remove_layers()` which lets you remove all polygon geometry (optionally including labels) from a Device on the specified layers. See [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for details
- 
+
 ### Bugfixes
 - Further fixes to `D.write_gds()` for rare edge cases
 
@@ -282,7 +287,7 @@ Huge update with lots of quality-of-life improvements.
 ## 0.8.6 (July 9, 2018)
 ### New features
 - `D.absorb(my_reference)` can be used to easily absorb references into a Device; polygons will be extracted from the reference, added to the Device, and then the reference will be removed. See the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py) for more details
-- Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).  
+- Added lithographic-resolution test structures including stars (`pg.litho_star()`), calipers (`pg.litho_calipers()`), and variable-size negative-tone and positive-tone steps (`pg.litho_steps()`) (Contribution from Dylan Oh @dmwo).
 
 ### Changes
 - Made `write_gds()` autofix names to guarantee no duplicates cell names ever appear
@@ -327,7 +332,7 @@ Huge update with lots of quality-of-life improvements.
 - Added the LayerSet class.  See the [tutorial](https://github.com/amccaugh/phidl/blob/master/phidl/phidl_tutorial_example.py), but essentially this class makes a convenient container to stores layers
 - Added `phidl.utilities.write_lyp()` (Contribution from Dylan Oh @dmwo).  Using a LayerSet, you can now create KLayout-compatible .lyp files.  This allows you to get the same coloring in the KLayout viewer as you have specified in PHIDL.
 - Several new electrical test structures (Contribution from Jacob Melonis @melonisj)  Specifically: via chain tests (`pg.test_via()`), inter- and intra-layer comb insulation tests (`pg.test_comb()`), and critical current test structures (`pg.test_ic`).
-- `add_ref()` can now take a list of input Devices and will return a list of the generated references, e.g. `ref_a,ref_b,ref_c = D.add_ref([A,B,C])` 
+- `add_ref()` can now take a list of input Devices and will return a list of the generated references, e.g. `ref_a,ref_b,ref_c = D.add_ref([A,B,C])`
 
 ### Changes
 
@@ -428,7 +433,7 @@ Huge update with lots of quality-of-life improvements.
 
 ### Bugfixes
  -  Under the hood
- 
+
 
 ## 0.6.2 (Jan 13, 2017)
 
@@ -493,7 +498,7 @@ Huge update with lots of quality-of-life improvements.
 ## 0.5.4 (Dec 5, 2016)
 ### Changes
  - A few under-the-hood optimizations
- 
+
 ### Bugfixes
  - Fixed error with quickplot where the last edge of a polygon was not rendered
  - Problem with route() and inset() caused by implementation of Layer().  You can now pass route() and inset() a Layer and it will parse it correctly
@@ -504,7 +509,7 @@ Huge update with lots of quality-of-life improvements.
  - You can now construct a Device using a set of parameters.  See "Constructing a Device from set of parameters" in tutorial_example.py
  - Usage of the annotate() function has been added to tutorial_example.py
  - quickplot rendering speed has been sped up by a factor of 10x
- 
+
 ### Changes
  - pg.rectangle() now takes "size" as a parameter rather than "point1" and "point2"
 
