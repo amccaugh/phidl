@@ -13,8 +13,9 @@ GDS scripting for Python that's intuitive, fast, and powerful.
 
 ```python
 import phidl.routing as pr
-D_left = pr.route_smooth(port1, port2, radius=8, layer = 2)
-D_right = pr.route_sharp(port1, port2, layer = 2)
+
+D_left = pr.route_smooth(port1, port2, radius=8, layer=2)
+D_right = pr.route_sharp(port1, port2, layer=2)
 ```
 
 ![phidl example image](https://amccaugh.github.io/phidl/readme_9.png)
