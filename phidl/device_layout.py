@@ -1078,7 +1078,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         try:
             return self.aliases[key]
-        except Exception:
+        except KeyError:
             raise ValueError(
                 '[PHIDL] Tried to access alias "%s" in Device '
                 '"%s", which does not exist' % (key, self.name)
@@ -1860,7 +1860,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         -----
         Algorithm:
 
-        .. code-block:: python
+        .. code-block::
 
             hash(
                 hash(First layer information: [layer1, datatype1]),
