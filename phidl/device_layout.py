@@ -1487,7 +1487,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         layermap = {_parse_layer(k): _parse_layer(v) for k, v in layermap.items()}
 
         all_D = list(self.get_dependencies(True))
-        all_D += [self]
+        all_D.append(self)
         for D in all_D:
             for p in D.polygons:
                 for n, layer in enumerate(p.layers):
@@ -1521,7 +1521,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         """
         layers = [_parse_layer(l) for l in layers]
         all_D = list(self.get_dependencies(True))
-        all_D += [self]
+        all_D.append(self)
         for D in all_D:
             for polygonset in D.polygons:
                 polygon_layers = zip(polygonset.layers, polygonset.datatypes)
@@ -1548,7 +1548,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                     else:
                         keep_layer = original_layer not in layers
                     if keep_layer:
-                        new_labels += [l]
+                        new_labels.append(l)
                 D.labels = new_labels
         return self
 

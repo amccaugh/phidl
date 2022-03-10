@@ -1818,7 +1818,7 @@ def import_gds(filename, cellname=None, flatten=False):
                 )
                 l.anchor = label.anchor
             c2dmap.update({cell: D})
-            D_list += [D]
+            D_list.append(D)
 
         for D in D_list:
             # First convert each reference so it points to the right Device
