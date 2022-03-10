@@ -564,16 +564,13 @@ def boolean(  # noqa: C901
         A = [A]
     if not isinstance(B, list):
         B = [B]
-    for e in A:
-        if isinstance(e, Device):
-            A_polys += e.get_polygons()
-        elif isinstance(e, DeviceReference):
-            A_polys += e.get_polygons()
-    for e in B:
-        if isinstance(e, Device):
-            B_polys += e.get_polygons()
-        elif isinstance(e, DeviceReference):
-            B_polys += e.get_polygons()
+
+    for X, polys in zip((A, A_polys), (B, B_polys)):
+        for e in X:
+            if isinstance(e, (Device, DeviceReference)):
+                polys.extend(e.get_polygons())
+            elif isinstance(e, Polygon):
+                polys.extend(e.polygons)
 
     gds_layer, gds_datatype = _parse_layer(layer)
 
