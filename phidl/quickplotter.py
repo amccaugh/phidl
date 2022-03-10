@@ -233,7 +233,7 @@ def quickplot(items):  # noqa: C901
     bbox = None
 
     # Iterate through each each Device/DeviceReference/Polygon
-    if type(items) is not list:
+    if not isinstance(items, list):
         items = [items]
     for item in items:
         if isinstance(item, (Device, DeviceReference, CellArray)):
@@ -947,7 +947,7 @@ def quickplot2(item_list, *args, **kwargs):
         viewer_window = ViewerWindow()
     viewer = viewer_window.viewer
     viewer.initialize()
-    if type(item_list) not in (list, tuple):
+    if not isinstance(item_list, (list, tuple)):
         item_list = [item_list]
     for element in item_list:
         if isinstance(

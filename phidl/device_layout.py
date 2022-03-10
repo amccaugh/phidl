@@ -1009,7 +1009,7 @@ def make_device(fun, config=None, **kwargs):
         A Device constructed from the specified function.
     """
     config_dict = {}
-    if type(config) is dict:
+    if isinstance(config, dict):
         config_dict = dict(config)
     elif config is None:
         pass
@@ -1378,7 +1378,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             )
         gds_layer, gds_datatype = _parse_layer(layer)
 
-        if type(text) is not str:
+        if not isinstance(text, str):
             text = str(text)
         l = Label(
             text=text,
@@ -2114,7 +2114,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         """
         if angle == 0:
             return self
-        if type(center) is Port:
+        if isinstance(center, Port):
             center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
@@ -2135,9 +2135,9 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         p2 : array-like[N][2]
             Second point of the line.
         """
-        if type(p1) is Port:
+        if isinstance(p1, Port):
             p1 = p1.midpoint
-        if type(p2) is Port:
+        if isinstance(p2, Port):
             p2 = p2.midpoint
         p1 = np.array(p1)
         p2 = np.array(p2)
@@ -2190,7 +2190,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # ``port`` can either be a string with the name or an actual Port
         if port in self.ports:  # Then ``port`` is a key for the ports dict
             p = self.ports[port]
-        elif type(port) is Port:
+        elif isinstance(port, Port):
             p = port
         else:
             raise ValueError(
@@ -2305,7 +2305,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         """
         if angle == 0:
             return self
-        if type(center) is Port:
+        if isinstance(center, Port):
             center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
@@ -2324,9 +2324,9 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         p2 : array-like[N][2]
             Second point of the line.
         """
-        if type(p1) is Port:
+        if isinstance(p1, Port):
             p1 = p1.midpoint
-        if type(p2) is Port:
+        if isinstance(p2, Port):
             p2 = p2.midpoint
         p1 = np.array(p1)
         p2 = np.array(p2)
