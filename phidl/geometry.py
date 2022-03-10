@@ -472,7 +472,7 @@ def offset(
     D : Device
         A Device containing a polygon(s) with the specified offset applied.
     """
-    if type(elements) is not list:
+    if not isinstance(elements, list):
         elements = [elements]
     polygons_to_offset = []
     for e in elements:
@@ -560,9 +560,9 @@ def boolean(  # noqa: C901
 
     A_polys = []
     B_polys = []
-    if type(A) is not list:
+    if not isinstance(A, list):
         A = [A]
-    if type(B) is not list:
+    if not isinstance(B, list):
         B = [B]
     for e in A:
         if isinstance(e, Device):
@@ -694,7 +694,7 @@ def outline(
         A Device containing the outlined polygon(s).
     """
     D = Device("outline")
-    if type(elements) is not list:
+    if not isinstance(elements, list):
         elements = [elements]
     port_list = []
     for e in elements:
@@ -779,7 +779,7 @@ def invert(
         corresponding border(s).
     """
     Temp = Device()
-    if type(elements) is not list:
+    if not isinstance(elements, list):
         elements = [elements]
     for e in elements:
         if isinstance(e, Device):
@@ -1655,7 +1655,7 @@ def extract(D, layers=[0, 1]):
         A Device containing the extracted polygons.
     """
     D_extracted = Device("extract")
-    if type(layers) not in (list, tuple):
+    if not isinstance(layers, (list, tuple)):
         raise ValueError(
             "[PHIDL] pg.extract() Argument `layers` needs to be "
             "passed a list or tuple"
@@ -2456,7 +2456,7 @@ def taper(length=10, width1=5, width2=None, port=None, layer=0):
     D: Device
         A Device containing a taper geometry.
     """
-    if type(port) is Port and width1 is None:
+    if isinstance(port, Port) and width1 is None:
         width1 = port.width
     if width2 is None:
         width2 = width1
@@ -2467,7 +2467,7 @@ def taper(length=10, width1=5, width2=None, port=None, layer=0):
     D.add_polygon([xpts, ypts], layer=layer)
     D.add_port(name=1, midpoint=[0, 0], width=width1, orientation=180)
     D.add_port(name=2, midpoint=[length, 0], width=width2, orientation=0)
-    if type(port) is Port:
+    if isinstance(port, Port):
         D.rotate(angle=port.orientation, center=[0, 0])
         D.move(origin=[0, 0], destination=port.midpoint)
     return D
@@ -3171,7 +3171,7 @@ def basic_die(
     t = D.add_ref(text(text=die_name, size=text_size, layer=layer))
 
     d = street_width + 20
-    if type(text_location) is str:
+    if isinstance(text_location, str):
         text_location = text_location.upper()
         if text_location == "NW":
             t.xmin, t.ymax = [-sx + d, sy - d]
