@@ -1483,6 +1483,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         ref_polygons = reference.get_polygons(by_spec = True)
         for (layer, polys) in ref_polygons.items():
             [self.add_polygon(points = p, layer = layer) for p in polys]
+
+        self.add(reference.parent.labels)
         self.remove(reference)
         return self
 
