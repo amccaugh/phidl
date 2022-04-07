@@ -1381,16 +1381,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.add(l)
         return l
 
-    def label(self, *args, **kwargs):
-        """
-        .. deprecated:: 1.3.0
-            `label` will be removed, please replace with
-            `add_label`.
-        """
-        warnings.warn(
-            "[PHIDL] WARNING: label() will be deprecated, please replace with add_label()"
-        )
-        return self.add_label(*args, **kwargs)
 
     def write_gds(
         self,
