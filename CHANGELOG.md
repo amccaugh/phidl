@@ -1,9 +1,25 @@
 # Changelog
 
-## 1.6.1 (March 8, 2022)
+## 1.6.1 (April 7, 2022)
+
+### New features
+- Re-added `Device.get_info()` that gathers the Device.info dictionaries from every sub-Device and returns them in a list.  Useful for collecting information about every Device in a layout
+- Updated documentation
+
+### Changes
+- Deprecated Python 2
+- Removal of 1023-character limit for labels (will only show warning instead now)
+- Deprecated `reflect()` has been fully removed, use `mirror()` instead
 
 ### Bugfixes
+- Much code sanitization under the hood (thanks Bas Nijholt @basnijholt)
+- `Device.absorb()` now preserves labels from the parent component (thanks Joaquin Matres @joamatab)
+- Fixed extrusion error of `pp.spiral()` caused by overlapping points
+- Bugfix for `pg.optimal_step()`, now works correctly when `start_width == end_width`
 - Fixed naming of some previously-unnamed geometries
+- Future-proofing for upcoming Numpy changes
+- Bugfix for `CrossSection.extrude()` since cross_section parameter renamed to `width`
+
 
 ## 1.6.0 (Sept 28, 2021)
 
