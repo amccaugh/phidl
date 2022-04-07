@@ -1381,7 +1381,6 @@ class Device(gdspy.Cell, _GeometryHelper):
         self.add(l)
         return l
 
-
     def write_gds(
         self,
         filename,
