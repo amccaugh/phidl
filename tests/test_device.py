@@ -126,7 +126,7 @@ def test_rotate():
     assert h == "2e4815072eabe053c3029d9e29a5b3ed59fe9bb7"
 
 
-def test_reflect():
+def test_mirror():
     # Test polygon reflection
     D = Device()
     p = D.add_polygon([(8, 6, 7, 9), (6, 8, 9, 5)])

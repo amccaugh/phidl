@@ -961,17 +961,6 @@ class Polygon(gdspy.Polygon, _GeometryHelper):
             self.parent._bb_valid = False
         return self
 
-    def reflect(self, p1=(0, 1), p2=(0, 0)):
-        """
-        .. deprecated:: 1.3.0
-            `reflect` will be removed in May 2021, please replace with
-            `mirror`.
-        """
-        warnings.warn(
-            "[PHIDL] Warning: reflect() will be deprecated in May 2021, please replace with mirror()"
-        )
-        return self.mirror(p1, p2)
-
     def simplify(self, tolerance=1e-3):
         """Removes points from the polygon but does not change the polygon
         shape by more than `tolerance` from the original. Uses the
@@ -2165,18 +2154,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             self.owner._bb_valid = False
         return self
 
-    def reflect(self, p1=(0, 1), p2=(0, 0)):
-        """
-        .. deprecated:: 1.3.0
-            `reflect` will be removed in May 2021, please replace with
-            `mirror`.
-        """
-        warnings.warn(
-            "[PHIDL] Warning: reflect() will be deprecated in "
-            "May 2021, please replace with mirror()"
-        )
-        return self.mirror(p1, p2)
-
     def connect(self, port, destination, overlap=0):
         """Moves and rotates this object such that the the Port specified by
         `port` is connected (aligned and adjacent) with the Port specified by
@@ -2354,18 +2331,6 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
             self.owner._bb_valid = False
         return self
 
-    def reflect(self, p1=(0, 1), p2=(0, 0)):
-        """
-        .. deprecated:: 1.3.0
-            `reflect` will be removed in May 2021, please replace with
-            `mirror`.
-        """
-        warnings.warn(
-            "[PHIDL] Warning: reflect() will be deprecated in "
-            "May 2021, please replace with mirror()"
-        )
-        return self.mirror(p1, p2)
-
 
 class Label(gdspy.Label, _GeometryHelper):
     """Text that can be used to label parts of the geometry or display
@@ -2429,18 +2394,6 @@ class Label(gdspy.Label, _GeometryHelper):
         """
         self.position = _reflect_points(self.position, p1, p2)
         return self
-
-    def reflect(self, p1=(0, 1), p2=(0, 0)):
-        """
-        .. deprecated:: 1.3.0
-            `reflect` will be removed in May 2021, please replace with
-            `mirror`.
-        """
-        warnings.warn(
-            "[PHIDL] Warning: reflect() will be deprecated in "
-            "May 2021, please replace with mirror()"
-        )
-        return self.mirror(p1, p2)
 
 
 class Group(_GeometryHelper):
