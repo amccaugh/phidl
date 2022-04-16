@@ -728,7 +728,7 @@ def outline(
     Outline = boolean(
         A=D_bloated,
         B=[D, Trim],
-        operation="A-B",
+        operation="A-B" if distance > 0 else "B-A",
         num_divisions=num_divisions,
         max_points=max_points,
         precision=precision,
