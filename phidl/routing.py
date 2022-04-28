@@ -325,7 +325,7 @@ def route_smooth(
                     (see path_manhattan() ).
             - 'L' - L-shaped path for orthogonal ports that can be directly
                     connected (see path_L() ).
-            - 'U' - U-shaped path for parrallel or facing ports
+            - 'U' - U-shaped path for parallel or facing ports
                     (see path_U() ).
             - 'J' - J-shaped path for orthogonal ports that cannot be
                     directly connected (see path_J() ).
@@ -441,7 +441,7 @@ def route_sharp(
                     (see path_manhattan() ).
             - 'L' - L-shaped path for orthogonal ports that can be directly
                     connected (see path_L() ).
-            - 'U' - U-shaped path for parrallel or facing ports
+            - 'U' - U-shaped path for parallel or facing ports
                     (see path_U() ).
             - 'J' - J-shaped path for orthogonal ports that cannot be
                     directly connected (see path_J() ).
@@ -595,7 +595,7 @@ def path_U(port1, port2, length1=200):
         np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3
     )
     if delta_orientation not in (0, 180, 360):
-        raise ValueError("[PHIDL] path_U(): ports must be parrallel.")
+        raise ValueError("[PHIDL] path_U(): ports must be parallel.")
     theta = np.radians(port1.orientation)
     e1 = np.array([np.cos(theta), np.sin(theta)])
     e2 = np.array([-1 * np.sin(theta), np.cos(theta)])
@@ -645,7 +645,7 @@ def path_J(port1, port2, length1=200, length2=200):
 
 def path_C(port1, port2, length1=100, left1=100, length2=100):
     """Return waypoint path between port1 and port2 in a C shape. Useful
-    when ports are parrallel and face away from each other.
+    when ports are parallel and face away from each other.
 
     Parameters
     ----------
@@ -670,7 +670,7 @@ def path_C(port1, port2, length1=100, left1=100, length2=100):
         np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3
     )
     if delta_orientation not in (0, 180, 360):
-        raise ValueError("[PHIDL] path_C(): ports must be parrallel.")
+        raise ValueError("[PHIDL] path_C(): ports must be parallel.")
     e1, e_left = _get_rotated_basis(port1.orientation)
     e2, _ = _get_rotated_basis(port2.orientation)
     # assemble route points
@@ -715,7 +715,7 @@ def path_manhattan(port1, port2, radius):
     )  # relative orientation
     if orel not in (0, 90, 180, 270, 360):
         raise ValueError(
-            "[PHIDL] path_manhattan(): ports must face parrallel or orthogonal directions."
+            "[PHIDL] path_manhattan(): ports must face parallel or orthogonal directions."
         )
     if orel in (90, 270):
         # Orthogonal case
@@ -736,7 +736,7 @@ def path_manhattan(port1, port2, radius):
             )
             pts = path_J(port1, port2, length1=length1, length2=length2)
     else:
-        # Parrallel case
+        # Parallel case
         if orel == 180 and yrel == 0 and xrel > 0:
             pts = path_straight(port1, port2)
         elif (orel == 180 and xrel <= 2 * radius) or (np.abs(yrel) < 2 * radius):

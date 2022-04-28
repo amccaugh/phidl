@@ -401,13 +401,15 @@ def _draw_line(x, y, ax, **kwargs):
 
 
 def _port_marker(port, is_subport):
+    angle = port.orientation if port.orientation is not None else 0
+
     if is_subport:
         arrow_scale = 0.75
-        rad = (port.orientation + 45) * np.pi / 180
+        rad = (angle + 45) * np.pi / 180
         pm = +1
     else:
         arrow_scale = 1
-        rad = (port.orientation - 45) * np.pi / 180
+        rad = (angle - 45) * np.pi / 180
         pm = -1
     arrow_points = (
         np.array([[0, 0], [10, 0], [6, pm * 4], [6, pm * 2], [0, pm * 2]])
@@ -416,9 +418,7 @@ def _port_marker(port, is_subport):
         * arrow_scale
     )
     arrow_points += port.midpoint
-    arrow_points = _rotate_points(
-        arrow_points, angle=port.orientation, center=port.center
-    )
+    arrow_points = _rotate_points(arrow_points, angle=angle, center=port.center)
     text_pos = np.array([np.cos(rad), np.sin(rad)]) * port.width / 3 + port.center
     return arrow_points, text_pos
 

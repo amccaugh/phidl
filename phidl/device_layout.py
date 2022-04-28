@@ -784,11 +784,15 @@ class Port:
     @property
     def endpoints(self):
         """Returns the endpoints of the Port."""
-        dxdy = np.array(
-            [
-                self.width / 2 * cos((self.orientation - 90) * pi / 180),
-                self.width / 2 * sin((self.orientation - 90) * pi / 180),
-            ]
+        dxdy = (
+            np.array(
+                [
+                    self.width / 2 * np.cos((self.orientation - 90) * np.pi / 180),
+                    self.width / 2 * np.sin((self.orientation - 90) * np.pi / 180),
+                ]
+            )
+            if self.orientation is not None
+            else np.array([self.width, self.width])
         )
         left_point = self.midpoint - dxdy
         right_point = self.midpoint + dxdy
@@ -2046,6 +2050,13 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         # Apply GDS-type transformations to a port (x_ref)
         new_point = np.array(point)
         new_orientation = orientation
+
+        if orientation is None:
+            if origin is not None:
+                new_point = new_point + np.array(origin)
+            if x_reflection:
+                new_point[1] = -new_point[1]
+            return new_point, new_orientation
 
         if x_reflection:
             new_point[1] = -new_point[1]
