@@ -420,6 +420,9 @@ def _port_marker(port, is_subport):
     arrow_points += port.midpoint
     arrow_points = _rotate_points(arrow_points, angle=angle, center=port.center)
     text_pos = np.array([np.cos(rad), np.sin(rad)]) * port.width / 3 + port.center
+    arrow_points = (
+        np.array([[0, 0], [0, 0]]) if port.orientation is None else arrow_points
+    )
     return arrow_points, text_pos
 
 
