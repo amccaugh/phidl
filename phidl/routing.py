@@ -297,7 +297,7 @@ def route_smooth(
     manual_path=None,
     smooth_options={"corner_fun": pp.euler, "use_eff": True},
     layer=np.nan,
-    **kwargs
+    **kwargs,
 ):
 
     """Convenience function that routes a path between ports using pp.smooth(),
@@ -413,7 +413,7 @@ def route_sharp(
     path_type="manhattan",
     manual_path=None,
     layer=np.nan,
-    **kwargs
+    **kwargs,
 ):
 
     """Convenience function that routes a path between ports and immediately
@@ -733,15 +733,17 @@ def path_manhattan(port1, port2, radius):
         pts = path_straight(port1, port2)
     elif (orel == 180 and xrel <= 2 * radius) or (np.abs(yrel) < 2 * radius):
         # Adjust length1 and left1 to ensure intermediate segments fit bend radius
-        left1 = (
-            np.abs(yrel) + 2 * radius if (np.abs(yrel) < 4 * radius) else 2 * radius
-        )
+        left1 = np.abs(yrel) + 2 * radius if (np.abs(yrel) < 4 * radius) else 2 * radius
         y_direction = -1 if (yrel < 0) else 1
         left1 = y_direction * left1
         length2 = radius
         x_direction = -1 if (orel == 180) else 1
         segmentx_length = np.abs(xrel + x_direction * length2 - radius)
-        length1 = xrel + x_direction * length2 + 2 * radius if segmentx_length < 2 * radius else radius
+        length1 = (
+            xrel + x_direction * length2 + 2 * radius
+            if segmentx_length < 2 * radius
+            else radius
+        )
 
         pts = path_C(port1, port2, length1=length1, length2=length2, left1=left1)
     else:
@@ -955,8 +957,15 @@ def route_manhattan(  # noqa: C901
         abs(port1.midpoint[0] - port2.midpoint[0]) < 2 * radius_eff
         or abs(port1.midpoint[1] - port2.midpoint[1]) < 2 * radius_eff
     ):
-        raise RoutingError(f"bend does not fit (radius = {radius_eff}) you need radius <", min([abs(port1.midpoint[0] - port2.midpoint[0]) / 2, abs(port1.midpoint[1] - port2.midpoint[1]) / 2,]))
-
+        raise RoutingError(
+            f"bend does not fit (radius = {radius_eff}) you need radius <",
+            min(
+                [
+                    abs(port1.midpoint[0] - port2.midpoint[0]) / 2,
+                    abs(port1.midpoint[1] - port2.midpoint[1]) / 2,
+                ]
+            ),
+        )
 
     Total = Device()
     width = port1.width
@@ -983,14 +992,17 @@ def route_manhattan(  # noqa: C901
         raise ValueError("Error - ports must be at different x AND y values.")
 
     # if it is parallel or anti-parallel, route with 180 option
-    if np.round(np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3) in [180, 0]:
+    if np.round(np.abs(np.mod(port1.orientation - port2.orientation, 360)), 3) in [
+        180,
+        0,
+    ]:
         R1 = _route_manhattan180(
             port1=port1, port2=port2, bendType=bendType, layer=layer, radius=radius
         )
         r1 = Total.add_ref(R1)
 
     else:
-            # simple 90 degree single-bend case
+        # simple 90 degree single-bend case
         if port2.orientation in [port1.orientation - 90, port1.orientation + 270]:
             if (p2[1] > p1[1]) & (p2[0] > p1[0]):
                 R1 = _route_manhattan90(
@@ -1034,7 +1046,9 @@ def route_manhattan(  # noqa: C901
                 )
                 r1 = Total.add_ref(R1)
         # second quadrant case
-        if (p2[1] > p1[1]) & (p2[0] < p1[0]) and np.abs(port1.orientation - port2.orientation) in [90, 270]:
+        if (p2[1] > p1[1]) & (p2[0] < p1[0]) and np.abs(
+            port1.orientation - port2.orientation
+        ) in [90, 270]:
             if bendType == "circular":
                 B1 = _arc(
                     radius=radius,
@@ -1065,7 +1079,9 @@ def route_manhattan(  # noqa: C901
             )
             r1 = Total.add_ref(R1)
         # third quadrant case
-        if (p2[1] < p1[1]) & (p2[0] < p1[0]) and np.abs(port1.orientation - port2.orientation) in [90, 270]:
+        if (p2[1] < p1[1]) & (p2[0] < p1[0]) and np.abs(
+            port1.orientation - port2.orientation
+        ) in [90, 270]:
             if bendType == "circular":
                 B1 = _arc(
                     radius=radius,

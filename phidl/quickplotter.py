@@ -182,7 +182,7 @@ def set_quickplot_options(
         _quickplot_options["interactive_zoom"] = interactive_zoom
 
 
-def quickplot(items):    # noqa: C901
+def quickplot(items):  # noqa: C901
     """Takes a list of devices/references/polygons or single one of those, and
     plots them. Use `set_quickplot_options()` to modify the viewer behavior
     (e.g. displaying ports, creating new windows, etc)
@@ -742,9 +742,13 @@ class Viewer(QGraphicsView):
         self.help_label.move(QPoint(self.width() - 175, 0))
 
     def create_grid(self):
-        self.gridlinesx = [self.scene.addLine(-10, -10, 10, 10, self.gridpen) for _ in range(300)]
+        self.gridlinesx = [
+            self.scene.addLine(-10, -10, 10, 10, self.gridpen) for _ in range(300)
+        ]
 
-        self.gridlinesy = [self.scene.addLine(-10, -10, 10, 10, self.gridpen) for _ in range(300)]
+        self.gridlinesy = [
+            self.scene.addLine(-10, -10, 10, 10, self.gridpen) for _ in range(300)
+        ]
 
         self.update_grid()
 

@@ -592,7 +592,14 @@ def boolean(  # noqa: C901
 
     # Check for trivial solutions
     if not A_polys:
-        if operation != "not" and operation != "and" and operation in ["or", "xor"] and not B_polys or operation == "not" or operation == "and":
+        if (
+            operation != "not"
+            and operation != "and"
+            and operation in ["or", "xor"]
+            and not B_polys
+            or operation == "not"
+            or operation == "and"
+        ):
             p = None
         elif operation in ["or", "xor"]:
             p = B_polys
@@ -604,7 +611,25 @@ def boolean(  # noqa: C901
     else:
         # If no trivial solutions, run boolean operation either in parallel or
         # straight
-        p = gdspy.boolean(operand1=A_polys, operand2=B_polys, operation=operation, precision=precision, max_points=max_points, layer=gds_layer, datatype=gds_datatype,) if all(np.array(num_divisions) == np.array([1, 1])) else _boolean_polygons_parallel(polygons_A=A_polys, polygons_B=B_polys, num_divisions=num_divisions, operation=operation, precision=precision,)
+        p = (
+            gdspy.boolean(
+                operand1=A_polys,
+                operand2=B_polys,
+                operation=operation,
+                precision=precision,
+                max_points=max_points,
+                layer=gds_layer,
+                datatype=gds_datatype,
+            )
+            if all(np.array(num_divisions) == np.array([1, 1]))
+            else _boolean_polygons_parallel(
+                polygons_A=A_polys,
+                polygons_B=B_polys,
+                num_divisions=num_divisions,
+                operation=operation,
+                precision=precision,
+            )
+        )
 
     if p is not None:
         polygons = D.add_polygon(p, layer=layer)
@@ -764,7 +789,15 @@ def invert(
     R = rectangle(size=(Temp.xsize + 2 * border, Temp.ysize + 2 * border))
     R.center = Temp.center
 
-    return boolean(A=R, B=Temp, operation="A-B", precision=precision, num_divisions=num_divisions, max_points=max_points, layer=layer,)
+    return boolean(
+        A=R,
+        B=Temp,
+        operation="A-B",
+        precision=precision,
+        num_divisions=num_divisions,
+        max_points=max_points,
+        layer=layer,
+    )
 
 
 def xor_diff(A, B, precision=1e-4):
@@ -879,7 +912,9 @@ def _union_polygons(polygons, precision=1e-4, max_points=4000):
         PolygonSet.
     """
     polygons = _merge_floating_point_errors(polygons, tol=precision / 1000)
-    return gdspy.boolean(polygons, [], operation="or", precision=precision, max_points=max_points)
+    return gdspy.boolean(
+        polygons, [], operation="or", precision=precision, max_points=max_points
+    )
 
 
 def _merge_floating_point_errors(polygons, tol=1e-10):
@@ -1045,7 +1080,12 @@ def _find_bboxes_in_rect(bboxes, left, bottom, right, top):
     result : list
         List of all polygon bboxes that overlap with the defined rectangle.
     """
-    return (bboxes[:, 0] <= right) & (bboxes[:, 2] >= left) & (bboxes[:, 1] <= top) & (bboxes[:, 3] >= bottom)
+    return (
+        (bboxes[:, 0] <= right)
+        & (bboxes[:, 2] >= left)
+        & (bboxes[:, 1] <= top)
+        & (bboxes[:, 3] >= bottom)
+    )
 
 
 # _find_bboxes_on_rect_edge
@@ -1308,7 +1348,9 @@ def _boolean_region(
     polygons_to_boolean_B = _crop_edge_polygons(
         all_polygons_B, bboxes_B, left, bottom, right, top, precision
     )
-    return clipper.clip(polygons_to_boolean_A, polygons_to_boolean_B, operation, 1 / precision)
+    return clipper.clip(
+        polygons_to_boolean_A, polygons_to_boolean_B, operation, 1 / precision
+    )
 
 
 def _boolean_polygons_parallel(
@@ -1413,7 +1455,9 @@ def litho_steps(line_widths=[1, 2, 4, 8, 16], line_spacing=10, height=100, layer
     D = Device("litho_steps")
 
     height = height / 2
-    T1 = text(text=f"{str(line_widths[-1])}", size=height, justify="center", layer=layer)
+    T1 = text(
+        text=f"{str(line_widths[-1])}", size=height, justify="center", layer=layer
+    )
 
     _ = D.add_ref(T1).rotate(90).movex(-height / 10)
     R1 = rectangle(size=(line_spacing, height), layer=layer)
@@ -2178,26 +2222,57 @@ def compass_multi(size=(4, 2), ports={"N": 3, "S": 4}, layer=0):
         num_ports = ports["N"]
         m = dx - dx / num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name=f"N{n + 1}", midpoint=[p, dy], width=dx / num_ports * 2, orientation=90) for n, p in enumerate(p_list)]
+        [
+            D.add_port(
+                name=f"N{n + 1}",
+                midpoint=[p, dy],
+                width=dx / num_ports * 2,
+                orientation=90,
+            )
+            for n, p in enumerate(p_list)
+        ]
 
     if "S" in ports:
         num_ports = ports["S"]
         m = dx - dx / num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name=f"S{n + 1}", midpoint=[p, -dy], width=dx / num_ports * 2, orientation=-90) for n, p in enumerate(p_list)]
+        [
+            D.add_port(
+                name=f"S{n + 1}",
+                midpoint=[p, -dy],
+                width=dx / num_ports * 2,
+                orientation=-90,
+            )
+            for n, p in enumerate(p_list)
+        ]
 
     if "E" in ports:
         num_ports = ports["E"]
         m = dy - dy / num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name=f"E{n + 1}", midpoint=[dx, p], width=dy / num_ports * 2, orientation=0) for n, p in enumerate(p_list)]
+        [
+            D.add_port(
+                name=f"E{n + 1}",
+                midpoint=[dx, p],
+                width=dy / num_ports * 2,
+                orientation=0,
+            )
+            for n, p in enumerate(p_list)
+        ]
 
     if "W" in ports:
         num_ports = ports["W"]
         m = dy - dy / num_ports
         p_list = np.linspace(-m, m, num_ports)
-        [D.add_port(name=f"W{n + 1}", midpoint=[-dx, p], width=dy / num_ports * 2, orientation=180) for n, p in enumerate(p_list)]
-
+        [
+            D.add_port(
+                name=f"W{n + 1}",
+                midpoint=[-dx, p],
+                width=dy / num_ports * 2,
+                orientation=180,
+            )
+            for n, p in enumerate(p_list)
+        ]
 
     return D
 
@@ -3542,7 +3617,9 @@ def _pack_single_bin(
     # Separate packed from unpacked rectangles, make dicts of form
     # {id:(x,y,w,h)}
     packed_rect_dict = {r[-1]: r[:-1] for r in rect_packer[0].rect_list()}
-    unpacked_rect_dict = {k: v for k, v in rect_dict.items() if k not in packed_rect_dict}
+    unpacked_rect_dict = {
+        k: v for k, v in rect_dict.items() if k not in packed_rect_dict
+    }
 
     return (packed_rect_dict, unpacked_rect_dict)
 

@@ -63,7 +63,7 @@ def _get_font_by_name(name):
     return _get_font_by_file(font_file)
 
 
-def _get_glyph(font, letter):    # noqa: C901
+def _get_glyph(font, letter):  # noqa: C901
     """
     Get a block reference to the given letter
     """

@@ -1119,7 +1119,6 @@ DC2 = computationally_intensive_device(width=10, unused_var=2.7)
 print(f"Function with new arguments took {time.time() - time_start} seconds to run")
 
 
-
 # ==============================================================================
 # Advanced: Geometry hashing
 # ==============================================================================
