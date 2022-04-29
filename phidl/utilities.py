@@ -34,7 +34,7 @@ def write_lyp(filename, layerset):
 
             name = "{}/{} - ".format(str(gds_layer), str(gds_datatype)) + layer.name
             if layer.description is not None:
-                name = name + " - (" + layer.description + ")"
+                name = f"{name} - (" + layer.description + ")"
 
             # Setting stipple or 'dither'
             dither = layer.dither
@@ -43,13 +43,10 @@ def write_lyp(filename, layerset):
                 stipple_count = (stipple_count + 1) % len(stipple_default)
             elif dither[0] != "I":
                 raise ValueError("""Stipple must begin with an I""")
-            elif int(dither[1 : len(dither)]) < 0:
+            elif int(dither[1:]) < 0:
                 raise ValueError("""Stipple index cannot be less than 0""")
-            elif int(dither[1 : len(dither)]) > 46:
+            elif int(dither[1:]) > 46:
                 raise ValueError("""Stipple index cannot be greater than 46""")
-            else:
-                pass
-
             # Writing properties header for speciic layer
             f.write(" <properties>\n")
             # Writing line to specify frame colour
@@ -59,9 +56,7 @@ def write_lyp(filename, layerset):
             #            # Writing line to specify brightness (value between [-255, 255])
             #            f.write('  <frame-brightness>%s</frame-brightness>\n  <fill-brightness>%s</fill-brightness>\n' % (int(brightness), int(brightness)))
             frame_brightness = -25
-            f.write(
-                "  <frame-brightness>%s</frame-brightness>\n" % (int(frame_brightness))
-            )
+            f.write("  <frame-brightness>%s</frame-brightness>\n" % frame_brightness)
             # Writing line to specify dither pattern
             f.write("  <dither-pattern>%s</dither-pattern>\n" % dither)
             # Writing lines to specify line style
@@ -123,8 +118,7 @@ def load_lyp(filename):
         No return value. It adds it to the lys variable directly
         """
         layerInfo = entry["source"].split("@")[0]
-        phidl_LayerArgs = dict()
-        phidl_LayerArgs["gds_layer"] = int(layerInfo.split("/")[0])
+        phidl_LayerArgs = {"gds_layer": int(layerInfo.split("/")[0])}
         phidl_LayerArgs["gds_datatype"] = int(layerInfo.split("/")[1])
         phidl_LayerArgs["color"] = entry["fill-color"]
         phidl_LayerArgs["dither"] = entry["dither-pattern"]
@@ -162,11 +156,7 @@ def name2shortName(name_str):
     if name_str is None:
         raise OSError("This layer has no name")
     components = name_str.split(" - ")
-    if len(components) > 1:
-        short_name = components[1]
-    else:
-        short_name = components[0]
-    return short_name
+    return components[1] if len(components) > 1 else components[0]
 
 
 def name2description(name_str):
@@ -185,10 +175,7 @@ def name2description(name_str):
     if name_str is None:
         raise OSError("This layer has no name")
     components = name_str.split(" - ")
-    description = ""
-    if len(components) > 2:
-        description = components[2][1:-1]
-    return description
+    return components[2][1:-1] if len(components) > 2 else ""
 
 
 def write_svg(D, filename, scale=1):
@@ -219,17 +206,12 @@ def write_svg(D, filename, scale=1):
 
             for polygon in polygons:
                 poly_str = '    <path style="fill:%s"\n          d="' % color
-                n = 0
-                for p in polygon:
-                    if n == 0:
-                        poly_str += "M "
-                    else:
-                        poly_str += "L "
+                for n, p in enumerate(polygon):
+                    poly_str += "M " if n == 0 else "L "
                     poly_str += "{:0.6f} {:0.6f} ".format(
                         (p[0] - dx) * scale,
                         (-(p[1] - dy) + ysize) * scale,
                     )
-                    n += 1
                 poly_str += 'Z"/>\n'
                 f.write(poly_str)
             f.write("  </g>\n")

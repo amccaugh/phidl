@@ -552,7 +552,7 @@ all_ports = D2.get_ports(depth=None)
 # We can then filter to find the locations of all ports we defined as "useful":
 for p in all_ports:
     if "is_useful" in p.info and p.info["is_useful"] is True:
-        print(str(p) + " is useful")
+        print(f"{str(p)} is useful")
 
 
 # ==============================================================================
@@ -1042,8 +1042,9 @@ X2 = pg.xor_diff(A=E1, B=E3)
 qp(X2)  # In this case X2 is empty -- therefore E1 and E3 are identical!
 
 # We can double-check this by computing the area of each device
-print("E1 != E2 because X1 is not blank: it has total polygon area %s" % X1.area())
-print("E1 == E3 because X2 is blank: it has total polygon area %s" % X2.area())
+print(f"E1 != E2 because X1 is not blank: it has total polygon area {X1.area()}")
+
+print(f"E1 == E3 because X2 is blank: it has total polygon area {X2.area()}")
 
 
 # ==============================================================================
@@ -1103,19 +1104,20 @@ def computationally_intensive_device(width=10, unused_var=1):
 # generate.
 time_start = time.time()
 DC1 = computationally_intensive_device(width=10, unused_var=1)
-print("Function took %s seconds to run initially" % (time.time() - time_start))
+print(f"Function took {time.time() - time_start} seconds to run initially")
 
 # However, if we use the same input arguments, since we already computed the
 # Device using those arguments the cache can return a copy much quicker
 time_start = time.time()
 DC2 = computationally_intensive_device(width=10, unused_var=1)
-print("Function took %s seconds to run a second time" % (time.time() - time_start))
+print(f"Function took {time.time() - time_start} seconds to run a second time")
 
 # Note that if we change the input arguments, we still need to generate
 # the function again (even if that argument isn't used!)
 time_start = time.time()
 DC2 = computationally_intensive_device(width=10, unused_var=2.7)
-print("Function with new arguments took %s seconds to run" % (time.time() - time_start))
+print(f"Function with new arguments took {time.time() - time_start} seconds to run")
+
 
 
 # ==============================================================================

@@ -73,7 +73,7 @@ def _fresnel(R0, s, num_pts, n_iter=8):
     x = np.zeros(num_pts)
     y = np.zeros(num_pts)
 
-    for n in range(0, n_iter):
+    for n in range(n_iter):
         x += (-1) ** n * t ** (4 * n + 1) / (np.math.factorial(2 * n) * (4 * n + 1))
         y += (-1) ** n * t ** (4 * n + 3) / (np.math.factorial(2 * n + 1) * (4 * n + 3))
 
@@ -164,10 +164,7 @@ def euler(radius=3, angle=90, p=1.0, use_eff=False, num_pts=720):
         Reff = points[-1][1] / 2
 
     # Scale curve to either match Reff or Rmin
-    if use_eff:
-        scale = radius / Reff
-    else:
-        scale = radius / Rmin
+    scale = radius / Reff if use_eff else radius / Rmin
     points *= scale
 
     P = Path()

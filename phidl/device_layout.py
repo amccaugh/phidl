@@ -321,15 +321,13 @@ def _simplify(points, tolerance=0):
     index = np.argmax(dists)
     dmax = dists[index]
 
-    if dmax > tolerance:
-        result1 = _simplify(M[: index + 1], tolerance)
-        result2 = _simplify(M[index:], tolerance)
+    if dmax <= tolerance:
+        return np.array([start, end])
 
-        result = np.vstack((result1[:-1], result2))
-    else:
-        result = np.array([start, end])
+    result1 = _simplify(M[: index + 1], tolerance)
+    result2 = _simplify(M[index:], tolerance)
 
-    return result
+    return np.vstack((result1[:-1], result2))
 
 
 def reset():
@@ -423,7 +421,7 @@ class LayerSet:
 
     def __repr__(self):
         """Prints the number of Layers in the LayerSet object."""
-        return "LayerSet (%s layers total)" % (len(self._layers))
+        return f"LayerSet ({len(self._layers)} layers total)"
 
 
 class Layer:
@@ -506,16 +504,7 @@ class Layer:
     def __repr__(self):
         """Prints a description of the Layer object, including the name, GDS
         layer, GDS datatype, description, and color of the Layer."""
-        return (
-            "Layer (name %s, GDS layer %s, GDS datatype %s, description %s, color %s)"
-            % (
-                self.name,
-                self.gds_layer,
-                self.gds_datatype,
-                self.description,
-                self.color,
-            )
-        )
+        return f"Layer (name {self.name}, GDS layer {self.gds_layer}, GDS datatype {self.gds_datatype}, description {self.description}, color {self.color})"
 
 
 def _parse_layer(layer):
@@ -774,12 +763,7 @@ class Port:
     def __repr__(self):
         """Prints a description of the Port object, including the name,
         midpoint, width, and orientation of the Port."""
-        return "Port (name {}, midpoint {}, width {}, orientation {})".format(
-            self.name,
-            self.midpoint,
-            self.width,
-            self.orientation,
-        )
+        return f"Port (name {self.name}, midpoint {self.midpoint}, width {self.width}, orientation {self.orientation})"
 
     @property
     def endpoints(self):
@@ -1000,9 +984,7 @@ def make_device(fun, config=None, **kwargs):
     config_dict = {}
     if isinstance(config, dict):
         config_dict = dict(config)
-    elif config is None:
-        pass
-    else:
+    elif config is not None:
         raise TypeError(
             """[PHIDL] When creating Device() from a function, the
         second argument should be a ``config`` argument which is a
@@ -1025,13 +1007,12 @@ class Device(gdspy.Cell, _GeometryHelper):
     _next_uid = 0
 
     def __init__(self, *args, **kwargs):
-        if len(args) > 0:
-            if callable(args[0]):
-                raise ValueError(
-                    "[PHIDL] You can no longer create geometry "
-                    "by calling Device(device_making_function), please use "
-                    "make_device(device_making_function) instead"
-                )
+        if len(args) > 0 and callable(args[0]):
+            raise ValueError(
+                "[PHIDL] You can no longer create geometry "
+                "by calling Device(device_making_function), please use "
+                "make_device(device_making_function) instead"
+            )
 
         # Allow name to be set like Device('arc') or Device(name = 'arc')
         if "name" in kwargs:
@@ -1219,7 +1200,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 return [self.add_polygon(points, l) for l in layer._layers.values()]
             elif isinstance(layer, set):
                 return [self.add_polygon(points, l) for l in layer]
-            elif all([isinstance(l, (Layer)) for l in layer]):
+            elif all(isinstance(l, (Layer)) for l in layer):
                 return [self.add_polygon(points, l) for l in layer]
             elif len(layer) > 2:  # Someone wrote e.g. layer = [1,4,5]
                 raise ValueError(
@@ -1471,7 +1452,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 for n, layer in enumerate(p.layers):
                     original_layer = (p.layers[n], p.datatypes[n])
                     original_layer = _parse_layer(original_layer)
-                    if original_layer in layermap.keys():
+                    if original_layer in layermap:
                         new_layer = layermap[original_layer]
                         p.layers[n] = new_layer[0]
                         p.datatypes[n] = new_layer[1]
@@ -1479,7 +1460,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 for l in D.labels:
                     original_layer = (l.layer, l.texttype)
                     original_layer = _parse_layer(original_layer)
-                    if original_layer in layermap.keys():
+                    if original_layer in layermap:
                         new_layer = layermap[original_layer]
                         l.layer = new_layer[0]
                         l.texttype = new_layer[1]
@@ -1655,10 +1636,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
         if depth is None or depth > 0:
             for r in self.references:
-                if depth is None:
-                    new_depth = None
-                else:
-                    new_depth = depth - 1
+                new_depth = None if depth is None else depth - 1
                 ref_ports = r.parent.get_ports(depth=new_depth)
 
                 # Transform ports that came from a reference
@@ -1695,10 +1673,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             List of the ".info" property dictionaries from all sub-Devices
         """
         D_list = self.get_dependencies(recursive=True)
-        info_list = []
-        for D in D_list:
-            info_list.append(D.info.copy())
-        return info_list
+        return [D.info.copy() for D in D_list]
 
     def remove(self, items):
         """Removes items from a Device, which can include Ports, PolygonSets,
@@ -2161,11 +2136,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         elif isinstance(port, Port):
             p = port
         else:
-            raise ValueError(
-                "[PHIDL] connect() did not receive a Port or valid port name"
-                + " - received (%s), ports available are (%s)"
-                % (port, tuple(self.ports.keys()))
-            )
+            raise ValueError(("[PHIDL] connect() did not receive a Port or valid port name" + f" - received ({port}), ports available are ({tuple(self.ports.keys())})"))
+
         self.rotate(
             angle=180 + destination.orientation - p.orientation, center=p.midpoint
         )
@@ -2395,7 +2367,7 @@ class Group(_GeometryHelper):
 
     def __repr__(self):
         """Prints the number of elements in the Group."""
-        return "Group (%s elements total)" % (len(self.elements))
+        return f"Group ({len(self.elements)} elements total)"
 
     def __len__(self):
         """Returns the number of elements in the Group."""
@@ -2721,9 +2693,6 @@ class Path(_GeometryHelper):
                 lengths = np.cumsum(np.sqrt((dx) ** 2 + (dy) ** 2))
                 lengths = np.concatenate([[0], lengths])
                 width = width(lengths / lengths[-1])
-            else:
-                pass
-
             points1 = self._centerpoint_offset_curve(
                 points,
                 offset_distance=offset + width / 2,
@@ -2901,7 +2870,7 @@ class Path(_GeometryHelper):
         dx = np.diff(points[:, 0])
         dy = np.diff(points[:, 1])
         theta = np.arctan2(dy, dx)
-        theta = np.concatenate([theta[0:1], theta, theta[-1:]])
+        theta = np.concatenate([theta[:1], theta, theta[-1:]])
         theta_mid = (np.pi + theta[1:] + theta[:-1]) / 2  # Mean angle between segments
         dtheta_int = np.pi + theta[:-1] - theta[1:]  # Internal angle between segments
         offset_distance = offset_distance / np.sin(dtheta_int / 2)
@@ -3113,8 +3082,7 @@ class CrossSection:
             Path with the CrossSection
         """
 
-        D = path.extrude(width=self, simplify=simplify)
-        return D
+        return path.extrude(width=self, simplify=simplify)
 
     def copy(self):
         """Creates a copy of the CrosSection.
