@@ -30,7 +30,7 @@ If you found PHIDL useful, please consider citing it in (just one!) of your publ
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
-- Python version >=3.5
+- Python version >=3.6
 - If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
     - For Windows + Python 3, install ["Build Tools for Visual Studio"](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019) (make sure to check the "C++ build tools" checkbox when installing)
     - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal

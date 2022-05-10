@@ -2137,10 +2137,8 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             p = port
         else:
             raise ValueError(
-                (
-                    "[PHIDL] connect() did not receive a Port or valid port name"
-                    + f" - received ({port}), ports available are ({tuple(self.ports.keys())})"
-                )
+                "[PHIDL] connect() did not receive a Port or valid port name"
+                + f" - received ({port}), ports available are ({tuple(self.ports.keys())})"
             )
 
         self.rotate(
