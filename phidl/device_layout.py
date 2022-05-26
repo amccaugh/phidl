@@ -36,6 +36,7 @@
 
 
 import hashlib
+import numbers
 import warnings
 from copy import deepcopy as _deepcopy
 
@@ -540,7 +541,7 @@ def _parse_layer(layer):
         gds_layer, gds_datatype = layer[0], 0
     elif layer is None:
         gds_layer, gds_datatype = 0, 0
-    elif isinstance(layer, (int, float)):
+    elif isinstance(layer, numbers.Number):
         gds_layer, gds_datatype = layer, 0
     else:
         raise ValueError(
