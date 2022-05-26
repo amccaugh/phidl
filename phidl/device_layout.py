@@ -1517,6 +1517,14 @@ class Device(gdspy.Cell, _GeometryHelper):
                     p for p, keep in zip(polygonset.datatypes, polygons_to_keep) if keep
                 ]
 
+            paths = []
+            for path in D.paths:
+                for layer in zip(path.layers, path.datatypes):
+                    if layer not in layers:
+                        paths.append(path)
+
+            D.paths = paths
+
             if include_labels:
                 new_labels = []
                 for l in D.labels:
