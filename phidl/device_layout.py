@@ -1206,9 +1206,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                 layers = zip(points.layers, points.datatypes)
             else:
                 layers = [layer] * len(points.polygons)
-            return [
-                self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)
-            ]
+
+            polygons = []
+            for p, layer in zip(points.polygons, layers):
+                new_polygon = self.add_polygon(p, layer)
+                new_polygon.properties = points.properties
+                polygons.append(new_polygon)
+            return polygons
 
         if layer is np.nan:
             layer = 0
