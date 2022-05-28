@@ -1830,6 +1830,7 @@ def import_gds(filename, cellname=None, flatten=False):
                         magnification=e.magnification,
                         x_reflection=e.x_reflection,
                     )
+                    dr.properties = e.properties
                     dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
