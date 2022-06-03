@@ -1802,6 +1802,7 @@ def import_gds(filename, cellname=None, flatten=False):
             D.polygons = cell.polygons
             D.references = cell.references
             D.name = cell.name
+            D.paths = cell.paths
             for label in cell.labels:
                 rotation = label.rotation
                 if rotation is None:
