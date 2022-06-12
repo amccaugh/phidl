@@ -1,7 +1,10 @@
+import os
+import tempfile
+
 import numpy as np
 
 import phidl.geometry as pg
-from phidl import Device, Group  # , Layer, LayerSet, make_device, Port
+from phidl import Device, Group
 
 # import phidl.routing as pr
 # import phidl.utilities as pu
@@ -328,3 +331,15 @@ def test_polygon_simplify():
     h = D.hash_geometry(precision=1e-4)
     assert h == "7d9ebcb231fb0107cbbf618353adeb583782ca11"
     # qp(D)
+
+
+def test_preserve_properties():
+    fname = os.path.join(tempfile.mkdtemp(), "properties.gds")
+    d = pg.bbox()
+    d.polygons[0].properties[1] = "yolo"
+    r = d << pg.bbox()
+    r.properties[1] = "foo"
+    d.write_gds(fname)
+    d2 = pg.import_gds(fname)
+    assert d2.polygons[0].properties == d.polygons[0].properties
+    assert d2.references[0].properties == r.properties

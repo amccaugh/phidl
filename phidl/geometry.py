@@ -1815,7 +1815,7 @@ def import_gds(filename, cellname=None, flatten=False):
                     layer=(label.layer, label.texttype),
                 )
                 l.anchor = label.anchor
-            c2dmap.update({cell: D})
+            c2dmap[cell] = D
             D_list.append(D)
 
         for D in D_list:
@@ -1831,6 +1831,7 @@ def import_gds(filename, cellname=None, flatten=False):
                         magnification=e.magnification,
                         x_reflection=e.x_reflection,
                     )
+                    dr.properties = e.properties
                     dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
