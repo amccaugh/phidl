@@ -1794,74 +1794,75 @@ def import_gds(filename, cellname=None, flatten=False):
             "one of them"
         )
 
-    if flatten:
+    if not flatten:
+        D_list = []
+        c2dmap = {}
+        for cell in gdsii_lib.cells.values():
+            D = Device(name=cell.name)
+            D.polygons = cell.polygons
+            D.references = cell.references
+            D.name = cell.name
+            D.paths = cell.paths
+            for label in cell.labels:
+                rotation = label.rotation
+                if rotation is None:
+                    rotation = 0
+                l = D.add_label(
+                    text=label.text,
+                    position=np.asfarray(label.position),
+                    magnification=label.magnification,
+                    rotation=rotation * 180 / np.pi,
+                    layer=(label.layer, label.texttype),
+                )
+                l.anchor = label.anchor
+            c2dmap.update({cell: D})
+            D_list.append(D)
+
+        for D in D_list:
+            # First convert each reference so it points to the right Device
+            converted_references = []
+            for e in D.references:
+                ref_device = c2dmap[e.ref_cell]
+                if isinstance(e, gdspy.CellReference):
+                    dr = DeviceReference(
+                        device=ref_device,
+                        origin=e.origin,
+                        rotation=e.rotation,
+                        magnification=e.magnification,
+                        x_reflection=e.x_reflection,
+                    )
+                    dr.owner = D
+                    converted_references.append(dr)
+                elif isinstance(e, gdspy.CellArray):
+                    dr = CellArray(
+                        device=ref_device,
+                        columns=e.columns,
+                        rows=e.rows,
+                        spacing=e.spacing,
+                        origin=e.origin,
+                        rotation=e.rotation,
+                        magnification=e.magnification,
+                        x_reflection=e.x_reflection,
+                    )
+                    dr.owner = D
+                    converted_references.append(dr)
+            D.references = converted_references
+            # Next convert each Polygon
+            temp_polygons = list(D.polygons)
+            D.polygons = []
+            for p in temp_polygons:
+                D.add_polygon(p)
+
+        topdevice = c2dmap[topcell]
+        return topdevice
+
+    elif flatten:
         D = Device("import_gds")
         polygons = topcell.get_polygons(by_spec=True)
 
         for layer_in_gds, polys in polygons.items():
             D.add_polygon(polys, layer=layer_in_gds)
         return D
-
-    D_list = []
-    c2dmap = {}
-    for cell in gdsii_lib.cells.values():
-        D = Device(name=cell.name)
-        D.polygons = cell.polygons
-        D.references = cell.references
-        D.name = cell.name
-        D.paths = cell.paths
-        for label in cell.labels:
-            rotation = label.rotation
-            if rotation is None:
-                rotation = 0
-            l = D.add_label(
-                text=label.text,
-                position=np.asfarray(label.position),
-                magnification=label.magnification,
-                rotation=rotation * 180 / np.pi,
-                layer=(label.layer, label.texttype),
-            )
-            l.anchor = label.anchor
-        c2dmap.update({cell: D})
-        D_list.append(D)
-
-    for D in D_list:
-        # First convert each reference so it points to the right Device
-        converted_references = []
-        for e in D.references:
-            ref_device = c2dmap[e.ref_cell]
-            if isinstance(e, gdspy.CellReference):
-                dr = DeviceReference(
-                    device=ref_device,
-                    origin=e.origin,
-                    rotation=e.rotation,
-                    magnification=e.magnification,
-                    x_reflection=e.x_reflection,
-                )
-                dr.owner = D
-                converted_references.append(dr)
-            elif isinstance(e, gdspy.CellArray):
-                dr = CellArray(
-                    device=ref_device,
-                    columns=e.columns,
-                    rows=e.rows,
-                    spacing=e.spacing,
-                    origin=e.origin,
-                    rotation=e.rotation,
-                    magnification=e.magnification,
-                    x_reflection=e.x_reflection,
-                )
-                dr.owner = D
-                converted_references.append(dr)
-        D.references = converted_references
-        # Next convert each Polygon
-        temp_polygons = list(D.polygons)
-        D.polygons = []
-        for p in temp_polygons:
-            D.add_polygon(p)
-
-    topdevice = c2dmap[topcell]
-    return topdevice
 
 
 def _translate_cell(c):
