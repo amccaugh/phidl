@@ -591,7 +591,7 @@ def boolean(  # noqa: C901
         )
 
     # Check for trivial solutions
-    if (len(A_polys) == 0) or (len(B_polys) == 0):
+    if ((len(A_polys) == 0) or (len(B_polys) == 0)) and (operation != 'or'):
         if operation == "not":
             if len(A_polys) == 0:
                 p = None
@@ -599,13 +599,15 @@ def boolean(  # noqa: C901
                 p = A_polys
         elif operation == "and":
             p = None
-        elif (operation == "or") or (operation == "xor"):
+        elif operation == "xor":
             if (len(A_polys) == 0) and (len(B_polys) == 0):
                 p = None
             elif len(A_polys) == 0:
                 p = B_polys
             elif len(B_polys) == 0:
                 p = A_polys
+    elif (len(A_polys) == 0) and (len(B_polys) == 0) and (operation == 'or'):
+        p = None
     else:
         # If no trivial solutions, run boolean operation either in parallel or
         # straight
