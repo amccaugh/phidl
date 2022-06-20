@@ -953,7 +953,7 @@ def route_manhattan(  # noqa: C901
     valid_bend_types = ["circular", "gradual"]
 
     if bendType not in valid_bend_types:
-        raise ValueError("bendType{}= not in {}".format(bendType, valid_bend_types))
+        raise ValueError(f"bendType{bendType}= not in {valid_bend_types}")
 
     if bendType == "gradual":
         b = _gradual_bend(radius=radius)
