@@ -62,7 +62,7 @@ def write_docstring(
     if os.stat(fwrite).st_size == 0:
         fw.write(
             "#" * len(main_header)
-            + "\n{}\n".format(main_header)
+            + f"\n{main_header}\n"
             + "#" * len(main_header)
             + "\n\n\n"
         )
@@ -81,7 +81,7 @@ def write_docstring(
         fread_header = fread_header.capitalize()
     fw.write(
         "*" * (len(fread_header) + len(sub_header))
-        + "\n{}{}\n".format(fread_header, sub_header)
+        + f"\n{fread_header}{sub_header}\n"
         + "*" * (len(fread_header) + len(sub_header))
         + "\n\n"
     )
@@ -116,14 +116,14 @@ def write_docstring(
         fw.write(name[0] + "\n")
         fw.write(("=" * len(name[0])) + "\n\n")
         if name[1] == "C":
-            fw.write(".. autoclass:: phidl.{}.{}\n".format(fread_name, name[0]))
+            fw.write(f".. autoclass:: phidl.{fread_name}.{name[0]}\n")
             fw.write(
                 "   :members:\n"
                 "   :inherited-members:\n"
                 "   :show-inheritance:\n\n\n"
             )
         else:
-            fw.write(".. autofunction:: phidl.{}.{}\n\n\n".format(fread_name, name[0]))
+            fw.write(f".. autofunction:: phidl.{fread_name}.{name[0]}\n\n\n")
     fw.close()
 
 

@@ -1919,7 +1919,7 @@ def preview_layerset(ls, size=100, spacing=100):
     for n, layer in enumerate(sorted_layers):
         R = rectangle(size=(100 * scale, 100 * scale), layer=layer)
         T = text(
-            text="{}\n{} / {}".format(layer.name, layer.gds_layer, layer.gds_datatype),
+            text=f"{layer.name}\n{layer.gds_layer} / {layer.gds_datatype}",
             size=20 * scale,
             justify="center",
             layer=layer,
@@ -1985,9 +1985,7 @@ def _convert_port_to_geometry(port, layer=0):
     The Port must start with a parent.
     """
     if port.parent is None:
-        raise ValueError(
-            "Port {}: Port needs a parent in which to draw".format(port.name)
-        )
+        raise ValueError(f"Port {port.name}: Port needs a parent in which to draw")
     if isinstance(port.parent, DeviceReference):
         device = port.parent.parent
     else:
@@ -3456,7 +3454,7 @@ def _gen_param_variations(
         D_new = make_device(function, config=param_defaults, **new_params)
         label_text = ""
         for name, value in params.items():
-            label_text += ("{}={}".format(name, value)) + "\n"
+            label_text += (f"{name}={value}") + "\n"
         if label_layer is not None:
             D_new.add_label(text=label_text, position=D_new.center, layer=label_layer)
 

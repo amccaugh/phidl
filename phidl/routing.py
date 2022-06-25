@@ -297,7 +297,7 @@ def route_smooth(
     manual_path=None,
     smooth_options={"corner_fun": pp.euler, "use_eff": True},
     layer=np.nan,
-    **kwargs
+    **kwargs,
 ):
 
     """Convenience function that routes a path between ports using pp.smooth(),
@@ -416,7 +416,7 @@ def route_sharp(
     path_type="manhattan",
     manual_path=None,
     layer=np.nan,
-    **kwargs
+    **kwargs,
 ):
 
     """Convenience function that routes a path between ports and immediately
@@ -953,7 +953,7 @@ def route_manhattan(  # noqa: C901
     valid_bend_types = ["circular", "gradual"]
 
     if bendType not in valid_bend_types:
-        raise ValueError("bendType{}= not in {}".format(bendType, valid_bend_types))
+        raise ValueError(f"bendType{bendType}= not in {valid_bend_types}")
 
     if bendType == "gradual":
         b = _gradual_bend(radius=radius)
