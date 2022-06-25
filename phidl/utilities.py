@@ -83,9 +83,7 @@ def write_lyp(filename, layerset):
             # Writing line to specify layer name
             f.write("  <name>%s</name>\n" % name)
             # Writing line to specify source
-            f.write(
-                f"  <source>{str(gds_layer)}/{str(gds_datatype)}@1</source>\n"
-            )
+            f.write(f"  <source>{str(gds_layer)}/{str(gds_datatype)}@1</source>\n")
             # Writing properties closer for specific layer
             f.write(" </properties>\n")
 

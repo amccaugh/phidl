@@ -1981,9 +1981,7 @@ def _convert_port_to_geometry(port, layer=0):
     The Port must start with a parent.
     """
     if port.parent is None:
-        raise ValueError(
-            f"Port {port.name}: Port needs a parent in which to draw"
-        )
+        raise ValueError(f"Port {port.name}: Port needs a parent in which to draw")
     if isinstance(port.parent, DeviceReference):
         device = port.parent.parent
     else:
