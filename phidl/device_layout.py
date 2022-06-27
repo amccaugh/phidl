@@ -36,6 +36,7 @@
 
 
 import hashlib
+import math
 import warnings
 from copy import deepcopy as _deepcopy
 
@@ -1856,26 +1857,23 @@ class Device(gdspy.Cell, _GeometryHelper):
         layers = np.array(list(polygons_by_spec.keys()))
         sorted_layers = layers[np.lexsort((layers[:, 0], layers[:, 1]))]
 
-        # A random offset which fixes common rounding errors intrinsic
-        # to floating point math. Example: with a precision of 0.1, the
-        # floating points 7.049999 and 7.050001 round to different values
-        # (7.0 and 7.1), but offset values (7.220485 and 7.220487) don't
-        magic_offset = 0.17048614
-
         final_hash = hashlib.sha1()
         for layer in sorted_layers:
             layer_hash = hashlib.sha1(layer.astype(np.int64)).digest()
             polygons = polygons_by_spec[tuple(layer)]
-            polygons = [
-                np.ascontiguousarray((p / precision) + magic_offset, dtype=np.int64)
-                for p in polygons
-            ]
+            polygons = [_rnd(p, precision) for p in polygons]
             polygon_hashes = np.sort([hashlib.sha1(p).digest() for p in polygons])
             final_hash.update(layer_hash)
             for ph in polygon_hashes:
                 final_hash.update(ph)
 
         return final_hash.hexdigest()
+
+
+def _rnd(arr, precision=1e-4):
+    arr = np.ascontiguousarray(arr)
+    ndigits = round(-math.log10(precision))
+    return np.ascontiguousarray(arr.round(ndigits) / precision, dtype=np.int64)
 
 
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
