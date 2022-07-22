@@ -194,7 +194,6 @@ def quickplot(items):  # noqa: C901
     >>> quickplot([R, E])
     """
 
-
     try:
         from matplotlib import pyplot as plt
 
