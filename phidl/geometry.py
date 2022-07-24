@@ -742,10 +742,6 @@ def outline(
     return Outline
 
 
-def inset(elements, distance=0.1, join_first=True, precision=1e-4, layer=0):
-    raise ValueError("[PHIDL] pg.inset() is deprecated, " "please use pg.offset()")
-
-
 def invert(
     elements, border=10, precision=1e-4, num_divisions=[1, 1], max_points=4000, layer=0
 ):
