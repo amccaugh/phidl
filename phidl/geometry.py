@@ -5396,7 +5396,7 @@ def snspd_expanded(
 # quickplot(s)
 
 
-def candelabra_meander(  # noqa: C901
+def snspd_candelabra(  # noqa: C901
     wire_width=0.52,
     wire_pitch=0.56,
     haxis=90,
@@ -5405,15 +5405,15 @@ def candelabra_meander(  # noqa: C901
     xwing=False,
     layer=0,
 ):
-    """ Creates an optimally-rounded SNSPD with low current crowding and
+    """Creates an optimally-rounded SNSPD with low current crowding and
     arbtitrarily-high fill factor as described by Reddy et. al.,
     APL Photonics 7, 051302 (2022)  https://doi.org/10.1063/5.0088007
 
     Parameters
     ----------
-    width : int or float
+    wire_width : int or float
         Width of the wire.
-    pitch : int or float
+    wire_pitch : int or float
         Distance between two adjacent wires. Must be greater than `width`.
     haxis : int or float
         Length of horizontal diagonal of the rhomboidal active area.
