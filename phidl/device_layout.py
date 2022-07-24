@@ -1920,7 +1920,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             x_reflection=x_reflection,
             ignore_missing=False,
         )
-        self.parent = device
         self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
@@ -1928,6 +1927,14 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self._local_ports = {
             name: port._copy(new_uid=True) for name, port in device.ports.items()
         }
+
+    @property
+    def parent(self):
+        return self.ref_cell
+
+    @parent.setter
+    def parent(self, value):
+        self.ref_cell = value
 
     def __repr__(self):
         """Prints a description of the DeviceReference, including parent
