@@ -5417,6 +5417,7 @@ def candelabra_meander(  # noqa: C901
         Distance between two adjacent wires. Must be greater than `width`.
     haxis : int or float
         Length of horizontal diagonal of the rhomboidal active area.
+        The parameter `haxis` is prioritized over `vaxis`.
     vaxis : int or float
         Length of vertical diagonal of the rhomboidal active area.
     equalize_path_lengths : bool
@@ -5584,42 +5585,50 @@ def candelabra_meander(  # noqa: C901
 
     D = Device(name="snspd_candelabra_meander")
     if xwing:
-        Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch)
+        Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch,
+                            layer=layer)
     else:
-        Dtemp = off_axis_uturn(wire_width=wire_width, wire_pitch=wire_pitch)
+        Dtemp = off_axis_uturn(wire_width=wire_width, wire_pitch=wire_pitch,
+                               layer=layer)
+    Dtemp_mirrored = deepcopy(Dtemp).mirror([0, 0], [0, 1])
     padding = Dtemp.xsize
     maxll = haxis - 2 * padding
     dll = abs(Dtemp.ports[1].x - Dtemp.ports[2].x) + wire_pitch
     half_num_meanders = int(np.ceil(0.5 * vaxis / wire_pitch)) + 2
 
     if xwing:
-        bend = D.add_ref(arc(radius=wire_width * 3, width=wire_width, theta=90)).rotate(
+        bend = D.add_ref(arc(radius=wire_width * 3, width=wire_width, theta=90,
+                             layer=layer)).rotate(
             180
         )
     else:
-        bend = D.add_ref(optimal_90deg(width=wire_width))
+        bend = D.add_ref(optimal_90deg(width=wire_width, layer=layer))
     if (maxll - dll * half_num_meanders) <= 0.0:
-        print("Horizontal axis too small! Shrinking vertical axis.")
+        # Horizontal axis too small! Shrinking vertical axis.
         while (maxll - dll * half_num_meanders) <= 0.0:
             half_num_meanders = half_num_meanders - 1
     fpas = D.add_ref(
-        compass(size=(0.5 * (maxll - dll * half_num_meanders), wire_width))
+        compass(size=(0.5 * (maxll - dll * half_num_meanders), wire_width),
+                layer=layer)
     )
     D.movex(-bend.ports[1].x)
     fpas.connect(fpas.ports["W"], bend.ports[2])
     ll = D.xsize * 2 - wire_width
-    if xwing:
-        Dtemp = xwing_uturn(
-            wire_width=wire_width,
-            wire_pitch=wire_pitch,
-            pad_length=(maxll - ll - dll) * equalize_path_lengths,
-        )
-    else:
-        Dtemp = off_axis_uturn(
-            wire_width=wire_width,
-            wire_pitch=wire_pitch,
-            pad_length=(maxll - ll - dll) * equalize_path_lengths,
-        )
+    if equalize_path_lengths:
+        if xwing:
+            Dtemp = xwing_uturn(
+                wire_width=wire_width,
+                wire_pitch=wire_pitch,
+                pad_length=(maxll - ll - dll) * equalize_path_lengths,
+                layer=layer
+            )
+        else:
+            Dtemp = off_axis_uturn(
+                wire_width=wire_width,
+                wire_pitch=wire_pitch,
+                pad_length=(maxll - ll - dll) * equalize_path_lengths,
+                layer=layer
+            )
     uturn = D.add_ref(Dtemp)
     uturn.connect(1, fpas.ports["E"])
     dir_left = True
@@ -5628,23 +5637,29 @@ def candelabra_meander(  # noqa: C901
 
     while ll < maxll - dll:
         ll = ll + dll
-        if xwing:
-            Dtemp = xwing_uturn(
-                wire_width=wire_width,
-                wire_pitch=wire_pitch,
-                pad_length=turn_padding * equalize_path_lengths,
-            )
-        else:
-            Dtemp = off_axis_uturn(
-                wire_width=wire_width,
-                wire_pitch=wire_pitch,
-                pad_length=turn_padding * equalize_path_lengths,
-            )
+        if equalize_path_lengths:
+            if xwing:
+                Dtemp = xwing_uturn(
+                    wire_width=wire_width,
+                    wire_pitch=wire_pitch,
+                    pad_length=turn_padding * equalize_path_lengths,
+                    layer=layer,
+                )
+            else:
+                Dtemp = off_axis_uturn(
+                    wire_width=wire_width,
+                    wire_pitch=wire_pitch,
+                    pad_length=turn_padding * equalize_path_lengths,
+                    layer=layer,
+                )
         turn_padding = turn_padding - dll
-        newpas = D.add_ref(compass(size=(ll, wire_width)))
+        newpas = D.add_ref(compass(size=(ll, wire_width), layer=layer))
         if dir_left:
             newpas.connect(newpas.ports["E"], uturn.ports[2])
-            uturn = D.add_ref(Dtemp.mirror([0, 0], [0, 1]))
+            if equalize_path_lengths:
+                uturn = D.add_ref(Dtemp.mirror([0, 0], [0, 1]))
+            else:
+                uturn = D.add_ref(Dtemp_mirrored)
             uturn.connect(1, newpas.ports["W"])
             dir_left = False
         else:
@@ -5653,7 +5668,7 @@ def candelabra_meander(  # noqa: C901
             uturn.connect(1, newpas.ports["E"])
             dir_left = True
 
-    newpas = D.add_ref(compass(size=(ll / 2, wire_width)))
+    newpas = D.add_ref(compass(size=(ll / 2, wire_width), layer=layer))
     if dir_left:
         newpas.connect(newpas.ports["E"], uturn.ports[2])
         dir_left = False
@@ -5666,7 +5681,8 @@ def candelabra_meander(  # noqa: C901
         bend.movex(-bend.ports[1].x)
     if (fpas.ports["W"].x - bend.ports[2].x) > 0:
         tempc = D.add_ref(
-            compass(size=(fpas.ports["W"].x - bend.ports[2].x, bend.ports[2].width))
+            compass(size=(fpas.ports["W"].x - bend.ports[2].x, bend.ports[2].width),
+                    layer=layer)
         )
         tempc.connect("E", fpas.ports["W"])
     D.move([-D.x, -D.ymin - wire_width * 0.5])
@@ -5680,16 +5696,15 @@ def candelabra_meander(  # noqa: C901
     D1 = Dout.add_ref(D)
     D2 = Dout.add_ref(copy(D).rotate(180))
     tempc = Dout.add_ref(
-        compass(size=(abs(D1.ports[2].x - D2.ports[2].x), D1.ports[2].width))
+        compass(size=(abs(D1.ports[2].x - D2.ports[2].x), D1.ports[2].width),
+                layer=layer)
     )
     if D1.ports[2].x > D2.ports[2].x:
         tempc.connect("E", D1.ports[2])
     else:
         tempc.connect("W", D1.ports[2])
-    Dout = copy_layer(Dout, layer=0, new_layer=layer)
     Dout.add_port(name=1, port=D1.ports[1])
     Dout.add_port(name=2, port=D2.ports[1])
-    Dout.flatten()
     return Dout
 
 
