@@ -6,7 +6,6 @@ import sys
 
 import gdspy
 import numpy as np
-from matplotlib.lines import Line2D
 
 import phidl
 from phidl.device_layout import (
@@ -22,15 +21,6 @@ from phidl.device_layout import (
 _SUBPORT_RGB = (0, 120, 120)
 _PORT_RGB = (190, 0, 0)
 
-try:
-    import matplotlib
-    from matplotlib import pyplot as plt
-    from matplotlib.collections import PolyCollection
-    from matplotlib.widgets import RectangleSelector
-
-    matplotlib_imported = True
-except ImportError:
-    matplotlib_imported = False
 
 try:
     from PyQt5 import QtCore, QtGui
@@ -108,6 +98,8 @@ _qp_objects = {}
 
 
 def _rectangle_selector_factory(fig, ax):
+    from matplotlib.widgets import RectangleSelector
+
     def line_select_callback(eclick, erelease):
         x1, y1 = eclick.xdata, eclick.ydata
         x2, y2 = erelease.xdata, erelease.ydata
@@ -201,6 +193,13 @@ def quickplot(items):  # noqa: C901
     >>> E = pg.ellipse()
     >>> quickplot([R, E])
     """
+
+    try:
+        from matplotlib import pyplot as plt
+
+        matplotlib_imported = True
+    except ImportError:
+        matplotlib_imported = False
 
     # Override default options with _quickplot_options
     show_ports = _quickplot_options["show_ports"]
@@ -330,6 +329,8 @@ def quickplot(items):  # noqa: C901
 def _use_interactive_zoom():
     """Checks whether the current matplotlib backend is compatible with
     interactive zoom"""
+    import matplotlib
+
     if _quickplot_options["interactive_zoom"] is not None:
         return _quickplot_options["interactive_zoom"]
     forbidden_backends = ["nbagg"]
@@ -382,6 +383,8 @@ def _get_layerprop(layer, datatype):
 
 
 def _draw_polygons(polygons, ax, **kwargs):
+    from matplotlib.collections import PolyCollection
+
     coll = PolyCollection(polygons, **kwargs)
     ax.add_collection(coll)
     stacked_polygons = np.vstack(polygons)
@@ -392,6 +395,8 @@ def _draw_polygons(polygons, ax, **kwargs):
 
 
 def _draw_line(x, y, ax, **kwargs):
+    from matplotlib.lines import Line2D
+
     line = Line2D(x, y, **kwargs)
     ax.add_line(line)
     xmin, ymin = np.min(x), np.min(y)
@@ -447,6 +452,8 @@ def _draw_port(ax, port, is_subport, color):
 
 
 def _draw_port_as_point(ax, port, **kwargs):
+    from matplotlib import pyplot as plt
+
     x = port.midpoint[0]
     y = port.midpoint[1]
     plt.plot(x, y, "r+", alpha=0.5, markersize=15, markeredgewidth=2)  # Draw port edge
