@@ -5396,7 +5396,7 @@ def snspd_expanded(
 # quickplot(s)
 
 
-def candelabra_meander(  # noqa: C901
+def snspd_candelabra(  # noqa: C901
     wire_width=0.52,
     wire_pitch=0.56,
     haxis=90,
@@ -5405,15 +5405,15 @@ def candelabra_meander(  # noqa: C901
     xwing=False,
     layer=0,
 ):
-    """ Creates an optimally-rounded SNSPD with low current crowding and
+    """Creates an optimally-rounded SNSPD with low current crowding and
     arbtitrarily-high fill factor as described by Reddy et. al.,
     APL Photonics 7, 051302 (2022)  https://doi.org/10.1063/5.0088007
 
     Parameters
     ----------
-    width : int or float
+    wire_width : int or float
         Width of the wire.
-    pitch : int or float
+    wire_pitch : int or float
         Distance between two adjacent wires. Must be greater than `width`.
     haxis : int or float
         Length of horizontal diagonal of the rhomboidal active area.
@@ -5496,7 +5496,6 @@ def candelabra_meander(  # noqa: C901
                 )
             )
             tempc.connect("N", pin1.ports[2])
-        D.flatten()
         D.add_port(
             name=1,
             midpoint=arc1.ports[1].midpoint,
@@ -5567,7 +5566,6 @@ def candelabra_meander(  # noqa: C901
             )
             tempc.connect("N", pin1.ports[indx2])
 
-        Dtemp.flatten()
         Dtemp.add_port(
             name=1,
             midpoint=arc1.ports[1].midpoint,
@@ -5583,7 +5581,7 @@ def candelabra_meander(  # noqa: C901
 
         return Dtemp
 
-    D = Device(name="snspd_candelabra_meander")
+    D = Device(name="snspd_candelabra")
     if xwing:
         Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch,
                             layer=layer)
@@ -5604,7 +5602,6 @@ def candelabra_meander(  # noqa: C901
     else:
         bend = D.add_ref(optimal_90deg(width=wire_width, layer=layer))
     if (maxll - dll * half_num_meanders) <= 0.0:
-        # Horizontal axis too small! Shrinking vertical axis.
         while (maxll - dll * half_num_meanders) <= 0.0:
             half_num_meanders = half_num_meanders - 1
     fpas = D.add_ref(
