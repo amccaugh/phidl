@@ -5405,7 +5405,34 @@ def candelabra_meander(  # noqa: C901
     xwing=False,
     layer=0,
 ):
-    """Returns phidl meander with low current crowding for any fill factor."""
+    """ Creates an optimally-rounded SNSPD with low current crowding and
+    arbtitrarily-high fill factor as described by Reddy et. al.,
+    APL Photonics 7, 051302 (2022)  https://doi.org/10.1063/5.0088007
+
+    Parameters
+    ----------
+    width : int or float
+        Width of the wire.
+    pitch : int or float
+        Distance between two adjacent wires. Must be greater than `width`.
+    haxis : int or float
+        Length of horizontal diagonal of the rhomboidal active area.
+    vaxis : int or float
+        Length of vertical diagonal of the rhomboidal active area.
+    equalize_path_lengths : bool
+        If True, adds wire segments to hairpin bends to equalize path lengths
+        from center to center for all parallel wires in active area.
+    xwing : bool
+        If True, replaces 90-degree bends with 135-degree bends.
+    layer : int
+        Specific layer to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing an optimally-rounded SNSPD with minimized current
+        crowding for any fill factor.
+    """
 
     def off_axis_uturn(
         wire_width=0.52,
