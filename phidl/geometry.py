@@ -5495,7 +5495,6 @@ def snspd_candelabra(  # noqa: C901
                 )
             )
             tempc.connect("N", pin1.ports[2])
-        D.flatten()
         D.add_port(
             name=1,
             midpoint=arc1.ports[1].midpoint,
@@ -5566,7 +5565,6 @@ def snspd_candelabra(  # noqa: C901
             )
             tempc.connect("N", pin1.ports[indx2])
 
-        Dtemp.flatten()
         Dtemp.add_port(
             name=1,
             midpoint=arc1.ports[1].midpoint,
@@ -5582,7 +5580,7 @@ def snspd_candelabra(  # noqa: C901
 
         return Dtemp
 
-    D = Device(name="snspd_candelabra_meander")
+    D = Device(name="snspd_candelabra")
     if xwing:
         Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch)
     else:
@@ -5599,7 +5597,6 @@ def snspd_candelabra(  # noqa: C901
     else:
         bend = D.add_ref(optimal_90deg(width=wire_width))
     if (maxll - dll * half_num_meanders) <= 0.0:
-        print("Horizontal axis too small! Shrinking vertical axis.")
         while (maxll - dll * half_num_meanders) <= 0.0:
             half_num_meanders = half_num_meanders - 1
     fpas = D.add_ref(
@@ -5689,7 +5686,6 @@ def snspd_candelabra(  # noqa: C901
     Dout = copy_layer(Dout, layer=0, new_layer=layer)
     Dout.add_port(name=1, port=D1.ports[1])
     Dout.add_port(name=2, port=D2.ports[1])
-    Dout.flatten()
     return Dout
 
 
