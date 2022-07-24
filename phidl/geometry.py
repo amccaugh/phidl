@@ -5396,43 +5396,52 @@ def snspd_expanded(
 # quickplot(s)
 
 
-def candelabra_meander(wire_width=0.52, wire_pitch=0.56, haxis=90, vaxis=50,
-                       equalize_path_lengths=False, xwing=False, layer=0):
-    ''' Returns phidl meander with low current crowding for any fill factor.'''
+def candelabra_meander(  # noqa: C901
+    wire_width=0.52,
+    wire_pitch=0.56,
+    haxis=90,
+    vaxis=50,
+    equalize_path_lengths=False,
+    xwing=False,
+    layer=0,
+):
+    """Returns phidl meander with low current crowding for any fill factor."""
 
-    def optimal_stepL(start_width=10, end_width=22, length=100,
-                      tolerance=1e-3, symmetric=True, layer=0):
-        ''' Returns phidl device optimal step of requested length. '''
-        afac = 1.2
-        D = optimal_step(start_width=start_width, end_width=end_width,
-                         anticrowding_factor=afac, num_pts=256,
-                         symmetric=symmetric, layer=layer)
-        while(abs(D.xsize - length) > tolerance):
-            afac = afac * length / D.xsize
-            D = optimal_step(start_width=start_width, end_width=end_width,
-                             anticrowding_factor=afac, num_pts=256,
-                             symmetric=symmetric, layer=layer)
-        return D
-
-    def off_axis_uturn(wire_width=0.52, wire_pitch=0.56, pfact=10.0 / 3,
-                       sharp=False, pad_length=0, layer=0):
-        ''' Returns phidl device low-crowding u-turn for candelabra meander.'''
+    def off_axis_uturn(
+        wire_width=0.52,
+        wire_pitch=0.56,
+        pfact=10.0 / 3,
+        sharp=False,
+        pad_length=0,
+        layer=0,
+    ):
+        """Returns phidl device low-crowding u-turn for candelabra meander."""
         barc = optimal_90deg(width=wire_width, layer=layer)
-        if(not sharp):
+        if not sharp:
             # For non-rounded outer radii
             # Not fully implemented
             port1mp = [barc.ports[1].x, barc.ports[1].y]
             port1or = barc.ports[1].orientation
             port2mp = [barc.ports[2].x, barc.ports[2].y]
             port2or = barc.ports[2].orientation
-            barc = boolean(A=barc, B=copy(barc).move(
-                [-wire_width, -wire_width]), operation='not', layer=layer)
-            barc.add_port(name=1, midpoint=port1mp, width=wire_width,
-                          orientation=port1or)
-            barc.add_port(name=2, midpoint=port2mp, width=wire_width,
-                          orientation=port2or)
-        pin = optimal_hairpin(width=wire_width, pitch=pfact * wire_width,
-                              length=8 * wire_width, layer=layer)
+            barc = boolean(
+                A=barc,
+                B=copy(barc).move([-wire_width, -wire_width]),
+                operation="not",
+                layer=layer,
+            )
+            barc.add_port(
+                name=1, midpoint=port1mp, width=wire_width, orientation=port1or
+            )
+            barc.add_port(
+                name=2, midpoint=port2mp, width=wire_width, orientation=port2or
+            )
+        pin = optimal_hairpin(
+            width=wire_width,
+            pitch=pfact * wire_width,
+            length=8 * wire_width,
+            layer=layer,
+        )
         pas = compass(size=(wire_width, wire_pitch), layer=layer)
         D = Device()
         arc1 = D.add_ref(barc)
@@ -5440,38 +5449,54 @@ def candelabra_meander(wire_width=0.52, wire_pitch=0.56, haxis=90, vaxis=50,
         pin1 = D.add_ref(pin)
         pin1.connect(1, arc1.ports[2])
         pas1 = D.add_ref(pas)
-        pas1.connect(pas1.ports['N'], pin1.ports[2])
+        pas1.connect(pas1.ports["N"], pin1.ports[2])
         arc2 = D.add_ref(barc)
-        arc2.connect(2, pas1.ports['S'])
-        if(pad_length > 0):
+        arc2.connect(2, pas1.ports["S"])
+        if pad_length > 0:
             pin1.movey(pad_length * 0.5)
             tempc = D.add_ref(
-                compass(size=(pin1.ports[1].width,
-                              pin1.ports[1].y - arc1.ports[2].y),
-                        layer=layer))
-            tempc.connect('N', pin1.ports[1])
+                compass(
+                    size=(pin1.ports[1].width, pin1.ports[1].y - arc1.ports[2].y),
+                    layer=layer,
+                )
+            )
+            tempc.connect("N", pin1.ports[1])
             tempc = D.add_ref(
-                compass(size=(pin1.ports[2].width,
-                              pin1.ports[2].y - pas1.ports['N'].y),
-                        layer=layer))
-            tempc.connect('N', pin1.ports[2])
+                compass(
+                    size=(pin1.ports[2].width, pin1.ports[2].y - pas1.ports["N"].y),
+                    layer=layer,
+                )
+            )
+            tempc.connect("N", pin1.ports[2])
         D.flatten()
-        D.add_port(name=1, midpoint=arc1.ports[1].midpoint,
-                   width=wire_width,
-                   orientation=arc1.ports[1].orientation)
-        D.add_port(name=2, midpoint=arc2.ports[1].midpoint,
-                   width=wire_width,
-                   orientation=arc2.ports[1].orientation)
+        D.add_port(
+            name=1,
+            midpoint=arc1.ports[1].midpoint,
+            width=wire_width,
+            orientation=arc1.ports[1].orientation,
+        )
+        D.add_port(
+            name=2,
+            midpoint=arc2.ports[1].midpoint,
+            width=wire_width,
+            orientation=arc2.ports[1].orientation,
+        )
         return D
 
-    def xwing_uturn(wire_width=0.52, wire_pitch=0.56, pfact=10.0 / 3,
-                    pad_length=0, layer=0):
-        ''' Returns phidl device low-crowding u-turn for X-wing meander. '''
-        barc = arc(radius=wire_width * 3, width=wire_width, layer=layer,
-                   theta=45).rotate(180)
+    def xwing_uturn(
+        wire_width=0.52, wire_pitch=0.56, pfact=10.0 / 3, pad_length=0, layer=0
+    ):
+        """Returns phidl device low-crowding u-turn for X-wing meander."""
+        barc = arc(
+            radius=wire_width * 3, width=wire_width, layer=layer, theta=45
+        ).rotate(180)
 
-        pin = optimal_hairpin(width=wire_width, pitch=pfact * wire_width,
-                              length=15 * wire_width, layer=layer)
+        pin = optimal_hairpin(
+            width=wire_width,
+            pitch=pfact * wire_width,
+            length=15 * wire_width,
+            layer=layer,
+        )
 
         paslen = pfact * wire_width - np.sqrt(2) * wire_pitch
         pas = compass(size=(wire_width, abs(paslen)), layer=layer)
@@ -5481,18 +5506,17 @@ def candelabra_meander(wire_width=0.52, wire_pitch=0.56, haxis=90, vaxis=50,
         pin1 = Dtemp.add_ref(pin)
         pas1 = Dtemp.add_ref(pas)
         arc2 = Dtemp.add_ref(barc)
-        if(paslen > 0):
-            pas1.connect(pas1.ports['S'], arc1.ports[2])
-            pin1.connect(1, pas1.ports['N'])
+        if paslen > 0:
+            pas1.connect(pas1.ports["S"], arc1.ports[2])
+            pin1.connect(1, pas1.ports["N"])
             arc2.connect(2, pin1.ports[2])
         else:
             pin1.connect(1, arc1.ports[2])
-            pas1.connect('N', pin1.ports[2])
-            arc2.connect(2, pas1.ports['S'])
-        if(pad_length > 0):
-            pin1.move([pad_length * 0.5 / np.sqrt(2),
-                       pad_length * 0.5 / np.sqrt(2)])
-            if(paslen > 0):
+            pas1.connect("N", pin1.ports[2])
+            arc2.connect(2, pas1.ports["S"])
+        if pad_length > 0:
+            pin1.move([pad_length * 0.5 / np.sqrt(2), pad_length * 0.5 / np.sqrt(2)])
+            if paslen > 0:
                 indx1 = 2
                 indx2 = 1
                 myarc = arc2
@@ -5501,33 +5525,37 @@ def candelabra_meander(wire_width=0.52, wire_pitch=0.56, haxis=90, vaxis=50,
                 indx2 = 2
                 myarc = arc1
             compdist = np.sqrt(
-                np.sum(
-                    np.square(
-                        pin1.ports[indx1].midpoint - myarc.ports[2].midpoint)))
+                np.sum(np.square(pin1.ports[indx1].midpoint - myarc.ports[2].midpoint))
+            )
             tempc = Dtemp.add_ref(
-                compass(size=(pin1.ports[indx1].width,
-                              compdist),
-                        layer=layer))
-            tempc.connect('N', pin1.ports[indx1])
+                compass(size=(pin1.ports[indx1].width, compdist), layer=layer)
+            )
+            tempc.connect("N", pin1.ports[indx1])
             compdist = np.sqrt(
-                np.sum(
-                    np.square(
-                        pin1.ports[indx2].midpoint - pas1.ports['N'].midpoint)))
+                np.sum(np.square(pin1.ports[indx2].midpoint - pas1.ports["N"].midpoint))
+            )
             tempc = Dtemp.add_ref(
-                compass(size=(pin1.ports[indx2].width,
-                              compdist),
-                        layer=layer))
-            tempc.connect('N', pin1.ports[indx2])
+                compass(size=(pin1.ports[indx2].width, compdist), layer=layer)
+            )
+            tempc.connect("N", pin1.ports[indx2])
 
         Dtemp.flatten()
-        Dtemp.add_port(name=1, midpoint=arc1.ports[1].midpoint,
-                       width=wire_width, orientation=arc1.ports[1].orientation)
-        Dtemp.add_port(name=2, midpoint=arc2.ports[1].midpoint,
-                       width=wire_width, orientation=arc2.ports[1].orientation)
+        Dtemp.add_port(
+            name=1,
+            midpoint=arc1.ports[1].midpoint,
+            width=wire_width,
+            orientation=arc1.ports[1].orientation,
+        )
+        Dtemp.add_port(
+            name=2,
+            midpoint=arc2.ports[1].midpoint,
+            width=wire_width,
+            orientation=arc2.ports[1].orientation,
+        )
 
         return Dtemp
 
-    D = Device(name='snspd_candelabra_meander')
+    D = Device(name="snspd_candelabra_meander")
     if xwing:
         Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch)
     else:
@@ -5538,87 +5566,99 @@ def candelabra_meander(wire_width=0.52, wire_pitch=0.56, haxis=90, vaxis=50,
     half_num_meanders = int(np.ceil(0.5 * vaxis / wire_pitch)) + 2
 
     if xwing:
-        bend = D.add_ref(arc(radius=wire_width * 3, width=wire_width,
-                             theta=90)).rotate(180)
+        bend = D.add_ref(arc(radius=wire_width * 3, width=wire_width, theta=90)).rotate(
+            180
+        )
     else:
         bend = D.add_ref(optimal_90deg(width=wire_width))
     if (maxll - dll * half_num_meanders) <= 0.0:
-        print('Horizontal axis too small! Shrinking vertical axis.')
-        while((maxll - dll * half_num_meanders) <= 0.0):
+        print("Horizontal axis too small! Shrinking vertical axis.")
+        while (maxll - dll * half_num_meanders) <= 0.0:
             half_num_meanders = half_num_meanders - 1
-    fpas = D.add_ref(compass(size=(0.5 * (maxll - dll * half_num_meanders),
-                                   wire_width)))
+    fpas = D.add_ref(
+        compass(size=(0.5 * (maxll - dll * half_num_meanders), wire_width))
+    )
     D.movex(-bend.ports[1].x)
-    fpas.connect(fpas.ports['W'], bend.ports[2])
+    fpas.connect(fpas.ports["W"], bend.ports[2])
     ll = D.xsize * 2 - wire_width
     if xwing:
         Dtemp = xwing_uturn(
-            wire_width=wire_width, wire_pitch=wire_pitch,
-            pad_length=(maxll - ll - dll) * equalize_path_lengths)
+            wire_width=wire_width,
+            wire_pitch=wire_pitch,
+            pad_length=(maxll - ll - dll) * equalize_path_lengths,
+        )
     else:
         Dtemp = off_axis_uturn(
-            wire_width=wire_width, wire_pitch=wire_pitch,
-            pad_length=(maxll - ll - dll) * equalize_path_lengths)
+            wire_width=wire_width,
+            wire_pitch=wire_pitch,
+            pad_length=(maxll - ll - dll) * equalize_path_lengths,
+        )
     uturn = D.add_ref(Dtemp)
-    uturn.connect(1, fpas.ports['E'])
+    uturn.connect(1, fpas.ports["E"])
     dir_left = True
 
     turn_padding = maxll - ll - 2 * dll
 
-    while(ll < maxll - dll):
+    while ll < maxll - dll:
         ll = ll + dll
         if xwing:
             Dtemp = xwing_uturn(
-                wire_width=wire_width, wire_pitch=wire_pitch,
-                pad_length=turn_padding * equalize_path_lengths)
+                wire_width=wire_width,
+                wire_pitch=wire_pitch,
+                pad_length=turn_padding * equalize_path_lengths,
+            )
         else:
             Dtemp = off_axis_uturn(
-                wire_width=wire_width, wire_pitch=wire_pitch,
-                pad_length=turn_padding * equalize_path_lengths)
+                wire_width=wire_width,
+                wire_pitch=wire_pitch,
+                pad_length=turn_padding * equalize_path_lengths,
+            )
         turn_padding = turn_padding - dll
         newpas = D.add_ref(compass(size=(ll, wire_width)))
-        if(dir_left):
-            newpas.connect(newpas.ports['E'], uturn.ports[2])
+        if dir_left:
+            newpas.connect(newpas.ports["E"], uturn.ports[2])
             uturn = D.add_ref(Dtemp.mirror([0, 0], [0, 1]))
-            uturn.connect(1, newpas.ports['W'])
+            uturn.connect(1, newpas.ports["W"])
             dir_left = False
         else:
-            newpas.connect(newpas.ports['W'], uturn.ports[2])
+            newpas.connect(newpas.ports["W"], uturn.ports[2])
             uturn = D.add_ref(Dtemp)
-            uturn.connect(1, newpas.ports['E'])
+            uturn.connect(1, newpas.ports["E"])
             dir_left = True
 
     newpas = D.add_ref(compass(size=(ll / 2, wire_width)))
-    if(dir_left):
-        newpas.connect(newpas.ports['E'], uturn.ports[2])
+    if dir_left:
+        newpas.connect(newpas.ports["E"], uturn.ports[2])
         dir_left = False
     else:
-        newpas.connect(newpas.ports['W'], uturn.ports[2])
+        newpas.connect(newpas.ports["W"], uturn.ports[2])
         dir_left = True
 
     D.movex(-D.x)
     if not xwing:
         bend.movex(-bend.ports[1].x)
-    if (fpas.ports['W'].x - bend.ports[2].x) > 0:
-        tempc = D.add_ref(compass(size=(fpas.ports['W'].x - bend.ports[2].x,
-                                        bend.ports[2].width)))
-        tempc.connect('E', fpas.ports['W'])
+    if (fpas.ports["W"].x - bend.ports[2].x) > 0:
+        tempc = D.add_ref(
+            compass(size=(fpas.ports["W"].x - bend.ports[2].x, bend.ports[2].width))
+        )
+        tempc.connect("E", fpas.ports["W"])
     D.move([-D.x, -D.ymin - wire_width * 0.5])
     D.add_port(name=1, port=bend.ports[1])
-    if(dir_left):
-        D.add_port(name=2, port=newpas.ports['E'])
+    if dir_left:
+        D.add_port(name=2, port=newpas.ports["E"])
     else:
-        D.add_port(name=2, port=newpas.ports['W'])
+        D.add_port(name=2, port=newpas.ports["W"])
 
     Dout = Device()
     D1 = Dout.add_ref(D)
     D2 = Dout.add_ref(copy(D).rotate(180))
-    tempc = Dout.add_ref(compass(size=(abs(D1.ports[2].x - D2.ports[2].x),
-                                       D1.ports[2].width)))
+    tempc = Dout.add_ref(
+        compass(size=(abs(D1.ports[2].x - D2.ports[2].x), D1.ports[2].width))
+    )
     if D1.ports[2].x > D2.ports[2].x:
-        tempc.connect('E', D1.ports[2])
+        tempc.connect("E", D1.ports[2])
     else:
-        tempc.connect('W', D1.ports[2])
+        tempc.connect("W", D1.ports[2])
     Dout = copy_layer(Dout, layer=0, new_layer=layer)
     Dout.add_port(name=1, port=D1.ports[1])
     Dout.add_port(name=2, port=D2.ports[1])
