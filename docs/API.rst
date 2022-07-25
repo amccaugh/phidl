@@ -299,6 +299,12 @@ snspd_expanded
 .. autofunction:: phidl.geometry.snspd_expanded
 
 
+snspd_candelabra
+==============
+
+.. autofunction:: phidl.geometry.snspd_candelabra
+
+
 straight
 ========
 
