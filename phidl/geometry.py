@@ -5583,11 +5583,11 @@ def snspd_candelabra(  # noqa: C901
 
     D = Device(name="snspd_candelabra")
     if xwing:
-        Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch,
-                            layer=layer)
+        Dtemp = xwing_uturn(wire_width=wire_width, wire_pitch=wire_pitch, layer=layer)
     else:
-        Dtemp = off_axis_uturn(wire_width=wire_width, wire_pitch=wire_pitch,
-                               layer=layer)
+        Dtemp = off_axis_uturn(
+            wire_width=wire_width, wire_pitch=wire_pitch, layer=layer
+        )
     Dtemp_mirrored = deepcopy(Dtemp).mirror([0, 0], [0, 1])
     padding = Dtemp.xsize
     maxll = haxis - 2 * padding
@@ -5595,18 +5595,16 @@ def snspd_candelabra(  # noqa: C901
     half_num_meanders = int(np.ceil(0.5 * vaxis / wire_pitch)) + 2
 
     if xwing:
-        bend = D.add_ref(arc(radius=wire_width * 3, width=wire_width, theta=90,
-                             layer=layer)).rotate(
-            180
-        )
+        bend = D.add_ref(
+            arc(radius=wire_width * 3, width=wire_width, theta=90, layer=layer)
+        ).rotate(180)
     else:
         bend = D.add_ref(optimal_90deg(width=wire_width, layer=layer))
     if (maxll - dll * half_num_meanders) <= 0.0:
         while (maxll - dll * half_num_meanders) <= 0.0:
             half_num_meanders = half_num_meanders - 1
     fpas = D.add_ref(
-        compass(size=(0.5 * (maxll - dll * half_num_meanders), wire_width),
-                layer=layer)
+        compass(size=(0.5 * (maxll - dll * half_num_meanders), wire_width), layer=layer)
     )
     D.movex(-bend.ports[1].x)
     fpas.connect(fpas.ports["W"], bend.ports[2])
@@ -5617,14 +5615,14 @@ def snspd_candelabra(  # noqa: C901
                 wire_width=wire_width,
                 wire_pitch=wire_pitch,
                 pad_length=(maxll - ll - dll) * equalize_path_lengths,
-                layer=layer
+                layer=layer,
             )
         else:
             Dtemp = off_axis_uturn(
                 wire_width=wire_width,
                 wire_pitch=wire_pitch,
                 pad_length=(maxll - ll - dll) * equalize_path_lengths,
-                layer=layer
+                layer=layer,
             )
     uturn = D.add_ref(Dtemp)
     uturn.connect(1, fpas.ports["E"])
@@ -5678,8 +5676,10 @@ def snspd_candelabra(  # noqa: C901
         bend.movex(-bend.ports[1].x)
     if (fpas.ports["W"].x - bend.ports[2].x) > 0:
         tempc = D.add_ref(
-            compass(size=(fpas.ports["W"].x - bend.ports[2].x, bend.ports[2].width),
-                    layer=layer)
+            compass(
+                size=(fpas.ports["W"].x - bend.ports[2].x, bend.ports[2].width),
+                layer=layer,
+            )
         )
         tempc.connect("E", fpas.ports["W"])
     D.move([-D.x, -D.ymin - wire_width * 0.5])
@@ -5693,8 +5693,9 @@ def snspd_candelabra(  # noqa: C901
     D1 = Dout.add_ref(D)
     D2 = Dout.add_ref(copy(D).rotate(180))
     tempc = Dout.add_ref(
-        compass(size=(abs(D1.ports[2].x - D2.ports[2].x), D1.ports[2].width),
-                layer=layer)
+        compass(
+            size=(abs(D1.ports[2].x - D2.ports[2].x), D1.ports[2].width), layer=layer
+        )
     )
     if D1.ports[2].x > D2.ports[2].x:
         tempc.connect("E", D1.ports[2])
