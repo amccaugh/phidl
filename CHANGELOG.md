@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.2 (July 25, 2022)
+
+### New features
+- Addition of `pg.snspd_candelabra()` which creates an optimally-rounded SNSPD with low current crowding and arbtitrarily-high fill factor (thanks Dileep Reddy @dileepvr)
+- Lazy loading of `matplotlib`, allowing loading the base phidl libraries much faster  (thanks Joaquin Matres @joamatab)
+
+
+### Changes
+- Modification to `pg.boolean()` s othat `OR`/union will merge all shapes within one Device, even if the second Device is `None` (thanks
+Stijn Balk  @sbalk)
+
+### Bugfixes
+- Modifying the `parent` of a `DeviceReference` now correctly updates the reference cell (thanks Joaquin Matres @joamatab)
+- GDS path objects now copy over when using `pg.import_gds()` (thanks Bas Nijholt @basnijholt)
+- Preserve Polygon.properties and DeviceReference.properties when saving and loading  (thanks Bas Nijholt @basnijholt)
+- `D.remove_layers()` works also with GDS path objects (thanks Joaquin Matres @joamatab)
+
+
 ## 1.6.1 (April 7, 2022)
 
 ### New features
