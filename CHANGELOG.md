@@ -13,6 +13,7 @@ Stijn Balk  @sbalk)
 
 ### Bugfixes
 - Modifying the `parent` of a `DeviceReference` now correctly updates the reference cell (thanks Joaquin Matres @joamatab)
+- Fix bug in `pg.outline()` when `distance < 0` (thanks @yoshi74ls181)
 - GDS path objects now copy over when using `pg.import_gds()` (thanks Bas Nijholt @basnijholt)
 - Preserve Polygon.properties and DeviceReference.properties when saving and loading  (thanks Bas Nijholt @basnijholt)
 - `D.remove_layers()` works also with GDS path objects (thanks Joaquin Matres @joamatab)
