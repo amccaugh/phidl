@@ -36,6 +36,7 @@
 
 
 import hashlib
+import numbers
 import warnings
 from copy import deepcopy as _deepcopy
 
@@ -51,7 +52,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 
 gdspy.library.use_current_library = False
 
-__version__ = "1.6.1"
+__version__ = "1.6.2"
 
 
 # ==============================================================================
@@ -540,7 +541,7 @@ def _parse_layer(layer):
         gds_layer, gds_datatype = layer[0], 0
     elif layer is None:
         gds_layer, gds_datatype = 0, 0
-    elif isinstance(layer, (int, float)):
+    elif isinstance(layer, numbers.Number):
         gds_layer, gds_datatype = layer, 0
     else:
         raise ValueError(
@@ -1206,9 +1207,13 @@ class Device(gdspy.Cell, _GeometryHelper):
                 layers = zip(points.layers, points.datatypes)
             else:
                 layers = [layer] * len(points.polygons)
-            return [
-                self.add_polygon(p, layer) for p, layer in zip(points.polygons, layers)
-            ]
+
+            polygons = []
+            for p, layer in zip(points.polygons, layers):
+                new_polygon = self.add_polygon(p, layer)
+                new_polygon.properties = points.properties
+                polygons.append(new_polygon)
+            return polygons
 
         if layer is np.nan:
             layer = 0
@@ -1515,6 +1520,14 @@ class Device(gdspy.Cell, _GeometryHelper):
                 polygonset.datatypes = [
                     p for p, keep in zip(polygonset.datatypes, polygons_to_keep) if keep
                 ]
+
+            paths = []
+            for path in D.paths:
+                for layer in zip(path.layers, path.datatypes):
+                    if layer not in layers:
+                        paths.append(path)
+
+            D.paths = paths
 
             if include_labels:
                 new_labels = []
@@ -1907,7 +1920,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
             x_reflection=x_reflection,
             ignore_missing=False,
         )
-        self.parent = device
         self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
         # since two DeviceReferences of the same parent Device can be
@@ -1915,6 +1927,14 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         self._local_ports = {
             name: port._copy(new_uid=True) for name, port in device.ports.items()
         }
+
+    @property
+    def parent(self):
+        return self.ref_cell
+
+    @parent.setter
+    def parent(self, value):
+        self.ref_cell = value
 
     def __repr__(self):
         """Prints a description of the DeviceReference, including parent

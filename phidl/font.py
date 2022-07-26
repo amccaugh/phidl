@@ -93,7 +93,7 @@ def _get_glyph(font, letter):  # noqa: C901
         # If there is no postscript name, use the family name
         font_name = font.family_name.replace(" ", "_")
 
-    block_name = "*char_{}_0x{:2X}".format(font_name, ord(letter))
+    block_name = f"*char_{font_name}_0x{ord(letter):2X}"
 
     # Load control points from font file
     font.load_char(letter, freetype.FT_LOAD_FLAGS["FT_LOAD_NO_BITMAP"])

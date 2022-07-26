@@ -7,7 +7,7 @@ GDS scripting for Python that's intuitive, fast, and powerful.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/en/latest/geometry_reference.html)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.6.1 on April 7, 2022)
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.6.2 on July 25, 2022)
     - Huge new routing rewrite for `phidl.routing`, including automatic manhattan routing with custom cross-sections!  See [the routing documentation](https://phidl.readthedocs.io/en/latest/tutorials/routing.html) for details. Big thanks to Jeffrey Holzgrafe @jolzgrafe for this contribution
     - `Path`s can now be used to produce sharp angles, in addition to smooth bends. See [the Path documentation](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Sharp/angular-paths)
 
@@ -30,7 +30,7 @@ If you found PHIDL useful, please consider citing it in (just one!) of your publ
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
-- Python version >=3.5
+- Python version >=3.6
 - If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
     - For Windows + Python 3, install ["Build Tools for Visual Studio"](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019) (make sure to check the "C++ build tools" checkbox when installing)
     - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
