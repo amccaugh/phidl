@@ -362,7 +362,7 @@ def smooth(
     encroachment = np.concatenate([[0], d]) + np.concatenate([d, [0]])
     if np.any(encroachment > ds):
         raise ValueError(
-            "[PHIDL] smooth(): Not enough distance between points to to fit curves.  Try reducing the radius or spacing the points out farther"
+            "[PHIDL] smooth(): Not enough distance between points to fit curves.  Try reducing the radius or spacing the points out farther"
         )
     p1 = points[1:-1, :] - normals[:-1, :] * d[:, np.newaxis]
 
