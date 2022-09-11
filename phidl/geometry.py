@@ -9,7 +9,7 @@ from functools import update_wrapper
 
 import gdstk
 import numpy as np
-from gdstk import clipper
+# from gdstk import clipper
 from numpy import cos, exp, log, pi, sin, sinh, sqrt
 
 from phidl.constants import _glyph, _indent, _width

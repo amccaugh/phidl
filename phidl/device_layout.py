@@ -1196,7 +1196,7 @@ class Device(gdstk.Cell, _GeometryHelper):
         except Exception:
             pass  # Verified points is not a list of polygons, continue on
 
-        if isinstance(points, gdstk.PolygonSet):
+        if isinstance(points, gdstk.Polygon):
             if layer is np.nan:
                 layers = zip(points.layers, points.datatypes)
             else:
@@ -1418,7 +1418,7 @@ class Device(gdstk.Cell, _GeometryHelper):
                 filename += ".gds"
         except Exception:
             pass
-        referenced_cells = list(self.get_dependencies(recursive=True))
+        referenced_cells = list(self.dependencies(True))
         all_cells = [self] + referenced_cells
 
         # Autofix names so there are no duplicates
@@ -1442,9 +1442,9 @@ class Device(gdstk.Cell, _GeometryHelper):
             self.name = cellname
 
         # Write the gds
-        lib = gdstk.GdsLibrary(unit=unit, precision=precision)
+        lib = gdstk.Library(unit=unit, precision=precision)
         lib.add(self)
-        lib.write_gds(filename, cells=all_cells)
+        lib.write_gds(filename)
         # Return cells to their original names if they were auto-renamed
         if auto_rename:
             for n, c in enumerate(all_cells_sorted):
@@ -1905,15 +1905,15 @@ class DeviceReference(gdstk.Reference, _GeometryHelper):
     """
 
     def __init__(
-        self, device, origin=(0, 0), rotation=0, magnification=None, x_reflection=False
+        self, device, origin=(0, 0), rotation=0, magnification=1, x_reflection=False
     ):
         super().__init__(
-            ref_cell=device,
+            cell=device,
             origin=origin,
             rotation=rotation,
             magnification=magnification,
             x_reflection=x_reflection,
-            ignore_missing=False,
+            # ignore_missing=False,
         )
         self.owner = None
         # The ports of a DeviceReference have their own unique id (uid),
