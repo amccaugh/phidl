@@ -1444,11 +1444,68 @@ class Device(gdstk.Cell, _GeometryHelper):
         # Write the gds
         lib = gdstk.Library(unit=unit, precision=precision)
         lib.add(self)
+
+        for parent in self.dependencies(True):
+            lib.add(parent)
+
+        # print("Dependencies: ",self.dependencies(True))
+        # print("References: ", self.references)
+        # print("Waveguide Cell References: ", self.dependencies(True)[1].references)
+
         lib.write_gds(filename)
         # Return cells to their original names if they were auto-renamed
         if auto_rename:
             for n, c in enumerate(all_cells_sorted):
                 c.name = all_cells_original_names[n]
+        return filename
+
+    def write_oas(
+        self,
+        filename,
+        unit=1e-6,
+        precision=1e-9,
+        auto_rename=True,
+        max_cellname_length=28,
+        cellname="toplevel",
+    ):
+        try:
+            if filename[-4:] != ".oas":
+                filename += ".oas"
+        except Exception:
+            pass
+        referenced_cells = list(self.dependencies(True))
+        all_cells = [self] + referenced_cells
+
+        # Autofix names so there are no duplicates
+        if auto_rename:
+            all_cells_sorted = sorted(all_cells, key=lambda x: x.uid)
+            all_cells_original_names = [c.name for c in all_cells_sorted]
+            used_names = {cellname}
+            n = 1
+            for c in all_cells_sorted:
+                if max_cellname_length is not None:
+                    new_name = c.name[:max_cellname_length]
+                else:
+                    new_name = c.name
+                temp_name = new_name
+                while temp_name in used_names:
+                    n += 1
+                    temp_name = new_name + ("%0.3i" % n)
+                new_name = temp_name
+                used_names.add(new_name)
+                c.name = new_name
+            self.name = cellname
+
+        lib = gdstk.Library(unit=unit, precision=precision)
+        lib.add(self)
+        for parent in self.dependencies(self):
+            lib.add(parent)
+
+        lib.write_oas(filename)
+        if auto_rename:
+            for n, c in enumerate(all_cells_sorted):
+                c.name = all_cells_original_names[n]
+
         return filename
 
     def remap_layers(self, layermap={}, include_labels=True):
@@ -1925,11 +1982,11 @@ class DeviceReference(gdstk.Reference, _GeometryHelper):
 
     @property
     def parent(self):
-        return self.ref_cell
+        return self.cell
 
     @parent.setter
     def parent(self, value):
-        self.ref_cell = value
+        self.cell = value
 
     def __repr__(self):
         """Prints a description of the DeviceReference, including parent
