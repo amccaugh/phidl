@@ -1,6 +1,6 @@
 import warnings
 
-import gdspy
+import gdstk
 import numpy as np
 from numpy import cos, mod, pi, sin
 from numpy.linalg import norm
@@ -208,7 +208,7 @@ def route_basic(
     if width_type == "sine":
         width_fun = lambda t: (width2 - width1) * (1 - cos(t * pi)) / 2 + width1
 
-    route_path = gdspy.Path(width=width1, initial_point=(0, 0))
+    route_path = gdstk.Path(width=width1, initial_point=(0, 0))
     route_path.parametric(
         curve_fun,
         curve_deriv_fun,

@@ -7,9 +7,9 @@ import warnings
 from collections import OrderedDict
 from functools import update_wrapper
 
-import gdspy
+import gdstk
 import numpy as np
-from gdspy import clipper
+from gdstk import clipper
 from numpy import cos, exp, log, pi, sin, sinh, sqrt
 
 from phidl.constants import _glyph, _indent, _width
@@ -478,7 +478,7 @@ def offset(
     for e in elements:
         if isinstance(e, (Device, DeviceReference)):
             polygons_to_offset += e.get_polygons(by_spec=False)
-        elif isinstance(e, (Polygon, gdspy.Polygon)):
+        elif isinstance(e, (Polygon, gdstk.Polygon)):
             polygons_to_offset.append(e)
     if len(polygons_to_offset) == 0:
         return Device("offset")
@@ -488,7 +488,7 @@ def offset(
     )
     gds_layer, gds_datatype = _parse_layer(layer)
     if all(np.array(num_divisions) == np.array([1, 1])):
-        p = gdspy.offset(
+        p = gdstk.offset(
             polygons_to_offset,
             distance=distance,
             join=join,
@@ -612,7 +612,7 @@ def boolean(  # noqa: C901
         # If no trivial solutions, run boolean operation either in parallel or
         # straight
         if all(np.array(num_divisions) == np.array([1, 1])):
-            p = gdspy.boolean(
+            p = gdstk.boolean(
                 operand1=A_polys,
                 operand2=B_polys,
                 operation=operation,
@@ -830,7 +830,7 @@ def xor_diff(A, B, precision=1e-4):
     all_layers.update(B_layers)
     for layer in all_layers:
         if (layer in A_layers) and (layer in B_layers):
-            p = gdspy.boolean(
+            p = gdstk.boolean(
                 operand1=A_polys[layer],
                 operand2=B_polys[layer],
                 operation="xor",
@@ -911,7 +911,7 @@ def _union_polygons(polygons, precision=1e-4, max_points=4000):
         PolygonSet.
     """
     polygons = _merge_floating_point_errors(polygons, tol=precision / 1000)
-    unioned = gdspy.boolean(
+    unioned = gdstk.boolean(
         polygons, [], operation="or", precision=precision, max_points=max_points
     )
     return unioned
@@ -1773,7 +1773,7 @@ def import_gds(filename, cellname=None, flatten=False):
         A PHIDL Device with all the geometry/labels/etc imported from the GDS file
 
     """
-    gdsii_lib = gdspy.GdsLibrary()
+    gdsii_lib = gdstk.GdsLibrary()
     gdsii_lib.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
@@ -1821,7 +1821,7 @@ def import_gds(filename, cellname=None, flatten=False):
             converted_references = []
             for e in D.references:
                 ref_device = c2dmap[e.ref_cell]
-                if isinstance(e, gdspy.CellReference):
+                if isinstance(e, gdstk.CellReference):
                     dr = DeviceReference(
                         device=ref_device,
                         origin=e.origin,
@@ -1832,7 +1832,7 @@ def import_gds(filename, cellname=None, flatten=False):
                     dr.properties = e.properties
                     dr.owner = D
                     converted_references.append(dr)
-                elif isinstance(e, gdspy.CellArray):
+                elif isinstance(e, gdstk.CellArray):
                     dr = CellArray(
                         device=ref_device,
                         columns=e.columns,
@@ -1867,11 +1867,11 @@ def import_gds(filename, cellname=None, flatten=False):
 def _translate_cell(c):
     D = Device(name=c.name)
     for e in c.elements:
-        if isinstance(e, gdspy.PolygonSet):
+        if isinstance(e, gdstk.PolygonSet):
             for n, points in enumerate(e.polygons):
                 polygon_layer = _parse_layer((e.layers[n], e.datatypes[n]))
                 D.add_polygon(points=points, layer=polygon_layer)
-        elif isinstance(e, gdspy.CellReference):
+        elif isinstance(e, gdstk.CellReference):
             dr = DeviceReference(
                 device=_translate_cell(e.ref_cell),
                 origin=e.origin,
@@ -2897,7 +2897,7 @@ def meander_taper(
         radius=10, width1=1, width2=2, theta=45, angle_resolution=2.5, layer=0
     ):
         D = Device("arctaper")
-        path1 = gdspy.Path(width=width1, initial_point=(0, 0))
+        path1 = gdstk.Path(width=width1, initial_point=(0, 0))
         path1.turn(
             radius=radius,
             angle=theta * pi / 180,
@@ -3223,7 +3223,7 @@ def racetrack_gradual(width=0.3, R=5, N=3, layer=0):
         A Device containing a gradual racetrack bent geometry.
     """
     curve_fun = lambda t: _racetrack_gradual_parametric(t, R=5, N=3)
-    route_path = gdspy.Path(width=width, initial_point=[0, 0])
+    route_path = gdstk.Path(width=width, initial_point=[0, 0])
     route_path.parametric(
         curve_fun,
         number_of_evaluations=99,
@@ -3857,7 +3857,7 @@ def _fill_cell_rectangle(
             A.center = (0, 0)
             A = A.get_polygons()
             B = R.get_polygons()
-            p = gdspy.boolean(A, B, operation="not")
+            p = gdstk.boolean(A, B, operation="not")
             D.add_polygon(p, layer=layer)
         else:
             D.add_ref(R)
@@ -3992,7 +3992,7 @@ def fill_rectangle(
         for s in sub_rasters:
             if s[0] == 0:
                 x, y = _raster_index_to_coords(i, j, bbox, fill_size[0], fill_size[1])
-                # F.add(gdspy.CellArray(ref_cell = fill_cell,
+                # F.add(gdstk.CellArray(ref_cell = fill_cell,
                 #                       columns = len(s), rows = 1,
                 #                       spacing = fill_size, ))
                 a = F.add_array(fill_cell, columns=len(s), rows=1, spacing=fill_size)

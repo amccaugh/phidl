@@ -13,8 +13,6 @@
 # Allow Boolean to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # Allow connect(overlap) to be a tuple (0, 0.7)
-# Possibly replace gdspy bezier (font rendering) with
-#   https://stackoverflow.com/a/12644499
 # ==============================================================================
 # Documentation TODO
 # ==============================================================================
@@ -40,17 +38,13 @@ import numbers
 import warnings
 from copy import deepcopy as _deepcopy
 
-import gdspy
+import gdstk
 
-# Remove this once gdspy fully deprecates current_library
-import gdspy.library
 import numpy as np
 from numpy import cos, mod, pi, sin, sqrt
 from numpy.linalg import norm
 
 from phidl.constants import _CSS3_NAMES_TO_HEX
-
-gdspy.library.use_current_library = False
 
 __version__ = "1.6.2"
 
@@ -883,7 +877,7 @@ class Port:
         return self
 
 
-class Polygon(gdspy.Polygon, _GeometryHelper):
+class Polygon(gdstk.Polygon, _GeometryHelper):
     """Polygonal geometric object.
 
     Parameters
@@ -1020,7 +1014,7 @@ def make_device(fun, config=None, **kwargs):
     return D
 
 
-class Device(gdspy.Cell, _GeometryHelper):
+class Device(gdstk.Cell, _GeometryHelper):
     """The basic object that holds polygons, labels, and ports in PHIDL"""
 
     _next_uid = 0
@@ -1141,7 +1135,7 @@ class Device(gdspy.Cell, _GeometryHelper):
 
     # @property
     # def polygons(self):
-    #     return [e for e in self.elements if isinstance(e, gdspy.PolygonSet)]
+    #     return [e for e in self.elements if isinstance(e, gdstk.PolygonSet)]
 
     @property
     def bbox(self):
@@ -1202,7 +1196,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         except Exception:
             pass  # Verified points is not a list of polygons, continue on
 
-        if isinstance(points, gdspy.PolygonSet):
+        if isinstance(points, gdstk.PolygonSet):
             if layer is np.nan:
                 layers = zip(points.layers, points.datatypes)
             else:
@@ -1448,7 +1442,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             self.name = cellname
 
         # Write the gds
-        lib = gdspy.GdsLibrary(unit=unit, precision=precision)
+        lib = gdstk.GdsLibrary(unit=unit, precision=precision)
+        lib.add(self)
         lib.write_gds(filename, cells=all_cells)
         # Return cells to their original names if they were auto-renamed
         if auto_rename:
@@ -1738,11 +1733,11 @@ class Device(gdspy.Cell, _GeometryHelper):
                     )
             else:
                 try:
-                    if isinstance(item, gdspy.PolygonSet):
+                    if isinstance(item, gdstk.PolygonSet):
                         self.polygons.remove(item)
-                    if isinstance(item, gdspy.CellReference):
+                    if isinstance(item, gdstk.CellReference):
                         self.references.remove(item)
-                    if isinstance(item, gdspy.Label):
+                    if isinstance(item, gdstk.Label):
                         self.labels.remove(item)
                     self.aliases = {k: v for k, v in self.aliases.items() if v != item}
                 except Exception:
@@ -1891,7 +1886,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         return final_hash.hexdigest()
 
 
-class DeviceReference(gdspy.CellReference, _GeometryHelper):
+class DeviceReference(gdstk.Reference, _GeometryHelper):
     """Simple reference to an existing Device.
 
     Parameters
@@ -2202,7 +2197,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         return self
 
 
-class CellArray(gdspy.CellArray, _GeometryHelper):
+class CellArray(gdstk.Reference, _GeometryHelper):
     """Multiple references to an existing cell in an array format.
 
     Parameters
@@ -2341,7 +2336,7 @@ class CellArray(gdspy.CellArray, _GeometryHelper):
         return self
 
 
-class Label(gdspy.Label, _GeometryHelper):
+class Label(gdstk.Label, _GeometryHelper):
     """Text that can be used to label parts of the geometry or display
     messages. The text does not create additional geometry, it’s meant for
     display and labeling purposes only.

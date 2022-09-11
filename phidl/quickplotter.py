@@ -4,7 +4,7 @@
 
 import sys
 
-import gdspy
+import gdstk
 import numpy as np
 
 import phidl
@@ -258,7 +258,7 @@ def quickplot(items):  # noqa: C901
                     bbox = _update_bbox(bbox, new_bbox)
             if isinstance(item, Device) and show_subports is True:
                 for sd in item.references:
-                    if not isinstance(sd, (gdspy.CellArray)):
+                    if not isinstance(sd, (gdstk.CellArray)):
                         for name, port in sd.ports.items():
                             new_bbox = _draw_port(
                                 ax,
@@ -962,7 +962,7 @@ def quickplot2(item_list, *args, **kwargs):
             (
                 phidl.device_layout.Device,
                 phidl.device_layout.DeviceReference,
-                gdspy.CellArray,
+                gdstk.CellArray,
             ),
         ):
             # Draw polygons in the element
@@ -976,7 +976,7 @@ def quickplot2(item_list, *args, **kwargs):
             # If element is a Device, draw ports and aliases
             if isinstance(element, phidl.device_layout.Device):
                 for ref in element.references:
-                    if not isinstance(ref, gdspy.CellArray):
+                    if not isinstance(ref, gdstk.CellArray):
                         for name, port in ref.ports.items():
                             viewer.add_port(port, is_subport=True)
                 for name, port in element.ports.items():

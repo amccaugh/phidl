@@ -2,8 +2,7 @@
 Support for font rendering in GDS files.
 """
 
-
-import gdspy
+import gdstk
 import numpy as np
 from matplotlib import font_manager
 
@@ -111,7 +110,7 @@ def _get_glyph(font, letter):  # noqa: C901
 
         # Build up the letter as a curve
         cpoint = start
-        curve = gdspy.Curve(*points[cpoint], tolerance=0.001)
+        curve = gdstk.Curve(*points[cpoint], tolerance=0.001)
         while cpoint <= end:
             # Figure out what sort of point we are looking at
             if tags[cpoint] & 1:
@@ -186,7 +185,7 @@ def _get_glyph(font, letter):  # noqa: C901
                             # halfway between here and the last point
                             p0 = (p0 + p1) / 2
                         # And reset the starting position of the spline
-                        curve = gdspy.Curve(*p0, tolerance=0.001)
+                        curve = gdstk.Curve(*p0, tolerance=0.001)
                     else:
                         # The first control point is at the midpoint of this control point and the
                         # previous control point
@@ -206,14 +205,14 @@ def _get_glyph(font, letter):  # noqa: C901
                     raise ValueError(
                         "Sequential control points not valid for cubic splines."
                     )
-        polylines.append(gdspy.Polygon(curve.get_points()))
+        polylines.append(gdstk.Polygon(curve.get_points()))
 
     # Construct the device
     device = Device(block_name)
     if polylines:
         letter_polyline = polylines[0]
         for polyline in polylines[1:]:
-            letter_polyline = gdspy.boolean(letter_polyline, polyline, "xor")
+            letter_polyline = gdstk.boolean(letter_polyline, polyline, "xor")
         device.add_polygon(letter_polyline)
 
     # Cache the return value and return it

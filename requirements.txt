@@ -1,7 +1,7 @@
 six
 numpy
 matplotlib
-gdspy
+gdstk
 nbsphinx
 ipython
 pygments>=2.4.1 # needed to avoid https://github.com/sphinx-doc/sphinx/issues/8198
