@@ -346,4 +346,5 @@ def test_preserve_properties():
 
 
 if __name__ == "__main__": 
-    test_preserve_properties()
+    # test_preserve_properties()
+    test_polygon_simplify()
