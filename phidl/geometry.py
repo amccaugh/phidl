@@ -3060,7 +3060,6 @@ def text(text="abcd", size=10, justify="left", layer=0, font="DEPLOF"):
         if justify == "center":
             l.move(origin=l.center, destination=(0, 0), axis="x")
 
-    t.flatten()
     return t
 
 

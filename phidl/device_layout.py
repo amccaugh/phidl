@@ -49,6 +49,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 
 __version__ = "1.6.2"
 
+
 def _rnd(arr, precision=1e-4):
     arr = np.ascontiguousarray(arr)
     ndigits = round(-math.log10(precision))
@@ -1655,35 +1656,6 @@ class Device(gdstk.Cell, _GeometryHelper):
         _align(elements, alignment=alignment)
         return self
 
-    def flatten(self, single_layer=None):
-        """Flattens the heirarchy of the Device such that there are no longer
-        any references to other Devices.  All polygons and labels from
-        underlying references are copied and placed in the top-level Device.
-        If single_layer is specified, all polygons are moved to that layer.
-
-        Parameters
-        ----------
-        single_layer : None, int, tuple of int, or set of int
-            If not None, all polygons are moved to the specified
-        """
-        if single_layer is None:
-            super().flatten(
-                single_layer=None, single_datatype=None, single_texttype=None
-            )
-        else:
-            gds_layer, gds_datatype = _parse_layer(single_layer)
-            super().flatten(
-                single_layer=gds_layer,
-                single_datatype=gds_datatype,
-                single_texttype=gds_datatype,
-            )
-
-        temp_polygons = list(self.polygons)
-        self.references = []
-        self.polygons = []
-        [self.add_polygon(poly) for poly in temp_polygons]
-        return self
-
     def absorb(self, reference):
         """Flattens and absorbs polygons from an underlying DeviceReference
         into the Device, destroying the reference in the process but keeping
@@ -1930,9 +1902,7 @@ class Device(gdstk.Cell, _GeometryHelper):
         final_hash = hashlib.sha1()
 
         polygons = [_rnd(p.points, precision) for p in self.get_polygons()]
-        polygon_hashes = np.sort(
-            [hashlib.sha1(p).digest() for p in polygons]
-        )
+        polygon_hashes = np.sort([hashlib.sha1(p).digest() for p in polygons])
         for ph in polygon_hashes:
             final_hash.update(ph)
 
