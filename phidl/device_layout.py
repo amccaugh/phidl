@@ -905,7 +905,7 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
     @property
     def bbox(self):
         """Returns the bounding box of the Polygon."""
-        return self.get_bounding_box()
+        return self.bounding_box()
 
     def rotate(self, angle=45, center=(0, 0)):
         """Rotates a Polygon by the specified angle.
@@ -1146,7 +1146,7 @@ class Device(gdstk.Cell, _GeometryHelper):
     @property
     def bbox(self):
         """Returns the bounding box of the Device."""
-        bbox = self.get_bounding_box()
+        bbox = self.bounding_box()
         if bbox is None:
             bbox = ((0, 0), (0, 0))
         return np.array(bbox)
@@ -2080,7 +2080,7 @@ class DeviceReference(gdstk.Reference, _GeometryHelper):
     @property
     def bbox(self):
         """Returns the bounding box of the DeviceReference."""
-        bbox = self.get_bounding_box()
+        bbox = self.bounding_box()
         if bbox is None:
             bbox = ((0, 0), (0, 0))
         return np.array(bbox)
@@ -2302,7 +2302,7 @@ class CellArray(gdstk.Reference, _GeometryHelper):
     @property
     def bbox(self):
         """Returns the bounding box of the CellArray."""
-        bbox = self.get_bounding_box()
+        bbox = self.bounding_box()
         if bbox is None:
             bbox = ((0, 0), (0, 0))
         return np.array(bbox)

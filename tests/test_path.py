@@ -194,3 +194,7 @@ def test_path_append3():
     P = Path([[P1, P2], [P2, P1, P2]])
     h = P.hash_geometry(precision=1e-4)
     assert h == "85646fba990cd2e72334df5d1e31678f090f6ce2"
+
+
+if __name__ == "__main__": 
+    test_path_append3()
