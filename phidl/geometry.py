@@ -1773,8 +1773,7 @@ def import_gds(filename, cellname=None, flatten=False):
         A PHIDL Device with all the geometry/labels/etc imported from the GDS file
 
     """
-    gdsii_lib = gdstk.GdsLibrary()
-    gdsii_lib.read_gds(filename)
+    gdsii_lib = gdstk.read_gds(filename)
     top_level_cells = gdsii_lib.top_level()
     if cellname is not None:
         if cellname not in gdsii_lib.cells:
@@ -1795,12 +1794,12 @@ def import_gds(filename, cellname=None, flatten=False):
     if not flatten:
         D_list = []
         c2dmap = {}
-        for cell in gdsii_lib.cells.values():
+        for cell in gdsii_lib.cells:
             D = Device(name=cell.name)
-            D.polygons = cell.polygons
-            D.references = cell.references
+            D.add(*cell.polygons)
+            D.add(*cell.references)
+            D.add(*cell.paths)
             D.name = cell.name
-            D.paths = cell.paths
             for label in cell.labels:
                 rotation = label.rotation
                 if rotation is None:
@@ -1820,8 +1819,8 @@ def import_gds(filename, cellname=None, flatten=False):
             # First convert each reference so it points to the right Device
             converted_references = []
             for e in D.references:
-                ref_device = c2dmap[e.ref_cell]
-                if isinstance(e, gdstk.CellReference):
+                ref_device = c2dmap[e.cell]
+                if isinstance(e, gdstk.Reference):
                     dr = DeviceReference(
                         device=ref_device,
                         origin=e.origin,
@@ -1832,25 +1831,12 @@ def import_gds(filename, cellname=None, flatten=False):
                     dr.properties = e.properties
                     dr.owner = D
                     converted_references.append(dr)
-                elif isinstance(e, gdstk.CellArray):
-                    dr = CellArray(
-                        device=ref_device,
-                        columns=e.columns,
-                        rows=e.rows,
-                        spacing=e.spacing,
-                        origin=e.origin,
-                        rotation=e.rotation,
-                        magnification=e.magnification,
-                        x_reflection=e.x_reflection,
-                    )
-                    dr.owner = D
-                    converted_references.append(dr)
-            D.references = converted_references
-            # Next convert each Polygon
-            temp_polygons = list(D.polygons)
-            D.polygons = []
-            for p in temp_polygons:
-                D.add_polygon(p)
+            D.add(*converted_references)
+            # # Next convert each Polygon
+            # temp_polygons = list(D.polygons)
+            # D.add(**D.polygons) = []
+            # for p in temp_polygons:
+            #     D.add_polygon(p)
 
         topdevice = c2dmap[topcell]
         return topdevice

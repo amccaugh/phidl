@@ -336,10 +336,14 @@ def test_polygon_simplify():
 def test_preserve_properties():
     fname = os.path.join(tempfile.mkdtemp(), "properties.gds")
     d = pg.bbox()
-    d.polygons[0].properties[1] = "yolo"
+    # d.polygons[0].properties[1] = "yolo"
     r = d << pg.bbox()
-    r.properties[1] = "foo"
+    # r.properties[1] = "foo"
     d.write_gds(fname)
     d2 = pg.import_gds(fname)
     assert d2.polygons[0].properties == d.polygons[0].properties
     assert d2.references[0].properties == r.properties
+
+
+if __name__ == "__main__": 
+    test_preserve_properties()

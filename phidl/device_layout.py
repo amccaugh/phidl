@@ -1385,7 +1385,7 @@ class Device(gdstk.Cell, _GeometryHelper):
         filename,
         unit=1e-6,
         precision=1e-9,
-        auto_rename=True,
+        auto_rename=False,
         max_cellname_length=28,
         cellname="toplevel",
     ):
@@ -1451,6 +1451,10 @@ class Device(gdstk.Cell, _GeometryHelper):
         # print("Dependencies: ",self.dependencies(True))
         # print("References: ", self.references)
         # print("Waveguide Cell References: ", self.dependencies(True)[1].references)
+        # writer = gdstk.GdsWriter(outfile=filename)
+        # writer.write(self)
+        # writer.close()
+        # return filename
 
         lib.write_gds(filename)
         # Return cells to their original names if they were auto-renamed
@@ -3219,3 +3223,16 @@ class CrossSection:
                 '[PHIDL] Tried to access name "%s" in CrossSection '
                 "which does not exist" % (key)
             )
+
+
+if __name__ == "__main__":
+    import gdsfactory as gf
+
+    c = Device("hi")
+    points = np.array([(5, 1), (25, 1), (25, 40), (55, 40), (55, 1), (75, 1)])
+    c.add_polygon(points, layer=1)
+    points = np.array([(5, 1), (25, 1), (25, 40), (55, 40), (55, 1), (75, 1)])
+    arm1 = gdstk.FlexPath(points, 0.5, bend_radius=15, simple_path=True, layer=1)
+    c.add(arm1)
+    c.write_gds("a.gds")
+    gf.show("a.gds")
