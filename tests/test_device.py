@@ -1,10 +1,15 @@
 import os
 import tempfile
 
+import gdstk
 import numpy as np
+import pytest
 
 import phidl.geometry as pg
 from phidl import Device, Group
+import gc
+
+gc.disable()
 
 # import phidl.routing as pr
 # import phidl.utilities as pu
@@ -36,18 +41,13 @@ def test_add_polygon3():
 def test_bbox():
     D = Device()
     D.add_polygon([(0, 0), (10, 0), (10, 10), (0, 10)], layer=2)
-    assert D._bb_valid is False
-    # Calculating the bbox should change _bb_valid to True once it's cached
     assert D.bbox.tolist() == [[0, 0], [10, 10]]
-    assert D._bb_valid is True
 
     E = Device()
     e1 = E.add_ref(D)
     e2 = E.add_ref(D)
     e2.movex(30)
-    assert E._bb_valid is False
     assert E.bbox.tolist() == [[0, 0], [40, 10]]
-    assert E._bb_valid is True
 
     D.add_polygon([(0, 0), (100, 0), (100, 100), (0, 100)], layer=2)
     D.add_polygon([(0, 0), (100, 0), (100, 100), (0, 100)], layer=2)
@@ -191,10 +191,11 @@ def test_flatten():
     D.flatten()
     h = D.hash_geometry(precision=1e-4)
     assert h == "8a057feca51d8097f2a915eda558fe2a9b88fb13"
-    D.flatten(single_layer=(5, 5))
-    h = D.hash_geometry(precision=1e-4)
-    assert h == "cfc1ba30384f5f1f7d888f47f16d1f310f95b464"
 
+    # flattening with single layer no longer supported
+    # D.flatten(single_layer=(5, 5))
+    # h = D.hash_geometry(precision=1e-4)
+    # assert h == "cfc1ba30384f5f1f7d888f47f16d1f310f95b464"
 
 def test_remove_layers():
     D = Device()
@@ -203,12 +204,24 @@ def test_remove_layers():
     xpts = list(range(1000))
     ypts = [x % 73 for x in xpts]
     p = D.add_polygon([xpts, ypts], layer=15)
-    p.fracture(max_points=13, precision=1e-4)
+    p_fractured = []
+    for p in D.polygons:
+        pf = p.fracture(max_points=13, precision=1e-4)
+        if isinstance(pf, list):
+            p_fractured.extend(pf)
+        else:
+            p_fractured.append(pf)
+    D = Device()
+    D.add_polygon(p_fractured)
     # Switch part of the polygons to layer (14,0)
-    p.layers[13:17] = [14] * 4
+    polygons = D.polygons
+    print(len(polygons))
+    for p in polygons[13:17]:
+        p.layer = 14
     # Switch part of the polygons to layer (14,1)
-    p.layers[23:27] = [14] * 4
-    p.datatypes[23:27] = [1] * 4
+    for p in polygons[23:27]:
+        p.layer = 14
+        p.datatype = 1
     h = D.hash_geometry(precision=1e-4)
     assert h == "7a7aa6a22b3d0b852a0e465398018dd19a1be305"
     D.remove_layers(layers=[13, (14, 0)])

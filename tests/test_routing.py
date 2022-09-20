@@ -3,7 +3,9 @@ import numpy as np
 import phidl.path as pp
 import phidl.routing as pr
 from phidl import Device
+import gc
 
+gc.disable()
 # import phidl.utilities as pu
 
 

@@ -900,8 +900,8 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
     """
 
     def __init__(self, points, gds_layer, gds_datatype, parent):
-        self.parent = parent
         super().__init__(points=points, layer=gds_layer, datatype=gds_datatype)
+        self.parent = parent
 
     @property
     def bbox(self):
@@ -919,8 +919,6 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
             Midpoint of the Polygon.
         """
         super().rotate(angle=angle * pi / 180, center=center)
-        if self.parent is not None:
-            self.parent._bb_valid = False
         return self
 
     def move(self, origin=(0, 0), destination=None, axis=None):
@@ -941,8 +939,6 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
         dx, dy = _parse_move(origin, destination, axis)
 
         super().translate(dx, dy)
-        if self.parent is not None:
-            self.parent._bb_valid = False
         return self
 
     def mirror(self, p1=(0, 1), p2=(0, 0)):
@@ -957,11 +953,7 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
         p2 : array-like[N][2]
             Second point of the line.
         """
-        for n, points in enumerate(self.polygons):
-            self.polygons[n] = _reflect_points(points, p1, p2)
-        if self.parent is not None:
-            self.parent._bb_valid = False
-        return self
+        return super().mirror(p1, p2)
 
     def simplify(self, tolerance=1e-3):
         """Removes points from the polygon but does not change the polygon
@@ -979,8 +971,6 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
 
         for n, points in enumerate(self.polygons):
             self.polygons[n] = _simplify(points, tolerance=tolerance)
-        if self.parent is not None:
-            self.parent._bb_valid = False
         return self
 
 
@@ -1196,30 +1186,6 @@ class Device(gdstk.Cell, _GeometryHelper):
         if layer is None:
             return None
 
-        # Check if input a list of polygons by seeing if it's 3 levels deep
-        try:
-            points[0][0][0]  # Try to access first x point
-            return [self.add_polygon(p, layer) for p in points]
-        except Exception:
-            pass  # Verified points is not a list of polygons, continue on
-
-        if isinstance(points, gdstk.Polygon):
-            if layer is np.nan:
-                layers = zip(points.layers, points.datatypes)
-            else:
-                layers = [layer] * len(points.polygons)
-
-            polygons = []
-            for p, layer in zip(points.polygons, layers):
-                new_polygon = self.add_polygon(p, layer)
-                new_polygon.properties = points.properties
-                polygons.append(new_polygon)
-            return polygons
-
-        if layer is np.nan:
-            layer = 0
-
-        # Check if layer is actually a list of Layer objects
         try:
             if isinstance(layer, LayerSet):
                 return [self.add_polygon(points, l) for l in layer._layers.values()]
@@ -1235,17 +1201,43 @@ class Device(gdstk.Cell, _GeometryHelper):
         except Exception:
             pass
 
-        # If in the form [[1,3,5],[2,4,6]]
-        if len(points[0]) > 2:
-            # Convert to form [[1,2],[3,4],[5,6]]
-            points = np.column_stack(points)
+        if isinstance(points, gdstk.Polygon):
+            # if layer is unspecified or matches original polygon, just add it as-is
+            polygon = points
+            if layer is np.nan or (isinstance(layer, tuple) and (polygon.layer, polygon.datatype) == layer):
+                polygon = Polygon(polygon.points, polygon.layer, polygon.datatype, parent=self)
+                self.add(polygon)
+            else:
+                layer, datatype = _parse_layer(layer)
+                polygon = Polygon(polygon.points, layer, datatype, parent=self)
+                self.add(polygon)
+            return polygon
 
-        gds_layer, gds_datatype = _parse_layer(layer)
-        polygon = Polygon(
-            points=points, gds_layer=gds_layer, gds_datatype=gds_datatype, parent=self
-        )
-        self.add(polygon)
-        return polygon
+        points = np.asarray(points)
+        if points.ndim == 1 and isinstance(points[0], gdstk.Polygon):
+            polygons = [self.add_polygon(poly, layer=layer) for poly in points]
+            return polygons
+
+        if layer is np.nan:
+            layer = 0
+
+        if points.ndim == 2:
+            # add single polygon from points
+            if len(points[0]) > 2:
+                # Convert to form [[1,2],[3,4],[5,6]]
+                points = np.column_stack(points)
+            layer, datatype = _parse_layer(layer)
+            polygon = Polygon(points, gds_layer=layer, gds_datatype=datatype, parent=self)
+            self.add(polygon)
+            return polygon
+        elif points.ndim == 3:
+            layer, datatype = _parse_layer(layer)
+            polygons = [Polygon(ppoints, gds_layer=layer, gds_datatype=datatype, parent=self) for ppoints in points]
+            self.add(*polygons)
+            return polygons
+        else:
+            raise ValueError(f'Unable to add {points.ndim}-dimensional points object')
+
 
     def add_array(self, device, columns=2, rows=2, spacing=(100, 100), alias=None):
         """Creates a CellArray reference to a Device.
@@ -1343,7 +1335,7 @@ class Device(gdstk.Cell, _GeometryHelper):
         text="hello",
         position=(0, 0),
         magnification=None,
-        rotation=None,
+        rotation=0,
         anchor="o",
         layer=255,
     ):
@@ -1366,6 +1358,8 @@ class Device(gdstk.Cell, _GeometryHelper):
         """
         if layer is None:
             return None
+        if rotation is None:
+            rotation = 0
         if len(text) >= 1023:
             warnings.warn(
                 "[PHIDL] add_label(): Label text exceeds 1023 characters, "
@@ -1788,7 +1782,6 @@ class Device(gdstk.Cell, _GeometryHelper):
                         % (item)
                     )
 
-        self._bb_valid = False
         return self
 
     def rotate(self, angle=45, center=(0, 0)):
@@ -1813,7 +1806,6 @@ class Device(gdstk.Cell, _GeometryHelper):
         for p in self.ports.values():
             p.midpoint = _rotate_points(p.midpoint, angle, center)
             p.orientation = mod(p.orientation + angle, 360)
-        self._bb_valid = False
         return self
 
     def move(self, origin=(0, 0), destination=None, axis=None):
@@ -1842,7 +1834,6 @@ class Device(gdstk.Cell, _GeometryHelper):
         for p in self.ports.values():
             p.midpoint = np.array(p.midpoint) + np.array((dx, dy))
 
-        self._bb_valid = False
         return self
 
     def mirror(self, p1=(0, 1), p2=(0, 0)):
@@ -1863,7 +1854,6 @@ class Device(gdstk.Cell, _GeometryHelper):
             p.midpoint = _reflect_points(p.midpoint, p1, p2)
             phi = np.arctan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / pi
             p.orientation = 2 * phi - p.orientation
-        self._bb_valid = False
         return self
 
     def hash_geometry(self, precision=1e-4):
@@ -2115,8 +2105,6 @@ class DeviceReference(gdstk.Reference, _GeometryHelper):
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
 
-        if self.owner is not None:
-            self.owner._bb_valid = False
         return self
 
     def rotate(self, angle=45, center=(0, 0)):
@@ -2137,8 +2125,6 @@ class DeviceReference(gdstk.Reference, _GeometryHelper):
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
 
-        if self.owner is not None:
-            self.owner._bb_valid = False
         return self
 
     def mirror(self, p1=(0, 1), p2=(0, 0)):
@@ -2177,8 +2163,6 @@ class DeviceReference(gdstk.Reference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
-        if self.owner is not None:
-            self.owner._bb_valid = False
         return self
 
     def connect(self, port, destination, overlap=0):
@@ -2252,19 +2236,18 @@ class CellArray(gdstk.Reference, _GeometryHelper):
         spacing,
         origin=(0, 0),
         rotation=0,
-        magnification=None,
+        magnification=1,
         x_reflection=False,
     ):
         super().__init__(
             columns=columns,
             rows=rows,
             spacing=spacing,
-            ref_cell=device,
+            cell=device,
             origin=origin,
             rotation=rotation,
             magnification=magnification,
             x_reflection=x_reflection,
-            ignore_missing=False,
         )
         self.parent = device
         self.owner = None
@@ -2294,8 +2277,6 @@ class CellArray(gdstk.Reference, _GeometryHelper):
         dx, dy = _parse_move(origin, destination, axis)
         self.origin = np.array(self.origin) + np.array((dx, dy))
 
-        if self.owner is not None:
-            self.owner._bb_valid = False
         return self
 
     def rotate(self, angle=45, center=(0, 0)):
@@ -2315,8 +2296,6 @@ class CellArray(gdstk.Reference, _GeometryHelper):
             center = center.midpoint
         self.rotation += angle
         self.origin = _rotate_points(self.origin, angle, center)
-        if self.owner is not None:
-            self.owner._bb_valid = False
         return self
 
     def mirror(self, p1=(0, 1), p2=(0, 0)):
@@ -2346,7 +2325,7 @@ class CellArray(gdstk.Reference, _GeometryHelper):
 
         # Reflect across x-axis
         self.x_reflection = not self.x_reflection
-        self.origin[1] = -self.origin[1]
+        self.origin = (self.origin[0], -self.origin[1])
         self.rotation = -self.rotation
 
         # Un-rotate and un-translate
@@ -2354,8 +2333,6 @@ class CellArray(gdstk.Reference, _GeometryHelper):
         self.rotation += angle
         self.origin = self.origin + p1
 
-        if self.owner is not None:
-            self.owner._bb_valid = False
         return self
 
 
@@ -2366,8 +2343,12 @@ class Label(gdstk.Label, _GeometryHelper):
     """
 
     def __init__(self, *args, **kwargs):
+        if 'position' in kwargs:
+            kwargs['origin'] = kwargs.pop('position')
+        if 'magnification' in kwargs and kwargs['magnification'] is None:
+            kwargs['magnification'] = 1
         super().__init__(*args, **kwargs)
-        self.position = np.array(self.position, dtype="float64")
+        # self.position = np.array(self.position, dtype="float64")
 
     @property
     def bbox(self):
@@ -2422,6 +2403,13 @@ class Label(gdstk.Label, _GeometryHelper):
         self.position = _reflect_points(self.position, p1, p2)
         return self
 
+    @property
+    def position(self):
+        return self.origin
+
+    @position.setter
+    def position(self, value):
+        self.origin = value
 
 class Group(_GeometryHelper):
     """Groups objects together so they can be manipulated as though
@@ -2456,7 +2444,7 @@ class Group(_GeometryHelper):
             raise ValueError("[PHIDL] Group is empty, no bbox is available")
         bboxes = np.empty([len(self.elements), 4])
         for n, e in enumerate(self.elements):
-            bboxes[n] = e.bbox.flatten()
+            bboxes[n] = np.asarray(e.bbox).flatten()
 
         bbox = (
             (bboxes[:, 0].min(), bboxes[:, 1].min()),

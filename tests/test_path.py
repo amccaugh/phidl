@@ -2,6 +2,10 @@ import numpy as np
 
 import phidl.path as pp
 from phidl import CrossSection, Path
+import pytest
+import gc
+
+gc.disable()
 
 
 def test_path_extrude_width1_constant():
