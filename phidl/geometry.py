@@ -477,7 +477,7 @@ def offset(
     polygons_to_offset = []
     for e in elements:
         if isinstance(e, (Device, DeviceReference)):
-            polygons_to_offset += e.get_polygons(by_spec=False)
+            polygons_to_offset += [poly.points for poly in e.get_polygons()]
         elif isinstance(e, (Polygon, gdstk.Polygon)):
             polygons_to_offset.append(e)
     if len(polygons_to_offset) == 0:
@@ -494,8 +494,6 @@ def offset(
             join=join,
             tolerance=tolerance,
             precision=precision,
-            join_first=join_first,
-            max_points=max_points,
             layer=gds_layer,
             datatype=gds_datatype,
         )
@@ -617,7 +615,7 @@ def boolean(  # noqa: C901
                 operand2=B_polys,
                 operation=operation,
                 precision=precision,
-                max_points=max_points,
+                # max_points=max_points,
                 layer=gds_layer,
                 datatype=gds_datatype,
             )
@@ -632,10 +630,10 @@ def boolean(  # noqa: C901
 
     if p is not None:
         polygons = D.add_polygon(p, layer=layer)
-        [
-            polygon.fracture(max_points=max_points, precision=precision)
-            for polygon in polygons
-        ]
+        # [
+        #     polygon.fracture(max_points=max_points, precision=precision)
+        #     for polygon in polygons
+        # ]
     return D
 
 
@@ -1722,11 +1720,6 @@ def deepcopy(D):
     D_copy.uid = Device._next_uid
     Device._next_uid += 1
     D_copy.name = D.name
-    # Make sure _bb_valid is set to false for these new objects so new
-    # bounding boxes are created in the cache
-    for D in D_copy.get_dependencies(True):
-        D._bb_valid = False
-    D_copy._bb_valid = False
 
     return D_copy
 
@@ -1941,7 +1934,7 @@ class device_lru_cache:
                 self.memo.popitem(last=False)  # Remove oldest item from cache
             # Add a deepcopy of new item to cache so that if we change the
             # returned device, our stored cache item is not changed
-            self.memo[pickle_str] = python_copy.deepcopy(new_cache_item)
+            self.memo[pickle_str] = new_cache_item  # TODO: this used to be deepcopy, which no longer works... not sure if there will be side effects
             return new_cache_item
         else:  # if found in cache
             # Pop cache item out and put it back on the top of the cache
