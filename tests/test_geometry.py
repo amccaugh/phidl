@@ -5,9 +5,9 @@ import pytest
 
 import phidl.geometry as pg
 from phidl import Device, Port
-import gc
+# import gc
 
-gc.disable()
+# gc.disable()
 
 
 def test_rectangle():

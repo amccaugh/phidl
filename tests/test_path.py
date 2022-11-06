@@ -5,7 +5,7 @@ from phidl import CrossSection, Path
 import pytest
 import gc
 
-gc.disable()
+# gc.disable()
 
 
 def test_path_extrude_width1_constant():
