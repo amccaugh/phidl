@@ -899,7 +899,7 @@ class Polygon(gdstk.Polygon, _GeometryHelper):
 
     """
 
-    def __init__(self, points, gds_layer, gds_datatype, parent):
+    def __init__(self, points, gds_layer, gds_datatype, parent=None):
         super().__init__(points=points, layer=gds_layer, datatype=gds_datatype)
         self.parent = parent
 
@@ -1560,44 +1560,31 @@ class Device(gdstk.Cell, _GeometryHelper):
             If True, removes all layers except those specified.
         """
         layers = [_parse_layer(l) for l in layers]
-        all_D = list(self.get_dependencies(True))
-        all_D.append(self)
-        for D in all_D:
-            for polygonset in D.polygons:
-                polygon_layers = zip(polygonset.layers, polygonset.datatypes)
-                polygons_to_keep = [(pl in layers) for pl in polygon_layers]
-                if not invert_selection:
-                    polygons_to_keep = [(not p) for p in polygons_to_keep]
-                polygonset.polygons = [
-                    p for p, keep in zip(polygonset.polygons, polygons_to_keep) if keep
-                ]
-                polygonset.layers = [
-                    p for p, keep in zip(polygonset.layers, polygons_to_keep) if keep
-                ]
-                polygonset.datatypes = [
-                    p for p, keep in zip(polygonset.datatypes, polygons_to_keep) if keep
-                ]
+        D = self
 
-            paths = []
-            for path in D.paths:
-                for layer in zip(path.layers, path.datatypes):
-                    if layer not in layers:
-                        paths.append(path)
+        for polygon in D.polygons:
+            if (polygon.layer, polygon.datatype) in layers:
+                D.remove(polygon)
 
-            D.paths = paths
+        for path in D.paths:
+            D.remove(
+                path for layer in zip(path.layers, path.datatypes) if layer in layers
+            )
 
-            if include_labels:
-                new_labels = []
-                for l in D.labels:
-                    original_layer = (l.layer, l.texttype)
-                    original_layer = _parse_layer(original_layer)
-                    if invert_selection:
-                        keep_layer = original_layer in layers
-                    else:
-                        keep_layer = original_layer not in layers
-                    if keep_layer:
-                        new_labels.append(l)
-                D.labels = new_labels
+        if include_labels:
+            new_labels = []
+            for label in D.labels:
+                original_layer = (label.layer, label.texttype)
+                original_layer = _parse_layer(original_layer)
+                if invert_selection:
+                    keep_layer = original_layer in layers
+                else:
+                    keep_layer = original_layer not in layers
+                if keep_layer:
+                    new_labels += [label]
+            D.labels.clear()
+            D.labels.extend(new_labels)
+
         return self
 
     def distribute(
@@ -1766,6 +1753,8 @@ class Device(gdstk.Cell, _GeometryHelper):
                     )
             else:
                 try:
+                    if isinstance(item, gdstk.Polygon):
+                        self.remove(item)
                     if isinstance(item, gdstk.PolygonSet):
                         self.polygons.remove(item)
                     if isinstance(item, gdstk.CellReference):
