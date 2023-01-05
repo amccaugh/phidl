@@ -4984,8 +4984,8 @@ def optimal_step(
         # a wire from a width of 'W' to a width of 'a'
         # eta takes value 0 to pi
 
-        W = np.complex(W)
-        a = np.complex(a)
+        W = np.array(W, dtype=complex)
+        a = np.array(a, dtype=complex)
 
         gamma = (a * a + W * W) / (a * a - W * W)
 
