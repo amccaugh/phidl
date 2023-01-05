@@ -1391,8 +1391,8 @@ def _boolean_polygons_parallel(
 
     """
     # Build bounding boxes
-    polygons_A = np.asarray(polygons_A)
-    polygons_B = np.asarray(polygons_B)
+    polygons_A = np.asarray(polygons_A, dtype=object)
+    polygons_B = np.asarray(polygons_B, dtype=object)
     bboxes_A = _polygons_to_bboxes(polygons_A)
     bboxes_B = _polygons_to_bboxes(polygons_B)
 
