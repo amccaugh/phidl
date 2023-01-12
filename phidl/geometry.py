@@ -3375,7 +3375,7 @@ def grid(
 
     # Create a blank Device and reference all the Devices in it
     D = Device("grid")
-    ref_array = np.empty(device_array.shape, dtype=np.object)
+    ref_array = np.empty(device_array.shape, dtype=object)
     dummy = Device()
     for idx, d in np.ndenumerate(device_array):
         if d is not None:
