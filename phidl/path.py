@@ -131,12 +131,20 @@ def euler(radius=3, angle=90, p=1.0, use_eff=False, num_pts=720):
     num_pts = abs(int(num_pts * angle / 360))
     num_pts_euler = int(np.round(sp / (s0 / 2) * num_pts))
     num_pts_arc = num_pts - num_pts_euler
+    # Ensure a minimum of 2 points for each euler/arc section
+    if num_pts <= 2:
+        num_pts_euler = 0
+        num_pts_arc = 2 
 
-    xbend1, ybend1 = _fresnel(R0, sp, num_pts_euler)
-    xp, yp = xbend1[-1], ybend1[-1]
-
-    dx = xp - Rp * np.sin(p * alpha / 2)
-    dy = yp - Rp * (1 - np.cos(p * alpha / 2))
+    if num_pts_euler > 0:
+        xbend1, ybend1 = _fresnel(R0, sp, num_pts_euler)
+        xp, yp = xbend1[-1], ybend1[-1]
+        dx = xp - Rp * np.sin(p * alpha / 2)
+        dy = yp - Rp * (1 - np.cos(p * alpha / 2))
+    else:
+        xbend1 = ybend1 = np.asfarray([])
+        dx = 0
+        dy = 0
 
     s = np.linspace(sp, s0 / 2, num_pts_arc)
     xbend2 = Rp * np.sin((s - sp) / Rp + p * alpha / 2) + dx
