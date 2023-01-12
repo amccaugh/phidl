@@ -134,7 +134,7 @@ def euler(radius=3, angle=90, p=1.0, use_eff=False, num_pts=720):
     # Ensure a minimum of 2 points for each euler/arc section
     if num_pts <= 2:
         num_pts_euler = 0
-        num_pts_arc = 2 
+        num_pts_arc = 2
 
     if num_pts_euler > 0:
         xbend1, ybend1 = _fresnel(R0, sp, num_pts_euler)
