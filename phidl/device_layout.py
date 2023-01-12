@@ -1272,6 +1272,12 @@ class Device(gdspy.Cell, _GeometryHelper):
                 """[PHIDL] add_array() was passed something that
             was not a Device object. """
             )
+
+        if np.size(spacing) != 2:
+            raise ValueError(
+                """[PHIDL] add_array() The spacing argument must
+            have exactly 2 elements, e.g. (150,80) """
+            )
         a = CellArray(
             device=device,
             columns=int(round(columns)),
