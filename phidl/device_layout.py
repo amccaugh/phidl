@@ -10,13 +10,13 @@
 # Minor TODO
 # ==============================================================================
 # Add Group.get_polygons()
-    # Allow Boolean to use Groups
-    # Allow pg.union to use Groups
+# Allow Boolean to use Groups
+# Allow pg.union to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
 #   https://stackoverflow.com/a/12644499
-# 
+#
 
 # ==============================================================================
 # Documentation TODO
