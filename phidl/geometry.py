@@ -853,7 +853,7 @@ def union(D, by_layer=False, precision=1e-4, join_first=True, max_points=4000, l
 
     Parameters
     ----------
-    D : Device(/Reference) or list of Device(/Reference)
+    D : Device(/Reference)
         A Device containing polygons to perform a union on.
     by_Layer : bool
         If true, performs the union operation layer-wise so each layer can be
@@ -1391,8 +1391,8 @@ def _boolean_polygons_parallel(
 
     """
     # Build bounding boxes
-    polygons_A = np.asarray(polygons_A)
-    polygons_B = np.asarray(polygons_B)
+    polygons_A = np.asarray(polygons_A, dtype=object)
+    polygons_B = np.asarray(polygons_B, dtype=object)
     bboxes_A = _polygons_to_bboxes(polygons_A)
     bboxes_B = _polygons_to_bboxes(polygons_B)
 
@@ -3375,7 +3375,7 @@ def grid(
 
     # Create a blank Device and reference all the Devices in it
     D = Device("grid")
-    ref_array = np.empty(device_array.shape, dtype=np.object)
+    ref_array = np.empty(device_array.shape, dtype=object)
     dummy = Device()
     for idx, d in np.ndenumerate(device_array):
         if d is not None:
@@ -4984,8 +4984,8 @@ def optimal_step(
         # a wire from a width of 'W' to a width of 'a'
         # eta takes value 0 to pi
 
-        W = np.complex(W)
-        a = np.complex(a)
+        W = np.array(W, dtype=complex)
+        a = np.array(a, dtype=complex)
 
         gamma = (a * a + W * W) / (a * a - W * W)
 

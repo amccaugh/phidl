@@ -11,10 +11,13 @@
 # ==============================================================================
 # Add Group.get_polygons()
 # Allow Boolean to use Groups
+# Allow pg.union to use Groups
 # Add pp.delay_sine(distance = 10, length = 20, num_periods = 2)
 # Allow connect(overlap) to be a tuple (0, 0.7)
 # Possibly replace gdspy bezier (font rendering) with
 #   https://stackoverflow.com/a/12644499
+#
+
 # ==============================================================================
 # Documentation TODO
 # ==============================================================================
@@ -52,7 +55,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 
 gdspy.library.use_current_library = False
 
-__version__ = "1.6.2"
+__version__ = "1.6.3"
 
 
 # ==============================================================================
@@ -1271,6 +1274,12 @@ class Device(gdspy.Cell, _GeometryHelper):
             raise TypeError(
                 """[PHIDL] add_array() was passed something that
             was not a Device object. """
+            )
+
+        if np.size(spacing) != 2:
+            raise ValueError(
+                """[PHIDL] add_array() The spacing argument must
+            have exactly 2 elements, e.g. (150,80) """
             )
         a = CellArray(
             device=device,
