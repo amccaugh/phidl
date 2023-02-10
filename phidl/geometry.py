@@ -853,7 +853,7 @@ def union(D, by_layer=False, precision=1e-4, join_first=True, max_points=4000, l
 
     Parameters
     ----------
-    D : Device(/Reference) or list of Device(/Reference)
+    D : Device(/Reference)
         A Device containing polygons to perform a union on.
     by_Layer : bool
         If true, performs the union operation layer-wise so each layer can be
