@@ -1,5 +1,15 @@
 # Changelog
 
+
+## 1.6.3 (Feb 9, 2023)
+
+### Bugfixes
+- Fixed error in `pg.euler()` and `pp.smooth()` for edge case of nearly-colinear points
+- Specify certain numpy arrays as `object` to avoid numpy deprecation (thanks Bas Nijholt @basnijholt and Samuel Gyger @gyger)
+- Corrected docstring for `pg.union()` as it does not accept lists of Devices (improvement for future, thanks Samuel Gyger @gyger)
+
+
+
 ## 1.6.2 (July 25, 2022)
 
 ### New features
