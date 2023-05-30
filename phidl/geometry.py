@@ -3336,6 +3336,7 @@ def grid(
     """
 
     device_array = np.asarray(device_list)
+    spacing = np.broadcast_to(spacing, 2)
     # Check arguments
     if device_array.ndim not in (1, 2):
         raise ValueError("[PHIDL] grid() The device_list needs to be 1D or 2D.")
