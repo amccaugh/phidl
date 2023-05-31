@@ -265,3 +265,24 @@ def test_packer():
     D = D_packed_list[0]
     h = D.hash_geometry(precision=1e-4)
     assert h == "d90e43693a5840bdc21eae85f56fdaa57fdb88b2"
+
+
+def test_grid():
+    device_list = []
+    for width1 in [1, 6, 9]:
+        for width2 in [1, 2, 4, 8]:
+            D = pg.taper(length=10, width1=width1, width2=width2, layer=0)
+            device_list.append(D)
+
+    D = pg.grid(
+        device_list,
+        spacing=(5, 1),
+        separation=True,
+        shape=(3, 4),
+        align_x="x",
+        align_y="y",
+        edge_x="x",
+        edge_y="ymax",
+    )
+    h = D.hash_geometry(precision=1e-4)
+    assert h == "9228ee40016e508f5589effd50056df633357de2"
