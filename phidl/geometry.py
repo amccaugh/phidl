@@ -3358,7 +3358,7 @@ def grid(
     else:
         # Change (x,y) shape to (y,x) shape to follow default row, column format in np.reshape
         shape = shape[::-1]
-        
+
         if np.min(shape) == -1:
             max_shape = np.max(shape)
             min_devices = int(np.ceil(device_array.size / max_shape) * max_shape)
