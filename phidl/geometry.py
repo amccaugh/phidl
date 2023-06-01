@@ -3316,8 +3316,8 @@ def grid(
         If True, guarantees elements are speparated with a fixed spacing
         between; if  False, elements are spaced evenly along a grid.
     shape : array-like[2]
-        x, y shape of the grid (see np.reshape). If no shape is given and the
-        list is 1D, the output is as if np.reshape were run with (1, -1).
+        x, y shape of the grid (as if np.reshape() were run with shape[::-1]). If no shape is given and the
+        list is 1D, the output is as if np.reshape were run with (-1, size of list).
     align_x : {'x', 'xmin', 'xmax'}
         Which edge to perform the x (column) alignment along
     align_y : {'y', 'ymin', 'ymax'}
@@ -3335,9 +3335,8 @@ def grid(
         A Device containing all the Devices in `device_list` in a grid.
     """
 
-    # Change (y,x) shape to (x,y) shape
-    shape = shape[::-1]
     device_array = np.asarray(device_list)
+    spacing = np.broadcast_to(spacing, 2)
     # Check arguments
     if device_array.ndim not in (1, 2):
         raise ValueError("[PHIDL] grid() The device_list needs to be 1D or 2D.")
@@ -3351,12 +3350,15 @@ def grid(
     if (shape is None) and (device_array.ndim == 2):  # Already in desired shape
         shape = device_array.shape
     elif (shape is None) and (device_array.ndim == 1):
-        shape = (device_array.size, -1)
+        shape = (-1, device_array.size)
     elif 0 < shape[0] * shape[1] < device_array.size:
         raise ValueError(
             "[PHIDL] grid() The shape is too small for all the items in device_list"
         )
     else:
+        # Change (x,y) shape to (y,x) shape to follow default row, column format in np.reshape
+        shape = shape[::-1]
+
         if np.min(shape) == -1:
             max_shape = np.max(shape)
             min_devices = int(np.ceil(device_array.size / max_shape) * max_shape)
