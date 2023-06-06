@@ -49,7 +49,6 @@ import gdspy
 import gdspy.library
 import numpy as np
 from numpy import cos, mod, pi, sin, sqrt
-from numpy.linalg import norm
 
 from phidl.constants import _CSS3_NAMES_TO_HEX
 
@@ -111,23 +110,26 @@ def _reflect_points(points, p1=(0, 0), p2=(1, 0)):
     -------
     A new set of points that are reflected across ``p1`` and ``p2``.
     """
-    # From http://math.stackexchange.com/questions/11515/point-reflection-across-a-line
-    points = np.array(points)
     p1 = np.array(p1)
     p2 = np.array(p2)
-    if np.asarray(points).ndim == 1:
-        return (
-            2 * (p1 + (p2 - p1) * np.dot((p2 - p1), (points - p1)) / norm(p2 - p1) ** 2)
-            - points
-        )
-    if np.asarray(points).ndim == 2:
-        return np.array(
-            [
-                2 * (p1 + (p2 - p1) * np.dot((p2 - p1), (p - p1)) / norm(p2 - p1) ** 2)
-                - p
-                for p in points
-            ]
-        )
+    line_vec = p2 - p1
+    line_vec_norm = np.linalg.norm(line_vec, axis=-1, keepdims=True) ** 2
+
+    # Checking if the input is 1D and adding an extra dimension if it is
+    input_was_1d = np.asarray(points).ndim == 1
+    if input_was_1d:
+        points = np.array([points])
+
+    reflected_points_projection = (
+        np.sum(line_vec * (points - p1), axis=-1, keepdims=True) / line_vec_norm
+    )
+    reflected_points = 2 * (p1 + line_vec * reflected_points_projection) - points
+
+    # If the input was 1D, remove the extra dimension from the output
+    if input_was_1d:
+        reflected_points = np.squeeze(reflected_points, axis=0)
+
+    return reflected_points
 
 
 def _is_iterable(items):
