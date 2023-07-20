@@ -10,10 +10,6 @@
 - Fixed `pg.grid()` to allow for empty `shape` parameter (thanks Samuel Gyger @gyger)
 - Allow `pg.grid()` spacing to be a single integer (thanks Samuel Gyger @gyger)
 - Fix to np.bool
-- Modifying the `parent` of a `DeviceReference` now correctly updates the reference cell (thanks Joaquin Matres @joamatab)
-- Fix bug in `pg.outline()` when `distance < 0` (thanks @yoshi74ls181)
-- Preserve Polygon.properties and DeviceReference.properties when saving and loading  (thanks Bas Nijholt @basnijholt)
-- `D.remove_layers()` works also with GDS path objects (thanks Joaquin Matres @joamatab)
 
 
 ## 1.6.3 (Feb 9, 2023)
