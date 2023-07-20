@@ -3812,14 +3812,14 @@ def _expand_raster(raster, distance=(4, 2)):
 
     num_pixels = np.array(np.ceil(distance), dtype=int)
     neighborhood = np.zeros(
-        (num_pixels[1] * 2 + 1, num_pixels[0] * 2 + 1), dtype=np.bool
+        (num_pixels[1] * 2 + 1, num_pixels[0] * 2 + 1), dtype=bool
     )
     rr, cc = draw.ellipse(
         num_pixels[1], num_pixels[0], distance[1] + 0.5, distance[0] + 0.5
     )
     neighborhood[rr, cc] = 1
 
-    return morphology.binary_dilation(image=raster, selem=neighborhood)
+    return morphology.binary_dilation(image=raster, footprint=neighborhood)
 
 
 def _fill_cell_rectangle(
