@@ -3316,8 +3316,8 @@ def grid(
         If True, guarantees elements are speparated with a fixed spacing
         between; if  False, elements are spaced evenly along a grid.
     shape : array-like[2]
-        x, y shape of the grid (see np.reshape). If no shape is given and the
-        list is 1D, the output is as if np.reshape were run with (1, -1).
+        x, y shape of the grid (as if np.reshape() were run with shape[::-1]). If no shape is given and the
+        list is 1D, the output is as if np.reshape were run with (-1, size of list).
     align_x : {'x', 'xmin', 'xmax'}
         Which edge to perform the x (column) alignment along
     align_y : {'y', 'ymin', 'ymax'}
@@ -3335,9 +3335,8 @@ def grid(
         A Device containing all the Devices in `device_list` in a grid.
     """
 
-    # Change (y,x) shape to (x,y) shape
-    shape = shape[::-1]
     device_array = np.asarray(device_list)
+    spacing = np.broadcast_to(spacing, 2)
     # Check arguments
     if device_array.ndim not in (1, 2):
         raise ValueError("[PHIDL] grid() The device_list needs to be 1D or 2D.")
@@ -3351,12 +3350,15 @@ def grid(
     if (shape is None) and (device_array.ndim == 2):  # Already in desired shape
         shape = device_array.shape
     elif (shape is None) and (device_array.ndim == 1):
-        shape = (device_array.size, -1)
+        shape = (-1, device_array.size)
     elif 0 < shape[0] * shape[1] < device_array.size:
         raise ValueError(
             "[PHIDL] grid() The shape is too small for all the items in device_list"
         )
     else:
+        # Change (x,y) shape to (y,x) shape to follow default row, column format in np.reshape
+        shape = shape[::-1]
+
         if np.min(shape) == -1:
             max_shape = np.max(shape)
             min_devices = int(np.ceil(device_array.size / max_shape) * max_shape)
@@ -3773,7 +3775,7 @@ def _rasterize_polygons(polygons, bounds=[[-100, -100], [100, 100]], dx=1, dy=1)
     # Initialize the raster matrix we'll be writing to
     xsize = int(np.ceil(bounds[1][0] - bounds[0][0]) / dx)
     ysize = int(np.ceil(bounds[1][1] - bounds[0][1]) / dy)
-    raster = np.zeros((ysize, xsize), dtype=np.bool)
+    raster = np.zeros((ysize, xsize), dtype=bool)
 
     # TODO: Replace polygon_perimeter with the supercover version
     for n in range(len(xpts)):
@@ -3809,15 +3811,13 @@ def _expand_raster(raster, distance=(4, 2)):
         return raster
 
     num_pixels = np.array(np.ceil(distance), dtype=int)
-    neighborhood = np.zeros(
-        (num_pixels[1] * 2 + 1, num_pixels[0] * 2 + 1), dtype=np.bool
-    )
+    neighborhood = np.zeros((num_pixels[1] * 2 + 1, num_pixels[0] * 2 + 1), dtype=bool)
     rr, cc = draw.ellipse(
         num_pixels[1], num_pixels[0], distance[1] + 0.5, distance[0] + 0.5
     )
     neighborhood[rr, cc] = 1
 
-    return morphology.binary_dilation(image=raster, selem=neighborhood)
+    return morphology.binary_dilation(image=raster, footprint=neighborhood)
 
 
 def _fill_cell_rectangle(

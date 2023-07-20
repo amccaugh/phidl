@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.4 (July 20, 2023)
+
+### New features
+- Optimized/vectorized point rotation, speeding up the `rotate()` operation by as much as 150x(!) (thanks Bas Nijholt @basnijholt)
+- Added proper `pg.fill_rectangle()` [examples and documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Fill-tool)
+
+### Bugfixes
+- Fixed `pg.grid()` to allow for empty `shape` parameter (thanks Samuel Gyger @gyger)
+- Allow `pg.grid()` spacing to be a single integer (thanks Samuel Gyger @gyger)
+- Fix to np.bool
+
 
 ## 1.6.3 (Feb 9, 2023)
 

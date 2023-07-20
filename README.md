@@ -7,7 +7,8 @@ GDS scripting for Python that's intuitive, fast, and powerful.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/en/latest/geometry_reference.html)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.6.3 on Feb 9, 2023)
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.6.3 on July 20, 2023)
+    - New `pg.fill_rectangle()` [examples and documentation](https://phidl.readthedocs.io/en/latest/geometry_reference.html#Fill-tool)
 
 # Citation
 
