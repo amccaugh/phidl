@@ -556,7 +556,7 @@ def boolean(  # noqa: C901
     'A-B' is equivalent to 'not'.
     'B-A' is equivalent to 'not' with the operands switched.
     """
-    D = Device("boolean")
+    D = Device()
 
     A_polys = []
     B_polys = []
