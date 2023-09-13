@@ -1684,6 +1684,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 else:
                     new_depth = depth - 1
                 ref_ports = r.parent.get_ports(depth=new_depth)
+                module = r.parent.metadata
 
                 # Transform ports that came from a reference
                 ref_ports_transformed = []
@@ -1698,6 +1699,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                     )
                     new_port.midpoint = new_midpoint
                     new_port.new_orientation = new_orientation
+                    new_port.port_type = module
                     ref_ports_transformed.append(new_port)
                 port_list += ref_ports_transformed
 
