@@ -1435,6 +1435,183 @@ def _boolean_polygons_parallel(
 
 
 # ==============================================================================
+# KLayout utility functions
+# ==============================================================================
+
+
+def _kl_polygon_to_array(kl_polygon):
+    return [(pt.x, pt.y) for pt in kl_polygon.each_point()]
+
+
+def _objects_to_kl_region(elements, precision):
+    try:
+        import klayout.db as kdb
+    except ImportError:
+        raise ImportError(
+            "PHIDL tried to import the klayout module but it failed. Please "
+            + "install the klayout Python package with"
+            + "pip install klayout"
+        )
+    kl_region = kdb.Region()
+    if type(elements) not in (list, tuple):
+        elements = [elements]
+    polygons = []
+    for e in elements:
+        if isinstance(e, Device) or isinstance(e, DeviceReference):
+            polygons.extend(e.get_polygons(by_spec=False))
+        elif isinstance(e, Polygon):
+            polygons.extend([e.points])
+    polygons = _merge_floating_point_errors(polygons, tol=1e-10)
+    for points in polygons:
+        p = kdb.SimplePolygon(
+            [kdb.Point(x / precision, y / precision) for x, y in points]
+        )  # x and y must be floats
+        kl_region.insert(p)
+    return kl_region
+
+
+def _kl_region_to_device(kl_region, layer, name, precision):
+    D = Device(name)
+    for polygon in kl_region.each():
+        polygon = polygon.to_simple_polygon()
+        points = _kl_polygon_to_array(polygon)
+        points = np.asfarray(points) * precision
+        D.add_polygon(points, layer=layer)
+    return D
+
+
+# ==============================================================================
+#
+# KLayout boolean functions
+#
+# ==============================================================================
+
+
+def kl_offset(
+    elements, distance=0.1, join_first=True, precision=1e-4, miter_mode=2, layer=0
+):
+    if type(elements) not in (list, tuple):
+        elements = [elements]
+
+    layer = _parse_layer(layer)
+    kl_region = _objects_to_kl_region(elements, precision=precision)
+    kl_region.merged_semantics = join_first
+
+    d = round(distance / precision)  # The distance in database units
+
+    # Perform the offsetting operation (referred to as "sizing" in KLayout)
+    mode = (
+        miter_mode  # https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    )
+    kl_region_result = kl_region.sized(d, d, mode)
+
+    # Create the Device and add the resulting offset region to it
+    D = _kl_region_to_device(
+        kl_region_result, layer=layer, name="offset", precision=precision
+    )
+
+    # Delete the regions so they don't hang around in memory
+    for r in [kl_region, kl_region_result]:
+        r.clear()
+        r._destroy()
+
+    return D
+
+
+def kl_boolean(A, B, operation, precision=1e-4, layer=0):
+    """
+    Performs boolean operations between 2 Device/DeviceReference objects,
+    or lists of Devices/DeviceReferences.
+
+    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.
+    Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    'B-A' is equivalent to 'not' with the operands switched
+    """
+
+    layer = _parse_layer(layer)
+    kl_region_A = _objects_to_kl_region(A, precision=precision)
+    kl_region_B = _objects_to_kl_region(B, precision=precision)
+
+    operation = operation.lower().replace(" ", "")
+    if operation in {"a-b", "not"}:
+        kl_region_result = kl_region_A - kl_region_B
+    elif operation in {"b-a"}:
+        kl_region_result = kl_region_B - kl_region_A
+    elif operation in {"a+b", "or"}:
+        kl_region_result = kl_region_A + kl_region_B
+        kl_region_result.merge()
+    elif operation in {"a^b", "xor"}:
+        kl_region_result = kl_region_A ^ kl_region_B
+    elif operation in {"a&b", "and"}:
+        kl_region_result = kl_region_A & kl_region_B
+    else:
+        raise ValueError(
+            "[PHIDL] phidl.geometry.boolean() `operation` parameter"
+            + " not recognized, must be one of the following:  'not',"
+            + " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'"
+        )
+
+    # Using the boolean function grabbed from the Region A object, call the function
+    # using Region B as the input (thus producing the resulting boolean-ed Region)
+    # Create the Device and add the polygons to it
+    D = _kl_region_to_device(
+        kl_region_result, layer=layer, name="boolean", precision=precision
+    )
+
+    # Delete the regions so they don't hang around in memory
+    for r in [kl_region_A, kl_region_B, kl_region_result]:
+        r.clear()
+        r._destroy()
+
+    return D
+
+
+def kl_outline(
+    elements,
+    distance=1,
+    precision=1e-4,
+    miter_mode=2,
+    join_first=True,
+    max_points=4000,
+    layer=0,
+):
+    """Creates an outline around all the polygons passed in the `elements`
+    argument.  `elements` may be a Device, Polygon, or list of Devices
+    """
+
+    layer = _parse_layer(layer)
+    kl_region = _objects_to_kl_region(elements, precision=precision)
+    kl_region.merged_semantics = join_first
+
+    d = round(distance / precision)  # The distance in database units
+
+    # Perform the offsetting operation (referred to as "sizing" in KLayout)
+    mode = (
+        miter_mode  # https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    )
+    kl_region_offset = kl_region.sized(d, d, mode)
+    kl_region_result = kl_region_offset - kl_region
+
+    # Create the Device and add the resulting offset region to it
+    D = _kl_region_to_device(
+        kl_region_result, layer=layer, name="outline", precision=precision
+    )
+
+    # Delete the regions so they don't hang around in memory
+    for r in [kl_region, kl_region_result]:
+        r.clear()
+        r._destroy()
+
+    return D
+
+
+# A = pg.snspd()
+# B = pg.circle(radius = 3)
+# qp(kl_boolean(A, B, operation = 'A-B', precision = 1e-3, layer = 2))
+# qp(kl_outline([A,B], distance = 0.1, precision = 1e-3, layer = 1))
+# qp(kl_offset([A,B], distance = 0.1, precision = 1e-3, layer = 1))
+
+# ==============================================================================
 #
 # Lithography test structures
 #
