@@ -1843,6 +1843,27 @@ class Device(gdspy.Cell, _GeometryHelper):
         self._bb_valid = False
         return self
 
+
+    def simplify(self, tolerance=1e-3):
+        """ Simplifies every polygon in the Device, without changing 
+        the shape by more than `tolerance` from the original. Uses the
+        Ramer-Douglas-Peucker algorithm.
+
+        Parameters
+        ----------
+        tolerance : float
+            Tolerance value for the simplification algorithm.  All points that
+            can be removed without changing the resulting polygon by more than
+            the value listed here will be removed. Also known as `epsilon` here
+            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        """
+        referenced_cells = list(self.get_dependencies(recursive=True))
+        for cell in referenced_cells:
+            for polygon in cell.polygons:
+                polygon.simplify(tolerance = tolerance)
+        return self
+
+
     def hash_geometry(self, precision=1e-4):
         """Computes an SHA1 hash of the geometry in the Device. For each layer,
         each polygon is individually hashed and then the polygon hashes are
