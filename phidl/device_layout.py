@@ -316,7 +316,8 @@ def _simplify(points, tolerance=0):
     """Ramer–Douglas–Peucker algorithm for line simplification. Takes an
     array of points of shape (N,2) and removes excess points in the line. The
     remaining points form a identical line to within `tolerance` from the
-    original"""
+    original
+    """
     # From https://github.com/fhirschmann/rdp/issues/7
     # originally written by Kirill Konevets https://github.com/kkonevets
 
