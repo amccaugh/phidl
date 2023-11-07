@@ -1605,12 +1605,6 @@ def kl_outline(
     return D
 
 
-# A = pg.snspd()
-# B = pg.circle(radius = 3)
-# qp(kl_boolean(A, B, operation = 'A-B', precision = 1e-3, layer = 2))
-# qp(kl_outline([A,B], distance = 0.1, precision = 1e-3, layer = 1))
-# qp(kl_offset([A,B], distance = 0.1, precision = 1e-3, layer = 1))
-
 # ==============================================================================
 #
 # Lithography test structures
