@@ -1856,7 +1856,8 @@ class Device(gdspy.Cell, _GeometryHelper):
             the value listed here will be removed. Also known as `epsilon` here
             https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
         """
-        referenced_cells = list(self.get_dependencies(recursive=True))
+        referenced_cells = [self]
+        referenced_cells += list(self.get_dependencies(recursive=True))
         for cell in referenced_cells:
             for polygon in cell.polygons:
                 polygon.simplify(tolerance=tolerance)
