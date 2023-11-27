@@ -3614,6 +3614,9 @@ def _gen_param_variations(
             )
     """
     parameter_list = _parameter_combinations(param_variations)
+    
+    # Pop out any None values
+    [params.pop(None, None) for params in parameter_list]
 
     D_list = []
     for params in parameter_list:
@@ -3668,10 +3671,12 @@ def gridsweep(
         The function which will be used to create the individual devices in the
         grid.  Must only return a single Device (e.g. any of the functions in
         pg.geometry)
-    param_x : dict
-        A dictionary of one or more parameters to sweep in the x-direction
-    param_y : dict
-        A dictionary of one or more parameters to sweep in the y-direction
+    param_x : dict, int, None
+        A dictionary of one or more parameters to sweep in the x-direction.
+        If None, do not sweep. If int, repeat N times in x-direction
+    param_y : dict, int, None
+        A dictionary of one or more parameters to sweep in the y-direction.
+        If None, do not sweep. If int, repeat N times in y-direction
     param_defaults : dict
         Default parameters to pass to every device in the grid
     param_override : dict
@@ -3704,6 +3709,14 @@ def gridsweep(
     device_matrix : Device
         A Device containing all the Devices in `device_list` in a grid.
     """
+    if param_x is None:
+        param_x = {None: [None]}
+    elif isinstance(param_x, int):
+        param_x = {None: [None]*param_x}
+    if param_y is None:
+        param_y = {None: [None]}
+    elif isinstance(param_y, int):
+        param_y = {None: [None]*param_y}
 
     param_variations = OrderedDict()
     param_variations.update(param_y)
