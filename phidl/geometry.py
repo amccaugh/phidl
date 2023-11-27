@@ -1449,7 +1449,7 @@ def _objects_to_kl_region(elements, precision):
     except ImportError:
         raise ImportError(
             "PHIDL tried to import the klayout module but it failed. Please "
-            + "install the klayout Python package with"
+            + "install the klayout Python package with "
             + "pip install klayout"
         )
     kl_region = kdb.Region()
