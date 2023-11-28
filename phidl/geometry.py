@@ -3614,9 +3614,10 @@ def _gen_param_variations(
             )
     """
     parameter_list = _parameter_combinations(param_variations)
-    
+
     # Pop out any None values
-    [params.pop(None, None) for params in parameter_list]
+    [params.pop((None, "x"), None) for params in parameter_list]
+    [params.pop((None, "y"), None) for params in parameter_list]
 
     D_list = []
     for params in parameter_list:
@@ -3710,13 +3711,13 @@ def gridsweep(
         A Device containing all the Devices in `device_list` in a grid.
     """
     if param_x is None:
-        param_x = {None: [None]}
+        param_x = {(None, "x"): [None]}
     elif isinstance(param_x, int):
-        param_x = {None: [None]*param_x}
+        param_x = {(None, "x"): [None] * param_x}
     if param_y is None:
-        param_y = {None: [None]}
+        param_y = {(None, "y"): [None]}
     elif isinstance(param_y, int):
-        param_y = {None: [None]*param_y}
+        param_y = {(None, "y"): [None] * param_y}
 
     param_variations = OrderedDict()
     param_variations.update(param_y)
