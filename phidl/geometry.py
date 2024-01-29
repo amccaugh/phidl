@@ -448,6 +448,9 @@ def offset(
         Polygons to offset or Device containing polygons to offset.
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
+    join first: bool
+        Sets whether to merge all the polygons before performing
+        the offset operation, or offset each polygon individually
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : array-like[2] of int
