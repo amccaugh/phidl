@@ -934,6 +934,8 @@ def _merge_floating_point_errors(polygons, tol=1e-10):
     polygons_fixed : PolygonSet
         Set of corrected polygons.
     """
+    if len(polygons) == 0:
+        return np.asfarray([])
     stacked_polygons = np.vstack(polygons)
     x = stacked_polygons[:, 0]
     y = stacked_polygons[:, 1]
