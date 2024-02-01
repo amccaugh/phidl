@@ -977,7 +977,8 @@ def _merge_nearby_floating_points(x, tol=1e-10):
     xargsort = np.argsort(x)
     xargunsort = np.argsort(xargsort)
     xsort = x[xargsort]
-    xsortthreshold = np.diff(xsort) < tol
+    dx = np.diff(xsort)
+    xsortthreshold = np.logical_and(dx < tol, dx > 0)
     xsortthresholdind = np.argwhere(xsortthreshold)
 
     # Merge nearby floating point values
