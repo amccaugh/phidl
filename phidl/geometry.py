@@ -1,12 +1,12 @@
 import copy as python_copy
 import itertools
 import json
+import multiprocessing
 import os.path
 import pickle
 import warnings
 from collections import OrderedDict
 from functools import update_wrapper
-import multiprocessing
 
 import gdspy
 import numpy as np
@@ -1525,14 +1525,16 @@ def kl_offset(
     return D
 
 
-def kl_boolean(A,
-               B, 
-               operation,
-               precision=1e-4,
-               tile_size = (1000,1000),
-               merge_after = True,
-               num_cpu = multiprocessing.cpu_count(),
-               layer=0):
+def kl_boolean(
+    A,
+    B,
+    operation,
+    precision=1e-4,
+    tile_size=(1000, 1000),
+    merge_after=True,
+    num_cpu=multiprocessing.cpu_count(),
+    layer=0,
+):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -1543,20 +1545,20 @@ def kl_boolean(A,
     """
     layer = _parse_layer(layer)
 
-    A_kl = _objects_to_kl_region(A, precision = precision)
-    B_kl = _objects_to_kl_region(B, precision = precision)
+    A_kl = _objects_to_kl_region(A, precision=precision)
+    B_kl = _objects_to_kl_region(B, precision=precision)
 
     operation = operation.lower().replace(" ", "")
     if operation in {"a-b", "not"}:
-        operation_kl = '-'
+        operation_kl = "-"
     elif operation in {"b-a"}:
-        operation_kl = '-'
+        operation_kl = "-"
     elif operation in {"a+b", "or"}:
-        operation_kl = '+'
+        operation_kl = "+"
     elif operation in {"a^b", "xor"}:
-        operation_kl = '^'
+        operation_kl = "^"
     elif operation in {"a&b", "and"}:
-        operation_kl = '&'
+        operation_kl = "&"
     else:
         raise ValueError(
             "[PHIDL] phidl.geometry.boolean() `operation` parameter"
@@ -1564,12 +1566,12 @@ def kl_boolean(A,
             + " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'"
         )
 
-
     import klayout.db as kdb
-    tp  = kdb.TilingProcessor()
+
+    tp = kdb.TilingProcessor()
     tp.threads = num_cpu
-    tp.tile_size(tile_size[0]*tp.dbu/precision, tile_size[0]*tp.dbu/precision)
-    tp.input("A", A_kl) 
+    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+    tp.input("A", A_kl)
     tp.input("B", B_kl)
     output_region = kdb.Region()
     tp.output("out", output_region)
@@ -1577,7 +1579,9 @@ def kl_boolean(A,
     tp.execute("tiled operation")
     if merge_after is True:
         output_region.merge()
-    D = _kl_region_to_device(output_region, layer = layer, name = 'boolean', precision = precision)
+    D = _kl_region_to_device(
+        output_region, layer=layer, name="boolean", precision=precision
+    )
 
     # Delete the regions so they don't hang around in memory
     for r in [A_kl, B_kl, output_region]:
