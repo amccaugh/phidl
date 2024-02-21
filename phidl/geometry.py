@@ -6,6 +6,7 @@ import pickle
 import warnings
 from collections import OrderedDict
 from functools import update_wrapper
+import multiprocessing
 
 import gdspy
 import numpy as np
@@ -1524,7 +1525,14 @@ def kl_offset(
     return D
 
 
-def kl_boolean(A, B, operation, precision=1e-4, layer=0):
+def kl_boolean(A,
+               B, 
+               operation,
+               precision=1e-4,
+               tile_size = (1000,1000),
+               merge_after = True,
+               num_cpu = multiprocessing.cpu_count(),
+               layer=0):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
     or lists of Devices/DeviceReferences.
@@ -1533,23 +1541,22 @@ def kl_boolean(A, B, operation, precision=1e-4, layer=0):
     Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
     """
-
     layer = _parse_layer(layer)
-    kl_region_A = _objects_to_kl_region(A, precision=precision)
-    kl_region_B = _objects_to_kl_region(B, precision=precision)
+
+    A_kl = _objects_to_kl_region(A, precision = precision)
+    B_kl = _objects_to_kl_region(B, precision = precision)
 
     operation = operation.lower().replace(" ", "")
     if operation in {"a-b", "not"}:
-        kl_region_result = kl_region_A - kl_region_B
+        operation_kl = '-'
     elif operation in {"b-a"}:
-        kl_region_result = kl_region_B - kl_region_A
+        operation_kl = '-'
     elif operation in {"a+b", "or"}:
-        kl_region_result = kl_region_A + kl_region_B
-        kl_region_result.merge()
+        operation_kl = '+'
     elif operation in {"a^b", "xor"}:
-        kl_region_result = kl_region_A ^ kl_region_B
+        operation_kl = '^'
     elif operation in {"a&b", "and"}:
-        kl_region_result = kl_region_A & kl_region_B
+        operation_kl = '&'
     else:
         raise ValueError(
             "[PHIDL] phidl.geometry.boolean() `operation` parameter"
@@ -1557,15 +1564,23 @@ def kl_boolean(A, B, operation, precision=1e-4, layer=0):
             + " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'"
         )
 
-    # Using the boolean function grabbed from the Region A object, call the function
-    # using Region B as the input (thus producing the resulting boolean-ed Region)
-    # Create the Device and add the polygons to it
-    D = _kl_region_to_device(
-        kl_region_result, layer=layer, name="boolean", precision=precision
-    )
+
+    import klayout.db as kdb
+    tp  = kdb.TilingProcessor()
+    tp.threads = num_cpu
+    tp.tile_size(tile_size[0]*tp.dbu/precision, tile_size[0]*tp.dbu/precision)
+    tp.input("A", A_kl) 
+    tp.input("B", B_kl)
+    output_region = kdb.Region()
+    tp.output("out", output_region)
+    tp.queue(f"_output(out, A {operation_kl} B)")
+    tp.execute("tiled operation")
+    if merge_after is True:
+        output_region.merge()
+    D = _kl_region_to_device(output_region, layer = layer, name = 'boolean', precision = precision)
 
     # Delete the regions so they don't hang around in memory
-    for r in [kl_region_A, kl_region_B, kl_region_result]:
+    for r in [A_kl, B_kl, output_region]:
         r.clear()
         r._destroy()
 
