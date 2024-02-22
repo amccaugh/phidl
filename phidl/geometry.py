@@ -11,6 +11,7 @@ import gdspy
 import numpy as np
 from gdspy import clipper
 from numpy import cos, exp, log, pi, sin, sinh, sqrt
+
 from phidl.constants import _glyph, _indent, _width
 from phidl.device_layout import (
     CellArray,

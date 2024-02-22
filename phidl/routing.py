@@ -2,9 +2,10 @@ import warnings
 
 import gdspy
 import numpy as np
-import phidl.path as pp
 from numpy import cos, mod, pi, sin
 from numpy.linalg import norm
+
+import phidl.path as pp
 from phidl import Path
 from phidl.device_layout import CrossSection, Device, Port
 from phidl.geometry import turn

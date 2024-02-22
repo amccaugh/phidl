@@ -6,6 +6,7 @@ import sys
 
 import gdspy
 import numpy as np
+
 import phidl
 from phidl.device_layout import (
     CellArray,

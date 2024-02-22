@@ -22,7 +22,7 @@ ignore = [
 ]
 
 [lint.isort]
-known-third-party = ["phidl"]
+known-first-party = ["phidl"]
 
 [lint.mccabe]
 max-complexity = 18

@@ -49,6 +49,7 @@ import gdspy
 import gdspy.library
 import numpy as np
 from numpy import cos, mod, pi, sin, sqrt
+
 from phidl.constants import _CSS3_NAMES_TO_HEX
 
 gdspy.library.use_current_library = False

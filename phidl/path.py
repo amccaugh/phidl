@@ -1,4 +1,5 @@
 import numpy as np
+
 from phidl.device_layout import CrossSection, Path, _rotate_points
 
 
