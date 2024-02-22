@@ -1,0 +1,14 @@
+line-length = 88
+
+[lint]
+select = ["C", "E", "F", "W", "B", "T4", "B9", "UP", "I"]
+ingore = ["E203", "E266", "W503", "E501", "E731", "E741"]
+
+[lint.isort]
+known-third-party = ["phidl"]
+
+[lint.mccabe]
+max-complexity = 18
+
+[lint.per-file-ignores]
+"*__init__.py" = ["E402"]
