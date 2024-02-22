@@ -49,7 +49,6 @@ import gdspy
 import gdspy.library
 import numpy as np
 from numpy import cos, mod, pi, sin, sqrt
-
 from phidl.constants import _CSS3_NAMES_TO_HEX
 
 gdspy.library.use_current_library = False
@@ -1650,7 +1649,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 exist in this Device. """
             )
         ref_polygons = reference.get_polygons(by_spec=True)
-        for (layer, polys) in ref_polygons.items():
+        for layer, polys in ref_polygons.items():
             [self.add_polygon(points=p, layer=layer) for p in polys]
         self.add(reference.parent.labels)
         self.add(reference.parent.paths)

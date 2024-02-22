@@ -1,5 +1,4 @@
 import numpy as np
-
 import phidl.path as pp
 from phidl import CrossSection, Path
 

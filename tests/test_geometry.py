@@ -1,9 +1,8 @@
 import sys
 
 import numpy as np
-import pytest
-
 import phidl.geometry as pg
+import pytest
 from phidl import Device, Port
 
 

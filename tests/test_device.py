@@ -2,7 +2,6 @@ import os
 import tempfile
 
 import numpy as np
-
 import phidl.geometry as pg
 from phidl import Device, Group
 

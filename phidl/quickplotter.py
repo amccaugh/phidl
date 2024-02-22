@@ -6,7 +6,6 @@ import sys
 
 import gdspy
 import numpy as np
-
 import phidl
 from phidl.device_layout import (
     CellArray,
@@ -743,9 +742,7 @@ class Viewer(QGraphicsView):
 
     def update_mouse_position_label(self):
         self.position_label.setText(
-            "X = {:0.4f} / Y = {:0.4f}".format(
-                self.mouse_position[0], self.mouse_position[1]
-            )
+            f"X = {self.mouse_position[0]:0.4f} / Y = {self.mouse_position[1]:0.4f}"
         )
         self.position_label.move(QPoint(self.width() - 250, self.height() - 25))
 

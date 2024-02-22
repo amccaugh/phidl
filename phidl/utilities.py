@@ -14,7 +14,6 @@ def write_lyp(filename, layerset):
 
     # Opening file for writing
     with open("%s" % filename, "w+") as f:
-
         # Writing header string
         f.write('<?xml version="1.0" encoding="utf-8"?>\n')
 

@@ -1,5 +1,4 @@
 import numpy as np
-
 import phidl.geometry as pg
 import phidl.routing as pr
 import phidl.utilities as pu

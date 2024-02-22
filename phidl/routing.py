@@ -2,10 +2,9 @@ import warnings
 
 import gdspy
 import numpy as np
+import phidl.path as pp
 from numpy import cos, mod, pi, sin
 from numpy.linalg import norm
-
-import phidl.path as pp
 from phidl import Path
 from phidl.device_layout import CrossSection, Device, Port
 from phidl.geometry import turn
@@ -61,7 +60,6 @@ def _gradual_bend(
     direction="ccw",
     layer=0,
 ):
-
     """
     creates a 90-degree bent waveguide
     the bending radius is gradually increased until it reaches the minimum
@@ -299,7 +297,6 @@ def route_smooth(
     layer=np.nan,
     **kwargs,
 ):
-
     """Convenience function that routes a path between ports using pp.smooth(),
     then immediately extrudes the path to create polygons. Has several waypoint
     path type options.  Equivalent to e.g.
@@ -418,7 +415,6 @@ def route_sharp(
     layer=np.nan,
     **kwargs,
 ):
-
     """Convenience function that routes a path between ports and immediately
     extrudes the path to create polygons. Has several waypoint path type
     options.  Equivalent to e.g.

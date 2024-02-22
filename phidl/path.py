@@ -1,5 +1,4 @@
 import numpy as np
-
 from phidl.device_layout import CrossSection, Path, _rotate_points
 
 
@@ -315,7 +314,7 @@ def smooth(
     ],
     radius=4,
     corner_fun=euler,
-    **kwargs
+    **kwargs,
 ):
     """Create a smooth path from a series of waypoints. Corners will be rounded
     using `corner_fun` and any additional key word arguments (for example,
@@ -438,7 +437,6 @@ def transition(cross_section1, cross_section2, width_type="sine"):
 
     for alias in X1.aliases.keys():
         if alias in X2.aliases:
-
             offset1 = X1[alias]["offset"]
             offset2 = X2[alias]["offset"]
             width1 = X1[alias]["width"]
