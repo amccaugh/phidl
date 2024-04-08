@@ -780,12 +780,7 @@ class Port:
     def __repr__(self):
         """Prints a description of the Port object, including the name,
         midpoint, width, and orientation of the Port."""
-        return "Port (name {}, midpoint {}, width {}, orientation {})".format(
-            self.name,
-            self.midpoint,
-            self.width,
-            self.orientation,
-        )
+        return f"Port (name {self.name}, midpoint {self.midpoint}, width {self.width}, orientation {self.orientation})"
 
     @property
     def endpoints(self):

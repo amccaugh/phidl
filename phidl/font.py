@@ -2,7 +2,6 @@
 Support for font rendering in GDS files.
 """
 
-
 import gdspy
 import numpy as np
 from matplotlib import font_manager
