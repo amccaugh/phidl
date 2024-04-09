@@ -4416,6 +4416,7 @@ def grating(
 #
 # ==============================================================================
 
+
 # Via Route ----------------------------------------
 def _via_iterable(
     via_spacing, wire_width, wiring1_layer, wiring2_layer, via_layer, via_width
@@ -5221,6 +5222,7 @@ def optimal_step(
     Clem, J., & Berggren, K. (2011). Geometry-dependent critical currents in
     superconducting nanocircuits. Physical Review B, 84(17), 1–27.
     """
+
     # ==========================================================================
     #  Create the basic geometry
     # ==========================================================================

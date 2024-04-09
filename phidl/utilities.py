@@ -14,7 +14,6 @@ def write_lyp(filename, layerset):
 
     # Opening file for writing
     with open("%s" % filename, "w+") as f:
-
         # Writing header string
         f.write('<?xml version="1.0" encoding="utf-8"?>\n')
 
@@ -223,10 +222,7 @@ def write_svg(D, filename, scale=1):
                         poly_str += "M "
                     else:
                         poly_str += "L "
-                    poly_str += "{:0.6f} {:0.6f} ".format(
-                        (p[0] - dx) * scale,
-                        (-(p[1] - dy) + ysize) * scale,
-                    )
+                    poly_str += f"{(p[0] - dx) * scale:0.6f} {(-(p[1] - dy) + ysize) * scale:0.6f} "
                     n += 1
                 poly_str += 'Z"/>\n'
                 f.write(poly_str)
