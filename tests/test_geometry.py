@@ -108,6 +108,62 @@ def test_outline():
     assert h == "503522b071080be6c98017cdc616752c1a3d75ce"
 
 
+# KLayout boolean functions
+def test_kl_offset():
+    A = pg.cross(length=20, width=3.1, layer=0)
+    B = pg.ellipse(radii=(10, 5), angle_resolution=2.5, layer=1)
+    D = pg.kl_offset([A, B], 
+        distance=0.8,
+        precision=1e-4,
+        miter_mode=2,
+        tile_size=(1000, 1000),
+        merge_after=True,
+        layer=0,)
+    h = D.hash_geometry(precision=1e-4)
+    assert h == "55733cfaedeafdbdd450acc6712feef6809e15f9"
+
+
+def test_kl_invert():
+    A = pg.cross(length=17, width=3.2, layer=0)
+    B = pg.ellipse(radii=(10, 5), angle_resolution=2.5, layer=1)
+    D = pg.kl_invert([A, B], 
+        border=(10, 17.2),
+        precision=1e-4,
+        tile_size=(1000, 1000),
+        merge_after=True,
+        layer=0,)
+    h = D.hash_geometry(precision=1e-4)
+    assert h == "1ae27a56b510f8bf6b90d0c89bec1a1f1d1e041a"
+
+
+def test_kl_boolean():
+    A = pg.cross(length=19, width=3.5, layer=0)
+    B = pg.ellipse(radii=(10, 5), angle_resolution=2.5, layer=1)
+    D = pg.kl_boolean(A=A, B=B, operation="and", precision=1e-6, 
+        tile_size=(1000, 1000),
+        merge_after=True,
+        layer=0,
+        )
+    h = D.hash_geometry(precision=1e-4)
+    assert h == "eae9ef1c4e5a582add69fc0246218bcba4c013ec"
+
+
+def test_kl_outline():
+    A = pg.cross(length=19, width=3.7, layer=0)
+    B = pg.ellipse(radii=(10, 5), angle_resolution=2.5, layer=1)
+    D = pg.kl_outline([A, B], 
+        distance=0.1,
+        open_ports=False,
+        precision=1e-4,
+        miter_mode=2,
+        tile_size=(1000, 1000),
+        merge_after=True,
+        layer=0,)
+    h = D.hash_geometry(precision=1e-4)
+    assert h == "68cf77355b04a87ca68cbeafc7b2df9356783f2c"
+
+
+
 def test_port_geometry():
     # Conversion between object and geometric representation of ports
     def geom_equal(A, B):
