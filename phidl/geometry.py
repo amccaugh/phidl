@@ -1547,6 +1547,7 @@ def kl_offset(
     d = round(distance / precision)  # The distance in database units
 
     import klayout.db as kdb
+
     tp = kdb.TilingProcessor()
     tp.threads = num_cpu
     tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
@@ -1589,7 +1590,7 @@ def kl_boolean(
     ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.
     Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
-    
+
     Parameters
     ----------
     A : Device(/Reference) or list of Device(/Reference) or Polygon
@@ -1662,8 +1663,6 @@ def kl_boolean(
         r._destroy()
 
     return D
-
-
 
 
 # ==============================================================================
