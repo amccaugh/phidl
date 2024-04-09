@@ -1498,18 +1498,20 @@ def _kl_region_to_device(kl_region, layer, name, precision):
 
 def _kl_expression(
     element_dict,  # e.g. dict(A = snspd(), B = pg.ellipse())
-    expression, # e.g. 'A.sized(-500, 2) - B',
+    expression,  # e.g. 'A.sized(-500, 2) - B',
     precision=1e-4,
     tile_size=(1000, 1000),
     join_first=True,
     merge_after=True,
-    output_name = "unnamed",
+    output_name="unnamed",
     num_cpu=4,
     layer=0,
-    ):
-
+):
     layer = _parse_layer(layer)
-    kl_region_dict = {k:_objects_to_kl_region(v, precision=precision) for k,v in element_dict.items()}
+    kl_region_dict = {
+        k: _objects_to_kl_region(v, precision=precision)
+        for k, v in element_dict.items()
+    }
     for kl_region in kl_region_dict.values():
         kl_region.merged_semantics = join_first
 
@@ -1587,16 +1589,16 @@ def kl_offset(
 
     d = round(distance / precision)  # The distance in database units
     D = _kl_expression(
-        element_dict = dict(A = elements),
-        expression = f"A.sized({d}, {miter_mode})",
+        element_dict=dict(A=elements),
+        expression=f"A.sized({d}, {miter_mode})",
         precision=precision,
         tile_size=tile_size,
         join_first=join_first,
         merge_after=merge_after,
-        output_name = "offset",
+        output_name="offset",
         num_cpu=num_cpu,
         layer=layer,
-        )
+    )
 
     return D
 
@@ -1645,7 +1647,7 @@ def kl_boolean(
     D : Device
         A Device containing a polygon(s) with the boolean operation applied.
     """
-    
+
     operation = operation.lower().replace(" ", "")
     if operation in {"a-b", "not"}:
         operation_kl = "-"
@@ -1665,16 +1667,101 @@ def kl_boolean(
         )
 
     D = _kl_expression(
-        element_dict = dict(A = A, B = B),
-        expression = f"A {operation_kl} B)",
+        element_dict=dict(A=A, B=B),
+        expression=f"A {operation_kl} B)",
         precision=precision,
         tile_size=tile_size,
         join_first=True,
         merge_after=merge_after,
-        output_name = "boolean",
+        output_name="boolean",
         num_cpu=num_cpu,
         layer=layer,
-        )
+    )
+
+    return D
+
+
+def kl_outline(
+    elements,
+    distance=0.1,
+    open_ports=False,
+    precision=1e-4,
+    miter_mode=2,
+    tile_size=(1000, 1000),
+    join_first=True,
+    merge_after=True,
+    num_cpu=NUM_CPU,
+    layer=0,
+):
+    """Shrinks or expands a polygon or set of polygons using KLayout
+
+    Parameters
+    ----------
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
+        Polygons to offset or Device containing polygons to offset.
+    distance : int or float
+        Distance to offset polygons. Positive values expand, negative shrink.
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    miter_mode : int
+        Type of corners generated during the offset operation, see
+        https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    join_first: bool
+        Sets whether to merge all the polygons before performing
+        the offset operation, or offset each polygon individually
+    merge_after: bool
+        Merge all the polygons after performing the offset operation
+    num_cpu : int
+        The number of CPU threads used to execute the function
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing a polygon(s) with the specified offset applied.
+    """
+
+    d = round(distance / precision)  # The distance in database units
+
+    # Get list of ports to be opened
+    if not isinstance(elements, list):
+        elements = [elements]
+    port_list = []
+    for e in elements:
+        if isinstance(e, Device):
+            port_list += list(e.ports.values())
+
+    Trim = Device()
+    if open_ports is not False:
+        if open_ports is True:
+            trim_width = 0
+        else:
+            trim_width = open_ports * 2
+        for port in port_list:
+            trim = compass(size=(distance + 6 * precision, port.width + trim_width))
+            trim_ref = Trim << trim
+            trim_ref.connect("E", port, overlap=2 * precision)
+
+    D = _kl_expression(
+        element_dict=dict(A=elements, B=Trim),
+        expression=f"A.sized({d}, {miter_mode}) - (A + B)",
+        precision=precision,
+        tile_size=tile_size,
+        join_first=join_first,
+        merge_after=merge_after,
+        output_name="outline",
+        num_cpu=num_cpu,
+        layer=layer,
+    )
+
+    if open_ports is not False and len(elements) == 1:
+        for port in port_list:
+            D.add_port(port=port)
 
     return D
 
