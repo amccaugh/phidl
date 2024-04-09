@@ -10,7 +10,7 @@ GDS scripting for Python that's intuitive, fast, and powerful.
 - [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.7.0 on April 9, 2024)
 -  New KLayout-based boolean/offset/outline functions!  These are under the name `pg.kl_boolean()`, `pg.kl_offset`, `pg.kl_outline()`, `pg.kl_invert()`.  They utilize the excellent KLayout tile processor, which allows breaking down & parallelizing these operations--in a nutshell, these operations should be much, much faster, and they also are more robust than the gdspy/clipper implementation.
 -  To use these new functions, you must first `pip install klayout`
- 
+
 
 # Citation
 
