@@ -302,6 +302,7 @@ def quickplot(items):  # noqa: C901
                 linewidth=2,
                 color="b",
             )
+            _draw_arrow(ax=ax, x=points[-1, 0], y=points[-1, 1], angle=item.end_angle)
             bbox = _update_bbox(bbox, new_bbox)
 
     if bbox is None:
@@ -325,6 +326,16 @@ def quickplot(items):  # noqa: C901
 
     plt.draw()
     plt.show(block=blocking)
+
+
+def _draw_arrow(ax, x, y, angle):
+    from matplotlib.markers import MarkerStyle
+
+    rotated_marker = MarkerStyle(marker=9)
+    rotated_marker._transform = rotated_marker.get_transform().rotate_deg(angle)
+    ax.scatter(
+        x, y, marker=rotated_marker, s=50, facecolors="b", alpha=0.5
+    )
 
 
 def _use_interactive_zoom():
