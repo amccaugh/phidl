@@ -12,8 +12,7 @@ Major optimization update!
 ### Bugfixes
 - 20x speedup to the internal operation `_merge_nearby_floating_points()` which should significantly speed up large operations (thanks Alex Tait @atait)
 - New pre-commit using ruff (thanks Bas Nijholt @basnijholt)
-- Grammar fix to documentation (thanks 
-Ashish Panigrahi @paniash)
+- Grammar fix to documentation (thanks Ashish Panigrahi @paniash)
 
 
 
