@@ -3,6 +3,7 @@
 
 
 import sys
+import warnings
 
 import gdspy
 import numpy as np
@@ -937,6 +938,14 @@ class Viewer(QGraphicsView):
 
 
 def quickplot2(item_list, *args, **kwargs):
+    """
+    .. deprecated:: 1.6.4
+        `quickplot2` will be removed in April 2025, please replace with quickplot()
+    """
+    warnings.warn(
+        """[PHIDL] Warning: `quickplot2` will be removed in April 2025, please replace with quickplot() """
+    )
+
     if not qt_imported:
         raise ImportError(
             "PHIDL tried to import PyQt5 but it failed. PHIDL will"
