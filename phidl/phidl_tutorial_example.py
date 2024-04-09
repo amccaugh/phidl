@@ -269,22 +269,6 @@ qp(D2)  # quickplot it!
 
 
 # ==============================================================================
-# Routing
-# ==============================================================================
-# Routing allows us to connect two ports which face each other with a smooth
-# polygon.  Since we connected our two
-D2.add_ref(
-    pr.route_basic(
-        port1=mwg1.ports[1],
-        port2=mwg2.ports[2],
-        path_type="sine",
-        width_type="straight",
-    )
-)
-qp(D2)
-
-
-# ==============================================================================
 # Adding text
 # ==============================================================================
 # The function text() creates a Device, just like waveguide.  Use it and
