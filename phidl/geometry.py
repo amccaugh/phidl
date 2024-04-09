@@ -1495,30 +1495,77 @@ def _kl_region_to_device(kl_region, layer, name, precision):
 
 
 def kl_offset(
-    elements, distance=0.1, join_first=True, precision=1e-4, miter_mode=2, layer=0
+    elements,
+    distance=0.1,
+    precision=1e-4,
+    miter_mode=2,
+    tile_size=(1000, 1000),
+    join_first=True,
+    merge_after=True,
+    num_cpu=multiprocessing.cpu_count(),
+    layer=0,
 ):
+    """Shrinks or expands a polygon or set of polygons using KLayout
+
+    Parameters
+    ----------
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
+        Polygons to offset or Device containing polygons to offset.
+    distance : int or float
+        Distance to offset polygons. Positive values expand, negative shrink.
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    miter_mode : int
+        Type of corners generated during the offset operation, see
+        https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    join_first: bool
+        Sets whether to merge all the polygons before performing
+        the offset operation, or offset each polygon individually
+    merge_after: bool
+        Merge all the polygons after performing the offset operation
+    num_cpu : int
+        The number of CPU threads used to execute the function
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing a polygon(s) with the specified offset applied.
+    """
+
     if type(elements) not in (list, tuple):
         elements = [elements]
 
     layer = _parse_layer(layer)
     kl_region = _objects_to_kl_region(elements, precision=precision)
     kl_region.merged_semantics = join_first
-
     d = round(distance / precision)  # The distance in database units
 
-    # Perform the offsetting operation (referred to as "sizing" in KLayout)
-    mode = (
-        miter_mode  # https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
-    )
-    kl_region_result = kl_region.sized(d, d, mode)
+    import klayout.db as kdb
+    tp = kdb.TilingProcessor()
+    tp.threads = num_cpu
+    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+    tp.input("A", kl_region)
+    output_region = kdb.Region()
+    tp.output("out", output_region)
+    tp.queue(f"_output(out, A.sized({d}, {miter_mode}))")
+    tp.execute("tiled operation")
+
+    if merge_after is True:
+        output_region.merge()
 
     # Create the Device and add the resulting offset region to it
     D = _kl_region_to_device(
-        kl_region_result, layer=layer, name="offset", precision=precision
+        output_region, layer=layer, name="offset", precision=precision
     )
 
     # Delete the regions so they don't hang around in memory
-    for r in [kl_region, kl_region_result]:
+    for r in [kl_region, output_region]:
         r.clear()
         r._destroy()
 
@@ -1542,6 +1589,32 @@ def kl_boolean(
     ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.
     Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
     'B-A' is equivalent to 'not' with the operands switched
+    
+    Parameters
+    ----------
+    A : Device(/Reference) or list of Device(/Reference) or Polygon
+        Input Devices.
+    B : Device(/Reference) or list of Device(/Reference) or Polygon
+        Input Devices.
+    operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
+        Boolean operation to perform.
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    merge_after: bool
+        Merge all the polygons after performing the offset operation
+    num_cpu : int
+        The number of CPU threads used to execute the function
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing a polygon(s) with the specified offset applied.
     """
     layer = _parse_layer(layer)
 
@@ -1591,43 +1664,6 @@ def kl_boolean(
     return D
 
 
-def kl_outline(
-    elements,
-    distance=1,
-    precision=1e-4,
-    miter_mode=2,
-    join_first=True,
-    max_points=4000,
-    layer=0,
-):
-    """Creates an outline around all the polygons passed in the `elements`
-    argument.  `elements` may be a Device, Polygon, or list of Devices
-    """
-
-    layer = _parse_layer(layer)
-    kl_region = _objects_to_kl_region(elements, precision=precision)
-    kl_region.merged_semantics = join_first
-
-    d = round(distance / precision)  # The distance in database units
-
-    # Perform the offsetting operation (referred to as "sizing" in KLayout)
-    mode = (
-        miter_mode  # https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
-    )
-    kl_region_offset = kl_region.sized(d, d, mode)
-    kl_region_result = kl_region_offset - kl_region
-
-    # Create the Device and add the resulting offset region to it
-    D = _kl_region_to_device(
-        kl_region_result, layer=layer, name="outline", precision=precision
-    )
-
-    # Delete the regions so they don't hang around in memory
-    for r in [kl_region, kl_region_result]:
-        r.clear()
-        r._destroy()
-
-    return D
 
 
 # ==============================================================================
