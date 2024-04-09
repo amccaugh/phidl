@@ -25,6 +25,8 @@ from phidl.device_layout import (
     make_device,
 )
 
+NUM_CPU = multiprocessing.cpu_count()
+
 ##### Categories:
 # Polygons / shapes
 # Boolean functions
@@ -1502,7 +1504,7 @@ def kl_offset(
     tile_size=(1000, 1000),
     join_first=True,
     merge_after=True,
-    num_cpu=multiprocessing.cpu_count(),
+    num_cpu=NUM_CPU,
     layer=0,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
@@ -1580,7 +1582,7 @@ def kl_boolean(
     precision=1e-4,
     tile_size=(1000, 1000),
     merge_after=True,
-    num_cpu=multiprocessing.cpu_count(),
+    num_cpu=NUM_CPU,
     layer=0,
 ):
     """
