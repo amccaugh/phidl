@@ -1496,6 +1496,51 @@ def _kl_region_to_device(kl_region, layer, name, precision):
 # ==============================================================================
 
 
+def _kl_expression(
+    element_dict,  # e.g. dict(A = snspd(), B = pg.ellipse())
+    expression, # e.g. 'A.sized(-500, 2) - B',
+    precision=1e-4,
+    tile_size=(1000, 1000),
+    join_first=True,
+    merge_after=True,
+    output_name = "unnamed",
+    num_cpu=4,
+    layer=0,
+    ):
+
+    layer = _parse_layer(layer)
+    kl_region_dict = {k:_objects_to_kl_region(v, precision=precision) for k,v in element_dict.items()}
+    for kl_region in kl_region_dict.values():
+        kl_region.merged_semantics = join_first
+
+    import klayout.db as kdb
+
+    tp = kdb.TilingProcessor()
+    tp.threads = num_cpu
+    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+    for name, kl_region in kl_region_dict.items():
+        tp.input(name, kl_region)
+    output_region = kdb.Region()
+    tp.output("out", output_region)
+    tp.queue(f"_output(out, {expression})")
+    tp.execute("tiled operation")
+
+    if merge_after is True:
+        output_region.merge()
+
+    # Create the Device and add the resulting offset region to it
+    D = _kl_region_to_device(
+        output_region, layer=layer, name=output_name, precision=precision
+    )
+
+    # Delete the regions so they don't hang around in memory
+    for kl_region in kl_region_dict.values():
+        kl_region.clear()
+        kl_region._destroy()
+
+    return D
+
+
 def kl_offset(
     elements,
     distance=0.1,
@@ -1540,37 +1585,18 @@ def kl_offset(
         A Device containing a polygon(s) with the specified offset applied.
     """
 
-    if type(elements) not in (list, tuple):
-        elements = [elements]
-
-    layer = _parse_layer(layer)
-    kl_region = _objects_to_kl_region(elements, precision=precision)
-    kl_region.merged_semantics = join_first
     d = round(distance / precision)  # The distance in database units
-
-    import klayout.db as kdb
-
-    tp = kdb.TilingProcessor()
-    tp.threads = num_cpu
-    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
-    tp.input("A", kl_region)
-    output_region = kdb.Region()
-    tp.output("out", output_region)
-    tp.queue(f"_output(out, A.sized({d}, {miter_mode}))")
-    tp.execute("tiled operation")
-
-    if merge_after is True:
-        output_region.merge()
-
-    # Create the Device and add the resulting offset region to it
-    D = _kl_region_to_device(
-        output_region, layer=layer, name="offset", precision=precision
-    )
-
-    # Delete the regions so they don't hang around in memory
-    for r in [kl_region, output_region]:
-        r.clear()
-        r._destroy()
+    D = _kl_expression(
+        element_dict = dict(A = elements),
+        expression = f"A.sized({d}, {miter_mode})",
+        precision=precision,
+        tile_size=tile_size,
+        join_first=join_first,
+        merge_after=merge_after,
+        output_name = "offset",
+        num_cpu=num_cpu,
+        layer=layer,
+        )
 
     return D
 
@@ -1608,7 +1634,7 @@ def kl_boolean(
         region to beprocessed sequentially, which is more computationally
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
-        Merge all the polygons after performing the offset operation
+        Merge all the polygons after performing the tiled boolean operation
     num_cpu : int
         The number of CPU threads used to execute the function
     layer : int, array-like[2], or set
@@ -1617,13 +1643,9 @@ def kl_boolean(
     Returns
     -------
     D : Device
-        A Device containing a polygon(s) with the specified offset applied.
+        A Device containing a polygon(s) with the boolean operation applied.
     """
-    layer = _parse_layer(layer)
-
-    A_kl = _objects_to_kl_region(A, precision=precision)
-    B_kl = _objects_to_kl_region(B, precision=precision)
-
+    
     operation = operation.lower().replace(" ", "")
     if operation in {"a-b", "not"}:
         operation_kl = "-"
@@ -1642,27 +1664,17 @@ def kl_boolean(
             + " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'"
         )
 
-    import klayout.db as kdb
-
-    tp = kdb.TilingProcessor()
-    tp.threads = num_cpu
-    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
-    tp.input("A", A_kl)
-    tp.input("B", B_kl)
-    output_region = kdb.Region()
-    tp.output("out", output_region)
-    tp.queue(f"_output(out, A {operation_kl} B)")
-    tp.execute("tiled operation")
-    if merge_after is True:
-        output_region.merge()
-    D = _kl_region_to_device(
-        output_region, layer=layer, name="boolean", precision=precision
-    )
-
-    # Delete the regions so they don't hang around in memory
-    for r in [A_kl, B_kl, output_region]:
-        r.clear()
-        r._destroy()
+    D = _kl_expression(
+        element_dict = dict(A = A, B = B),
+        expression = f"A {operation_kl} B)",
+        precision=precision,
+        tile_size=tile_size,
+        join_first=True,
+        merge_after=merge_after,
+        output_name = "boolean",
+        num_cpu=num_cpu,
+        layer=layer,
+        )
 
     return D
 
