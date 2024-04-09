@@ -22,6 +22,29 @@ set_quickplot_options
 Geometry Library
 ****************
 
+
+
+kl_boolean
+=======
+
+.. autofunction:: phidl.geometry.kl_boolean
+
+kl_offset
+=======
+
+.. autofunction:: phidl.geometry.kl_offset
+
+kl_outline
+=======
+
+.. autofunction:: phidl.geometry.kl_outline
+
+kl_invert
+=======
+
+.. autofunction:: phidl.geometry.kl_invert
+
+
 arc
 ===
 

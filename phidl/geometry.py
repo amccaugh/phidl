@@ -1,6 +1,7 @@
 import copy as python_copy
 import itertools
 import json
+import multiprocessing
 import os.path
 import pickle
 import warnings
@@ -23,6 +24,8 @@ from phidl.device_layout import (
     _parse_layer,
     make_device,
 )
+
+NUM_CPU = multiprocessing.cpu_count()
 
 ##### Categories:
 # Polygons / shapes
@@ -448,6 +451,9 @@ def offset(
         Polygons to offset or Device containing polygons to offset.
     distance : int or float
         Distance to offset polygons. Positive values expand, negative shrink.
+    join first: bool
+        Sets whether to merge all the polygons before performing
+        the offset operation, or offset each polygon individually
     precision : float
         Desired precision for rounding vertex coordinates.
     num_divisions : array-like[2] of int
@@ -934,6 +940,8 @@ def _merge_floating_point_errors(polygons, tol=1e-10):
     polygons_fixed : PolygonSet
         Set of corrected polygons.
     """
+    if len(polygons) == 0:
+        return np.asfarray([])
     stacked_polygons = np.vstack(polygons)
     x = stacked_polygons[:, 0]
     y = stacked_polygons[:, 1]
@@ -972,7 +980,8 @@ def _merge_nearby_floating_points(x, tol=1e-10):
     xargsort = np.argsort(x)
     xargunsort = np.argsort(xargsort)
     xsort = x[xargsort]
-    xsortthreshold = np.diff(xsort) < tol
+    dx = np.diff(xsort)
+    xsortthreshold = np.logical_and(dx < tol, dx > 0)
     xsortthresholdind = np.argwhere(xsortthreshold)
 
     # Merge nearby floating point values
@@ -1432,6 +1441,372 @@ def _boolean_polygons_parallel(
             boolean_polygons += _boolean_region_polygons
 
     return boolean_polygons
+
+
+# ==============================================================================
+# KLayout utility functions
+# ==============================================================================
+
+
+def _kl_polygon_to_array(kl_polygon):
+    return [(pt.x, pt.y) for pt in kl_polygon.each_point()]
+
+
+def _objects_to_kl_region(elements, precision):
+    try:
+        import klayout.db as kdb
+    except ImportError:
+        raise ImportError(
+            "PHIDL tried to import the klayout module but it failed. Please "
+            + "install the klayout Python package with "
+            + "pip install klayout"
+        )
+    kl_region = kdb.Region()
+    if type(elements) not in (list, tuple):
+        elements = [elements]
+    polygons = []
+    for e in elements:
+        if isinstance(e, Device) or isinstance(e, DeviceReference):
+            polygons.extend(e.get_polygons(by_spec=False))
+        elif isinstance(e, Polygon):
+            polygons.extend([e.points])
+    polygons = _merge_floating_point_errors(polygons, tol=1e-10)
+    for points in polygons:
+        p = kdb.SimplePolygon(
+            [kdb.Point(x / precision, y / precision) for x, y in points]
+        )  # x and y must be floats
+        kl_region.insert(p)
+    return kl_region
+
+
+def _kl_region_to_device(kl_region, layer, name, precision):
+    D = Device(name)
+    for polygon in kl_region.each():
+        polygon = polygon.to_simple_polygon()
+        points = _kl_polygon_to_array(polygon)
+        points = np.asfarray(points) * precision
+        D.add_polygon(points, layer=layer)
+    return D
+
+
+# ==============================================================================
+#
+# KLayout boolean functions
+#
+# ==============================================================================
+
+
+def _kl_expression(
+    element_dict,  # e.g. dict(A = snspd(), B = pg.ellipse())
+    expression,  # e.g. 'A.sized(-500, 2) - B',
+    precision=1e-4,
+    tile_size=(1000, 1000),
+    merge_first=True,
+    merge_after=True,
+    output_name="unnamed",
+    num_cpu=NUM_CPU,
+    layer=0,
+):
+    layer = _parse_layer(layer)
+    kl_region_dict = {
+        k: _objects_to_kl_region(v, precision=precision)
+        for k, v in element_dict.items()
+    }
+    for kl_region in kl_region_dict.values():
+        kl_region.merged_semantics = merge_first
+
+    import klayout.db as kdb
+
+    tp = kdb.TilingProcessor()
+    tp.threads = num_cpu
+    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+    for name, kl_region in kl_region_dict.items():
+        tp.input(name, kl_region)
+    output_region = kdb.Region()
+    tp.output("out", output_region)
+    tp.queue(f"_output(out, {expression})")
+    tp.execute("tiled operation")
+
+    if merge_after is True:
+        output_region.merge()
+
+    # Create the Device and add the resulting offset region to it
+    D = _kl_region_to_device(
+        output_region, layer=layer, name=output_name, precision=precision
+    )
+
+    # Delete the regions so they don't hang around in memory
+    for kl_region in kl_region_dict.values():
+        kl_region.clear()
+        kl_region._destroy()
+
+    return D
+
+
+def kl_offset(
+    elements,
+    distance=0.1,
+    precision=1e-4,
+    miter_mode=2,
+    tile_size=(1000, 1000),
+    merge_after=True,
+    layer=0,
+):
+    """Shrinks or expands a polygon or set of polygons using KLayout
+
+    Parameters
+    ----------
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
+        Polygons to offset or Device containing polygons to offset.
+    distance : int or float
+        Distance to offset polygons. Positive values expand, negative shrink.
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    miter_mode : int
+        Type of corners generated during the offset operation, see
+        https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    merge_after: bool
+        Merge all the polygons after performing the offset operation
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing a polygon(s) with the specified offset applied.
+    """
+
+    d = round(distance / precision)  # The distance in database units
+    D = _kl_expression(
+        element_dict=dict(A=elements),
+        expression=f"A.sized({d}, {miter_mode})",
+        precision=precision,
+        tile_size=tile_size,
+        merge_first=True,
+        merge_after=merge_after,
+        output_name="offset",
+        num_cpu=NUM_CPU,
+        layer=layer,
+    )
+
+    return D
+
+
+def kl_boolean(
+    A,
+    B,
+    operation,
+    precision=1e-4,
+    tile_size=(1000, 1000),
+    merge_after=True,
+    layer=0,
+):
+    """
+    Performs boolean operations between 2 Device/DeviceReference objects,
+    or lists of Devices/DeviceReferences.
+
+    ``operation`` should be one of {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}.
+    Note that 'A+B' is equivalent to 'or', 'A-B' is equivalent to 'not', and
+    'B-A' is equivalent to 'not' with the operands switched
+
+    Parameters
+    ----------
+    A : Device(/Reference) or list of Device(/Reference) or Polygon
+        Input Devices.
+    B : Device(/Reference) or list of Device(/Reference) or Polygon
+        Input Devices.
+    operation : {'not', 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B'}
+        Boolean operation to perform.
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    merge_after: bool
+        Merge all the polygons after performing the tiled boolean operation
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing a polygon(s) with the boolean operation applied.
+    """
+
+    operation = operation.lower().replace(" ", "")
+    if operation in {"a-b", "not"}:
+        operation_kl = "-"
+    elif operation in {"b-a"}:
+        operation_kl = "-"
+    elif operation in {"a+b", "or"}:
+        operation_kl = "+"
+    elif operation in {"a^b", "xor"}:
+        operation_kl = "^"
+    elif operation in {"a&b", "and"}:
+        operation_kl = "&"
+    else:
+        raise ValueError(
+            "[PHIDL] phidl.geometry.boolean() `operation` parameter"
+            + " not recognized, must be one of the following:  'not',"
+            + " 'and', 'or', 'xor', 'A-B', 'B-A', 'A+B',  'A&B', 'A^B'"
+        )
+
+    D = _kl_expression(
+        element_dict=dict(A=A, B=B),
+        expression=f"A {operation_kl} B",
+        precision=precision,
+        tile_size=tile_size,
+        merge_first=True,
+        merge_after=merge_after,
+        output_name="boolean",
+        num_cpu=NUM_CPU,
+        layer=layer,
+    )
+
+    return D
+
+
+def kl_outline(
+    elements,
+    distance=0.1,
+    open_ports=False,
+    precision=1e-4,
+    miter_mode=2,
+    tile_size=(1000, 1000),
+    merge_after=True,
+    layer=0,
+):
+    """Shrinks or expands a polygon or set of polygons using KLayout
+
+    Parameters
+    ----------
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
+        Polygons to offset or Device containing polygons to offset.
+    distance : int or float
+        Distance to offset polygons. Positive values expand, negative shrink.
+    open_ports : bool or float
+        If not False, holes will be cut in the outline such that the Ports are
+        not covered. If True, the holes will have the same width as the Ports.
+        If a float, the holes will be be widened by that value (useful for fully
+        clearing the outline around the Ports for positive-tone processes
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    miter_mode : int
+        Type of corners generated during the offset operation, see
+        https://www.klayout.de/doc/code/class_EdgeProcessor.html#method55
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    merge_after: bool
+        Merge all the polygons after performing the outline operation
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing a polygon(s) with the specified offset applied.
+    """
+
+    d = round(distance / precision)  # The distance in database units
+
+    # Get list of ports to be opened
+    if not isinstance(elements, list):
+        elements = [elements]
+    port_list = []
+    for e in elements:
+        if isinstance(e, Device):
+            port_list += list(e.ports.values())
+
+    Trim = Device()
+    if open_ports is not False:
+        if open_ports is True:
+            trim_width = 0
+        else:
+            trim_width = open_ports * 2
+        for port in port_list:
+            trim = compass(size=(distance + 6 * precision, port.width + trim_width))
+            trim_ref = Trim << trim
+            trim_ref.connect("E", port, overlap=2 * precision)
+
+    D = _kl_expression(
+        element_dict=dict(A=elements, B=Trim),
+        expression=f"A.sized({d}, {miter_mode}) - (A + B)",
+        precision=precision,
+        tile_size=tile_size,
+        merge_first=True,
+        merge_after=merge_after,
+        output_name="outline",
+        num_cpu=NUM_CPU,
+        layer=layer,
+    )
+
+    if open_ports is not False and len(elements) == 1:
+        for port in port_list:
+            D.add_port(port=port)
+
+    return D
+
+
+def kl_invert(
+    elements,
+    border=(10, 10),
+    precision=1e-4,
+    tile_size=(1000, 1000),
+    merge_after=True,
+    layer=0,
+):
+    """Creates an inverted version of the input shapes with an additional
+    border around the edges.
+
+    Parameters
+    ----------
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
+        A Device containing the polygons to invert.
+    border : array-like[2]
+        (dx,dy) size of the border around the inverted shape (border value is the
+        distance from the edges of the bounding box defining)
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    merge_after: bool
+        Merge all the polygons after performing the outline operation
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing the inverted version of the input shape(s) and the
+        corresponding border(s).
+    """
+    if np.size(border) == 1:
+        dx = dy = round(border / precision)
+    elif np.size(border) == 2:
+        dx = round(border[0] / precision)
+        dy = round(border[1] / precision)
+
+    D = _kl_expression(
+        element_dict=dict(A=elements),
+        expression=f"A.extents().sized({dx},{dy},2) - A",
+        precision=precision,
+        tile_size=tile_size,
+        merge_first=True,
+        merge_after=merge_after,
+        output_name="invert",
+        num_cpu=NUM_CPU,
+        layer=layer,
+    )
+    return D
 
 
 # ==============================================================================
@@ -3444,6 +3819,10 @@ def _gen_param_variations(
     """
     parameter_list = _parameter_combinations(param_variations)
 
+    # Pop out any None values
+    [params.pop((None, "x"), None) for params in parameter_list]
+    [params.pop((None, "y"), None) for params in parameter_list]
+
     D_list = []
     for params in parameter_list:
         new_params = dict()
@@ -3497,10 +3876,12 @@ def gridsweep(
         The function which will be used to create the individual devices in the
         grid.  Must only return a single Device (e.g. any of the functions in
         pg.geometry)
-    param_x : dict
-        A dictionary of one or more parameters to sweep in the x-direction
-    param_y : dict
-        A dictionary of one or more parameters to sweep in the y-direction
+    param_x : dict, int, None
+        A dictionary of one or more parameters to sweep in the x-direction.
+        If None, do not sweep. If int, repeat N times in x-direction
+    param_y : dict, int, None
+        A dictionary of one or more parameters to sweep in the y-direction.
+        If None, do not sweep. If int, repeat N times in y-direction
     param_defaults : dict
         Default parameters to pass to every device in the grid
     param_override : dict
@@ -3533,6 +3914,14 @@ def gridsweep(
     device_matrix : Device
         A Device containing all the Devices in `device_list` in a grid.
     """
+    if param_x is None:
+        param_x = {(None, "x"): [None]}
+    elif isinstance(param_x, int):
+        param_x = {(None, "x"): [None] * param_x}
+    if param_y is None:
+        param_y = {(None, "y"): [None]}
+    elif isinstance(param_y, int):
+        param_y = {(None, "y"): [None] * param_y}
 
     param_variations = OrderedDict()
     param_variations.update(param_y)

@@ -3,6 +3,7 @@
 
 
 import sys
+import warnings
 
 import gdspy
 import numpy as np
@@ -301,6 +302,8 @@ def quickplot(items):  # noqa: C901
                 linewidth=2,
                 color="b",
             )
+            _draw_arrow(ax=ax, x=points[-1, 0], y=points[-1, 1], angle=item.end_angle)
+            _draw_dot(ax=ax, x=points[0, 0], y=points[0, 1])
             bbox = _update_bbox(bbox, new_bbox)
 
     if bbox is None:
@@ -324,6 +327,18 @@ def quickplot(items):  # noqa: C901
 
     plt.draw()
     plt.show(block=blocking)
+
+
+def _draw_arrow(ax, x, y, angle):
+    from matplotlib.markers import MarkerStyle
+
+    rotated_marker = MarkerStyle(marker=9)
+    rotated_marker._transform = rotated_marker.get_transform().rotate_deg(angle)
+    ax.scatter(x, y, marker=rotated_marker, s=50, facecolors="b", alpha=0.5)
+
+
+def _draw_dot(ax, x, y):
+    ax.scatter(x, y, marker=".", color="b", s=50, alpha=0.9)
 
 
 def _use_interactive_zoom():
@@ -937,6 +952,14 @@ class Viewer(QGraphicsView):
 
 
 def quickplot2(item_list, *args, **kwargs):
+    """
+    .. deprecated:: 1.6.4
+        `quickplot2` will be removed in April 2025, please replace with quickplot()
+    """
+    warnings.warn(
+        """[PHIDL] Warning: `quickplot2` will be removed in April 2025, please replace with quickplot() """
+    )
+
     if not qt_imported:
         raise ImportError(
             "PHIDL tried to import PyQt5 but it failed. PHIDL will"

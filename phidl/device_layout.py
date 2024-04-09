@@ -54,7 +54,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 
 gdspy.library.use_current_library = False
 
-__version__ = "1.6.4"
+__version__ = "1.7.0"
 
 
 # ==============================================================================
@@ -316,7 +316,8 @@ def _simplify(points, tolerance=0):
     """Ramer–Douglas–Peucker algorithm for line simplification. Takes an
     array of points of shape (N,2) and removes excess points in the line. The
     remaining points form a identical line to within `tolerance` from the
-    original"""
+    original
+    """
     # From https://github.com/fhirschmann/rdp/issues/7
     # originally written by Kirill Konevets https://github.com/kkonevets
 
@@ -1836,6 +1837,26 @@ class Device(gdspy.Cell, _GeometryHelper):
             phi = np.arctan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / pi
             p.orientation = 2 * phi - p.orientation
         self._bb_valid = False
+        return self
+
+    def simplify(self, tolerance=1e-3):
+        """Simplifies every polygon in the Device, without changing
+        the shape by more than `tolerance` from the original. Uses the
+        Ramer-Douglas-Peucker algorithm.
+
+        Parameters
+        ----------
+        tolerance : float
+            Tolerance value for the simplification algorithm.  All points that
+            can be removed without changing the resulting polygon by more than
+            the value listed here will be removed. Also known as `epsilon` here
+            https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        """
+        referenced_cells = [self]
+        referenced_cells += list(self.get_dependencies(recursive=True))
+        for cell in referenced_cells:
+            for polygon in cell.polygons:
+                polygon.simplify(tolerance=tolerance)
         return self
 
     def hash_geometry(self, precision=1e-4):

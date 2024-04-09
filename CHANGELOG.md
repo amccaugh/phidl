@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.0 (April 9, 2024)
+
+Major optimization update!
+
+### New features
+- New KLayout-based boolean/offset/outline functions!  These are under the name `pg.kl_boolean()`, `pg.kl_offset`, etc.  They utilize the excellent KLayout tile processor, which allows breaking down & parallelizing these operations--in a nutshell, these operations should be much, much faster.
+- Added `D.simplify()`, which allows you to significantly reduce memory usage of a geometry by discarding unnecessarily-precise points from all polygons within a Device.  Uses the very robust Ramer–Douglas–Peucker algorithm for simplification.
+- Now `pg.gridsweep()` allows `param_x` or `param_y` to be integers, which creates copies of the same parameters in the x or y direction.
+
+### Bugfixes
+- 20x speedup to the internal operation `_merge_nearby_floating_points()` which should significantly speed up large operations (thanks Alex Tait @atait)
+- New pre-commit using ruff (thanks Bas Nijholt @basnijholt)
+- Grammar fix to documentation (thanks Ashish Panigrahi @paniash)
+
+
+
 ## 1.6.4 (July 20, 2023)
 
 ### New features
