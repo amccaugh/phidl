@@ -1766,6 +1766,61 @@ def kl_outline(
     return D
 
 
+
+def kl_invert(
+    elements,
+    border=(10,10),
+    precision=1e-4,
+    tile_size=(1000, 1000),
+    merge_after=True,
+    layer=0,
+):
+    """Creates an inverted version of the input shapes with an additional
+    border around the edges.
+
+    Parameters
+    ----------
+    elements : Device(/Reference), list of Device(/Reference), or Polygon
+        A Device containing the polygons to invert.
+    border : array-like[2]
+        (dx,dy) size of the border around the inverted shape (border value is the
+        distance from the edges of the bounding box defining)
+    precision : float
+        Desired precision for rounding vertex coordinates.
+    tile_size : array-like[2]
+        The tile size with which the geometry is divided. This allows for each
+        region to beprocessed sequentially, which is more computationally
+        efficient (and can be run in parallel on multiple CPU cores).
+    merge_after: bool
+        Merge all the polygons after performing the outline operation
+    layer : int, array-like[2], or set
+        Specific layer(s) to put polygon geometry on.
+
+    Returns
+    -------
+    D : Device
+        A Device containing the inverted version of the input shape(s) and the
+        corresponding border(s).
+    """
+    if np.size(border) == 1:
+        dx = dy = round(border / precision)
+    elif np.size(border) == 2:
+        dx = round(border[0] / precision)
+        dy = round(border[1] / precision)
+
+    D = _kl_expression(
+        element_dict=dict(A=elements),
+        expression=f"A.extents().sized({dx},{dy},2) - A",
+        precision=precision,
+        tile_size=tile_size,
+        merge_first=True,
+        merge_after=merge_after,
+        output_name="invert",
+        num_cpu=NUM_CPU,
+        layer=layer,
+    )
+    return D
+
 # ==============================================================================
 #
 # Lithography test structures
