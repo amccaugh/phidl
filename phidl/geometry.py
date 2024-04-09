@@ -1658,7 +1658,7 @@ def kl_boolean(
 
     D = _kl_expression(
         element_dict=dict(A=A, B=B),
-        expression=f"A {operation_kl} B)",
+        expression=f"A {operation_kl} B",
         precision=precision,
         tile_size=tile_size,
         merge_first=True,
