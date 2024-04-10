@@ -8,8 +8,8 @@ GDS scripting for Python that's intuitive, fast, and powerful.
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/en/latest/geometry_reference.html)
 - [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.7.0 on April 9, 2024)
--  New KLayout-based boolean/offset/outline functions!  These are under the name `pg.kl_boolean()`, `pg.kl_offset`, `pg.kl_outline()`, `pg.kl_invert()`.  They utilize the excellent KLayout tile processor, which allows breaking down & parallelizing these operations--in a nutshell, these operations should be much, much faster, and they also are more robust than the gdspy/clipper implementation.
--  To use these new functions, you must first `pip install klayout`
+  -  New KLayout-based boolean/offset/outline functions!  These are under the name `pg.kl_boolean()`, `pg.kl_offset`, `pg.kl_outline()`, `pg.kl_invert()`.  They utilize the excellent KLayout tile processor, which allows breaking down & parallelizing these operations--in a nutshell, these operations should be much, much faster, and they also are more robust than the gdspy/clipper implementation.
+  -  To use these new functions, you must first `pip install klayout`
 
 
 # Citation
@@ -24,9 +24,7 @@ If you found PHIDL useful, please consider citing it in (just one!) of your publ
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
 - Python version >=3.6
-- If you are on Windows or Mac and don't already have `gdspy` installed, you will need a C++ compiler
-    - For Windows + Python 3, install ["Build Tools for Visual Studio"](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019) (make sure to check the "C++ build tools" checkbox when installing)
-    - For Mac, install "Xcode" from the App Store, then run the command `xcode-select --install` in the terminal
+
 
 # About PHIDL
 
