@@ -187,10 +187,20 @@ def test_flatten():
     D << E1
     D << E2
     h = D.hash_geometry(precision=1e-4)
-    assert h == "8a057feca51d8097f2a915eda558fe2a9b88fb13"
+    expected_hash = "8a057feca51d8097f2a915eda558fe2a9b88fb13"
+
+    # First flatten and copy
+    new_D = D.flatten(inplace=False)
+    assert id(new_D) != id(D)
+    h = new_D.hash_geometry(precision=1e-4)
+    assert h == expected_hash
+
+    # Now flatten in place
     D.flatten()
     h = D.hash_geometry(precision=1e-4)
-    assert h == "8a057feca51d8097f2a915eda558fe2a9b88fb13"
+    assert h == expected_hash
+
+    # Now flatten inplace with a single layer
     D.flatten(single_layer=(5, 5))
     h = D.hash_geometry(precision=1e-4)
     assert h == "cfc1ba30384f5f1f7d888f47f16d1f310f95b464"
