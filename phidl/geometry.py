@@ -1504,7 +1504,7 @@ def _kl_expression(
     merge_first=True,
     merge_after=True,
     output_name="unnamed",
-    num_cpu=NUM_CPU,
+    num_cpu="all",
     layer=0,
 ):
     layer = _parse_layer(layer)
@@ -1518,7 +1518,7 @@ def _kl_expression(
     import klayout.db as kdb
 
     tp = kdb.TilingProcessor()
-    tp.threads = num_cpu
+    tp.threads = NUM_CPU if num_cpu == "all" else num_cpu
     tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
     for name, kl_region in kl_region_dict.items():
         tp.input(name, kl_region)
@@ -1551,7 +1551,7 @@ def kl_offset(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
-    num_cpu=NUM_CPU,
+    num_cpu="all",
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
 
@@ -1574,7 +1574,7 @@ def kl_offset(
         Merge all the polygons after performing the offset operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int
+    num_cpu : int or "all"
         Number of CPU cores to use for the offset operation.
         By default, it uses all available CPU cores.
 
@@ -1608,7 +1608,7 @@ def kl_boolean(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
-    num_cpu=NUM_CPU,
+    num_cpu="all",
 ):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
@@ -1636,7 +1636,7 @@ def kl_boolean(
         Merge all the polygons after performing the tiled boolean operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int
+    num_cpu : int or "all"
         Number of CPU cores to use for the boolean operation.
         By default, it uses all available CPU cores.
 
@@ -1688,7 +1688,7 @@ def kl_outline(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
-    num_cpu=NUM_CPU,
+    num_cpu="all",
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
 
@@ -1716,7 +1716,7 @@ def kl_outline(
         Merge all the polygons after performing the outline operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int
+    num_cpu : int or "all"
         Number of CPU cores to use for the offset operation.
         By default, it uses all available CPU cores.
 
@@ -1773,7 +1773,7 @@ def kl_invert(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
-    num_cpu=NUM_CPU,
+    num_cpu="all",
 ):
     """Creates an inverted version of the input shapes with an additional
     border around the edges.
@@ -1795,7 +1795,7 @@ def kl_invert(
         Merge all the polygons after performing the outline operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int
+    num_cpu : int or "all"
         Number of CPU cores to use for the offset operation.
         By default, it uses all available CPU cores.
 
