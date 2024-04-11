@@ -1461,6 +1461,8 @@ def _objects_to_kl_region(elements, precision):
             + "install the klayout Python package with "
             + "pip install klayout"
         )
+    if isinstance(elements, kdb.Region):
+        return elements
     kl_region = kdb.Region()
     if type(elements) not in (list, tuple):
         elements = [elements]
@@ -1519,7 +1521,8 @@ def _kl_expression(
 
     tp = kdb.TilingProcessor()
     tp.threads = num_cpu
-    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+    if tile_size is not None:
+        tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
     for name, kl_region in kl_region_dict.items():
         tp.input(name, kl_region)
     output_region = kdb.Region()
@@ -1795,9 +1798,12 @@ def kl_invert(
         dx = round(border[0] / precision)
         dy = round(border[1] / precision)
 
+    A = _objects_to_kl_region(elements, precision)
+    B = A.extents().sized(dx,dy,2)
+
     D = _kl_expression(
-        element_dict=dict(A=elements),
-        expression=f"A.extents().sized({dx},{dy},2) - A",
+        element_dict=dict(A=A, B=B),
+        expression=f"B - A",
         precision=precision,
         tile_size=tile_size,
         merge_first=True,
