@@ -36,12 +36,13 @@
 # ==============================================================================
 # Imports
 # ==============================================================================
-
+from __future__ import annotations
 
 import hashlib
 import numbers
 import warnings
 from copy import deepcopy as _deepcopy
+from typing import Union
 
 import gdspy
 
@@ -55,7 +56,6 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 gdspy.library.use_current_library = False
 
 __version__ = "1.7.0"
-
 
 # ==============================================================================
 # Useful transformation functions
@@ -525,7 +525,10 @@ class Layer:
         )
 
 
-def _parse_layer(layer):
+LayerType = Union[int, np.ndarray, Layer, tuple[int, int], None]
+
+
+def _parse_layer(layer: LayerType) -> tuple[int, int]:
     """Check if the variable layer is a Layer object, a 2-element list like
     [0, 1] representing layer = 0 and datatype = 1, or just a layer number.
 
@@ -1600,8 +1603,8 @@ class Device(gdspy.Cell, _GeometryHelper):
         _align(elements, alignment=alignment)
         return self
 
-    def flatten(self, single_layer=None):
-        """Flattens the heirarchy of the Device such that there are no longer
+    def flatten(self, single_layer: LayerType = None, copy: bool = False) -> Device:
+        """Flattens the hierarchy of the Device such that there are no longer
         any references to other Devices.  All polygons and labels from
         underlying references are copied and placed in the top-level Device.
         If single_layer is specified, all polygons are moved to that layer.
@@ -1610,24 +1613,25 @@ class Device(gdspy.Cell, _GeometryHelper):
         ----------
         single_layer : None, int, tuple of int, or set of int
             If not None, all polygons are moved to the specified
+        copy : bool
+            If True, the Device is copied before flattening, otherwise the
+            Device is flattened in-place.
         """
-        if single_layer is None:
-            super().flatten(
-                single_layer=None, single_datatype=None, single_texttype=None
-            )
-        else:
-            gds_layer, gds_datatype = _parse_layer(single_layer)
-            super().flatten(
-                single_layer=gds_layer,
-                single_datatype=gds_datatype,
-                single_texttype=gds_datatype,
-            )
-
-        temp_polygons = list(self.polygons)
-        self.references = []
-        self.polygons = []
-        [self.add_polygon(poly) for poly in temp_polygons]
-        return self
+        gds_layer, gds_datatype = (
+            (None, None) if single_layer is None else _parse_layer(single_layer)
+        )
+        device = _deepcopy(self) if copy else self
+        super(device, self.__class__).flatten(
+            single_layer=gds_layer,
+            single_datatype=gds_datatype,
+            single_texttype=gds_datatype,
+        )
+        temp_polygons = list(device.polygons)
+        device.references = []
+        device.polygons = []
+        for poly in temp_polygons:
+            device.add_polygon(poly)
+        return device
 
     def absorb(self, reference):
         """Flattens and absorbs polygons from an underlying DeviceReference
