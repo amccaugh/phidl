@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy as python_copy
 import itertools
 import json
@@ -2229,7 +2231,7 @@ def import_gds(filename, cellname=None, flatten=False):
                         magnification=e.magnification,
                         x_reflection=e.x_reflection,
                     )
-                    dr.properties = e.properties
+                    dr.properties = _correct_properties(e.properties)
                     dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
@@ -2250,6 +2252,7 @@ def import_gds(filename, cellname=None, flatten=False):
             temp_polygons = list(D.polygons)
             D.polygons = []
             for p in temp_polygons:
+                _correct_properties(p.properties)
                 D.add_polygon(p)
 
         topdevice = c2dmap[topcell]
@@ -2262,6 +2265,37 @@ def import_gds(filename, cellname=None, flatten=False):
         for layer_in_gds, polys in polygons.items():
             D.add_polygon(polys, layer=layer_in_gds)
         return D
+
+
+def _correct_properties(properties: dict[int, str]) -> dict[int, str]:
+    """
+    Corrects the properties dictionary of a loaded GDS element to handle the
+    conversion of keys from signed to unsigned integers.
+
+    This is a workaround for a bug in gdspy (https://github.com/heitzmann/gdspy/pull/240)
+    where property keys are incorrectly interpreted as signed integers when loading
+    GDS files.
+
+    Parameters
+    ----------
+    properties : dict[int, str]
+        The properties dictionary of a loaded GDS element.
+
+    Returns
+    -------
+    dict[int, str]
+        The input dictionary is modified in place but also returned for convenience.
+    """
+    to_del = []
+    to_add = {}
+    for key, value in properties.items():
+        if key < 0:
+            to_add[key + 2**16] = value
+            to_del.append(key)
+    for key in to_del:
+        del properties[key]
+    properties.update(to_add)
+    return properties
 
 
 def _translate_cell(c):
