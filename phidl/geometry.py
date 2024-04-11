@@ -2225,6 +2225,7 @@ def import_gds(filename, cellname=None, flatten=False):
             temp_polygons = list(D.polygons)
             D.polygons = []
             for p in temp_polygons:
+                p.properties = _correct_properties(p.properties)
                 D.add_polygon(p)
 
         topdevice = c2dmap[topcell]
@@ -2239,7 +2240,7 @@ def import_gds(filename, cellname=None, flatten=False):
         return D
 
 
-def _correct_properties(properties: dict[int, str]) -> None:
+def _correct_properties(properties: dict[int, str]) -> dict[int, str]:
     """
     Corrects the properties dictionary of a loaded GDS element to handle the
     conversion of keys from signed to unsigned integers.
@@ -2255,16 +2256,19 @@ def _correct_properties(properties: dict[int, str]) -> None:
 
     Returns
     -------
-    None
-        The input dictionary is modified in place.
+    dict[int, str]
+        The input dictionary is modified in place but also returned for convenience.
     """
     to_del = []
+    to_add = {}
     for key, value in properties.items():
         if key < 0:
-            properties[key + 2**16] = value
+            to_add[key + 2**16] = value
             to_del.append(key)
     for key in to_del:
         del properties[key]
+    properties.update(to_add)
+    return properties
 
 
 def _translate_cell(c):
