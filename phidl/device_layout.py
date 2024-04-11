@@ -1603,7 +1603,7 @@ class Device(gdspy.Cell, _GeometryHelper):
         _align(elements, alignment=alignment)
         return self
 
-    def flatten(self, single_layer: LayerType = None, copy: bool = False) -> Device:
+    def flatten(self, single_layer: LayerType = None, inplace: bool = True) -> Device:
         """Flattens the hierarchy of the Device such that there are no longer
         any references to other Devices.  All polygons and labels from
         underlying references are copied and placed in the top-level Device.
@@ -1613,14 +1613,14 @@ class Device(gdspy.Cell, _GeometryHelper):
         ----------
         single_layer : None, int, tuple of int, or set of int
             If not None, all polygons are moved to the specified
-        copy : bool
-            If True, the Device is copied before flattening, otherwise the
-            Device is flattened in-place.
+        inplace : bool
+            If True, the Device is flattened in-place, otherwise it
+            is copied before flattening.
         """
         gds_layer, gds_datatype = (
             (None, None) if single_layer is None else _parse_layer(single_layer)
         )
-        device = _deepcopy(self) if copy else self
+        device = self if inplace else _deepcopy(self)
         super(device, self.__class__).flatten(
             single_layer=gds_layer,
             single_datatype=gds_datatype,
