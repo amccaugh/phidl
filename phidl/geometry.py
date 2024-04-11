@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy as python_copy
 import itertools
 import json
