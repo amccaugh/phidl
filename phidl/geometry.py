@@ -2204,7 +2204,7 @@ def import_gds(filename, cellname=None, flatten=False):
                         magnification=e.magnification,
                         x_reflection=e.x_reflection,
                     )
-                    dr.properties = e.properties
+                    dr.properties = _correct_properties(e.properties)
                     dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
@@ -2237,6 +2237,34 @@ def import_gds(filename, cellname=None, flatten=False):
         for layer_in_gds, polys in polygons.items():
             D.add_polygon(polys, layer=layer_in_gds)
         return D
+
+
+def _correct_properties(properties: dict[int, str]) -> None:
+    """
+    Corrects the properties dictionary of a loaded GDS element to handle the
+    conversion of keys from signed to unsigned integers.
+
+    This is a workaround for a bug in gdspy (https://github.com/heitzmann/gdspy/pull/240)
+    where property keys are incorrectly interpreted as signed integers when loading
+    GDS files.
+
+    Parameters
+    ----------
+    properties : dict[int, str]
+        The properties dictionary of a loaded GDS element.
+
+    Returns
+    -------
+    None
+        The input dictionary is modified in place.
+    """
+    to_del = []
+    for key, value in properties.items():
+        if key < 0:
+            properties[key + 2**16] = value
+            to_del.append(key)
+    for key in to_del:
+        del properties[key]
 
 
 def _translate_cell(c):
