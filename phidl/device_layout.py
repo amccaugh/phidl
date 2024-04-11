@@ -1621,7 +1621,7 @@ class Device(gdspy.Cell, _GeometryHelper):
             (None, None) if single_layer is None else _parse_layer(single_layer)
         )
         device = self if inplace else _deepcopy(self)
-        super(device, self.__class__).flatten(
+        super(device, Device).flatten(
             single_layer=gds_layer,
             single_datatype=gds_datatype,
             single_texttype=gds_datatype,
