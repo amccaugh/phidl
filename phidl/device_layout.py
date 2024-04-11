@@ -1918,6 +1918,64 @@ class Device(gdspy.Cell, _GeometryHelper):
         return final_hash.hexdigest()
 
 
+def to_properties(d: dict[str, str]) -> dict[int, str]:
+    """
+    Convert a dict[str, str] to a dict[int, str] for saving in GDS-compatible format.
+
+    In the resulting dict[int, str], the keys are mapped to integers starting from 0,
+    and the values are mapped to integers starting from 2**16 - 1 in reverse order.
+    This allows the dictionary to be stored in a GDS-compatible format while preserving
+    the original key-value pairs.
+
+    Parameters
+    ----------
+    d : dict[str, str]
+        The input dictionary with string keys and values.
+
+    Returns
+    -------
+    dict[int, str]
+        The converted dictionary with integer keys and string values,
+        suitable for saving in GDS format.
+    """
+    properties = {}
+    i_max = 2**16 - 1  # 2 bytes int
+    for i, (k, v) in enumerate(d.items()):
+        properties[i] = k
+        properties[i_max - i] = v
+    return properties
+
+
+def from_properties(properties: dict[int, str]) -> dict[str, str]:
+    """
+    Convert a dict[int, str] back to the original dict[str, str] format.
+
+    This function reverses the conversion done by the `to_properties` function.
+    It takes a dictionary with integer keys and string values, where the keys and values
+    were mapped according to the GDS-compatible format, and reconstructs the original
+    dictionary with string keys and values.
+
+    Parameters
+    ----------
+    properties : dict[int, str]
+        The input dictionary with integer keys and string values, in the GDS-compatible
+        format.
+
+    Returns
+    -------
+    dict[str, str]
+        The reconstructed dictionary with string keys and values,
+        corresponding to the original format.
+    """
+    d = {}
+    i_max = 2**16 - 1  # 2 bytes int
+    for i in range(len(properties) // 2):
+        k = properties[i]
+        v = properties[i_max - i]
+        d[k] = v
+    return d
+
+
 class DeviceReference(gdspy.CellReference, _GeometryHelper):
     """Simple reference to an existing Device.
 
