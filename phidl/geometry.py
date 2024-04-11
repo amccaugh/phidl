@@ -2225,7 +2225,7 @@ def import_gds(filename, cellname=None, flatten=False):
             temp_polygons = list(D.polygons)
             D.polygons = []
             for p in temp_polygons:
-                p.properties = _correct_properties(p.properties)
+                _correct_properties(p.properties)
                 D.add_polygon(p)
 
         topdevice = c2dmap[topcell]
