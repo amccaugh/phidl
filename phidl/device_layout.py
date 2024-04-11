@@ -42,7 +42,7 @@ import hashlib
 import numbers
 import warnings
 from copy import deepcopy as _deepcopy
-from typing import Union
+from typing import Tuple, Union
 
 import gdspy
 
@@ -525,7 +525,7 @@ class Layer:
         )
 
 
-LayerType = Union[int, np.ndarray, Layer, tuple[int, int], None]
+LayerType = Union[int, np.ndarray, Layer, Tuple[int, int], None]
 
 
 def _parse_layer(layer: LayerType) -> tuple[int, int]:
