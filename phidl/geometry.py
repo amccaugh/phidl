@@ -1522,7 +1522,9 @@ def _kl_expression(
     tp = kdb.TilingProcessor()
     tp.threads = num_cpu
     if tile_size is not None:
-        tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+        tp.tile_size(
+            tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision
+        )
     for name, kl_region in kl_region_dict.items():
         tp.input(name, kl_region)
     output_region = kdb.Region()
@@ -1799,11 +1801,11 @@ def kl_invert(
         dy = round(border[1] / precision)
 
     A = _objects_to_kl_region(elements, precision)
-    B = A.extents().sized(dx,dy,2)
+    B = A.extents().sized(dx, dy, 2)
 
     D = _kl_expression(
         element_dict=dict(A=A, B=B),
-        expression=f"B - A",
+        expression="B - A",
         precision=precision,
         tile_size=tile_size,
         merge_first=True,
