@@ -280,7 +280,9 @@ def test_copy_deepcopy():
 
 def test_write_and_import_gds():
     D = Device()
-    D.add_ref(pg.rectangle(size=[1.5, 2.7], layer=[3, 2]))
+    ref = D.add_ref(pg.rectangle(size=[1.5, 2.7], layer=[3, 2]))
+    ref.properties[0] = "start"
+    ref.properties[2**16 - 1] = "end"  # max allowed key (2 byte unsigned int)
     D.add_ref(pg.rectangle(size=[0.8, 2.5], layer=[9, 7]))
     D.add_array(
         pg.rectangle(size=[1, 2], layer=[4, 66]), rows=3, columns=2, spacing=[14, 7.5]
@@ -303,6 +305,7 @@ def test_write_and_import_gds():
     h2 = Dimport.hash_geometry(precision=precision)
     assert h1 == h2
     assert Dimport.polygons[-1].properties == poly.properties
+    assert Dimport.references[0].properties == ref.properties
 
 
 def test_packer():
