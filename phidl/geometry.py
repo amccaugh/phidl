@@ -1551,6 +1551,7 @@ def kl_offset(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
+    num_cpu=NUM_CPU,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
 
@@ -1573,6 +1574,9 @@ def kl_offset(
         Merge all the polygons after performing the offset operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    num_cpu : int
+        Number of CPU cores to use for the offset operation.
+        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1589,7 +1593,7 @@ def kl_offset(
         merge_first=True,
         merge_after=merge_after,
         output_name="offset",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
 
@@ -1604,6 +1608,7 @@ def kl_boolean(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
+    num_cpu=NUM_CPU,
 ):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
@@ -1631,6 +1636,9 @@ def kl_boolean(
         Merge all the polygons after performing the tiled boolean operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    num_cpu : int
+        Number of CPU cores to use for the boolean operation.
+        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1664,7 +1672,7 @@ def kl_boolean(
         merge_first=True,
         merge_after=merge_after,
         output_name="boolean",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
 
@@ -1680,6 +1688,7 @@ def kl_outline(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
+    num_cpu=NUM_CPU,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
 
@@ -1707,6 +1716,9 @@ def kl_outline(
         Merge all the polygons after performing the outline operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    num_cpu : int
+        Number of CPU cores to use for the offset operation.
+        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1743,7 +1755,7 @@ def kl_outline(
         merge_first=True,
         merge_after=merge_after,
         output_name="outline",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
 
@@ -1761,6 +1773,7 @@ def kl_invert(
     tile_size=(1000, 1000),
     merge_after=True,
     layer=0,
+    num_cpu=NUM_CPU,
 ):
     """Creates an inverted version of the input shapes with an additional
     border around the edges.
@@ -1782,6 +1795,9 @@ def kl_invert(
         Merge all the polygons after performing the outline operation
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
+    num_cpu : int
+        Number of CPU cores to use for the offset operation.
+        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1803,7 +1819,7 @@ def kl_invert(
         merge_first=True,
         merge_after=merge_after,
         output_name="invert",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
     return D
