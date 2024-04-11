@@ -1,7 +1,6 @@
 import copy as python_copy
 import itertools
 import json
-import multiprocessing
 import os.path
 import pickle
 import warnings
@@ -24,8 +23,9 @@ from phidl.device_layout import (
     _parse_layer,
     make_device,
 )
-
-NUM_CPU = multiprocessing.cpu_count()
+from phidl.device_layout import (
+    config as phidl_config,
+)
 
 ##### Categories:
 # Polygons / shapes
@@ -1517,8 +1517,9 @@ def _kl_expression(
 
     import klayout.db as kdb
 
+    print(phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu)
     tp = kdb.TilingProcessor()
-    tp.threads = NUM_CPU if num_cpu == "all" else num_cpu
+    tp.threads = phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu
     tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
     for name, kl_region in kl_region_dict.items():
         tp.input(name, kl_region)
@@ -1550,8 +1551,8 @@ def kl_offset(
     miter_mode=2,
     tile_size=(1000, 1000),
     merge_after=True,
-    layer=0,
     num_cpu="all",
+    layer=0,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
 
@@ -1572,11 +1573,11 @@ def kl_offset(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the offset operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int or "all"
-        Number of CPU cores to use for the offset operation.
-        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1607,8 +1608,8 @@ def kl_boolean(
     precision=1e-4,
     tile_size=(1000, 1000),
     merge_after=True,
-    layer=0,
     num_cpu="all",
+    layer=0,
 ):
     """
     Performs boolean operations between 2 Device/DeviceReference objects,
@@ -1634,11 +1635,11 @@ def kl_boolean(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the tiled boolean operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int or "all"
-        Number of CPU cores to use for the boolean operation.
-        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1687,8 +1688,8 @@ def kl_outline(
     miter_mode=2,
     tile_size=(1000, 1000),
     merge_after=True,
-    layer=0,
     num_cpu="all",
+    layer=0,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
 
@@ -1714,11 +1715,11 @@ def kl_outline(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the outline operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int or "all"
-        Number of CPU cores to use for the offset operation.
-        By default, it uses all available CPU cores.
 
     Returns
     -------
@@ -1772,8 +1773,8 @@ def kl_invert(
     precision=1e-4,
     tile_size=(1000, 1000),
     merge_after=True,
-    layer=0,
     num_cpu="all",
+    layer=0,
 ):
     """Creates an inverted version of the input shapes with an additional
     border around the edges.
@@ -1793,11 +1794,11 @@ def kl_invert(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the outline operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
-    num_cpu : int or "all"
-        Number of CPU cores to use for the offset operation.
-        By default, it uses all available CPU cores.
 
     Returns
     -------

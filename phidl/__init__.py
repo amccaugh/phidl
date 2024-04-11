@@ -7,6 +7,7 @@ from phidl.device_layout import (
     Path,
     Port,
     __version__,
+    config,
     make_device,
     reset,
 )
@@ -28,4 +29,5 @@ __all__ = [
     "quickplot",
     "quickplot2",
     "set_quickplot_options",
+    "config",
 ]

@@ -56,6 +56,9 @@ gdspy.library.use_current_library = False
 
 __version__ = "1.7.0"
 
+import multiprocessing
+
+config = dict(NUM_CPU=multiprocessing.cpu_count())
 
 # ==============================================================================
 # Useful transformation functions
