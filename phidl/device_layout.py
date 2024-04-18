@@ -205,7 +205,8 @@ def _parse_move(origin, destination, axis):
     return dx, dy
 
 
-def _transform_port(point, orientation, origin=(0, 0), rotation=None, x_reflection=False
+def _transform_port(
+    point, orientation, origin=(0, 0), rotation=None, x_reflection=False
 ):
     """Applies various transformations to a Port.
 
@@ -927,6 +928,49 @@ class Port:
             center = self.midpoint
         self.midpoint = _rotate_points(self.midpoint, angle=angle, center=center)
         return self
+
+
+def _transform_port(
+    point, orientation, origin=(0, 0), rotation=None, x_reflection=False
+):
+    """Applies various transformations to a Port.
+
+    Parameters
+    ----------
+    point : array-like[N][2]
+        Coordinates of the Port.
+    orientation : int, float, or None
+        Orientation of the Port
+    origin : array-like[2] or None
+        If given, shifts the transformed points to the specified origin.
+    rotation : int, float, or None
+        Angle of rotation to apply
+    x_reflection : bool
+        If True, reflects the Port across the x-axis before applying
+        rotation.
+
+    Returns
+    -------
+    new_point : array-like[N][2]
+        Coordinates of the transformed Port.
+    new_orientation : int, float, or None
+
+    """
+    # Apply GDS-type transformations to a port (x_ref)
+    new_point = np.array(point)
+    new_orientation = orientation
+
+    if x_reflection:
+        new_point[1] = -new_point[1]
+        new_orientation = -orientation
+    if rotation is not None:
+        new_point = _rotate_points(new_point, angle=rotation, center=[0, 0])
+        new_orientation += rotation
+    if origin is not None:
+        new_point = new_point + np.array(origin)
+    new_orientation = mod(new_orientation, 360)
+
+    return new_point, new_orientation
 
 
 class Polygon(gdspy.Polygon, _GeometryHelper):
@@ -1701,9 +1745,10 @@ class Device(gdspy.Cell, _GeometryHelper):
     def get_ports(self, depth=None):
         """Returns copies of all the ports of the Device, rotated and
         translated so that they're in their top-level position. The Ports
-        returned are copies of the originals, but each copy has the same
-        ``uid`` as the original so that they can be traced back to the
-        original if needed.
+        returned are copies of the originals, but each copy has the same ``uid``
+        as the original so that they can be traced back to the original if
+        needed.  Ports taken from arrays have an additional `array_idx`
+        parameter added to their .info metadata describing the row/column
 
         Parameters
         ----------
@@ -1725,6 +1770,18 @@ class Device(gdspy.Cell, _GeometryHelper):
                 else:
                     new_depth = depth - 1
                 ref_ports = r.parent.get_ports(depth=new_depth)
+                if isinstance(r, CellArray):
+                    ref_ports_array = []
+                    xs = r.spacing[0]
+                    ys = r.spacing[1]
+                    for i in range(r.rows):
+                        for j in range(r.columns):
+                            for rp in ref_ports:
+                                new_port = rp._copy(new_uid=False)
+                                new_port.midpoint += np.array((xs * j, ys * i))
+                                # new_port.new_orientation = new_orientation
+                                ref_ports_array.append(new_port)
+                    ref_ports = ref_ports_array
 
                 # Transform ports that came from a reference
                 ref_ports_transformed = []
