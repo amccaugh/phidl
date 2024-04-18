@@ -205,6 +205,48 @@ def _parse_move(origin, destination, axis):
     return dx, dy
 
 
+def _transform_port(point, orientation, origin=(0, 0), rotation=None, x_reflection=False
+):
+    """Applies various transformations to a Port.
+
+    Parameters
+    ----------
+    point : array-like[N][2]
+        Coordinates of the Port.
+    orientation : int, float, or None
+        Orientation of the Port
+    origin : array-like[2] or None
+        If given, shifts the transformed points to the specified origin.
+    rotation : int, float, or None
+        Angle of rotation to apply
+    x_reflection : bool
+        If True, reflects the Port across the x-axis before applying
+        rotation.
+
+    Returns
+    -------
+    new_point : array-like[N][2]
+        Coordinates of the transformed Port.
+    new_orientation : int, float, or None
+
+    """
+    # Apply GDS-type transformations to a port (x_ref)
+    new_point = np.array(point)
+    new_orientation = orientation
+
+    if x_reflection:
+        new_point[1] = -new_point[1]
+        new_orientation = -orientation
+    if rotation is not None:
+        new_point = _rotate_points(new_point, angle=rotation, center=[0, 0])
+        new_orientation += rotation
+    if origin is not None:
+        new_point = new_point + np.array(origin)
+    new_orientation = mod(new_orientation, 360)
+
+    return new_point, new_orientation
+
+
 def _distribute(elements, direction="x", spacing=100, separation=True, edge=None):
     """Takes a list of elements and distributes them either equally along a
     grid or with a fixed spacing between them.
@@ -1688,7 +1730,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                 ref_ports_transformed = []
                 for rp in ref_ports:
                     new_port = rp._copy(new_uid=False)
-                    new_midpoint, new_orientation = r._transform_port(
+                    new_midpoint, new_orientation = _transform_port(
                         rp.midpoint,
                         rp.orientation,
                         r.origin,
@@ -2032,7 +2074,7 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         of the ports dict which is correctly rotated and translated."""
         for name, port in self.parent.ports.items():
             port = self.parent.ports[name]
-            new_midpoint, new_orientation = self._transform_port(
+            new_midpoint, new_orientation = _transform_port(
                 port.midpoint,
                 port.orientation,
                 self.origin,
@@ -2066,48 +2108,6 @@ class DeviceReference(gdspy.CellReference, _GeometryHelper):
         if bbox is None:
             bbox = ((0, 0), (0, 0))
         return np.array(bbox)
-
-    def _transform_port(
-        self, point, orientation, origin=(0, 0), rotation=None, x_reflection=False
-    ):
-        """Applies various transformations to a Port.
-
-        Parameters
-        ----------
-        point : array-like[N][2]
-            Coordinates of the Port.
-        orientation : int, float, or None
-            Orientation of the Port
-        origin : array-like[2] or None
-            If given, shifts the transformed points to the specified origin.
-        rotation : int, float, or None
-            Angle of rotation to apply
-        x_reflection : bool
-            If True, reflects the Port across the x-axis before applying
-            rotation.
-
-        Returns
-        -------
-        new_point : array-like[N][2]
-            Coordinates of the transformed Port.
-        new_orientation : int, float, or None
-
-        """
-        # Apply GDS-type transformations to a port (x_ref)
-        new_point = np.array(point)
-        new_orientation = orientation
-
-        if x_reflection:
-            new_point[1] = -new_point[1]
-            new_orientation = -orientation
-        if rotation is not None:
-            new_point = _rotate_points(new_point, angle=rotation, center=[0, 0])
-            new_orientation += rotation
-        if origin is not None:
-            new_point = new_point + np.array(origin)
-        new_orientation = mod(new_orientation, 360)
-
-        return new_point, new_orientation
 
     def move(self, origin=(0, 0), destination=None, axis=None):
         """Moves the DeviceReference from the origin point to the
