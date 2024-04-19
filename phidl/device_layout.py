@@ -1795,7 +1795,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                         r.x_reflection,
                     )
                     new_port.midpoint = new_midpoint
-                    new_port.new_orientation = new_orientation
+                    new_port.orientation = new_orientation
                     ref_ports_transformed.append(new_port)
                 port_list += ref_ports_transformed
 
