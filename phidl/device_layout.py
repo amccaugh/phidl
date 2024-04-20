@@ -1779,7 +1779,7 @@ class Device(gdspy.Cell, _GeometryHelper):
                             for rp in ref_ports:
                                 new_port = rp._copy(new_uid=False)
                                 new_port.midpoint += np.array((xs * j, ys * i))
-                                new_port.info['array_idx'] = (i,j)
+                                new_port.info["array_idx"] = (i, j)
                                 ref_ports_array.append(new_port)
                     ref_ports = ref_ports_array
 
