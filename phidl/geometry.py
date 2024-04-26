@@ -2168,7 +2168,7 @@ def flatten(D, single_layer=None):
     single_layer : None, int, tuple of int, or set of int
         If not None, all polygons are moved to the specified
     """
-    return deepcopy(D).flatten()
+    return copy(D).flatten()
 
 
 def import_gds(filename, cellname=None, flatten=False):
