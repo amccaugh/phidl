@@ -2156,11 +2156,11 @@ def copy_layer(D, layer=1, new_layer=2):
 
 
 def flatten(D, single_layer=None):
-    """ Flattens the heirarchy of the Device such that there are no longer
+    """Flattens the heirarchy of the Device such that there are no longer
     any references to other Devices.  All polygons and labels from
     underlying references are copied and placed in the top-level Device.
     If single_layer is specified, all polygons are moved to that layer.
-    Identical to Device.flatten() but creates new geometry instead of 
+    Identical to Device.flatten() but creates new geometry instead of
     modifying in-place.
 
     Parameters
