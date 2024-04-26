@@ -2959,9 +2959,8 @@ class Path(_GeometryHelper):
 
         return self
 
-
-    def interpolate(self, distance, offset = 0):
-        """ 
+    def interpolate(self, distance, offset=0):
+        """
         Interpolates points along the length of the Path (with an optional offset)
         so that it follows the Path centerline plus an offset. Any distance values
         less than zero or greater than the path length will return NaN
@@ -2992,13 +2991,12 @@ class Path(_GeometryHelper):
         s = np.cumsum(ds)
         s = np.concatenate([[0], s])
 
-        interpx = np.interp(distance, s, x, left = np.nan, right = np.nan)
-        interpy = np.interp(distance, s, y, left = np.nan, right = np.nan)
-        interpn = np.interp(distance, s, range(len(x)), left = np.nan, right = np.nan)
+        interpx = np.interp(distance, s, x, left=np.nan, right=np.nan)
+        interpy = np.interp(distance, s, y, left=np.nan, right=np.nan)
+        interpn = np.interp(distance, s, range(len(x)), left=np.nan, right=np.nan)
         angle = np.rad2deg(theta[np.floor(interpn).astype(int)])
 
-        return np.vstack([interpx,interpy]).T, angle
-
+        return np.vstack([interpx, interpy]).T, angle
 
     def rotate(self, angle=45, center=(0, 0)):
         """Rotates all Polygons in the Device around the specified
