@@ -1,5 +1,19 @@
 # Changelog
 
+
+## 1.7.1 (April 26, 2024)
+
+### New features
+- Allow `Device.get_ports()` to be used with arrays
+- Allow setting `num_cpu` in the new `pg.kl_boolean()`, `pg.kl_offset`, `pg.kl_invert()` functions.  Global defaults for the number of CPU to be used can be set with e.g. `phidl.config["NUM_CPU"] = 8`
+- Added `pg.flatten()` convenience function.  This is identical to `Device.flatten()` but instead of modifying the geometry in-place, returns a flattened copy (thanks Bas Nijholt @basnijholt)
+- Fixed an issue from `gdspy` where property keys are incorrectly interpreted as signed integers when importing GDS files using `import_gds()` (thanks Bas Nijholt @basnijholt)
+
+### Bugfixes
+- Fixed rare problem with mew `pg.kl_invert()` function when `tile_size` was too small
+
+
+
 ## 1.7.0 (April 9, 2024)
 
 Major optimization update!

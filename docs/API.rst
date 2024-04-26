@@ -135,6 +135,13 @@ extract
 .. autofunction:: phidl.geometry.extract
 
 
+
+flatten
+========
+
+.. autofunction:: phidl.geometry.flatten
+
+
 fill_rectangle
 ==============
 

@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import copy as python_copy
 import itertools
 import json
-import multiprocessing
 import os.path
 import pickle
 import warnings
@@ -24,8 +25,9 @@ from phidl.device_layout import (
     _parse_layer,
     make_device,
 )
-
-NUM_CPU = multiprocessing.cpu_count()
+from phidl.device_layout import (
+    config as phidl_config,
+)
 
 ##### Categories:
 # Polygons / shapes
@@ -1461,6 +1463,8 @@ def _objects_to_kl_region(elements, precision):
             + "install the klayout Python package with "
             + "pip install klayout"
         )
+    if isinstance(elements, kdb.Region):
+        return elements
     kl_region = kdb.Region()
     if type(elements) not in (list, tuple):
         elements = [elements]
@@ -1504,7 +1508,7 @@ def _kl_expression(
     merge_first=True,
     merge_after=True,
     output_name="unnamed",
-    num_cpu=NUM_CPU,
+    num_cpu="all",
     layer=0,
 ):
     layer = _parse_layer(layer)
@@ -1517,9 +1521,13 @@ def _kl_expression(
 
     import klayout.db as kdb
 
+    print(phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu)
     tp = kdb.TilingProcessor()
-    tp.threads = num_cpu
-    tp.tile_size(tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision)
+    tp.threads = phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu
+    if tile_size is not None:
+        tp.tile_size(
+            tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision
+        )
     for name, kl_region in kl_region_dict.items():
         tp.input(name, kl_region)
     output_region = kdb.Region()
@@ -1550,6 +1558,7 @@ def kl_offset(
     miter_mode=2,
     tile_size=(1000, 1000),
     merge_after=True,
+    num_cpu="all",
     layer=0,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
@@ -1571,6 +1580,9 @@ def kl_offset(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the offset operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -1589,7 +1601,7 @@ def kl_offset(
         merge_first=True,
         merge_after=merge_after,
         output_name="offset",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
 
@@ -1603,6 +1615,7 @@ def kl_boolean(
     precision=1e-4,
     tile_size=(1000, 1000),
     merge_after=True,
+    num_cpu="all",
     layer=0,
 ):
     """
@@ -1629,6 +1642,9 @@ def kl_boolean(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the tiled boolean operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -1664,7 +1680,7 @@ def kl_boolean(
         merge_first=True,
         merge_after=merge_after,
         output_name="boolean",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
 
@@ -1679,6 +1695,7 @@ def kl_outline(
     miter_mode=2,
     tile_size=(1000, 1000),
     merge_after=True,
+    num_cpu="all",
     layer=0,
 ):
     """Shrinks or expands a polygon or set of polygons using KLayout
@@ -1705,6 +1722,9 @@ def kl_outline(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the outline operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -1743,7 +1763,7 @@ def kl_outline(
         merge_first=True,
         merge_after=merge_after,
         output_name="outline",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
 
@@ -1760,6 +1780,7 @@ def kl_invert(
     precision=1e-4,
     tile_size=(1000, 1000),
     merge_after=True,
+    num_cpu="all",
     layer=0,
 ):
     """Creates an inverted version of the input shapes with an additional
@@ -1780,6 +1801,9 @@ def kl_invert(
         efficient (and can be run in parallel on multiple CPU cores).
     merge_after: bool
         Merge all the polygons after performing the outline operation
+    num_cpu : int or "all"
+        Number of CPU cores to use. By default, it uses all available CPU cores,
+        but this default can be set by `phidl.config['NUM_CPU'] = 2`
     layer : int, array-like[2], or set
         Specific layer(s) to put polygon geometry on.
 
@@ -1795,15 +1819,18 @@ def kl_invert(
         dx = round(border[0] / precision)
         dy = round(border[1] / precision)
 
+    A = _objects_to_kl_region(elements, precision)
+    B = A.extents().sized(dx, dy, 2)
+
     D = _kl_expression(
-        element_dict=dict(A=elements),
-        expression=f"A.extents().sized({dx},{dy},2) - A",
+        element_dict=dict(A=A, B=B),
+        expression="B - A",
         precision=precision,
         tile_size=tile_size,
         merge_first=True,
         merge_after=merge_after,
         output_name="invert",
-        num_cpu=NUM_CPU,
+        num_cpu=num_cpu,
         layer=layer,
     )
     return D
@@ -2128,6 +2155,22 @@ def copy_layer(D, layer=1, new_layer=2):
     return D_copied_layer
 
 
+def flatten(D, single_layer=None):
+    """Flattens the heirarchy of the Device such that there are no longer
+    any references to other Devices.  All polygons and labels from
+    underlying references are copied and placed in the top-level Device.
+    If single_layer is specified, all polygons are moved to that layer.
+    Identical to Device.flatten() but creates new geometry instead of
+    modifying in-place.
+
+    Parameters
+    ----------
+    single_layer : None, int, tuple of int, or set of int
+        If not None, all polygons are moved to the specified
+    """
+    return copy(D).flatten()
+
+
 def import_gds(filename, cellname=None, flatten=False):
     """Imports a GDS file and returns a Device with all the corresponding
     geometry
@@ -2204,7 +2247,7 @@ def import_gds(filename, cellname=None, flatten=False):
                         magnification=e.magnification,
                         x_reflection=e.x_reflection,
                     )
-                    dr.properties = e.properties
+                    dr.properties = _correct_properties(e.properties)
                     dr.owner = D
                     converted_references.append(dr)
                 elif isinstance(e, gdspy.CellArray):
@@ -2225,6 +2268,7 @@ def import_gds(filename, cellname=None, flatten=False):
             temp_polygons = list(D.polygons)
             D.polygons = []
             for p in temp_polygons:
+                _correct_properties(p.properties)
                 D.add_polygon(p)
 
         topdevice = c2dmap[topcell]
@@ -2237,6 +2281,37 @@ def import_gds(filename, cellname=None, flatten=False):
         for layer_in_gds, polys in polygons.items():
             D.add_polygon(polys, layer=layer_in_gds)
         return D
+
+
+def _correct_properties(properties: dict[int, str]) -> dict[int, str]:
+    """
+    Corrects the properties dictionary of a loaded GDS element to handle the
+    conversion of keys from signed to unsigned integers.
+
+    This is a workaround for a bug in gdspy (https://github.com/heitzmann/gdspy/pull/240)
+    where property keys are incorrectly interpreted as signed integers when loading
+    GDS files.
+
+    Parameters
+    ----------
+    properties : dict[int, str]
+        The properties dictionary of a loaded GDS element.
+
+    Returns
+    -------
+    dict[int, str]
+        The input dictionary is modified in place but also returned for convenience.
+    """
+    to_del = []
+    to_add = {}
+    for key, value in properties.items():
+        if key < 0:
+            to_add[key + 2**16] = value
+            to_del.append(key)
+    for key in to_del:
+        del properties[key]
+    properties.update(to_add)
+    return properties
 
 
 def _translate_cell(c):
