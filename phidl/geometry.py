@@ -2155,6 +2155,22 @@ def copy_layer(D, layer=1, new_layer=2):
     return D_copied_layer
 
 
+def flatten(D, single_layer=None):
+    """ Flattens the heirarchy of the Device such that there are no longer
+    any references to other Devices.  All polygons and labels from
+    underlying references are copied and placed in the top-level Device.
+    If single_layer is specified, all polygons are moved to that layer.
+    Identical to Device.flatten() but creates new geometry instead of 
+    modifying in-place.
+
+    Parameters
+    ----------
+    single_layer : None, int, tuple of int, or set of int
+        If not None, all polygons are moved to the specified
+    """
+    return deepcopy(D).flatten()
+
+
 def import_gds(filename, cellname=None, flatten=False):
     """Imports a GDS file and returns a Device with all the corresponding
     geometry
