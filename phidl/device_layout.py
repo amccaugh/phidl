@@ -2986,15 +2986,18 @@ class Path(_GeometryHelper):
         y = P.points[:, 1]
         dx = np.diff(x)
         dy = np.diff(y)
+        theta = np.arctan2(dy, dx)
+        theta = np.concatenate([theta, [theta[-1]]])
         ds = np.sqrt((dx) ** 2 + (dy) ** 2)
         s = np.cumsum(ds)
         s = np.concatenate([[0], s])
 
         interpx = np.interp(distance, s, x, left = np.nan, right = np.nan)
         interpy = np.interp(distance, s, y, left = np.nan, right = np.nan)
-        angle = np.interp(distance, s, y, left = np.nan, right = np.nan)
+        interpn = np.interp(distance, s, range(len(x)), left = np.nan, right = np.nan)
+        angle = np.rad2deg(theta[np.floor(interpn).astype(int)])
 
-        return np.vstack([interpx,interpy]).T
+        return np.vstack([interpx,interpy]).T, angle
 
 
     def rotate(self, angle=45, center=(0, 0)):
