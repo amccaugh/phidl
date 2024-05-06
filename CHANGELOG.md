@@ -4,6 +4,7 @@
 ## 1.7.1 (April 26, 2024)
 
 ### New features
+- Path.interpolate() now allows easy placement of objects alongside a path (e.g. for placing vias).  See [the tutorial](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Interpolating-/-placing-objects-along-a-path) for more information
 - Allow `Device.get_ports()` to be used with arrays
 - Allow setting `num_cpu` in the new `pg.kl_boolean()`, `pg.kl_offset`, `pg.kl_invert()` functions.  Global defaults for the number of CPU to be used can be set with e.g. `phidl.config["NUM_CPU"] = 8`
 - Added `pg.flatten()` convenience function.  This is identical to `Device.flatten()` but instead of modifying the geometry in-place, returns a flattened copy (thanks Bas Nijholt @basnijholt)
