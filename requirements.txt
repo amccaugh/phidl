@@ -1,4 +1,6 @@
-six
+gdspy
+klayout
 numpy
 matplotlib
-gdspy
+rectpack
+six
