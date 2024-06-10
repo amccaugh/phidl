@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 from phidl.device_layout import CrossSection, Path, _rotate_points
@@ -74,8 +76,8 @@ def _fresnel(R0, s, num_pts, n_iter=8):
     y = np.zeros(num_pts)
 
     for n in range(0, n_iter):
-        x += (-1) ** n * t ** (4 * n + 1) / (np.math.factorial(2 * n) * (4 * n + 1))
-        y += (-1) ** n * t ** (4 * n + 3) / (np.math.factorial(2 * n + 1) * (4 * n + 3))
+        x += (-1) ** n * t ** (4 * n + 1) / (math.factorial(2 * n) * (4 * n + 1))
+        y += (-1) ** n * t ** (4 * n + 3) / (math.factorial(2 * n + 1) * (4 * n + 3))
 
     return np.array([np.sqrt(2) * R0 * x, np.sqrt(2) * R0 * y])
 
@@ -142,7 +144,7 @@ def euler(radius=3, angle=90, p=1.0, use_eff=False, num_pts=720):
         dx = xp - Rp * np.sin(p * alpha / 2)
         dy = yp - Rp * (1 - np.cos(p * alpha / 2))
     else:
-        xbend1 = ybend1 = np.asfarray([])
+        xbend1 = ybend1 = np.array([], dtype=np.float64)
         dx = 0
         dy = 0
 
@@ -293,7 +295,7 @@ def spiral(num_turns=5, gap=1, inner_gap=2, num_pts=10000):
 
 
 def _compute_segments(points):
-    points = np.asfarray(points)
+    points = np.asarray(points, dtype=np.float64)
     normals = np.diff(points, axis=0)
     normals = (normals.T / np.linalg.norm(normals, axis=1)).T
     dx = np.diff(points[:, 0])

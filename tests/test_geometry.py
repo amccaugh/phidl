@@ -207,8 +207,9 @@ def test_text():
 
 
 def test_truetype():
-    _ = pytest.importorskip(
-        "phidl.font", reason="Testing of ttf/otf fonts requires the freetype package."
+    pytest.importorskip(
+        "phidl.font", reason="Testing of ttf/otf fonts requires the freetype package.",
+        exc_type=ImportError,
     )
     from os import path
 
@@ -229,8 +230,9 @@ def test_truetype():
 
 @pytest.mark.skipif(sys.version_info < (3, 0), reason="unicode test requires python3")
 def test_unicode():
-    _ = pytest.importorskip(
-        "phidl.font", reason="Testing of ttf/otf fonts requires the freetype package."
+    pytest.importorskip(
+        "phidl.font", reason="Testing of ttf/otf fonts requires the freetype package.",
+        exc_type=ImportError,
     )
     from os import path
 
