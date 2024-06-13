@@ -353,10 +353,10 @@ def _line_distances(points, start, end):
     if np.all(start == end):
         return np.linalg.norm(points - start, axis=1)
 
-    vec = end - start
-    vec2 = start - points
-    cross = vec[..., 0] * vec2[..., 1] - vec[..., 1] * vec2[..., 0]
-    return np.divide(abs(cross), np.linalg.norm(vec))
+    line_vec = end - start
+    relative_points = start - points
+    cross = line_vec[..., 0] * relative_points[..., 1] - line_vec[..., 1] * relative_points[..., 0]
+    return np.divide(abs(cross), np.linalg.norm(line_vec))
 
 
 def _simplify(points, tolerance=0):
