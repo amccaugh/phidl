@@ -1132,6 +1132,9 @@ class Device(gdspy.Cell, _GeometryHelper):
         else:
             name = "Unnamed"
 
+        if name == "":
+            raise ValueError("[PHIDL] Device was given a blank name")
+
         # Make a new blank device
         self.ports = {}
         self.info = {}
