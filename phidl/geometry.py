@@ -943,7 +943,7 @@ def _merge_floating_point_errors(polygons, tol=1e-10):
         Set of corrected polygons.
     """
     if len(polygons) == 0:
-        return np.asfarray([])
+        return np.asarray([], dtype=np.float64)
     stacked_polygons = np.vstack(polygons)
     x = stacked_polygons[:, 0]
     y = stacked_polygons[:, 1]
@@ -1488,7 +1488,7 @@ def _kl_region_to_device(kl_region, layer, name, precision):
     for polygon in kl_region.each():
         polygon = polygon.to_simple_polygon()
         points = _kl_polygon_to_array(polygon)
-        points = np.asfarray(points) * precision
+        points = np.asarray(points, dtype=np.float64) * precision
         D.add_polygon(points, layer=layer)
     return D
 
@@ -2225,7 +2225,7 @@ def import_gds(filename, cellname=None, flatten=False):
                     rotation = 0
                 l = D.add_label(
                     text=label.text,
-                    position=np.asfarray(label.position),
+                    position=np.asarray(label.position, dtype=np.float64),
                     magnification=label.magnification,
                     rotation=rotation * 180 / np.pi,
                     layer=(label.layer, label.texttype),

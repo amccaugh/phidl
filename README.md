@@ -23,8 +23,12 @@ If you found PHIDL useful, please consider citing it in (just one!) of your publ
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
+- Install with `pip install -U phidl[all]` to include optional dependencies (e.g. freetype-py, klayout, rectpack)
 - Python version >=3.6
 
+## Testing
+- Install with test dependencies with `pip install -U phidl[test]` (includes `all` extras as well)
+- Run tests with `pytest` (or `python -m pytest`)
 
 # About PHIDL
 

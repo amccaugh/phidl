@@ -10,6 +10,10 @@ install_requires = [
     "matplotlib",
 ]
 
+extras_require = {}
+extras_require["all"] = ["freetype-py", "klayout", "rectpack", "scipy"]
+extras_require["test"] = extras_require["all"] + ["pytest"]
+
 # read the contents of your README file
 
 this_directory = path.abspath(path.dirname(__file__))
@@ -24,6 +28,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=install_requires,
+    extras_require=extras_require,
     author="Adam McCaughan",
     author_email="amccaugh@gmail.com",
     packages=["phidl"],
