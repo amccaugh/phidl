@@ -55,7 +55,7 @@ from phidl.constants import _CSS3_NAMES_TO_HEX
 
 gdspy.library.use_current_library = False
 
-__version__ = "1.7.1"
+__version__ = "1.7.2"
 
 
 config = dict(NUM_CPU=multiprocessing.cpu_count())
@@ -353,9 +353,13 @@ def _line_distances(points, start, end):
     if np.all(start == end):
         return np.linalg.norm(points - start, axis=1)
 
-    vec = end - start
-    cross = np.cross(vec, start - points)
-    return np.divide(abs(cross), np.linalg.norm(vec))
+    line_vec = end - start
+    relative_points = start - points
+    cross = (
+        line_vec[..., 0] * relative_points[..., 1]
+        - line_vec[..., 1] * relative_points[..., 0]
+    )
+    return np.divide(abs(cross), np.linalg.norm(line_vec))
 
 
 def _simplify(points, tolerance=0):
@@ -1131,6 +1135,9 @@ class Device(gdspy.Cell, _GeometryHelper):
             name = args[0]
         else:
             name = "Unnamed"
+
+        if name == "":
+            raise ValueError("[PHIDL] Device was given a blank name")
 
         # Make a new blank device
         self.ports = {}
@@ -2728,7 +2735,7 @@ class Path(_GeometryHelper):
             and np.issubdtype(np.array(path).dtype, np.number)
             and (np.shape(path)[1] == 2)
         ):
-            points = np.asfarray(path)
+            points = np.asarray(path, dtype=np.float64)
             nx1, ny1 = points[1] - points[0]
             start_angle = np.arctan2(ny1, nx1) / np.pi * 180
             nx2, ny2 = points[-1] - points[-2]

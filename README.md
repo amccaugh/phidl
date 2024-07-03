@@ -7,7 +7,7 @@ GDS scripting for Python that's intuitive, fast, and powerful.
 - [**Installation / requirements**](#installation--requirements)
 - [**Tutorial + examples**](https://phidl.readthedocs.io/en/latest/tutorials.html) (or [try an interactive notebook](https://mybinder.org/v2/gh/amccaugh/phidl/master?filepath=phidl_tutorial_example.ipynb))
 - [**Geometry library + function documentation**](https://phidl.readthedocs.io/en/latest/geometry_reference.html)
-- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.7.1 on April 26, 2024)
+- [Changelog](https://github.com/amccaugh/phidl/blob/master/CHANGELOG.md) (latest update 1.7.2 on July 3, 2024)
   -  New KLayout-based boolean/offset/outline functions!  These are under the name `pg.kl_boolean()`, `pg.kl_offset`, `pg.kl_outline()`, `pg.kl_invert()`.  They utilize the excellent KLayout tile processor, which allows breaking down & parallelizing these operations--in a nutshell, these operations should be much, much faster, and they also are more robust than the gdspy/clipper implementation. To use these new functions, you must first `pip install klayout`
   - Path.interpolate() now allows easy placement of objects alongside a path (e.g. for placing vias).  See [the tutorial](https://phidl.readthedocs.io/en/latest/tutorials/waveguides.html#Interpolating-/-placing-objects-along-a-path) for more information
 
@@ -23,8 +23,12 @@ If you found PHIDL useful, please consider citing it in (just one!) of your publ
 
 # Installation / requirements
 - Install or upgrade with `pip install -U phidl`
+- Install with `pip install -U phidl[all]` to include optional dependencies (e.g. freetype-py, klayout, rectpack)
 - Python version >=3.6
 
+## Testing
+- Install with test dependencies with `pip install -U phidl[test]` (includes `all` extras as well)
+- Run tests with `pytest` (or `python -m pytest`)
 
 # About PHIDL
 

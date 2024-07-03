@@ -9,7 +9,7 @@ jobs:
   pytest:
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -20,14 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -U \
-          matplotlib \
-          scipy \
-          rectpack \
-          klayout \
-          freetype-py \
-          pytest
-        pip install -e .
+        pip install -e '.[test]'
     - name: Run test
       uses: GabrielBB/xvfb-action@v1
       with:
