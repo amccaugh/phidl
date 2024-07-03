@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 1.7.2 (July 3, 2024)
+
+### Bugfixes
+- Updated to be compatible with Numpy 2.0 (thanks Ashley Anderson @aganders3)
+- Removed leftover debugging `print()` statement from `kl_` boolean functions (thanks Bakhrom Oripov @bakhromtjk)
+
+
 ## 1.7.1 (April 26, 2024)
 
 ### New features
