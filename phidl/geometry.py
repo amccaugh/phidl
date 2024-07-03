@@ -1521,7 +1521,6 @@ def _kl_expression(
 
     import klayout.db as kdb
 
-    print(phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu)
     tp = kdb.TilingProcessor()
     tp.threads = phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu
     if tile_size is not None:
