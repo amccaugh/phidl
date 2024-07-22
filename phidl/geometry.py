@@ -1505,6 +1505,7 @@ def _kl_expression(
     expression,  # e.g. 'A.sized(-500, 2) - B',
     precision=1e-4,
     tile_size=(1000, 1000),
+    tile_border=(0, 0),
     merge_first=True,
     merge_after=True,
     output_name="unnamed",
@@ -1523,6 +1524,7 @@ def _kl_expression(
 
     tp = kdb.TilingProcessor()
     tp.threads = phidl_config["NUM_CPU"] if num_cpu == "all" else num_cpu
+    tp.tile_border(tile_border[0], tile_border[1])
     if tile_size is not None:
         tp.tile_size(
             tile_size[0] * tp.dbu / precision, tile_size[0] * tp.dbu / precision
@@ -1597,6 +1599,7 @@ def kl_offset(
         expression=f"A.sized({d}, {miter_mode})",
         precision=precision,
         tile_size=tile_size,
+        tile_border=(2 * abs(distance), 2 * abs(distance)),
         merge_first=True,
         merge_after=merge_after,
         output_name="offset",
